@@ -220,7 +220,8 @@ python generate-module.py \
 | `--repository-url URL` | Source code repository URL (used by the researcher agent). |
 | `--documentation-url URL` | Tool documentation URL (used by the researcher agent). |
 | `--instructions TEXT` | Free-form additional instructions passed to all agents — use this to specify which sub-command to expose, preferred parameter names, or any special requirements. |
-| `--data PATH_OR_URL …` | One or more example data files (local paths or `http`/`https` URLs). URLs are downloaded before the pipeline starts. All files are bind-mounted into the container during the Dockerfile runtime test, and their formats inform the manifest's `fileFormat` field. Accepts multiple values: `--data file.bam file2.bai` |
+| `--base-image IMAGE` | Known Docker base image to use (e.g. `broadinstitute/gatk:4.5.0.0`). When provided, this value is written directly into the plan's `docker_image_tag` field and passed to the Dockerfile agent, skipping automatic image selection. |
+| `--data PATH_OR_URL[::HINT] …` | One or more example data files (local paths or `http`/`https` URLs). Each entry may include an optional semantic hint after `::` to clarify the role of the file (e.g. `sample.bam::tumor_sample ref.fasta::reference`). Hints are shown to the LLM during planning and used by the runtime test to assign the correct file to each parameter when multiple files share the same extension. URLs are downloaded before the pipeline starts. All files are bind-mounted into the container during the Dockerfile runtime test. Accepts multiple values: `--data file.bam file2.bai` |
 
 ### Artifact selection flags
 
@@ -272,6 +273,14 @@ python generate-module.py --resume ./generated-modules/mytool_20260315_143022 \
 | `--no-zip` | Skip creating a `.zip` archive of the generated artifacts. |
 | `--zip-only` | Create the `.zip` archive and then delete the individual artifact files, keeping only the zip. |
 | `--docker-push` | After successfully building the Docker image, push it to Docker Hub using the tag in the module's `docker_image_tag` field. |
+
+### GenePattern upload flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--gp-server URL` | `https://beta.genepattern.org/gp` | GenePattern server URL to upload the module zip to. Can also be set via the `GP_SERVER` environment variable. |
+| `--gp-user USERNAME` | *(none)* | GenePattern username for upload. Can also be set via the `GP_USER` environment variable. |
+| `--gp-password PASSWORD` | *(none)* | GenePattern password for upload. Can also be set via the `GP_PASSWORD` environment variable. |
 
 ---
 

@@ -106,6 +106,28 @@
         }
         .data-item-badge .remove-btn:hover { color: #dc3545; }
         .data-item-badge.uploading { opacity: 0.6; }
+        .data-item-badge .hint-input {
+            border: none;
+            border-bottom: 1px dashed #adb5bd;
+            background: transparent;
+            font-size: 0.75rem;
+            color: #6c757d;
+            width: 90px;
+            min-width: 50px;
+            outline: none;
+            margin-left: 0.4rem;
+            padding: 0 2px;
+        }
+        .data-item-badge .hint-input:focus {
+            border-bottom-color: #0d6efd;
+            color: #212529;
+        }
+        .data-item-badge .hint-label {
+            font-size: 0.72rem;
+            color: #868e96;
+            margin-left: 0.3rem;
+            white-space: nowrap;
+        }
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
@@ -228,6 +250,13 @@
                                       placeholder="Any specific instructions for module generation (e.g., which features to expose, which functions to wrap)"></textarea>
                         </div>
 
+                        <div class="mb-3">
+                            <label for="base_image" class="form-label">Docker Base Image <span class="text-muted fw-normal">(optional)</span></label>
+                            <input type="text" class="form-control" id="base_image" name="base_image"
+                                   placeholder="e.g., broadinstitute/gatk:4.5.0.0">
+                            <div class="form-text">Provide a known Docker base image to skip automatic image selection. Leave blank to let the agent choose.</div>
+                        </div>
+
                         <!-- Example Data -->
                         <div class="mb-3">
                             <label class="form-label">Example Data <span class="text-muted fw-normal">(optional)</span></label>
@@ -250,7 +279,7 @@
                                 <!-- URL input rows (appended dynamically) -->
                                 <div id="urlInputRows"></div>
 
-                                <div class="form-text">Upload local files or provide HTTP/HTTPS URLs. Files are saved into the module directory alongside generated artifacts.</div>
+                                <div class="form-text">Upload local files or provide HTTP/HTTPS URLs. After adding a file or URL, type an optional <strong>hint</strong> (e.g. <code>tumor_sample</code>, <code>reference</code>) to tell the LLM the role of each file. Files are saved into the module directory alongside generated artifacts.</div>
                             </div>
                         </div>
 
@@ -345,11 +374,11 @@
         let pollInterval = null;
 
         // ── Example-data state ──────────────────────────────────────────────
-        // resumableModuleData: {moduleName: [{original, filename, is_url, local_path}, ...]}
+        // resumableModuleData: {moduleName: [{original, filename, is_url, local_path, hint}, ...]}
         const resumableModuleData = {{ resumable_module_data_json|safe }};
 
         // Items currently staged for submission.
-        // Each entry: {type: 'file'|'url', label: string, value: string}
+        // Each entry: {type: 'file'|'url', label: string, value: string, hint: string}
         //   type='file'  → value is the absolute server path returned by /upload-data/
         //   type='url'   → value is the URL string
         let dataItems = [];
@@ -364,17 +393,30 @@
                 // Badge
                 const badge = document.createElement('span');
                 badge.className = 'data-item-badge';
+                const hintVal = item.hint || '';
                 badge.innerHTML = `
                     <span class="badge-name" title="${escapeHtml(item.value)}">${item.type === 'file' ? '📄' : '🔗'} ${escapeHtml(item.label)}</span>
+                    <span class="hint-label" title="Optional role hint passed to the LLM (e.g. tumor_sample, reference)">:: </span><input
+                        type="text"
+                        class="hint-input"
+                        placeholder="hint (optional)"
+                        title="Optional semantic hint — clarifies this file's role when multiple files share the same extension (e.g. tumor_sample, normal_sample, reference)"
+                        value="${escapeHtml(hintVal)}"
+                        data-idx="${idx}">
                     <span class="remove-btn" title="Remove" data-idx="${idx}">✕</span>
                 `;
                 badge.querySelector('.remove-btn').addEventListener('click', () => {
                     dataItems.splice(idx, 1);
                     renderDataItems();
                 });
+                // Live-update hint in dataItems as user types
+                badge.querySelector('.hint-input').addEventListener('input', function() {
+                    dataItems[parseInt(this.dataset.idx)].hint = this.value.trim();
+                    updateHiddenInputs();
+                });
                 list.appendChild(badge);
 
-                // Hidden input
+                // Hidden input — encode hint inline as value::hint if provided
                 const inp = document.createElement('input');
                 inp.type = 'hidden';
                 if (item.type === 'file') {
@@ -382,7 +424,21 @@
                 } else {
                     inp.name = 'data_url';
                 }
-                inp.value = item.value;
+                inp.value = hintVal ? `${item.value}::${hintVal}` : item.value;
+                hiddenContainer.appendChild(inp);
+            });
+        }
+
+        // Lightweight update of just the hidden inputs (called on hint keystrokes)
+        function updateHiddenInputs() {
+            const hiddenContainer = document.getElementById('dataFilePathInputs');
+            hiddenContainer.innerHTML = '';
+            dataItems.forEach(item => {
+                const hintVal = item.hint || '';
+                const inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.name = item.type === 'file' ? 'data_file_path' : 'data_url';
+                inp.value = hintVal ? `${item.value}::${hintVal}` : item.value;
                 hiddenContainer.appendChild(inp);
             });
         }
@@ -427,7 +483,7 @@
             for (const file of files) {
                 // Show uploading badge
                 const tempIdx = dataItems.length;
-                dataItems.push({type: 'file', label: file.name + ' (uploading…)', value: ''});
+                dataItems.push({type: 'file', label: file.name + ' (uploading…)', value: '', hint: ''});
                 renderDataItems();
 
                 const fd = new FormData();
@@ -443,8 +499,8 @@
                     const data = await resp.json();
                     if (!resp.ok) throw new Error(data.error || 'Upload failed');
 
-                    // Replace placeholder
-                    dataItems[tempIdx] = {type: 'file', label: data.filename, value: data.path};
+                    // Replace placeholder (preserve any hint that was typed while uploading)
+                    dataItems[tempIdx] = {type: 'file', label: data.filename, value: data.path, hint: dataItems[tempIdx].hint || ''};
                 } catch (err) {
                     // Remove failed placeholder
                     dataItems.splice(tempIdx, 1);
@@ -483,7 +539,7 @@
                 return;
             }
             input.classList.remove('is-invalid');
-            dataItems.push({type: 'url', label: url, value: url});
+            dataItems.push({type: 'url', label: url, value: url, hint: ''});
             renderDataItems();
             // Remove the inline row
             const row = input.closest('.d-flex');
@@ -499,9 +555,9 @@
             const items = resumableModuleData[moduleName] || [];
             items.forEach(item => {
                 if (item.is_url) {
-                    dataItems.push({type: 'url', label: item.original, value: item.original});
+                    dataItems.push({type: 'url', label: item.original, value: item.original, hint: item.hint || ''});
                 } else if (item.local_path) {
-                    dataItems.push({type: 'file', label: item.filename, value: item.local_path});
+                    dataItems.push({type: 'file', label: item.filename, value: item.local_path, hint: item.hint || ''});
                 }
             });
             renderDataItems();

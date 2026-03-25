@@ -160,6 +160,7 @@ def dashboard(request):
                         'filename': item.get('filename', ''),
                         'is_url': item.get('is_url', False),
                         'local_path': item.get('local_path'),
+                        'hint': item.get('hint') or '',
                     }
                     for item in example_data
                 ]
@@ -257,7 +258,9 @@ def run_generate_script(username, form_data, module_toolkit_path, output_dir, mo
         cmd.extend(['--documentation-url', form_data['documentation_url']])
     if form_data.get('instructions'):
         cmd.extend(['--instructions', form_data['instructions']])
-    
+    if form_data.get('base_image'):
+        cmd.extend(['--base-image', form_data['base_image']])
+
     # Dev mode
     if form_data.get('dev_mode') == 'on':
         cmd.append('--dev-mode')
@@ -408,11 +411,13 @@ def generate_module(request):
         'repository_url': request.POST.get('repository_url', '').strip(),
         'documentation_url': request.POST.get('documentation_url', '').strip(),
         'instructions': request.POST.get('instructions', '').strip(),
+        'base_image': request.POST.get('base_image', '').strip(),
         'dev_mode': request.POST.get('dev_mode', ''),
         'resume': request.POST.get('resume', '').strip(),
     }
 
-    # Collect example data items: uploaded file paths + typed URLs
+    # Collect example data items: uploaded file paths (with optional hints) + typed URLs (with optional hints).
+    # The JS encodes hints inline as "value::hint" before putting them in hidden inputs.
     data_file_paths = request.POST.getlist('data_file_path')
     data_urls = [u.strip() for u in request.POST.getlist('data_url') if u.strip()]
     form_data['data_items'] = data_file_paths + data_urls

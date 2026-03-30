@@ -95,7 +95,7 @@ commandLine=python wrapper.py --input.file <input.file> --output.name <output.na
 - All non-optional parameters must appear in the command line
 - The command references the wrapper script (e.g., `python wrapper.py`) or tool executable
 - Placeholders may also be keys for any entries in `genepattern.properties` (e.g., `<java>`, `<resources>`)
-- At runtime, each placeholder is replaced with the parameter value; if the parameter has a `prefix_when_specified`, the prefix is prepended only when the value is non-empty
+- At runtime, each placeholder is replaced with the parameter value; if the parameter has a `prefix_when_specified`, the prefix string is concatenated **directly** onto the value with no automatic separator — the prefix value **must end with a trailing space** (e.g., `--input.file `) so the resulting command-line token is `--input.file /path/to/file` rather than `--input.file/path/to/file`
 - A space inside angle brackets (e.g., `< input >`) is treated as stdin redirection, not a parameter — avoid spaces in placeholder names
 - For **pipeline** modules (`taskType` ending in `pipeline`), the `commandLine` is auto-generated from the serialized pipeline model and should not be set manually
 
@@ -117,7 +117,7 @@ p<N>_type=java.io.File
 p<N>_MODE=IN
 p<N>_fileFormat=txt;bam;sam
 p<N>_numValues=1..1
-p<N>_prefix_when_specified=--input.file
+p<N>_prefix_when_specified=--input.file   # NOTE: must end with a trailing space in the actual file
 p<N>_default_value=
 p<N>_value=
 p<N>_range=
@@ -135,7 +135,7 @@ p<N>_range=
 | `p<N>_MODE` | **Required** | `IN` (input file), `OUT` (output file), or empty for non-file parameters |
 | `p<N>_fileFormat` | For FILE type | Semicolon-separated accepted extensions, e.g., `txt;csv;bam` |
 | `p<N>_numValues` | **Required** | Cardinality: `0..1`, `1..1`, `0+`, `1+`, `N..M`, or exact integer |
-| `p<N>_prefix_when_specified` | Recommended | CLI flag added only when parameter is provided (e.g., `--input.file`). **Must use dots matching `p<N>_name`** |
+| `p<N>_prefix_when_specified` | Recommended | CLI flag added only when parameter is provided. **Must use dots matching `p<N>_name`** and **must end with a trailing space** so the server produces `--flag value` rather than `--flagvalue`. Example: `--input.file ` (note the space). |
 | `p<N>_prefix` | Rarely used | CLI flag added unconditionally |
 | `p<N>_default_value` | Optional | Default value when parameter is not specified |
 | `p<N>_value` | For choices | Semicolon-separated choices: `Display\=value;Display2\=value2` |
@@ -217,7 +217,7 @@ The following parameter names are reserved by the GenePattern server and **must 
 16. Parameters must be numbered sequentially from `p1` with no gaps; a missing `p<N>_name` terminates parsing
 17. Each parameter must have `description`, `optional`, `type`, `MODE`, and `numValues` fields
 18. FILE-type parameters (`type=java.io.File` or `TYPE=FILE`) must have `MODE` set to `IN` or `OUT`
-19. `prefix_when_specified` must use dots matching the parameter name (not dashes or underscores)
+19. `prefix_when_specified` must use dots matching the parameter name (not dashes or underscores), and the value **must end with a trailing space** (e.g., `--input.file `) — the server concatenates the prefix directly onto the staged file path with no automatic separator, so omitting the space produces a malformed token like `--input.file/path/to/file`
 20. No parameter name may be declared more than once
 21. No parameter name may be a reserved server name (`STDOUT`, `STDERR`, `input.filename`, `output.filename`)
 22. Non-optional parameters must appear as `<parameter.name>` placeholders in `commandLine`
@@ -534,7 +534,7 @@ These rules apply across manifest and wrapper together:
 
 1. **Every** parameter `p<N>_name` in the manifest must appear as a `--dot.notation` flag in the wrapper.
 2. **Every** parameter in the manifest must appear in `commandLine` as `<parameter.name>`.
-3. `p<N>_prefix_when_specified` must exactly equal `--` + `p<N>_name` (dots, not dashes).
+3. `p<N>_prefix_when_specified` must exactly equal `--` + `p<N>_name` + ` ` (dots, not dashes, with a trailing space) — e.g., for `p2_name=input.vcf.tbi` the value must be `--input.vcf.tbi ` (with trailing space).
 4. The wrapper filename referenced in `commandLine` must match the actual wrapper file (e.g., `wrapper.py`).
 5. The `job.docker.image` must include all Python packages and tool binaries required by the wrapper.
 6. Parameter cardinality (`p<N>_numValues`) must be consistent with whether the wrapper argument is `required=True` or has a `default`.
@@ -587,3 +587,83 @@ docker buildx build \
 ```
 
 Replace `<module-name>` and `<version>` with the values from `job.docker.image` (e.g., `genepattern/samtosambam:1`). Requires Docker 19.03+ with `buildx` enabled and `docker login` completed.
+
+---
+
+## 6. gpunit Test Files (Strongly Recommended)
+
+Every module should include at least one gpunit test so that correctness can be verified automatically after installation or updates. Tests live in a `gpunit/` subdirectory of the module repository and are **not** packaged into the installable zip.
+
+### Directory Layout
+
+```
+my.Module/
+  manifest
+  wrapper.py
+  README.md
+  gpunit/
+    test.yml           # one test per file; add more for edge cases
+    data/              # small (<10 MB) local input files used by the test
+      sample.bam
+      sample.bam.bai
+```
+
+### gpunit YAML Format
+
+```yaml
+name: "My.Module - Basic smoke test"
+module: My.Module          # must match the manifest `name` field exactly
+description: >
+  Optional free-text description of what this test covers.
+
+params:
+  input.file: data/sample.bam          # local file relative to gpunit/
+  reference: data/ref.fa
+  output.prefix: test_output           # TEXT parameters are plain strings
+  optional.flag:                       # omit the key entirely to leave optional params unset
+
+assertions:
+  files:
+    - test_output.bam                  # assert this file exists in job results
+    - test_output.bam.bai
+```
+
+### Parameter Value Rules
+
+| Value type | How to specify |
+|-----------|---------------|
+| Local test file | Relative path from the `gpunit/` directory, e.g., `data/sample.bam` |
+| Remote file | Full URL, e.g., `https://datasets.genepattern.org/data/...` |
+| Text / string | Plain value, e.g., `output_prefix` |
+| Optional param not provided | Omit the key from `params` entirely |
+
+### Assertions
+
+- **`files`**: List of filenames expected to exist in the job output directory. The test fails if any listed file is absent.
+- **`diffCmd`**: Optional command used to compare each output file against a matching expected file stored in `gpunit/`. Example: `diff <%gpunit.diffStripTrailingCR%> -q`. If omitted, only file existence is checked.
+
+### Test Data Guidelines
+
+- Keep test inputs **small** (ideally under 1 MB each, always under 10 MB) so tests run quickly and the repository stays lean.
+- Prefer publicly available reference datasets (e.g., GATK test resources on GitHub, ENCODE small files) over private data.
+- Store test data in `gpunit/data/` and reference it with relative paths in the YAML.
+- For tools that require paired files (BAM + BAI, VCF + TBI, FASTA + FAI + dict), include all companion files in `gpunit/data/`.
+- Do **not** include test data in the installable zip (the `build.xml` fileset should exclude the `gpunit/` directory).
+
+### Minimal Example
+
+```yaml
+name: "gatk.FilterMutectCalls - Mitochondrial smoke test"
+module: gatk.FilterMutectCalls
+params:
+  input.vcf: data/mito_unfiltered.vcf
+  reference: data/Homo_sapiens_assembly38.mt_only.fasta
+  reference.fai: data/Homo_sapiens_assembly38.mt_only.fasta.fai
+  reference.dict: data/Homo_sapiens_assembly38.mt_only.dict
+  stats.file: data/mito_unfiltered.vcf.stats
+  output.vcf.name: mito_filtered.vcf
+
+assertions:
+  files:
+    - mito_filtered.vcf
+```

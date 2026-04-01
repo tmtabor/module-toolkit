@@ -295,6 +295,87 @@ Python wrappers are preferred for complex tools. R wrappers are used when the to
 
 ---
 
+### Multi-Value FILE Parameters (numValues=1+ or 0+)
+
+When a FILE parameter has `numValues=1+` or `0+`, the GenePattern server does **not** call the wrapper multiple times or repeat the flag. Instead it writes a **list file** — a plain-text file containing one absolute path per line — and passes the path to that list file as the single argument for the parameter.
+
+**What the server does at runtime:**
+```
+# User submits three files for --input.tar.gz
+# Server writes:  /tmp/gp_job_12345/input.tar.gz.list
+#   /data/uploads/file1.tar.gz
+#   /data/uploads/file2.tar.gz
+#   /data/uploads/file3.tar.gz
+# Then invokes the wrapper as:
+bash wrapper.sh --input.tar.gz /tmp/gp_job_12345/input.tar.gz.list
+```
+
+**What the wrapper must do:**
+
+1. Receive the single list-file path in the `--param.name` case handler.
+2. Call an `expand_inputs()` function (or equivalent) that reads the list file line-by-line and populates a bash array (or Python list) with the actual file paths.
+3. Skip blank lines when reading the list file.
+4. Validate each expanded path exists before passing it to the tool.
+5. Pass each path individually to the underlying tool (e.g., repeated `-I file` flags for GATK).
+
+**Bash pattern:**
+```bash
+INPUT_LIST_FILE=""       # path to the GP-generated list file
+INPUT_FILES=()           # expanded real paths, filled by expand_inputs()
+
+# In parse_arguments():
+--input.tar.gz)
+    INPUT_LIST_FILE="$2"
+    shift 2
+    ;;
+
+# New function called between parse_arguments() and validate_inputs():
+expand_inputs() {
+    [[ -z "$INPUT_LIST_FILE" ]] && { echo "[ERROR] --input.tar.gz required"; exit 1; }
+    [[ ! -f "$INPUT_LIST_FILE" ]] && { echo "[ERROR] List file not found: $INPUT_LIST_FILE"; exit 1; }
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ -z "$line" ]] && continue
+        INPUT_FILES+=("$line")
+    done < "$INPUT_LIST_FILE"
+    [[ ${#INPUT_FILES[@]} -eq 0 ]] && { echo "[ERROR] No paths in list file"; exit 1; }
+}
+
+# In run_tool(), pass each file to the tool:
+for f in "${INPUT_FILES[@]}"; do
+    cmd+=(-I "$f")
+done
+```
+
+**Python pattern:**
+```python
+# parse_arguments() receives the list-file path:
+parser.add_argument("--input.tar.gz", dest="input_tar_gz_list", required=True)
+
+# expand_inputs() reads actual paths:
+def expand_inputs(list_file):
+    paths = []
+    with open(list_file) as fh:
+        for line in fh:
+            line = line.strip()
+            if line:
+                paths.append(line)
+    if not paths:
+        raise ValueError(f"No paths found in list file: {list_file}")
+    return paths
+```
+
+**runLocal.sh simulation:** When testing locally, create the list file manually before calling Docker:
+```bash
+LIST_FILE="${RUN_DIR}/input.tar.gz.list"
+echo "/data/file1.tar.gz" > "${LIST_FILE}"
+echo "/data/file2.tar.gz" >> "${LIST_FILE}"
+# Then pass: --input.tar.gz /work/input.tar.gz.list
+```
+
+**This applies to all multi-value FILE parameters** — not just F1R2 files. Any parameter with `numValues=1+`, `0+`, or `N..M` where N or M > 1 and `TYPE=FILE` will be passed as a list file.
+
+---
+
 ### Critical Convention: Dot-Based Parameter Names
 
 **The single most important rule:** argument flags in the wrapper must use **dots**, matching the manifest `p<N>_name` and `p<N>_prefix_when_specified` exactly.
@@ -528,7 +609,81 @@ tool-binary \
 
 ---
 
-## 3. Cross-Artifact Consistency Rules
+## 3. paramgroups.json — Parameter UI Grouping
+
+Every module must include a `paramgroups.json` file alongside the manifest. The GenePattern server reads it to organize the parameter form into collapsible sections, making complex modules easier to use.
+
+### Format
+
+JSON array of group objects. **Every parameter defined in the manifest must appear in exactly one group.**
+
+```json
+[
+    {
+        "name": "Input",
+        "description": "Brief sentence describing what this group contains.",
+        "parameters": ["input.vcf", "input.vcf.tbi"],
+        "hidden": false
+    },
+    {
+        "name": "Advanced Options",
+        "description": "Rarely-needed parameters for expert users.",
+        "parameters": ["arguments.file", "gatk.config.file"],
+        "hidden": true
+    }
+]
+```
+
+### Field Reference
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Short group label shown as the section header |
+| `parameters` | Yes | Ordered list of `p<N>_name` values belonging to this group |
+| `description` | Recommended | One-sentence explanation shown as group subtitle |
+| `hidden` | No | `true` collapses the group by default; omit or `false` to expand |
+
+### Design Rules
+
+1. **Every manifest parameter appears in exactly one group** — no orphans, no duplicates.
+2. **Maximum 5 groups** — more than 5 overwhelms the UI.
+3. **Maximum 10 parameters per group** — split larger groups.
+4. **Standard last group**: always end with an `"Advanced Options"` group (`"hidden": true`) containing `arguments.file` and `gatk.config.file` (or equivalent).
+5. **Order groups by workflow sequence**: inputs first, output second, algorithm options third, advanced last.
+6. **Group companion files together**: e.g., `reference`, `reference.fai`, and `reference.dict` belong in the same "Reference Genome" group.
+
+### Typical Group Pattern for GATK Modules
+
+```json
+[
+    { "name": "Input",            "parameters": ["<primary.input>", "<companion.index>"] },
+    { "name": "Reference Genome", "parameters": ["reference", "reference.fai", "reference.dict"] },
+    { "name": "Output",           "parameters": ["output.file.name"] },
+    { "name": "Analysis Options", "parameters": ["<tool-specific optional params>"] },
+    { "name": "Advanced Options", "parameters": ["arguments.file", "gatk.config.file"], "hidden": true }
+]
+```
+
+### Validation
+
+```bash
+# All manifest parameter names appear in paramgroups.json
+python3 -c "
+import json, subprocess, re
+params = re.findall(r'^p\d+_name=(.+)', open('manifest').read(), re.M)
+groups = json.load(open('paramgroups.json'))
+grouped = [p for g in groups for p in g['parameters']]
+missing = [p for p in params if p not in grouped]
+extra   = [p for p in grouped if p not in params]
+print('Missing from paramgroups:', missing or 'none')
+print('Extra in paramgroups:',     extra   or 'none')
+print('Groups:', len(groups), '(max 5)')
+"
+```
+
+---
+
+## 4. Cross-Artifact Consistency Rules
 
 These rules apply across manifest and wrapper together:
 

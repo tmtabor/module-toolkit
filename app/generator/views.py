@@ -261,10 +261,6 @@ def run_generate_script(username, form_data, module_toolkit_path, output_dir, mo
     if form_data.get('base_image'):
         cmd.extend(['--base-image', form_data['base_image']])
 
-    # Dev mode
-    if form_data.get('dev_mode') == 'on':
-        cmd.append('--dev-mode')
-
     # Pre-created module directory — ensures uploads and artifacts share the same dir
     if form_data.get('module_dir'):
         cmd.extend(['--module-dir', form_data['module_dir']])
@@ -412,7 +408,6 @@ def generate_module(request):
         'documentation_url': request.POST.get('documentation_url', '').strip(),
         'instructions': request.POST.get('instructions', '').strip(),
         'base_image': request.POST.get('base_image', '').strip(),
-        'dev_mode': request.POST.get('dev_mode', ''),
         'resume': request.POST.get('resume', '').strip(),
     }
 

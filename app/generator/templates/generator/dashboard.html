@@ -186,22 +186,19 @@
                         {% csrf_token %}
 
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="name" class="form-label">Tool Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="name" name="name"
                                        placeholder="e.g., samtools, bwa, star" required>
                                 <div class="form-text">The name of the bioinformatics tool</div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="version" class="form-label">Version</label>
                                 <input type="text" class="form-control" id="version" name="version"
                                        placeholder="e.g., 1.0, latest">
                                 <div class="form-text">Tool version (optional, defaults to "latest")</div>
                             </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="language" class="form-label">Primary Language</label>
                                 <select class="form-select" id="language" name="language">
                                     <option value="">Select language...</option>
@@ -214,14 +211,6 @@
                                     <option value="cpp">C++</option>
                                     <option value="other">Other</option>
                                 </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="dev_mode" class="form-label">Dev Mode</label>
-                                <select class="form-select" id="dev_mode" name="dev_mode">
-                                    <option value="on" selected>On (save intermediate files)</option>
-                                    <option value="off">Off</option>
-                                </select>
-                                <div class="form-text">Saves research, plan, and status files</div>
                             </div>
                         </div>
 

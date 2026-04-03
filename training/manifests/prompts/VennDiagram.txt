@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for VennDiagram.
+
+Tool Information:
+- Name: VennDiagram
+- Version: latest
+- Language: Java
+- Description: Displays a Venn diagram
+- Repository: 
+
+Planning Data:
+{'module_name': 'VennDiagram', 'parameters': [{'name': 'feature.list.one', 'type': 'FILE', 'description': 'Feature list one - .grp, .txt', 'required': True, 'default_value': '', 'file_format': 'grp;txt'}, {'name': 'feature.list.two', 'type': 'FILE', 'description': 'Feature list two - .grp, .txt', 'required': True, 'default_value': '', 'file_format': 'grp;txt'}, {'name': 'feature.list.three', 'type': 'FILE', 'description': 'Feature list three - .grp, .txt', 'required': False, 'default_value': '', 'file_format': 'grp;txt'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Visualizer', 'author': 'GenePattern', 'command_line': '<java> <java_flags> -cp <libdir>gp-modules.jar org.genepattern.gui.venn.VennDiagram <feature.list.one> <feature.list.two> <feature.list.three>'}
+
+Generate a complete, valid manifest file in key=value format.

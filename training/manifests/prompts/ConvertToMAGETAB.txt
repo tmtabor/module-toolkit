@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for ConvertToMAGETAB.
+
+Tool Information:
+- Name: ConvertToMAGETAB
+- Version: Added types for text parameters
+- Language: Java
+- Description: A module to export data from GenePattern in MAGE-TAB format
+- Repository: 
+
+Planning Data:
+{'module_name': 'ConvertToMAGETAB', 'parameters': [{'name': 'input.file', 'type': 'FILE', 'description': 'A dataset file  - .gct, .res', 'required': True, 'default_value': '', 'file_format': 'gct;res'}, {'name': 'cls.file', 'type': 'FILE', 'description': 'A class file  - .cls', 'required': False, 'default_value': '', 'file_format': 'cls'}, {'name': 'sample.reference.label', 'type': 'java.lang.String', 'description': 'reference label for samples in the data matrix file', 'required': True, 'default_value': 'Hybridization REF'}, {'name': 'feature.reference.label', 'type': 'java.lang.String', 'description': 'reference label for features in the data matrix file', 'required': True, 'default_value': 'CompositeElement REF'}, {'name': 'intensity.type.label', 'type': 'java.lang.String', 'description': 'label that specifies the type of intensity values in data matrix file', 'required': True, 'default_value': ''}, {'name': 'output.prefix', 'type': 'java.lang.String', 'description': 'prefix to use for output file name', 'required': True, 'default_value': '<input.file_basename>'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Preprocess & Utilities', 'author': 'Marc-Danie Nazaire(Broad Institute)', 'command_line': '<java> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>limpopo-1.0-beta-20100420.jar<path.separator><libdir>convertMAGETAB.jar org.broadinstitute.mage.MAGETABCreator <input.file> <sample.reference.label> <feature.reference.label> <intensity.type.label> <output.prefix> <cls.file>'}
+
+Generate a complete, valid manifest file in key=value format.

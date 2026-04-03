@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for SVM.
+
+Tool Information:
+- Name: SVM
+- Version: Added check that the user provided saved model is an SVM model
+- Language: R
+- Description: Classify samples using SVM
+- Repository: 
+
+Planning Data:
+{'module_name': 'SVM', 'parameters': [{'name': 'train.data.filename', 'type': 'FILE', 'description': 'The training data file - .gct, .res', 'required': False, 'default_value': '', 'file_format': 'res;gct'}, {'name': 'train.cls.filename', 'type': 'FILE', 'description': 'The training class file - .cls', 'required': False, 'default_value': '', 'file_format': 'cls'}, {'name': 'saved.model.filename', 'type': 'FILE', 'description': 'A saved model from a previous run of SVM', 'required': False, 'default_value': '', 'file_format': 'model'}, {'name': 'test.data.filename', 'type': 'FILE', 'description': 'The test data file - .gct, .res', 'required': False, 'default_value': '', 'file_format': 'res;gct'}, {'name': 'test.cls.filename', 'type': 'FILE', 'description': 'The test class file - .cls', 'required': False, 'default_value': '', 'file_format': 'cls'}, {'name': 'pred.results.output.file', 'type': 'java.lang.String', 'description': 'The name of the output file for prediction results', 'required': False, 'default_value': '<test.data.filename_basename>.pred.odf'}, {'name': 'model.output.file', 'type': 'java.lang.String', 'description': 'The name of the file containing the saved model', 'required': False, 'default_value': '<train.data.filename_basename>.model'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Prediction', 'author': 'Joshua Gould, Broad Institute', 'command_line': '<R2.5> <libdir>svm.R mysvm -rf<train.data.filename> -rc<train.cls.filename> -ef<test.data.filename> -ec<test.cls.filename> -pr<pred.results.output.file> -mf<model.output.file> -li<libdir> -sm<saved.model.filename>'}
+
+Generate a complete, valid manifest file in key=value format.

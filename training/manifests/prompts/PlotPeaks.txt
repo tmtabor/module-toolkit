@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for PlotPeaks.
+
+Tool Information:
+- Name: PlotPeaks
+- Version: Updated for R 2.5
+- Language: R
+- Description: Plot peaks
+- Repository: 
+
+Planning Data:
+{'module_name': 'PlotPeaks', 'parameters': [{'name': 'peaks.output.filename', 'type': 'FILE', 'description': 'The output from the Peaks module', 'required': True, 'default_value': '', 'file_format': 'Spectrum Peaks'}, {'name': 'output.file', 'type': 'java.lang.String', 'description': 'output file name', 'required': True, 'default_value': '<peaks.output.filename_basename>.pdf'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Proteomics', 'author': 'D.R. Mani, Broad Institute', 'command_line': '<R2.5> <libdir>pipeline.wrapper.R plot.peaks.wrapper <peaks.output.filename> <output.file> <libdir>'}
+
+Generate a complete, valid manifest file in key=value format.

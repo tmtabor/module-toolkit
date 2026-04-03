@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for HeatMapViewer.
+
+Tool Information:
+- Name: HeatMapViewer
+- Version: Bug fix to support S3 files
+- Language: HTML,JQuery
+- Description: A configurable heat map viewer that provides users with several options for manipulating and visualizing array-based data
+- Repository: https\://github.com/genepattern/HeatMapViewer.git
+
+Planning Data:
+{'module_name': 'HeatMapViewer', 'parameters': [{'name': 'dataset', 'type': 'FILE', 'description': 'The dataset to display - .gct', 'required': True, 'default_value': '', 'file_format': 'res;gct;odf;Dataset'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'javascript', 'author': 'GenePattern', 'command_line': 'heatmap.html ? <dataset>'}
+
+Generate a complete, valid manifest file in key=value format.

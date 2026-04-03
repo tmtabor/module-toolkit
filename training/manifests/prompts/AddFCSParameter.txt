@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for AddFCSParameter.
+
+Tool Information:
+- Name: AddFCSParameter
+- Version: Added fix for parsing empty keyword values
+- Language: Java
+- Description: Add parameters and their values to a FCS data file
+- Repository: 
+
+Planning Data:
+{'module_name': 'AddFCSParameter', 'parameters': [{'name': 'Input.fcs.data.file', 'type': 'FILE', 'description': 'A FCS data file to add parameters to.', 'required': True, 'default_value': '', 'file_format': 'fcs', 'prefix': '-InputFCS\\:'}, {'name': 'Input.csv.file', 'type': 'FILE', 'description': 'A CSV file with parameters and values to add.', 'required': True, 'default_value': '', 'file_format': 'csv', 'prefix': '-InputCSV\\:'}, {'name': 'Output.file.name', 'type': 'java.lang.String', 'description': 'The output FCS file name.', 'required': True, 'default_value': '<Input.fcs.data.file_basename>_with_extra_params.fcs', 'prefix': '-OutputFCS\\:'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Flow Cytometry', 'author': 'Josef Spidlen, BC Cancer Agency', 'command_line': '<java> <java_flags> -jar <libdir>addfcsparameter.jar <Input.fcs.data.file> <Input.csv.file> <Output.file.name>'}
+
+Generate a complete, valid manifest file in key=value format.

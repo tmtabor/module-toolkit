@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for AddFCSEventIndex.
+
+Tool Information:
+- Name: AddFCSEventIndex
+- Version: Added fix for parsing empty keyword values
+- Language: Java
+- Description: Adds indexes to events in a Flow Cytometry Standard (FCS) data file.
+- Repository: 
+
+Planning Data:
+{'module_name': 'AddFCSEventIndex', 'parameters': [{'name': 'Input.data.file', 'type': 'FILE', 'description': 'An FCS data file to which you want to add indexes.', 'required': True, 'default_value': '', 'file_format': 'fcs', 'prefix': '-InputFCS\\:'}, {'name': 'Start.index', 'type': 'java.lang.Integer', 'description': 'The index number for the first event in the data set; the default is 1. The index will be incremented by 1 for each of the events in the data set.', 'required': True, 'default_value': '1', 'prefix': '-StartIndex\\:'}, {'name': 'Index.parameter.short.name', 'type': 'java.lang.String', 'description': 'The short name ($PnN keyword) of the parameter to get the index; the default is "Index."', 'required': True, 'default_value': 'Index', 'prefix': '-IndexParameterShortName\\:'}, {'name': 'Index.parameter.long.name', 'type': 'java.lang.String', 'description': 'The long name ($PnS keyword) of the parameter to get the index; the default is blank.', 'required': False, 'default_value': '', 'prefix': '-IndexParameterLongName\\:'}, {'name': 'Output.fcs.file.name', 'type': 'java.lang.String', 'description': 'The output file name.', 'required': True, 'default_value': '<Input.data.file_basename>', 'prefix': '-OutputFCS\\:'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Flow Cytometry', 'author': 'Josef Spidlen, BC Cancer Agency', 'command_line': '<java> <java_flags> -jar <libdir>addfcseventindex.jar <Input.data.file> <Output.fcs.file.name> <Start.index> <Index.parameter.short.name> <Index.parameter.long.name>'}
+
+Generate a complete, valid manifest file in key=value format.

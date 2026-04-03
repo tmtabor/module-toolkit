@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for ConvertToMAGEML.
+
+Tool Information:
+- Name: ConvertToMAGEML
+- Version: Fixes bug in the order of the BioDataCube
+- Language: Java
+- Description: Converts a gct, res, or odf dataset file to a MAGE-ML file
+- Repository: 
+
+Planning Data:
+{'module_name': 'ConvertToMAGEML', 'parameters': [{'name': 'input.filename', 'type': 'FILE', 'description': 'The gct, res, or odf file to convert', 'required': True, 'default_value': ''}, {'name': 'output.file.base.name', 'type': 'java.lang.String', 'description': 'The base name of the zip output file or the MAGE-ML file', 'required': True, 'default_value': '<input.filename_basename>'}, {'name': 'create.zip.file', 'type': 'java.lang.String', 'description': 'Whether to zip the MAGE-ML files', 'required': True, 'default_value': 'yes', 'choices': 'yes;no'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Preprocess & Utilities', 'author': 'Joshua Gould', 'command_line': '<java> <java_flags> -cp <libdir>MAGEstk-2003-10-24-v1.1-compatible.jar<path.separator><libdir>ConvertToMAGE.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar edu.mit.broad.modules.mage.MAGECreator <input.filename> <output.file.base.name> <create.zip.file>'}
+
+Generate a complete, valid manifest file in key=value format.

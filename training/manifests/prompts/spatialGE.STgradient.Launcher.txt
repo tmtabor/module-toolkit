@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for spatialGE.STgradient.Launcher.
+
+Tool Information:
+- Name: spatialGE.STgradient.Launcher
+- Version: Initial version
+- Language: Javascript
+- Description: Reads the output of spatialGE.STclust and then launches an analysis to test for genes for which there is evidence of expression spatial gradients with respect to a "reference" tissue niche/domain (e.g., higher expression closer to reference tissue niche, lower expression as farther from reference tissue niche).
+- Repository: https\://github.com/genepattern/spatialGE.STgradient.Launcher.git
+
+Planning Data:
+{'module_name': 'spatialGE.STgradient.Launcher', 'parameters': [{'name': 'dataset', 'type': 'FILE', 'description': 'Normalized spatial transcriptomics data with clusters, coming from the spatialGE.STclust module.', 'required': True, 'default_value': '', 'file_format': 'rds'}, {'name': 'sample.info', 'type': 'FILE', 'description': 'JSON file containing spot/cell and gene statistics for each sample, coming from the spatialGE.Preprocessing module.', 'required': True, 'default_value': '', 'file_format': 'json'}, {'name': 'domain.info', 'type': 'FILE', 'description': 'JSON file containing domain/cluster statistics for each sample, coming from the spatialGE.STclust module.', 'required': True, 'default_value': '', 'file_format': 'json'}], 'docker_image_tag': '', 'categories': 'spatial transcriptomics, javascript', 'task_type': 'javascript', 'author': 'Thorin Tabor;UCSD - Mesirov Lab', 'command_line': 'app.html ? <dataset> <sample.info> <domain.info>'}
+
+Generate a complete, valid manifest file in key=value format.

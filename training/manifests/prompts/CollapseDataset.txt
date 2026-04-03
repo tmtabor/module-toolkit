@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for CollapseDataset.
+
+Tool Information:
+- Name: CollapseDataset
+- Version: 10/03/2022 \: Updated to Human MSigDB v2022.1.Hs and Mouse MSigDB 2022.1.Mm.
+- Language: Java
+- Description: Collapses expression values from multiple input ids that map to a single target gene to a single value on a per-sample basis
+- Repository: 
+
+Planning Data:
+{'module_name': 'CollapseDataset', 'parameters': [{'name': 'dataset.file', 'type': 'FILE', 'description': 'Dataset file - .res, .gct', 'required': True, 'default_value': '', 'file_format': 'gct;res'}, {'name': 'chip.platform', 'type': 'FILE', 'description': 'DNA Chip (array) annotation file from GSEA website.  Upload your own chip file if the one corresponding to your DNA Microarray platform is not listed in the drop-down menu.  A chip file is only required if collapse dataset is set to true.', 'required': False, 'default_value': '', 'file_format': 'chip'}, {'name': 'collapse.mode', 'type': 'TEXT', 'description': 'Collapsing mode.  It is also possible to remap symbols from one namespace to another without collapsing (an error will occur if multiple source genes map to a single destination gene)', 'required': True, 'default_value': 'Max_probe', 'choices': 'Max_probe;Median_of_probes;Mean_of_probes;Sum_of_probes;Abs_max_of_probes;Remap_only'}, {'name': 'output.file.name', 'type': 'java.lang.String', 'description': 'The output file name', 'required': True, 'default_value': '', 'prefix': '-out_file'}, {'name': 'omit.features.with.no.symbol.match', 'type': 'TEXT', 'description': 'If there is no known gene symbol match for a probe set, omit it from the collapsed dataset', 'required': True, 'default_value': 'true', 'choices': 'false;true'}, {'name': 'dev.mode', 'type': 'TEXT', 'description': 'Enable developer mode.', 'required': True, 'default_value': 'false', 'choices': 'false;true'}], 'docker_image_tag': 'genepattern/gsea_4.3.2\\:0.1', 'categories': 'gsea', 'task_type': 'Preprocess & Utilities', 'author': 'Aravind Subramanian, Josh Gould, David Eby; Broad Institute', 'command_line': '/opt/gsea/GSEA_4.3.2/gsea-cli.sh CollapseDataset -res <dataset.file> -chip <chip.platform> -mode <collapse.mode> -dev_mode <dev.mode> -include_only_symbols <omit.features.with.no.symbol.match> <output.file.name> -run_as_genepattern true'}
+
+Generate a complete, valid manifest file in key=value format.

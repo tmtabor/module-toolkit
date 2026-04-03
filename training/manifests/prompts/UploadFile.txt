@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for UploadFile.
+
+Tool Information:
+- Name: UploadFile
+- Version: latest
+- Language: Java
+- Description: A utility for users to upload and share a common input file for use by modules within a pipeline.
+- Repository: 
+
+Planning Data:
+{'module_name': 'UploadFile', 'parameters': [{'name': 'input.file', 'type': 'FILE', 'description': 'Please specify the file you wish to upload.', 'required': True, 'default_value': ''}, {'name': 'output.filename', 'type': 'java.lang.String', 'description': 'Please specify the new filename if required.', 'required': True, 'default_value': '<input.file_file>'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Preprocess & Utilities', 'author': 'Adrian Png, BC Cancer Research Centre', 'command_line': '<java> -cp <libdir>uploadfile.jar net.sf.flowcyt.gp.module.StageFiles -in <input.file> -out <output.filename>'}
+
+Generate a complete, valid manifest file in key=value format.

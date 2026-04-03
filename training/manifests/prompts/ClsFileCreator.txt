@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for ClsFileCreator.
+
+Tool Information:
+- Name: ClsFileCreator
+- Version: S3 file fix
+- Language: Java
+- Description: A tool to create a class label (CLS) file.
+- Repository: 
+
+Planning Data:
+{'module_name': 'ClsFileCreator', 'parameters': [{'name': 'input.file', 'type': 'FILE', 'description': 'A dataset - .gct', 'required': True, 'default_value': '', 'file_format': 'gct'}], 'docker_image_tag': '', 'categories': 'Preprocess & Utilities', 'task_type': 'javascript', 'author': 'Marc-Danie Nazaire (Broad Institute)', 'command_line': 'clsfilecreator.html ? <input.file>'}
+
+Generate a complete, valid manifest file in key=value format.

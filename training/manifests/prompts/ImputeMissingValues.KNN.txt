@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for ImputeMissingValues.KNN.
+
+Tool Information:
+- Name: ImputeMissingValues.KNN
+- Version: Renamed module from ImputeMissingValues.KNN to ImputeMissingValuesKNN
+- Language: R
+- Description: Imputes missing values
+- Repository: 
+
+Planning Data:
+{'module_name': 'ImputeMissingValues.KNN', 'parameters': [{'name': 'data.filename', 'type': 'FILE', 'description': 'Data file (missing values are stored as NA) - .gct', 'required': True, 'default_value': '', 'file_format': 'gct'}, {'name': 'k', 'type': 'java.lang.Integer', 'description': 'Number of neighbors to be used in the imputation', 'required': True, 'default_value': '10'}, {'name': 'rowmax', 'type': 'java.lang.Float', 'description': 'The maximum percent missing data allowed in any row', 'required': True, 'default_value': '0.5'}, {'name': 'colmax', 'type': 'java.lang.Float', 'description': 'The maximum percent missing data allowed in any column', 'required': True, 'default_value': '0.8'}, {'name': 'output.file', 'type': 'java.lang.String', 'description': 'The name of the output file - .gct', 'required': True, 'default_value': '<data.filename_basename>.imputed.gct'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Missing Value Imputation', 'author': 'Joshua Gould', 'command_line': '<R2.5> <libdir>impute.R impute <data.filename> <k> <rowmax> <colmax> <output.file> <libdir>'}
+
+Generate a complete, valid manifest file in key=value format.

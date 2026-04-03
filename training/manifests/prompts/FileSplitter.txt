@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for FileSplitter.
+
+Tool Information:
+- Name: FileSplitter
+- Version: latest
+- Language: Java
+- Description: Splits a file into equal-sized chunks, given the number of lines per output file
+- Repository: 
+
+Planning Data:
+{'module_name': 'FileSplitter', 'parameters': [{'name': 'inputFile', 'type': 'FILE', 'description': 'The input file, to be split into chunks', 'required': True, 'default_value': '', 'prefix': '--inputFile\\='}, {'name': 'numFiles', 'type': 'java.lang.String', 'description': "[Integer, >\\=1], The maximum number of output files to split the file into. When both 'numFiles' and 'numLines' are set, treat this as the maximum number of output files to create, even if the files have more than the requested number of lines", 'required': False, 'default_value': '', 'prefix': '--numFiles\\='}, {'name': 'numLines', 'type': 'java.lang.String', 'description': '[Integer, >\\=1], The number of lines in each output file.', 'required': False, 'default_value': '', 'prefix': '--numLines\\='}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Preprocess & Utilities', 'author': 'Peter Carr, Broad Institute', 'command_line': '<java> <java_flags> -cp <libdir>FileSplitter.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar org.genepattern.module.filesplitter.FileSplitter <inputFile> <numFiles> <numLines>'}
+
+Generate a complete, valid manifest file in key=value format.

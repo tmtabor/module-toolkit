@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for shRNAscores.
+
+Tool Information:
+- Name: shRNAscores
+- Version: changed name of module
+- Language: R
+- Description: Outputs fold change, signal to noise and modified score (which deweights highly variable hps from reference control) for RNAI HP scoring
+- Repository: 
+
+Planning Data:
+{'module_name': 'shRNAscores', 'parameters': [{'name': 'gct', 'type': 'FILE', 'description': '', 'required': True, 'default_value': '', 'file_format': 'gct'}, {'name': 'array.info', 'type': 'FILE', 'description': "Array annotation from 'makeArrayInfo' module", 'required': True, 'default_value': '', 'file_format': 'txt'}, {'name': 'reference', 'type': 'java.lang.String', 'description': "Reference to compare each cell line to - name can partially or totally match 'Array_timepoint' column of array.info file", 'required': True, 'default_value': 'DNA'}, {'name': 'annotation', 'type': 'FILE', 'description': 'TRChuV2.chip file (hp annotation)', 'required': True, 'default_value': '', 'file_format': 'txt'}, {'name': 'output.prefix', 'type': 'java.lang.String', 'description': 'prefix for output file name', 'required': True, 'default_value': 'test'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'RNAi', 'author': 'Barbara Weir, Broad Institute', 'command_line': '<R2.5> <libdir>HPscores.R HPscores -i<gct> -s<array.info> -r<reference> -a<annotation> -e<output.prefix> -l<libdir>'}
+
+Generate a complete, valid manifest file in key=value format.

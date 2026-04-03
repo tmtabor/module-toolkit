@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for ESPPredictor.
+
+Tool Information:
+- Name: ESPPredictor
+- Version: Dockerized release
+- Language: MATLAB, R, Java
+- Description: Determine which tryptic peptides will generate the highest signal in ESI-MS
+- Repository: 
+
+Planning Data:
+{'module_name': 'ESPPredictor', 'parameters': [{'name': 'input.file', 'type': 'FILE', 'description': 'List of peptide sequences (one per line, no column header)', 'required': True, 'default_value': '', 'file_format': 'txt;csv'}], 'docker_image_tag': 'genepattern/esppredictor\\:0.1', 'categories': '', 'task_type': 'proteomics', 'author': 'Vincent Fusaro, Broad Institute, updated by Ted Liefeld, UCSD School of Medicine.', 'command_line': 'sh /ESPPredictor/esp_module.sh <input.file>'}
+
+Generate a complete, valid manifest file in key=value format.

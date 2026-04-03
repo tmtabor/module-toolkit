@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Kallisto.Indexer.
+
+Tool Information:
+- Name: Kallisto.Indexer
+- Version: add documentation, author, docker, source code repo, change visibility to public, quality level to preproduction
+- Language: any
+- Description: Builds an index from a FASTA formatted file of target sequences for use with Kallisto.
+- Repository: https\://github.com/genepattern/Kallisto.Indexer
+
+Planning Data:
+{'module_name': 'Kallisto.Indexer', 'parameters': [{'name': 'FASTA.files', 'type': 'FILE', 'description': 'FASTA formatted file of target sequences. Can be in plaintext or gzipped (.gz) format. Can upload more than one file and can be a mix of .gz and .fa files.', 'required': True, 'default_value': '', 'file_format': '.fa.gz;fa;fa.gz;FASTA;fasta;fasta.gz', 'num_values': '0+'}, {'name': 'output.filename', 'type': 'TEXT', 'description': 'Filename for the kallisto index to be constructed.', 'required': False, 'default_value': 'new_kallisto_index', 'num_values': '0..1'}, {'name': 'k-mer.size', 'type': 'Integer', 'description': 'Odd length of k-mers. Default is 31, max values is 31.', 'required': False, 'default_value': '31', 'num_values': '0..1'}, {'name': 'make.unique', 'type': 'TEXT', 'description': 'Replace repeated target names with unique names.', 'required': False, 'default_value': 'No', 'choices': 'Yes\\=Yes;No\\=No', 'num_values': '0..1'}], 'docker_image_tag': 'genepattern/kallisto.indexer\\:v0.1', 'categories': 'rna-seq', 'task_type': '', 'author': 'Edwin Huang;Mesirov Lab - UCSD', 'command_line': '/opt/genepatt/src/run_kallisto_indexer.sh <output.filename> <make.unique> <k-mer.size> <FASTA.files>'}
+
+Generate a complete, valid manifest file in key=value format.

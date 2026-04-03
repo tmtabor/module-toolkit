@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for PredictionResultsViewer.
+
+Tool Information:
+- Name: PredictionResultsViewer
+- Version: Bug fix for S3 files
+- Language: Javascript
+- Description: Visualizes prediction results in JavaScript
+- Repository: https\://github.com/genepattern/PredictionResultsViewer.git
+
+Planning Data:
+{'module_name': 'PredictionResultsViewer', 'parameters': [{'name': 'prediction.results.file', 'type': 'FILE', 'description': 'Prediction results - .odf', 'required': True, 'default_value': '', 'file_format': 'odf;pred.odf;Prediction Results'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'javascript', 'author': 'Thorin Tabor (UC San Diego, Broad Institute)', 'command_line': 'prediction_results_viewer.html ? <prediction.results.file>'}
+
+Generate a complete, valid manifest file in key=value format.

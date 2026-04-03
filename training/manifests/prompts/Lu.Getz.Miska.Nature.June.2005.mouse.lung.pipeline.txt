@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Lu.Getz.Miska.Nature.June.2005.mouse.lung.pipeline.
+
+Tool Information:
+- Name: Lu.Getz.Miska.Nature.June.2005.mouse.lung.pipeline
+- Version: Updated for R 2.5
+- Language: Java;R
+- Description: Normal/tumor classifier and kNN prediction of mouse lung samples
+- Repository: 
+
+Planning Data:
+{'module_name': 'Lu.Getz.Miska.Nature.June.2005.mouse.lung.pipeline', 'parameters': [], 'docker_image_tag': '', 'categories': '', 'task_type': 'pipeline', 'author': 'Gad Getz, Broad Institute', 'command_line': '<java>  -Dgenepattern.properties\\=<resources> -DLSID\\=<LSID> -DPIPELINE_ARG.StopAfterTask\\=<PIPELINE_ARG.StopAfterTask> -DGenePatternURL\\=<GenePatternURL>  org.genepattern.server.webapp.RunPipelineSoap <GenePatternURL>getPipelineModel.jsp?name\\=<LSID>&userid\\=<userid> <userid>'}
+
+Generate a complete, valid manifest file in key=value format.

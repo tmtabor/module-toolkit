@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for CreateSymlinks.
+
+Tool Information:
+- Name: CreateSymlinks
+- Version: latest
+- Language: any
+- Description: Creates symlinks to the input files in the job results directory. This is intended to be a helper module for creating scatter-gather pipelines.  Note that this module is not supported on Windows
+- Repository: 
+
+Planning Data:
+{'module_name': 'CreateSymlinks', 'parameters': [{'name': 'input.files', 'type': 'FILE', 'description': 'One or more input files', 'required': True, 'default_value': '', 'num_values': '1+'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Preprocess & Utilities', 'author': 'GenePattern Team', 'command_line': '<perl> <libdir>createsymlinks.pl --inputfilelist <input.files>'}
+
+Generate a complete, valid manifest file in key=value format.

@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for DeIdentifyFCS.
+
+Tool Information:
+- Name: DeIdentifyFCS
+- Version: latest
+- Language: Java
+- Description: DeIdentifyFCS an FCS data file; remove keywords from a list or matching a regular expression; useful to anonymize FCS data files and/or to remove specific (e.g., clinical) information
+- Repository: 
+
+Planning Data:
+{'module_name': 'DeIdentifyFCS', 'parameters': [{'name': 'Input.FCS.data.file', 'type': 'FILE', 'description': 'An FCS data file to be de-identified.', 'required': True, 'default_value': '', 'file_format': 'fcs', 'prefix': '-InputFile\\:'}, {'name': 'Remove.keywords', 'type': 'java.lang.String', 'description': "Comma-separated list of keyword names (escape comma by '\\\\' if part of a keyword name) or regular expression to match keywords to be removed.", 'required': True, 'default_value': '', 'prefix': '-Remove\\:'}, {'name': 'Is.regular.expression.used', 'type': 'java.lang.String', 'description': "Is a regular expression used in the list of keywords to remove? If not (default) a simple comma-separated list of keyword names is expected. In this list, comma may be escaped by '\\\\' if part of a keyword name, e.g., this \\\\, is in the keyword.", 'required': True, 'default_value': 'No', 'choices': 'Yes\\=Yes;No\\=No, default', 'prefix': '-IsRegExUsed\\:'}, {'name': 'Output.FCS.file.name', 'type': 'java.lang.String', 'description': 'Output FCS file name.', 'required': True, 'default_value': '<Input.FCS.data.file_basename>.deidentified.<Input.FCS.data.file_extension>', 'prefix': '-OutputFile\\:'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Flow Cytometry', 'author': 'Josef Spidlen, BC Cancer Agency', 'command_line': '<java> <java_flags> -jar <libdir>deidentifyfcs.jar -Debug <Input.FCS.data.file> <Remove.keywords> <Is.regular.expression.used> <Output.FCS.file.name>'}
+
+Generate a complete, valid manifest file in key=value format.

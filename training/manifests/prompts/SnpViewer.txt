@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for SnpViewer.
+
+Tool Information:
+- Name: SnpViewer
+- Version: Fixes bug with legend thresholds
+- Language: Java
+- Description: Displays a heat map of snp data
+- Repository: 
+
+Planning Data:
+{'module_name': 'SnpViewer', 'parameters': [{'name': 'dataset.filename', 'type': 'FILE', 'description': 'The dataset to display - .snp, .cn, .xcn', 'required': False, 'default_value': '', 'file_format': 'snp;xcn;cn'}, {'name': 'sample.info.filename', 'type': 'FILE', 'description': 'Sample information file', 'required': False, 'default_value': ''}, {'name': 'sample.list.filename', 'type': 'FILE', 'description': 'Sample list file', 'required': False, 'default_value': ''}, {'name': 'max.memory', 'type': 'java.lang.String', 'description': 'Maximum memory', 'required': True, 'default_value': '700m'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Visualizer', 'author': 'GenePattern', 'command_line': '<java> -Xmx<max.memory>  -jar <libdir>snpviewer.jar -cnFile <dataset.filename> -sampleInfoFile <sample.info.filename> -sampleListFile <sample.list.filename>'}
+
+Generate a complete, valid manifest file in key=value format.

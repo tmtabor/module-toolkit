@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for HierarchicalClusteringViewer.
+
+Tool Information:
+- Name: HierarchicalClusteringViewer
+- Version: Bug fix for S3 files
+- Language: HTML,jQuery
+- Description: Views results of hierarchical clustering.
+- Repository: https\://github.com/genepattern/HierarchicalClusteringViewer.git
+
+Planning Data:
+{'module_name': 'HierarchicalClusteringViewer', 'parameters': [{'name': 'cdt.file', 'type': 'FILE', 'description': 'Clustered data table, contains the original data, but reordered', 'required': True, 'default_value': '', 'file_format': 'cdt'}, {'name': 'gtr.file', 'type': 'FILE', 'description': 'Gene tree file, records the order in which genes (rows) were joined (at least one of gtr file and atr file is required)', 'required': False, 'default_value': '', 'file_format': 'gtr'}, {'name': 'atr.file', 'type': 'FILE', 'description': 'Array tree file, records the order in which samples (columns) were joined (at least one of gtr file and atr file is required)', 'required': False, 'default_value': '', 'file_format': 'atr'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'javascript', 'author': 'Marc-Danie Nazaire, Thorin Tabor', 'command_line': 'hclViewer.html ? <cdt.file> <gtr.file> <atr.file>'}
+
+Generate a complete, valid manifest file in key=value format.

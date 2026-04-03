@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Picard.SortSam.
+
+Tool Information:
+- Name: Picard.SortSam
+- Version: Renamed from SortSam to Picard.SortSam
+- Language: Java
+- Description: Sorts a SAM or BAM file in a specified order
+- Repository: 
+
+Planning Data:
+{'module_name': 'Picard.SortSam', 'parameters': [{'name': 'input.file', 'type': 'FILE', 'description': 'Input file in SAM or BAM format', 'required': True, 'default_value': '', 'file_format': 'sam;bam'}, {'name': 'sort.order', 'type': 'java.lang.String', 'description': 'Sort order', 'required': True, 'default_value': 'coordinate', 'choices': 'coordinate\\=coordinate;queryname\\=queryname;unsorted\\=unsorted'}, {'name': 'output.format', 'type': 'java.lang.String', 'description': 'Whether the file output format should be SAM or BAM', 'required': True, 'default_value': '', 'choices': 'sam\\=SAM;bam\\=BAM'}, {'name': 'output.prefix', 'type': 'java.lang.String', 'description': 'prefix for the name of output file', 'required': True, 'default_value': '<input.file_basename>'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Preprocess & Utilities', 'author': 'GenePattern', 'command_line': '<java> <java_flags> -cp <libdir>SortSam.jar<path.separator><libdir>commons-io-1.4.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>SortSamWrapper.jar SortSamWrapper -i <input.file> -s <sort.order> -o <output.prefix>.sorted.<output.format>'}
+
+Generate a complete, valid manifest file in key=value format.

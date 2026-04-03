@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for FeatureSummaryViewer.
+
+Tool Information:
+- Name: FeatureSummaryViewer
+- Version: Bug fix for S3 files
+- Language: Javascript
+- Description: Visualizes feature summary results in JavaScript
+- Repository: https\://github.com/genepattern/FeatureSummaryViewer.git
+
+Planning Data:
+{'module_name': 'FeatureSummaryViewer', 'parameters': [{'name': 'feature.filename', 'type': 'FILE', 'description': 'odf file with or without features to summarize', 'required': True, 'default_value': '', 'file_format': 'odf;feat.odf;Feature Summary'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'javascript', 'author': 'Thorin Tabor, reimplemented in js by Ted Liefeld (UC San Diego, Broad Institute)', 'command_line': 'feature_summary_viewer.html ? <feature.filename>'}
+
+Generate a complete, valid manifest file in key=value format.

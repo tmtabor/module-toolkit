@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for MAGETABImportViewer.
+
+Tool Information:
+- Name: MAGETABImportViewer
+- Version: Fixed bug with merging multiple data matrix files and also modified input parameters.
+- Language: Java
+- Description: A visualizer to import data in MAGE-TAB format into GenePattern
+- Repository: 
+
+Planning Data:
+{'module_name': 'MAGETABImportViewer', 'parameters': [{'name': 'sdrf.file', 'type': 'FILE', 'description': 'The sdrf file - .txt', 'required': True, 'default_value': '', 'file_format': 'txt'}, {'name': 'data.files', 'type': 'FILE', 'description': 'A zip file containing MAGE-TAB data matrix files - .zip', 'required': True, 'default_value': '', 'file_format': 'zip'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Visualizer', 'author': 'Marc-Danie Nazaire(Broad Institute)', 'command_line': '<java> <java_flags> -cp <libdir>jargs.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>trove.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>ant.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>limpopo-1.0-beta-20100420.jar<path.separator><libdir>MAGETABImportViewer.jar org.broadinstitute.mage.MAGETABImportViewer -s <sdrf.file> -z <data.files>'}
+
+Generate a complete, valid manifest file in key=value format.

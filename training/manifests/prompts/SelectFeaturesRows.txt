@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for SelectFeaturesRows.
+
+Tool Information:
+- Name: SelectFeaturesRows
+- Version: Added support for .snp, .cn, and .loh files
+- Language: Java
+- Description: Generate a .res, .gct, .snp, .cn, .loh, or .odf file containing only specified features (i.e. rows).
+- Repository: 
+
+Planning Data:
+{'module_name': 'SelectFeaturesRows', 'parameters': [{'name': 'input.filename', 'type': 'FILE', 'description': 'input file - .res, .gct, .snp, .cn, .loh, or .odf file from which the slice is extracted', 'required': True, 'default_value': '', 'file_format': 'gct;res;Dataset;snp;cn;loh'}, {'name': 'list.filename', 'type': 'FILE', 'description': 'text file containing one identifier per line that specifies the rows to select.', 'required': True, 'default_value': ''}, {'name': 'output', 'type': 'java.lang.String', 'description': 'output filename - .res, .gct, .snp, .cn, .loh, .odf', 'required': True, 'default_value': '<list.filename_basename>.slice'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Gene List Selection', 'author': 'Joshua Gould, Broad Institute', 'command_line': '<java> <java_flags> -cp <libdir>SelectFeaturesRows.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.selectfeaturesrows.SelectFeaturesRows <input.filename> <list.filename> <output>'}
+
+Generate a complete, valid manifest file in key=value format.

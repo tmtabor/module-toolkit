@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for CART.
+
+Tool Information:
+- Name: CART
+- Version: latest
+- Language: R
+- Description: Classification and Regression Tree
+- Repository: 
+
+Planning Data:
+{'module_name': 'CART', 'parameters': [{'name': 'train.data.filename', 'type': 'FILE', 'description': 'The training data file - .gct, .res, ignored if a saved model (saved.model.filename) is used', 'required': False, 'default_value': '', 'file_format': 'gct;res'}, {'name': 'train.cls.filename', 'type': 'FILE', 'description': 'The training class file - .cls, ignored if a saved model (saved.model.filename) is used', 'required': False, 'default_value': '', 'file_format': 'cls'}, {'name': 'saved.model.filename', 'type': 'FILE', 'description': 'input CART model', 'required': False, 'default_value': '', 'file_format': 'model'}, {'name': 'model.output.file', 'type': 'java.lang.String', 'description': 'name of output CART model file', 'required': False, 'default_value': '<train.data.filename_basename>.cart.model'}, {'name': 'test.data.filename', 'type': 'FILE', 'description': 'The test data file - .gct, .res', 'required': False, 'default_value': '', 'file_format': 'gct;res'}, {'name': 'test.cls.filename', 'type': 'FILE', 'description': 'The test class file - .cls', 'required': False, 'default_value': '', 'file_format': 'cls'}, {'name': 'pred.results.file', 'type': 'java.lang.String', 'description': 'The name of the output file for prediction results', 'required': False, 'default_value': '<test.data.filename_basename>.pred.odf'}, {'name': 'tree.output.file', 'type': 'java.lang.String', 'description': 'The name of the file containing a plot of the classification tree', 'required': False, 'default_value': '<test.data.filename_basename>.tree.pdf'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Prediction', 'author': 'Joshua Gould', 'command_line': '<R2.5> <libdir>cart.R cartCmdLine -t<train.data.filename> -c<train.cls.filename> -e<test.data.filename> -f<test.cls.filename> -r<pred.results.file> -p<tree.output.file> -m<model.output.file> -l<libdir> -s<saved.model.filename>'}
+
+Generate a complete, valid manifest file in key=value format.

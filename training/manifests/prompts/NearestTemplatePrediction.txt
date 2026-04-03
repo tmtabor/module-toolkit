@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for NearestTemplatePrediction.
+
+Tool Information:
+- Name: NearestTemplatePrediction
+- Version: Updated to use R-3.1 and added HTML documentation.
+- Language: R-3.1.3
+- Description: Nearest neighbor prediction based on a list of marker genes
+- Repository: 
+
+Planning Data:
+{'module_name': 'NearestTemplatePrediction', 'parameters': [{'name': 'input.exp.filename', 'type': 'FILE', 'description': 'Gene expression data set (.gct)', 'required': True, 'default_value': '', 'file_format': 'gct'}, {'name': 'input.features.filename', 'type': 'FILE', 'description': 'List of marker genes (.txt)\\: Probe ID, Gene name, Class (1,2,...), Weight (optional)', 'required': True, 'default_value': '', 'file_format': 'txt'}, {'name': 'output.name', 'type': 'java.lang.String', 'description': 'Name for output files', 'required': True, 'default_value': 'NTP'}, {'name': 'distance.selection', 'type': 'java.lang.String', 'description': 'Distance metric', 'required': True, 'default_value': 'cosine', 'choices': 'cosine\\=cosine;correlation\\=correlation'}, {'name': 'weight.genes', 'type': 'java.lang.String', 'description': 'Weight genes? (by statistic, fold change, etc. only for 2 classes)', 'required': True, 'default_value': 'T', 'choices': 'T\\=yes;F\\=no'}, {'name': 'num.resamplings', 'type': 'java.lang.Integer', 'description': '\\# resampling to generate null distribution for distance metric', 'required': True, 'default_value': '1000'}, {'name': 'GenePattern.output', 'type': 'java.lang.String', 'description': 'Create .gct and .cls files for GenePattern', 'required': True, 'default_value': 'F', 'choices': 'T\\=yes;F\\=no'}, {'name': 'random.seed', 'type': 'java.lang.Integer', 'description': 'Random seed', 'required': True, 'default_value': '7392854'}], 'docker_image_tag': 'genepattern/docker-r-3-13\\:0.1', 'categories': '', 'task_type': 'Prediction', 'author': 'Yujin Hoshida (Broad Institute)', 'command_line': '<R3.1_Rscript> <libdir>NTPez.R <input.exp.filename> <input.features.filename> <output.name> <distance.selection> <weight.genes> <num.resamplings> <GenePattern.output> <random.seed>'}
+
+Generate a complete, valid manifest file in key=value format.

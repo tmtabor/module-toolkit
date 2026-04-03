@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for XChromosomeCorrect.
+
+Tool Information:
+- Name: XChromosomeCorrect
+- Version: Fixed bug that required sample info file to have a Ploidy(numeric) column
+- Language: Java
+- Description: Corrects X Chromosome SNP's for male samples.
+- Repository: 
+
+Planning Data:
+{'module_name': 'XChromosomeCorrect', 'parameters': [{'name': 'snp.filename', 'type': 'FILE', 'description': 'Summarized probe intensity data in .snp format', 'required': True, 'default_value': '', 'file_format': 'snp'}, {'name': 'sample.info.filename', 'type': 'FILE', 'description': 'A Sample information file that contains gender information', 'required': True, 'default_value': ''}, {'name': 'output.file', 'type': 'java.lang.String', 'description': 'Output file name', 'required': True, 'default_value': '<snp.filename_basename>.xcorrected.snp'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'SNP Analysis', 'author': 'David Twomey and Joshua Gould', 'command_line': '<java> <java_flags> -cp <libdir>snp.jar<path.separator><libdir>commons-math-1.1.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>log4j-1.2.13.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>opencsv-1.7.jar org.genepattern.modules.XCorrect.Xcorrect <snp.filename> <sample.info.filename> <output.file>'}
+
+Generate a complete, valid manifest file in key=value format.

@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Seurat.Clustering.
+
+Tool Information:
+- Name: Seurat.Clustering
+- Version: Updating to run Seurat 4.0.3
+- Language: any
+- Description: Companion module for the <a href\="https\://notebook.genepattern.org/services/sharing/notebooks/376/preview/">Seurat notebook</a>. Performs clustering and marker identification on single cell data.
+- Repository: https\://github.com/genepattern/Seurat.Clustering
+
+Planning Data:
+{'module_name': 'Seurat.Clustering', 'parameters': [{'name': 'input.seurat.rds.file', 'type': 'FILE', 'description': 'RDS file containing a preprocessed Seurat object', 'required': True, 'default_value': '', 'file_format': 'rds', 'num_values': '1..1'}, {'name': 'output.filename', 'type': 'TEXT', 'description': 'Name for output rds file', 'required': True, 'default_value': '<input.seurat.rds.file_basename>.clustered', 'num_values': '1..1'}, {'name': 'maximum_dimension', 'type': 'TEXT', 'description': 'Max num dimensions to cluster', 'required': False, 'default_value': '10', 'num_values': '1..1'}, {'name': 'resolution', 'type': 'TEXT', 'description': 'resolution', 'required': True, 'default_value': '0.05', 'num_values': '1..1'}, {'name': 'reduction', 'type': 'TEXT', 'description': 'The reduction to use (only umap is implemented in version 1.1 of this module, version 2 will include tsne)', 'required': True, 'default_value': 'umap', 'choices': 'umap', 'num_values': '1..1'}, {'name': 'nmarkers', 'type': 'Integer', 'description': 'How many cluster markers to output (a CSV file with this number of top markers per cluster will be created in addition to a CSV file with all of the cluster markers found)', 'required': True, 'default_value': '50', 'num_values': '0..1'}, {'name': 'seed', 'type': 'TEXT', 'description': 'Random number seed.', 'required': False, 'default_value': '17', 'num_values': '1..1'}], 'docker_image_tag': 'genepattern/seurat-suite\\:4.0.3', 'categories': 'clustering;singlecell', 'task_type': 'clustering', 'author': 'Satija Lab New York Genome Canter, Wrapped as a module by Ted Liefeld & Edwin Juarez, UCSD School of Medicine.;UCSD - Mesirov Lab', 'command_line': 'Rscript --no-save --quiet --slave --no-restore <libdir>run_seurat_clustering.R --input.file\\=<input.seurat.rds.file> --output.file\\=<output.filename> --max_dim\\=<maximum_dimension> --resolution\\=<resolution> --reduction\\=<reduction> --nmarkers\\=<nmarkers> --seed\\=<seed>'}
+
+Generate a complete, valid manifest file in key=value format.

@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for CopyNumberDivideByNormals.
+
+Tool Information:
+- Name: CopyNumberDivideByNormals
+- Version: Updated to accept Allele-specific SNP files.
+- Language: Java
+- Description: Determines the copy number of a target SNP
+- Repository: 
+
+Planning Data:
+{'module_name': 'CopyNumberDivideByNormals', 'parameters': [{'name': 'snp.file', 'type': 'FILE', 'description': 'SNP file containing both normal and target samples.', 'required': False, 'default_value': '', 'file_format': 'snp'}, {'name': 'sample.info.file', 'type': 'FILE', 'description': 'dChip format sample info file containing Ploidy(numeric) and Sample columns', 'required': True, 'default_value': '', 'file_format': 'txt;xls'}, {'name': 'include.genotype.calls', 'type': 'java.lang.String', 'description': 'Whether to include genotype calls from the input snp file if they exist.', 'required': True, 'default_value': 'cn', 'choices': 'xcn\\=yes (create xcn file);cn\\=no (create cn file)'}, {'name': 'output.file.name', 'type': 'java.lang.String', 'description': 'Output file name', 'required': True, 'default_value': '<snp.file_basename>'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'SNP Analysis', 'author': 'David Twomey and Joshua Gould', 'command_line': '<java> <java_flags> -cp <libdir>snp.jar<path.separator><libdir>opencsv-1.7.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>commons-math-1.2.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>log4j-1.2.13.jar org.genepattern.modules.DivideByNormals.DivideByNormals <snp.file> <sample.info.file> <output.file.name> <include.genotype.calls>'}
+
+Generate a complete, valid manifest file in key=value format.

@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for GlobalAlignment.
+
+Tool Information:
+- Name: GlobalAlignment
+- Version: latest
+- Language: Java
+- Description: standard global sequence analysis
+- Repository: 
+
+Planning Data:
+{'module_name': 'GlobalAlignment', 'parameters': [{'name': 'subject.fasta.filename', 'type': 'FILE', 'description': 'filename of subject FASTA file', 'required': True, 'default_value': ''}, {'name': 'match', 'type': 'java.lang.String', 'description': '> 0', 'required': True, 'default_value': ''}, {'name': 'mismatch', 'type': 'java.lang.String', 'description': '< 0', 'required': True, 'default_value': ''}, {'name': 'gapopen', 'type': 'java.lang.String', 'description': '< 0', 'required': True, 'default_value': ''}, {'name': 'gapextend', 'type': 'java.lang.String', 'description': '< 0', 'required': True, 'default_value': ''}, {'name': 'query.filename', 'type': 'FILE', 'description': 'FASTA file', 'required': True, 'default_value': ''}, {'name': 'output.file', 'type': 'java.lang.String', 'description': 'filename of output', 'required': True, 'default_value': '<subject.fasta.filename_basename>'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Sequence Analysis', 'author': 'Mike Kamal, gp-help@broad.mit.edu', 'command_line': '<java> <java_flags> -cp <libdir>DPJava.jar DemoStandardGlobal <query.filename> <subject.fasta.filename> <match> <mismatch> <gapopen> <gapextend> <output.file>'}
+
+Generate a complete, valid manifest file in key=value format.

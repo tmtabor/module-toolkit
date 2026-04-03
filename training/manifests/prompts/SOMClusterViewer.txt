@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for SOMClusterViewer.
+
+Tool Information:
+- Name: SOMClusterViewer
+- Version: Added ability to scroll the left panel
+- Language: Java
+- Description: Visualize clusters created with the SOM algorithm
+- Repository: 
+
+Planning Data:
+{'module_name': 'SOMClusterViewer', 'parameters': [{'name': 'som.cluster.filename', 'type': 'FILE', 'description': 'SOM Properties ODF file', 'required': True, 'default_value': '', 'file_format': 'SOM Cluster'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Visualizer', 'author': 'Ken Ross, Joshua Gould, Broad Institute', 'command_line': '<java> <java_flags> -cp <libdir>somviewer.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.som.SOM <som.cluster.filename>'}
+
+Generate a complete, valid manifest file in key=value format.

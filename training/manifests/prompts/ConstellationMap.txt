@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for ConstellationMap.
+
+Tool Information:
+- Name: ConstellationMap
+- Version: Updated to Human MSigDB v2022.1.Hs and Mouse MSigDB 2022.1.Mm.
+- Language: R
+- Description: A downstream visualization and analysis tool for gene set enrichment results with interactive web visualizer.
+- Repository: 
+
+Planning Data:
+{'module_name': 'ConstellationMap', 'parameters': [{'name': 'input.gct.file', 'type': 'FILE', 'description': 'Input gene set enrichment file. Expected to be output from ssGSEAProjection module.', 'required': True, 'default_value': '', 'file_format': 'gct'}, {'name': 'input.cls.file', 'type': 'FILE', 'description': 'Phenotype labels. Input cls file describing phenotypes of gct file.', 'required': True, 'default_value': '', 'file_format': 'cls'}, {'name': 'gene.sets.file', 'type': 'FILE', 'description': 'Gene sets database from GSEA website.  Upload a gene set if your gene set is not listed as a choice from MsigDB.', 'required': True, 'default_value': '', 'file_format': 'gmt;gmx;grp', 'num_values': '1'}, {'name': 'top.n', 'type': 'java.lang.Integer', 'description': 'The number of gene sets to be plotted.', 'required': True, 'default_value': ''}, {'name': 'direction', 'type': 'java.lang.String', 'description': 'The direction of correlation, as measured by mutual information, to be investigated.', 'required': True, 'default_value': 'positive', 'choices': 'positive;negative'}, {'name': 'image.format', 'type': 'java.lang.String', 'description': 'The image file type of outputted plots, either bitmap (PNG) or vector graphics (PDF).', 'required': True, 'default_value': 'PNG', 'choices': 'PNG;PDF'}, {'name': 'jaccard.threshold', 'type': 'java.lang.Float', 'description': 'The Jaccard index threshold above which connective edges between gene sets will be plotted.', 'required': True, 'default_value': '0.1'}, {'name': 'target.class', 'type': 'java.lang.String', 'description': 'The phenotypic category of interest.', 'required': False, 'default_value': '', 'prefix': '--target.class\\='}], 'docker_image_tag': 'genepattern/docker-r-3-0-conmap', 'categories': 'gsea;pathway analysis;viewer', 'task_type': 'Pathway Analysis', 'author': 'Felix Wu;Broad Institute', 'command_line': 'Rscript <libdir>run_ConstellationMap.R <libdir> --input.gct.file\\=<input.gct.file> --input.cls.file\\=<input.cls.file> --gene.sets.file\\=<gene.sets.file> --top.n\\=<top.n> --direction\\=<direction> --image.format\\=<image.format> --jaccard.threshold\\=<jaccard.threshold> <target.class>'}
+
+Generate a complete, valid manifest file in key=value format.

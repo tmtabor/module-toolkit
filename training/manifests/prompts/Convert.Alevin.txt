@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Convert.Alevin.
+
+Tool Information:
+- Name: Convert.Alevin
+- Version: Initial Release
+- Language: any
+- Description: Read alevin output files and convert them to anndata (.h5ad) or loom (.loom) format for downstream analysis. Designed to convert Alevin Velocity quantification into a compatible format for scVelo.
+- Repository: https\://github.com/genepattern/Convert.Alevin/tree/v1
+
+Planning Data:
+{'module_name': 'Convert.Alevin', 'parameters': [{'name': 'Alevin.Quants', 'type': 'FILE', 'description': 'Alevin output directories. Files must be in .tar.gz format, and have unique names.', 'required': True, 'default_value': '', 'file_format': '.tar.gz;tar.gz', 'num_values': '1+'}, {'name': 'Features', 'type': 'FILE', 'description': 'A tab delimited file containing the list of spliced gene ids in column 1, the unspliced gene ids in column 2, and gene names (symbols) in column 3. (From PreprocessVelocityTranscriptome, or manually created)', 'required': False, 'default_value': '', 'file_format': '.tsv', 'num_values': '0..1'}, {'name': 'Merge', 'type': 'TEXT', 'description': 'Combine multiple Alevin runs into a single output object (True), or output them individually (false).', 'required': True, 'default_value': 'True', 'choices': 'True\\=true;False\\=false', 'num_values': '1..1'}, {'name': 'Out.Type', 'type': 'TEXT', 'description': 'Output alevin results as anndata (.h5ad) or loom (.loom)', 'required': True, 'default_value': 'h5ad', 'choices': 'h5ad\\=h5ad;loom\\=loom', 'num_values': '1..1'}], 'docker_image_tag': 'genepattern/convert_alevin\\:v1', 'categories': 'singlecell;single-cell', 'task_type': 'singlecell', 'author': 'Anthony S. Castanza;UCSD-MesirovLab', 'command_line': 'python3 /build/alevin.vpolo.py -i <Alevin.Quants> -f <Features> -m <Merge> -o <Out.Type>'}
+
+Generate a complete, valid manifest file in key=value format.

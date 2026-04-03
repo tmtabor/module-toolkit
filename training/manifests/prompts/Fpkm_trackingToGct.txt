@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Fpkm_trackingToGct.
+
+Tool Information:
+- Name: Fpkm_trackingToGct
+- Version: Updated to output scientific values and 0s as output by Cufflinks
+- Language: any
+- Description: Takes a Cufflinks FPKM_tracking file and converts it to GCT format.
+- Repository: 
+
+Planning Data:
+{'module_name': 'Fpkm_trackingToGct', 'parameters': [{'name': 'input.file', 'type': 'FILE', 'description': 'Input file in FPKM_TRACKING format', 'required': True, 'default_value': '', 'file_format': 'fpkm_tracking'}, {'name': 'row.labels', 'type': 'java.lang.String', 'description': 'Select row labels to be written to GCT file', 'required': True, 'default_value': 'Tracking ID', 'choices': 'tracking_id\\=Tracking ID;nearest_ref_id\\=Nearest Reference Transcript ID;gene_short_name\\=Gene Name;tss_id\\=TSS ID;locus\\=Locus'}, {'name': 'row.descriptions', 'type': 'java.lang.String', 'description': 'Select row descriptions to be written to GCT file', 'required': True, 'default_value': 'Locus', 'choices': 'locus\\=Locus;tracking_id\\=Tracking ID;nearest_ref_id\\=Nearest Reference Transcript ID;gene_short_name\\=Gene Name;tss_id\\=TSS ID;class_code\\=Class Code'}, {'name': 'filter.rows', 'type': 'java.lang.String', 'description': 'Whether to filter rows with invalid row names (ie., "-")', 'required': True, 'default_value': 'yes', 'choices': 'no\\=no;yes\\=yes'}, {'name': 'output.prefix', 'type': 'java.lang.String', 'description': 'A label that will be used to name the GCT output file.', 'required': True, 'default_value': '<input.file_basename>'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'RNA-seq', 'author': 'GenePattern Team', 'command_line': '<perl> <libdir>Fpkm_trackingToGct.pl -input <input.file> -rownames <row.labels> -rowdescs <row.descriptions> -filterDashRowNames <filter.rows> -output <output.prefix>'}
+
+Generate a complete, valid manifest file in key=value format.

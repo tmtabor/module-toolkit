@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Peaks.
+
+Tool Information:
+- Name: Peaks
+- Version: Updated for R 2.5
+- Language: R
+- Description: Determine peaks in the spectrum using a series of digital filters.
+- Repository: 
+
+Planning Data:
+{'module_name': 'Peaks', 'parameters': [{'name': 'spectrum.filename', 'type': 'FILE', 'description': 'spectrum data file - .csv', 'required': True, 'default_value': '', 'file_format': 'csv'}, {'name': 'low.Da', 'type': 'java.lang.Float', 'description': 'Minimum M/Z to include', 'required': False, 'default_value': ''}, {'name': 'high.Da', 'type': 'java.lang.Float', 'description': 'Maximum M/Z to include', 'required': False, 'default_value': ''}, {'name': 'percentile', 'type': 'java.lang.Float', 'description': 'After applying filters, threshold above which peaks are located', 'required': True, 'default_value': '0.65'}, {'name': 'smoothing.size', 'type': 'java.lang.Float', 'description': 'Size of the smoothing filter', 'required': True, 'default_value': '21'}, {'name': 'adaptive.background.correction.strength', 'type': 'java.lang.Float', 'description': 'Strength of the adaptive background correction filter', 'required': True, 'default_value': '0.75'}, {'name': 'adaptive.background.correction.size', 'type': 'java.lang.Float', 'description': 'Size of the adaptive background correction filter', 'required': True, 'default_value': '21'}, {'name': 'high.pass.filter.strength', 'type': 'java.lang.Float', 'description': 'Strength of the high pass filter', 'required': True, 'default_value': '10'}, {'name': 'high.pass.filter.factor', 'type': 'java.lang.Float', 'description': 'Filter factor for the high pass filter', 'required': True, 'default_value': '5'}, {'name': 'output.file', 'type': 'java.lang.String', 'description': 'output file name', 'required': True, 'default_value': '<spectrum.filename_basename>.peaks.odf'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Proteomics', 'author': 'D.R. Mani, Broad Institute', 'command_line': '<R2.5> <libdir>pipeline.wrapper.R peaks.wrapper <spectrum.filename> <output.file> <libdir> -l<low.Da> -h<high.Da> -p<percentile> -a<smoothing.size> -b<adaptive.background.correction.strength> -c<adaptive.background.correction.size> -d<high.pass.filter.strength> -e<high.pass.filter.factor>'}
+
+Generate a complete, valid manifest file in key=value format.

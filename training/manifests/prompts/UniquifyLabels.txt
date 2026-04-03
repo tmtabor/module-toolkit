@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for UniquifyLabels.
+
+Tool Information:
+- Name: UniquifyLabels
+- Version: latest
+- Language: Java
+- Description: Makes row and column labels unique
+- Repository: 
+
+Planning Data:
+{'module_name': 'UniquifyLabels', 'parameters': [{'name': 'input.filename', 'type': 'FILE', 'description': 'input filename - .res, .gct, .odf type\\=Dataset', 'required': True, 'default_value': '', 'file_format': 'res;gct;Dataset'}, {'name': 'output.file', 'type': 'java.lang.String', 'description': 'output file', 'required': True, 'default_value': '<input.filename_basename>.unique'}, {'name': 'make.row.labels.unique', 'type': 'java.lang.String', 'description': 'whether to make the row labels unique', 'required': True, 'default_value': 'yes', 'choices': 'yes;no'}, {'name': 'make.column.labels.unique', 'type': 'java.lang.String', 'description': 'whether to make the column labels unique', 'required': True, 'default_value': 'yes', 'choices': 'yes;no'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Preprocess & Utilities', 'author': 'Joshua Gould, Broad Institute', 'command_line': '<java> <java_flags> -cp <libdir>UniquifyLabels.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.unique.Unique <input.filename> <output.file> <make.row.labels.unique> <make.column.labels.unique>'}
+
+Generate a complete, valid manifest file in key=value format.

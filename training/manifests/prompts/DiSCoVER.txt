@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for DiSCoVER.
+
+Tool Information:
+- Name: DiSCoVER
+- Version: Showing only upload option for contol.
+- Language: Python
+- Description: Beta implementation of the DiSCoVER algorithm.
+- Repository: 
+
+Planning Data:
+{'module_name': 'DiSCoVER', 'parameters': [{'name': 'disease_subtype_gene_expression_sample', 'type': 'FILE', 'description': 'The csv file which contains the gene expression to be used as input.', 'required': True, 'default_value': '', 'file_format': 'csv', 'num_values': '0..1'}, {'name': 'control_sample', 'type': 'FILE', 'description': 'The csv control file to use as input (to compare disease subtype samples against).', 'required': True, 'default_value': '', 'file_format': 'csv', 'num_values': '0..1'}, {'name': 'output_supplementary_files', 'type': 'TEXT', 'description': 'Whether or not to output supplementary files.', 'required': True, 'default_value': 'False', 'choices': 'False\\=False;True\\=True', 'num_values': '0..1'}], 'docker_image_tag': 'genepattern/discover\\:1.3', 'categories': 'RNA-Seq;RNA-seq;Statistical Methods;Prediction', 'task_type': 'Prediction', 'author': 'Edwin F. Juarez;UCSD -- Mesirov Lab', 'command_line': 'python /module/call_discover.py -g <disease_subtype_gene_expression_sample> -u "Custom" -c <control_sample> -s <output_supplementary_files>'}
+
+Generate a complete, valid manifest file in key=value format.

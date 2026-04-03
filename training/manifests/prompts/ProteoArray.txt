@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for ProteoArray.
+
+Tool Information:
+- Name: ProteoArray
+- Version: latest
+- Language: Java
+- Description: LC-MS proteomic data processing module
+- Repository: 
+
+Planning Data:
+{'module_name': 'ProteoArray', 'parameters': [{'name': 'input.zip.filename', 'type': 'FILE', 'description': 'zip file of LC-MS runs in mzXML format.', 'required': True, 'default_value': '', 'file_format': 'zip'}, {'name': 'output.file', 'type': 'java.lang.String', 'description': 'output filename', 'required': True, 'default_value': '<input.zip.filename_basename>.prot'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Proteomics', 'author': 'Brian Piening (Fred Hutchinson Cancer Research Center)', 'command_line': '<java> <java_flags> -cp <libdir>ProteoArray.jar<path.separator><libdir>jrap.jar<path.separator><libdir>xerces.jar org.fhcrc.edi.proteoArray.ProteoArray <input.zip.filename> <output.file>'}
+
+Generate a complete, valid manifest file in key=value format.

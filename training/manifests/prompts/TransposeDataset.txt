@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for TransposeDataset.
+
+Tool Information:
+- Name: TransposeDataset
+- Version: Added gct as an output format
+- Language: Java
+- Description: Transpose a Dataset - .res .gct, .odf
+- Repository: 
+
+Planning Data:
+{'module_name': 'TransposeDataset', 'parameters': [{'name': 'input.filename', 'type': 'FILE', 'description': 'Dataset - .res .gct, .odf', 'required': True, 'default_value': '', 'file_format': 'res;gct;Dataset'}, {'name': 'output.file.format', 'type': 'java.lang.String', 'description': 'The output file format', 'required': True, 'default_value': 'gct', 'choices': 'gct;odf'}, {'name': 'output.file.name', 'type': 'java.lang.String', 'description': 'The name of the output file', 'required': True, 'default_value': '<input.filename_basename>.transposed'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Preprocess & Utilities', 'author': 'GenePattern', 'command_line': '<java> <java_flags> -cp <libdir>TransposeDataset.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.modules.transpose.Transpose <input.filename> <output.file.format> <output.file.name>'}
+
+Generate a complete, valid manifest file in key=value format.

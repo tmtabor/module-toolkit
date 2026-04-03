@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Mutect2.
+
+Tool Information:
+- Name: Mutect2
+- Version: Initial module revision
+- Language: any
+- Description: Runs Gatk Mutect2
+- Repository: https\://github.com/garvit192/Genepattern-mutect2/tree/main
+
+Planning Data:
+{'module_name': 'Mutect2', 'parameters': [{'name': 'Reference', 'type': 'FILE', 'description': 'Reference genome', 'required': True, 'default_value': '', 'file_format': 'fa', 'num_values': '1..1'}, {'name': 'Tumor.BAM', 'type': 'FILE', 'description': 'Input BAM (tumor)', 'required': True, 'default_value': '', 'file_format': 'BAM;bam', 'num_values': '1..1'}, {'name': 'Output', 'type': 'TEXT', 'description': 'Output file name', 'required': True, 'default_value': '', 'num_values': '1..1'}, {'name': 'Tumor.sample', 'type': 'TEXT', 'description': 'Tumor sample name', 'required': True, 'default_value': '', 'num_values': '1..1'}, {'name': 'Normal.BAM', 'type': 'FILE', 'description': 'Input BAM (normal)', 'required': False, 'default_value': '', 'file_format': 'BAM;bam', 'num_values': '0..1'}, {'name': 'Normal.sample', 'type': 'TEXT', 'description': 'Normal sample name (Required if Normal.BAM is passed through)', 'required': False, 'default_value': '', 'num_values': '0..1'}, {'name': 'Germline.resource', 'type': 'FILE', 'description': 'Germline-resource file (vcf)', 'required': False, 'default_value': '', 'file_format': '.gz;VCF;vcf', 'num_values': '0..1'}, {'name': 'Pannel.of.Normals', 'type': 'FILE', 'description': 'Pannel of Normals file (vcf)', 'required': False, 'default_value': '', 'file_format': '.gz;VCF;vcf', 'num_values': '0..1'}, {'name': 'intervals', 'type': 'FILE', 'description': 'One or more genomic intervals over which to operate.', 'required': False, 'default_value': '', 'file_format': '.intervals', 'num_values': '0..1'}, {'name': 'Parallel.Processing', 'type': 'TEXT', 'description': 'When selected, will run a separate instance of Mutect2 for each of the 22 chromosomes, outputs a seperate VCF file for each. Can not be used with intervals. Output files will be named chr1_somatic.vcf, chr2_somatic.vcf, ...', 'required': False, 'default_value': '', 'choices': '-S\\=Yes; \\=No', 'num_values': '0..1'}], 'docker_image_tag': 'broadinstitute/gatk', 'categories': '', 'task_type': '', 'author': 'Garvit Agarwal', 'command_line': 'python3 <libdir>mutect2Parallel.py -R <Reference>  -I <Tumor.BAM> -O <Output>  -N <Normal.BAM> --tumor_sample <Tumor.sample> --normal_sample <Normal.sample>  --germline_resource <Germline.resource> -L <intervals> -Pon <Pannel.of.Normals> -J <job.cpuCount> <Parallel.Processing>'}
+
+Generate a complete, valid manifest file in key=value format.

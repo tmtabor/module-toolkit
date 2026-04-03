@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for SelectSNPProbes.
+
+Tool Information:
+- Name: SelectSNPProbes
+- Version: Modified to append extension of input file to output file and input and output file formats and added doc
+- Language: Perl
+- Description: Filter to keep just copy number probes
+- Repository: 
+
+Planning Data:
+{'module_name': 'SelectSNPProbes', 'parameters': [{'name': 'input.file', 'type': 'FILE', 'description': 'The input file - .cn, .xcn, .snp, .bsnp', 'required': True, 'default_value': '', 'file_format': 'cn;xcn;snp;bsnp'}, {'name': 'output.prefix', 'type': 'java.lang.String', 'description': 'The prefix to use for the output file', 'required': True, 'default_value': '<input.file_basename>'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'SNP Analysis', 'author': 'gp-help@broadinstitute.org, Broad Institute', 'command_line': '<perl> <libdir>select_snp_probes.pl <input.file> <output.prefix>'}
+
+Generate a complete, valid manifest file in key=value format.

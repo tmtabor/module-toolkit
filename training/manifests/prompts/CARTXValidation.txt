@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for CARTXValidation.
+
+Tool Information:
+- Name: CARTXValidation
+- Version: Added html doc and outputs classification results for each iteration
+- Language: R
+- Description: Classification and Regression Tree Cross-Validation
+- Repository: 
+
+Planning Data:
+{'module_name': 'CARTXValidation', 'parameters': [{'name': 'data.filename', 'type': 'FILE', 'description': 'The data file - .gct, .res', 'required': True, 'default_value': '', 'file_format': 'gct;res'}, {'name': 'cls.filename', 'type': 'FILE', 'description': 'The class file - .cls', 'required': True, 'default_value': '', 'file_format': 'cls'}, {'name': 'prediction.results.file', 'type': 'java.lang.String', 'description': 'The name of the output file for prediction results', 'required': True, 'default_value': '<data.filename_basename>.pred.odf'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Prediction', 'author': 'Joshua Gould, D. R. Mani', 'command_line': '<R2.5> <libdir>cart.R runCartCV <data.filename> <cls.filename> <prediction.results.file> <libdir>'}
+
+Generate a complete, valid manifest file in key=value format.

@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for BWA.indexer.
+
+Tool Information:
+- Name: BWA.indexer
+- Version: updated dockerfile and commandline to run script at dockerfile location, to production
+- Language: any
+- Description: Creates a BWT index from a sequence FASTA file for use with the BWA 0.7.4 aligners.
+- Repository: 
+
+Planning Data:
+{'module_name': 'BWA.indexer', 'parameters': [{'name': 'fasta.file', 'type': 'FILE', 'description': 'A sequence fasta file', 'required': True, 'default_value': '', 'file_format': 'fa;fasta', 'num_values': '1..1'}, {'name': 'algorithm', 'type': 'TEXT', 'description': 'The algorithm to use for constructing the BWT index', 'required': True, 'default_value': '', 'choices': 'is;bwtsw', 'num_values': '1..1'}, {'name': 'output.prefix', 'type': 'TEXT', 'description': 'A prefix for the output file name.', 'required': True, 'default_value': '<fasta.file_basename>', 'num_values': '1..1'}], 'docker_image_tag': 'genepattern/bwa_modules\\:v0.2', 'categories': 'rna-seq', 'task_type': 'rna-seq', 'author': 'Heng Li, Broad Institute', 'command_line': 'perl /opt/genepatt/BWA.indexer/src/bwa_index_wrapper.pl -bwa <BWA_0.7.4>/bwa -libdir <libdir> -f <fasta.file> -a <algorithm> -o <output.prefix>'}
+
+Generate a complete, valid manifest file in key=value format.

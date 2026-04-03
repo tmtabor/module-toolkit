@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for LOHPaired.
+
+Tool Information:
+- Name: LOHPaired
+- Version: Pairings based on array name instead of sample name
+- Language: Java
+- Description: Computes LOH for paired samples
+- Repository: 
+
+Planning Data:
+{'module_name': 'LOHPaired', 'parameters': [{'name': 'input.filename', 'type': 'FILE', 'description': 'A .snp file that contains genotypes', 'required': True, 'default_value': '', 'file_format': 'snp'}, {'name': 'sample.info.filename', 'type': 'FILE', 'description': 'A sample info file with the paired information', 'required': True, 'default_value': '', 'file_format': 'txt'}, {'name': 'output.file', 'type': 'java.lang.String', 'description': 'Output file', 'required': True, 'default_value': '<input.filename_basename>.loh'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'SNP Analysis', 'author': 'Jim Robinson, David Twomey, Joshua Gould', 'command_line': '<java> <java_flags> -cp <libdir>snp.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>opencsv-1.7.jar  edu.mit.broad.cg.visualization.LOHComputation <input.filename> <sample.info.filename> <output.file>'}
+
+Generate a complete, valid manifest file in key=value format.

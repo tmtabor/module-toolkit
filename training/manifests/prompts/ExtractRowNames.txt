@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for ExtractRowNames.
+
+Tool Information:
+- Name: ExtractRowNames
+- Version: Added support for gct and odf files
+- Language: Java
+- Description: Extracts the row names from a .res, .gct, or .odf file.
+- Repository: 
+
+Planning Data:
+{'module_name': 'ExtractRowNames', 'parameters': [{'name': 'input.filename', 'type': 'FILE', 'description': 'input file - .res, .gct, .odf, file from which the row names are extracted', 'required': True, 'default_value': '', 'file_format': 'res;gct;Dataset'}, {'name': 'output', 'type': 'java.lang.String', 'description': 'output filename containing the row names - .txt', 'required': True, 'default_value': '<input.filename_basename>.row.names.txt'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Preprocess & Utilities', 'author': 'Joshua Gould, Broad Institute', 'command_line': '<java> <java_flags> -cp <libdir>ExtractRowNames.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.extractrows.ExtractRowNames <input.filename> <output>'}
+
+Generate a complete, valid manifest file in key=value format.

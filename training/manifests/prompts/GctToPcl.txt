@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for GctToPcl.
+
+Tool Information:
+- Name: GctToPcl
+- Version: latest
+- Language: Perl
+- Description: Convert .gct to .pcl
+- Repository: 
+
+Planning Data:
+{'module_name': 'GctToPcl', 'parameters': [{'name': 'input.filename', 'type': 'FILE', 'description': 'GCT file to convert', 'required': True, 'default_value': '', 'file_format': 'gct'}, {'name': 'output.filename', 'type': 'java.lang.String', 'description': 'PCL file that will be produced', 'required': True, 'default_value': '<input.filename_basename>.pcl'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Data Format Conversion', 'author': 'Jeremy Hubble, Stanford University, gp-help@broad.mit.edu', 'command_line': '<perl> <libdir>gctToPcl.pl -o <output.filename> <input.filename>'}
+
+Generate a complete, valid manifest file in key=value format.

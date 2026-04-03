@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for AreaChange.
+
+Tool Information:
+- Name: AreaChange
+- Version: Updated for R 2.5.0
+- Language: R
+- Description: Calculates fraction of area under the spectrum that is attributable to signal (area after noise removal / original area)
+- Repository: 
+
+Planning Data:
+{'module_name': 'AreaChange', 'parameters': [{'name': 'spectrum.filename', 'type': 'FILE', 'description': 'spectrum data file - .csv', 'required': True, 'default_value': '', 'file_format': 'csv'}, {'name': 'low.Da', 'type': 'java.lang.Float', 'description': 'minimum M/Z to include', 'required': False, 'default_value': ''}, {'name': 'high.Da', 'type': 'java.lang.Float', 'description': 'maximum M/Z to include', 'required': False, 'default_value': ''}, {'name': 'quality.threshold', 'type': 'java.lang.Float', 'description': 'discard spectra with quality < quality threshold', 'required': True, 'default_value': '0.45'}, {'name': 'window.filter', 'type': 'java.lang.Float', 'description': 'window filter size', 'required': False, 'default_value': '5'}, {'name': 'factor', 'type': 'java.lang.Float', 'description': 'factor to multiply standard deviation by', 'required': False, 'default_value': '3'}, {'name': 'smooth', 'type': 'java.lang.String', 'description': 'averaging function', 'required': False, 'default_value': 'median', 'choices': 'median;mean'}, {'name': 'output.file', 'type': 'java.lang.String', 'description': 'output file', 'required': True, 'default_value': '<spectrum.filename_basename>.area.odf'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Proteomics', 'author': 'D.R. Mani, Broad Institute', 'command_line': '<R2.5> <libdir>pipeline.wrapper.R areachange.wrapper <spectrum.filename> <output.file> <quality.threshold> <libdir> -l<low.Da> -h<high.Da> -w<window.filter> -f<factor> -s<smooth>'}
+
+Generate a complete, valid manifest file in key=value format.

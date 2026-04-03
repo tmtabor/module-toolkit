@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Single.Cell.ssGSEA.
+
+Tool Information:
+- Name: Single.Cell.ssGSEA
+- Version: Release after updates 0262025
+- Language: any
+- Description: Perform Single Cell ssGSEA. Can be used after Seurat.Clustering module.
+- Repository: https\://github.com/genepattern/scGSEA/tree/main/src
+
+Planning Data:
+{'module_name': 'Single.Cell.ssGSEA', 'parameters': [{'name': 'input_file', 'type': 'FILE', 'description': 'Input Seurat RDS, h5seurat, or h5ad file.', 'required': True, 'default_value': '', 'file_format': 'rds;h5ad;h5seurat', 'num_values': '0..1'}, {'name': 'gene_set_database_file', 'type': 'FILE', 'description': 'Gene sets database from GSEA website. Upload a gene set if your gene set is not listed as a choice from MsigDB.', 'required': True, 'default_value': '', 'file_format': 'gmt', 'num_values': '0+'}, {'name': 'output_file_name', 'type': 'TEXT', 'description': 'Base name of the output files to be saved.', 'required': True, 'default_value': 'scGSEA_scores', 'num_values': '0..1'}, {'name': 'chip_file', 'type': 'FILE', 'description': 'Chip file containing Gene ID to Gene Symbol mappings. Leave blank if the gene names are already in gene symbols.', 'required': False, 'default_value': '', 'file_format': 'chip', 'prefix': '--chip_file', 'num_values': '0..1'}, {'name': 'cluster_data_label', 'type': 'TEXT', 'description': 'Name of the label for cluster metadata. The default label is <seurat_clusters> that is generated from the Seurat.Clustering module.', 'required': True, 'default_value': 'seurat_clusters', 'num_values': '1..1'}], 'docker_image_tag': 'atwenzel/sc_ssgsea\\:v1.3.0', 'categories': 'gsea;pathway analysis;projection;single-cell;singlecell', 'task_type': 'gsea', 'author': 'Alexander T. Wenzel & John Jun', 'command_line': 'bash <libdir>sc_ssGSEA_driver.sh <input_file> <gene_set_database_file> <output_file_name> <job.cpuCount> <cluster_data_label> <chip_file>'}
+
+Generate a complete, valid manifest file in key=value format.

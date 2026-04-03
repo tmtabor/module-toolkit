@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for txt2odf.
+
+Tool Information:
+- Name: txt2odf
+- Version: Cleaning up the release
+- Language: Python
+- Description: This module turns a TXT file into an ODF file which can be used with other GenePattern Modules.
+- Repository: 
+
+Planning Data:
+{'module_name': 'txt2odf', 'parameters': [{'name': 'txt_file', 'type': 'FILE', 'description': 'The text file to be reformatted.', 'required': True, 'default_value': '', 'file_format': 'txt', 'num_values': '0..1'}, {'name': 'prune_gct', 'type': 'TEXT', 'description': 'Whether or not to prune the GCT file to match the TXT file.', 'required': True, 'default_value': 'False', 'choices': 'True\\=True;False\\=False', 'num_values': '0..1'}, {'name': 'gct', 'type': 'FILE', 'description': 'This is the GCT file which was originally used. *Set prune_gct to True if you want this file pruned*', 'required': False, 'default_value': '', 'file_format': 'gct', 'num_values': '0..1'}, {'name': 'cls', 'type': 'FILE', 'description': 'This is the CLS file which was originally used.', 'required': False, 'default_value': '', 'file_format': 'cls', 'num_values': '0..1'}], 'docker_image_tag': 'genepattern/docker-python36\\:0.5', 'categories': 'Data Format Conversion', 'task_type': 'Data Format Conversion', 'author': 'Edwin Juarez;GenePattern - Mesirov Lab', 'command_line': '<python_3.6> <libdir>txt2odf.py <txt_file> <prune_gct> <gct> <cls>'}
+
+Generate a complete, valid manifest file in key=value format.

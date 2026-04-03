@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for DAPPLE.
+
+Tool Information:
+- Name: DAPPLE
+- Version: Official GParc release
+- Language: any
+- Description: DAPPLE (Disease Association Protein-Protein Link Evaluator) looks for significant physical connectivity among proteins encoded for by genes in loci associated to disease according to protein-protein interactions reported in the literature.
+- Repository: https\://github.com/genepattern/DAPPLE/tree/v0.19
+
+Planning Data:
+{'module_name': 'DAPPLE', 'parameters': [{'name': 'Input.File', 'type': 'FILE', 'description': 'File containing a list of SNPs, genes or regions. Each input should be on a new line.', 'required': True, 'default_value': '', 'num_values': '0..1'}, {'name': 'Permute.Length', 'type': 'Integer', 'description': 'To increase speed, this is adaptive permutation (see README)', 'required': True, 'default_value': '0', 'choices': '0\\=0;50\\=50;1000\\=1000', 'num_values': '0..1'}, {'name': 'Plot', 'type': 'TEXT', 'description': '', 'required': False, 'default_value': 'true', 'choices': 'true\\=true;false\\=false', 'num_values': '0..1'}, {'name': 'nearest.gene', 'type': 'TEXT', 'description': 'Do you want to use the gene nearest to the SNP (rather than grabbing all genes in the LD wingspan)? Only relevant for SNP inputs.', 'required': False, 'default_value': 'false', 'choices': 'true\\=yes;false\\=no, use LD', 'num_values': '0..1'}, {'name': 'genome.build', 'type': 'TEXT', 'description': 'Which set of SNPs should we use? hg18, hg19, 1KG?', 'required': True, 'default_value': '18', 'choices': '18\\=hg18;19\\=hg19;1kg\\=1KG', 'num_values': '1..1'}, {'name': 'Keyword', 'type': 'TEXT', 'description': '', 'required': True, 'default_value': '', 'num_values': '1..1'}, {'name': 'Seed', 'type': 'java.lang.Integer', 'description': 'For reproducible runs, please specify a seed [integer] for randomization', 'required': False, 'default_value': '', 'prefix': 'seed\\='}], 'docker_image_tag': 'genepattern/dapple\\:v0.19-pre.4', 'categories': 'Proteomics;Statistical Methods', 'task_type': '', 'author': 'Lizzy Rossin, Heiko Horn', 'command_line': 'python /code/BuildNetwork_slowTMP.py <Input.File> keyword\\=<Keyword> permute\\=<Permute.Length> plot\\=<Plot> genome\\=<genome.build> nearestgene\\=<nearest.gene>'}
+
+Generate a complete, valid manifest file in key=value format.

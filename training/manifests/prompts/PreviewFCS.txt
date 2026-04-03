@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for PreviewFCS.
+
+Tool Information:
+- Name: PreviewFCS
+- Version: Fix for parsing empty keyword values
+- Language: Java
+- Description: Allows viewing of structural metadata, parameters, and descriptive statistics from a Flow Cytometry Standard (FCS) data file
+- Repository: 
+
+Planning Data:
+{'module_name': 'PreviewFCS', 'parameters': [{'name': 'Input.FCS.data.file', 'type': 'FILE', 'description': 'An input FCS data file to be described.', 'required': True, 'default_value': '', 'file_format': 'fcs', 'prefix': '-InputFile\\:'}, {'name': 'Output.file.format', 'type': 'java.lang.String', 'description': 'Output file format, either HTML or XML, default HTML.', 'required': True, 'default_value': 'HTML', 'choices': 'HTML\\=HTML, default;XML\\=XML', 'prefix': '-OutputFormat\\:'}, {'name': 'Output.file.name', 'type': 'java.lang.String', 'description': 'The output file name (optional).', 'required': True, 'default_value': '<Input.FCS.data.file_basename>', 'prefix': '-OutputFile\\:'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Flow Cytometry', 'author': 'Josef Spidlen, BC Cancer Agency', 'command_line': '<java> <java_flags> -jar <libdir>previewfcs.jar <Input.FCS.data.file> <Output.file.name> <Output.file.format>'}
+
+Generate a complete, valid manifest file in key=value format.

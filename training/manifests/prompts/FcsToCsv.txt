@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for FcsToCsv.
+
+Tool Information:
+- Name: FcsToCsv
+- Version: Added fix for parsing empty keyword values
+- Language: Java
+- Description: Converts a Flow Cytometry Standard (FCS) file to a Comma Separated Values (CSV) file.
+- Repository: 
+
+Planning Data:
+{'module_name': 'FcsToCsv', 'parameters': [{'name': 'Input.FCS.data.file', 'type': 'FILE', 'description': 'An FCS data file to be converted to CSV.', 'required': True, 'default_value': '', 'file_format': 'fcs', 'prefix': '-InputFile\\:'}, {'name': 'Output.CSV.file.name', 'type': 'java.lang.String', 'description': 'The name of the output CSV file.', 'required': True, 'default_value': '<Input.FCS.data.file_basename>.csv', 'prefix': '-OutputFile\\:'}, {'name': 'Use.full.names', 'type': 'java.lang.String', 'description': 'Whether to try to extract full parameter names from the FCS file.', 'required': False, 'default_value': 'TRUE', 'choices': 'TRUE\\=Use full names, default;FALSE\\=Use short names only', 'prefix': '-FullNames\\:'}, {'name': 'Output.keywords.file.name', 'type': 'java.lang.String', 'description': 'The file name to store keyword value pairs extracted from the FCS file.', 'required': True, 'default_value': '<Input.FCS.data.file_basename>', 'prefix': '-KeywordsFile\\:'}, {'name': 'Output.keywords.mode', 'type': 'java.lang.String', 'description': 'How to store keywords.', 'required': False, 'default_value': 'CSV', 'choices': 'CSV\\=Store as a CSV file, default;FCS\\=Store keywords in the FCS TEXT segment format;None\\=Do not extract the keyword/value pairs', 'prefix': '-KeywordsMode\\:'}, {'name': 'Channel.to.scale.conversion', 'type': 'java.lang.String', 'description': 'Whether to convert log channel values to linear scale.', 'required': False, 'default_value': 'TRUE', 'choices': 'TRUE\\=Convert channel to scale, default;NO\\=No conversion, store as in the FCS file', 'prefix': '-ChannelToScale\\:'}, {'name': 'Precision', 'type': 'java.lang.String', 'description': 'Whether to use regular (32bit, recommended) or double precision.', 'required': False, 'default_value': 'FALSE', 'choices': 'FALSE\\=Use regular precision, default;TRUE\\=Use double precision', 'prefix': '-DoublePrecision\\:'}], 'docker_image_tag': '', 'categories': 'Data Format Conversion; Flow Cytometry', 'task_type': 'Data Format Conversion', 'author': 'Josef Spidlen, BC Cancer Agency', 'command_line': '<java> <java_flags> -jar <libdir>fcs2csv.jar <Input.FCS.data.file> <Output.CSV.file.name> <Use.full.names> <Output.keywords.file.name> <Output.keywords.mode> <Channel.to.scale.conversion> <Precision>'}
+
+Generate a complete, valid manifest file in key=value format.

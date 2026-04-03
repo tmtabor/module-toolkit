@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Hu68kHu35kAtoU95.
+
+Tool Information:
+- Name: Hu68kHu35kAtoU95
+- Version: Updated documentation
+- Language: Perl
+- Description: Converts a list of Affymetrix Hu6800/Hu35KsubA probes to the corresponding Affymetrix U95Av2 probes.
+- Repository: 
+
+Planning Data:
+{'module_name': 'Hu68kHu35kAtoU95', 'parameters': [{'name': 'input.filename', 'type': 'FILE', 'description': 'the .pol, .tag or .grp file to be converted', 'required': True, 'default_value': ''}, {'name': 'output', 'type': 'java.lang.String', 'description': 'name of the output file (same format as input file)', 'required': True, 'default_value': '<input.filename_basename>.U95'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Preprocess & Utilities', 'author': 'Justin Lamb (gp-help@broad.mit.edu)', 'command_line': '<perl> <libdir>GCM_to_U95.pl <input.filename> <output> <libdir>'}
+
+Generate a complete, valid manifest file in key=value format.

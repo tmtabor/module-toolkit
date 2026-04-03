@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for SamTools.FastaIndex.
+
+Tool Information:
+- Name: SamTools.FastaIndex
+- Version: Improved error message for different line length in sequence error
+- Language: C++;Perl
+- Description: Indexes a reference sequence in the FASTA format
+- Repository: 
+
+Planning Data:
+{'module_name': 'SamTools.FastaIndex', 'parameters': [{'name': 'fasta.file', 'type': 'FILE', 'description': 'A sequence in FASTA format.', 'required': False, 'default_value': '', 'file_format': 'fasta;fa'}, {'name': 'output.prefix', 'type': 'unknown', 'description': 'The prefix to use for the output file name', 'required': False, 'default_value': '<fasta.file_basename>'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Preprocess & Utilities', 'author': 'Marc-Danie Nazaire, gp-help@broadinstitute.org, Broad Institute', 'command_line': '<perl> <libdir>build_fasta_index.pl -libdir <libdir> -fasta <fasta.file> -output <output.prefix>'}
+
+Generate a complete, valid manifest file in key=value format.

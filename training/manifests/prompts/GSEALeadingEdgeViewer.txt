@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for GSEALeadingEdgeViewer.
+
+Tool Information:
+- Name: GSEALeadingEdgeViewer
+- Version: Updated to the GSEA 4.2.3 code base, removing Log4J entirely from the code base.
+- Language: Java
+- Description: Leading Edge Viewer for GSEA results
+- Repository: https\://github.com/genepattern/GSEALeadingEdgeViewer/tree/v5.1
+
+Planning Data:
+{'module_name': 'GSEALeadingEdgeViewer', 'parameters': [{'name': 'zip.file', 'type': 'FILE', 'description': 'zip output file from GSEA - .zip.', 'required': False, 'default_value': '', 'file_format': 'zip'}], 'docker_image_tag': '', 'categories': 'gsea', 'task_type': 'Visualizer', 'author': 'GenePattern', 'command_line': '<java> <java_flags> -cp <libdir>gsea-4.2.3.jar<path.separator><libdir>batik-codec-1.10.jar org.genepattern.gsea.LeadingEdgeWidget <zip.file>'}
+
+Generate a complete, valid manifest file in key=value format.

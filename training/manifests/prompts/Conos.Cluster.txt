@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Conos.Cluster.
+
+Tool Information:
+- Name: Conos.Cluster
+- Version: Test Docker image v3 - version control for pkgs
+- Language: any
+- Description: GenePattern Module which implements the clustering and embedding steps of Conos
+- Repository: 
+
+Planning Data:
+{'module_name': 'Conos.Cluster', 'parameters': [{'name': 'conos_object', 'type': 'FILE', 'description': 'Conos object created by Conos.Preprocess (.rds).', 'required': True, 'default_value': '', 'file_format': 'rds', 'num_values': '1..1'}, {'name': 'runleiden', 'type': 'TEXT', 'description': 'Whether or not to run Leiden community clustering', 'required': True, 'default_value': 'True', 'choices': 'True\\=True;False\\=False', 'num_values': '0..1'}, {'name': 'leiden_resolution', 'type': 'Floating Point', 'description': 'Resolution for Leiden Community Clustering (default\\:1). Generally best performance is achieved  with a resolution between 1 and 2', 'required': True, 'default_value': '1.0', 'num_values': '0..1'}, {'name': 'runwalktrap', 'type': 'TEXT', 'description': 'Whether or not to perform runwalktrap community clustering', 'required': True, 'default_value': 'True', 'choices': 'True\\=True;False\\=False', 'num_values': '0..1'}, {'name': 'walktrap_steps', 'type': 'Integer', 'description': 'Steps to be taken for the walktrap algorithm (default\\:10)', 'required': True, 'default_value': '10', 'num_values': '0..1'}, {'name': 'umap_distance', 'type': 'Floating Point', 'description': 'UMAP Minimum Distance (default\\: 0.05)', 'required': True, 'default_value': '0.05', 'num_values': '0..1'}, {'name': 'umap_spread', 'type': 'Floating Point', 'description': 'UMAP Spread (default\\: 5.0)', 'required': True, 'default_value': '5', 'num_values': '0..1'}], 'docker_image_tag': 'genepattern/conos\\:v3', 'categories': 'clustering;singlecell', 'task_type': 'clustering', 'author': 'Edwin F. Juarez & Anthony Castanza;UCSD -- Mesirov Lab', 'command_line': 'Rscript /module/run_conos_cluster.R --conos_object <conos_object> --runleiden <runleiden> --leiden_resolution <leiden_resolution> --runwalktrap <runwalktrap> --walktrap_steps <walktrap_steps> --umap_distance <umap_distance> --umap_spread <umap_spread>'}
+
+Generate a complete, valid manifest file in key=value format.

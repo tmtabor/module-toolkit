@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for DifferentialExpressionViewer.
+
+Tool Information:
+- Name: DifferentialExpressionViewer
+- Version: Renamed from ComparativeMarkerSelectionViewer
+- Language: any
+- Description: Views differential expression results such as from the ComparativeMarkerSelection module. Formerly known as ComparativeMarkerSelectionViewer.
+- Repository: https\://github.com/genepattern/DifferentialExpressionViewer/tree/v10
+
+Planning Data:
+{'module_name': 'DifferentialExpressionViewer', 'parameters': [{'name': 'differential.expression.filename', 'type': 'FILE', 'description': 'An odf result file of model type "Comparative Marker Selection"', 'required': True, 'default_value': '', 'file_format': 'Comparative Marker Selection;Differential Expression;odf', 'num_values': '1..1'}, {'name': 'dataset.filename', 'type': 'FILE', 'description': 'The expression dataset file used as input to calculate differential expression', 'required': True, 'default_value': '', 'file_format': 'gct;res', 'num_values': '1..1'}], 'docker_image_tag': 'genepattern/docker-java17\\:0.12', 'categories': 'javascript', 'task_type': 'javascript', 'author': 'Marc-Danie Nazaire, Thorin Tabor', 'command_line': 'cmsviewer.html ? <differential.expression.filename> <dataset.filename>'}
+
+Generate a complete, valid manifest file in key=value format.

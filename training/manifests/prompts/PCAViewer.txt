@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for PCAViewer.
+
+Tool Information:
+- Name: PCAViewer
+- Version: Fixed bug with 3D plot with legend not properly saved on non-Windows machines
+- Language: Java
+- Description: Principal Component Analysis Visualizer (adapted from MeV, http\://www.tigr.org/software/tm4/mev.html)
+- Repository: 
+
+Planning Data:
+{'module_name': 'PCAViewer', 'parameters': [{'name': 'dataset.file', 'type': 'FILE', 'description': 'The dataset - .res, .gct', 'required': True, 'default_value': '', 'file_format': 'res;gct'}, {'name': 's.matrix.file', 'type': 'FILE', 'description': 'The s matrix - .odf', 'required': True, 'default_value': '', 'file_format': 'Matrix'}, {'name': 't.matrix.file', 'type': 'FILE', 'description': 'The t matrix - .odf', 'required': True, 'default_value': '', 'file_format': 'Matrix'}, {'name': 'u.matrix.file', 'type': 'FILE', 'description': 'The u matrix - .odf', 'required': True, 'default_value': '', 'file_format': 'Matrix'}, {'name': 'cls.or.sample.info.file', 'type': 'FILE', 'description': 'A cls or sample info file - .cls, .txt', 'required': False, 'default_value': '', 'file_format': 'cls'}, {'name': 'sample.info.class', 'type': 'unknown', 'description': 'The name of the class column to use in the sample info file (required if sample info file provided)', 'required': False, 'default_value': ''}, {'name': 'featureset.file', 'type': 'FILE', 'description': 'The feature set file - .gmt, .gmx, .grp', 'required': False, 'default_value': '', 'file_format': 'gmt;gmx;grp'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Visualizer', 'author': 'TIGR, http\\://www.tigr.org/software/tm4/mev.html, mev@tigr.org', 'command_line': '<java> <java_flags> -jar <libdir>pcaviewer.jar <dataset.file> <s.matrix.file> <t.matrix.file> <u.matrix.file> -c<cls.or.sample.info.file> -k<sample.info.class> -f<featureset.file>'}
+
+Generate a complete, valid manifest file in key=value format.

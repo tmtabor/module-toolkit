@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Picard.SamToBam.
+
+Tool Information:
+- Name: Picard.SamToBam
+- Version: Renamed from SamToBam to Picard.SamToBam
+- Language: Java
+- Description: Converts a SAM file to a BAM file
+- Repository: 
+
+Planning Data:
+{'module_name': 'Picard.SamToBam', 'parameters': [{'name': 'input.file', 'type': 'FILE', 'description': 'A SAM file', 'required': True, 'default_value': '', 'file_format': 'sam'}, {'name': 'output.prefix', 'type': 'java.lang.String', 'description': 'A label used to name the output file', 'required': True, 'default_value': '<input.file_basename>'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Data Format Conversion', 'author': 'Picard Tools', 'command_line': '<java> <java_flags> -cp <libdir>SamToBam.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>SamFormatConverter.jar org.genepattern.sam.SamFormat.SamToBam -inputFileName <input.file> -outputFileName <output.prefix>'}
+
+Generate a complete, valid manifest file in key=value format.

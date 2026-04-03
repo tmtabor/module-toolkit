@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Golub.Slonim.1999.Nature.all.aml.pipeline.
+
+Tool Information:
+- Name: Golub.Slonim.1999.Nature.all.aml.pipeline
+- Version: 1.0
+- Language: Java
+- Description: ALL/AML methodology, from Golub and Slonim et al., 1999
+- Repository: 
+
+Planning Data:
+{'module_name': 'Golub.Slonim.1999.Nature.all.aml.pipeline', 'parameters': [], 'docker_image_tag': '', 'categories': 'pipeline', 'task_type': 'pipeline', 'author': 'GenePattern', 'command_line': '<java>  -Dgenepattern.properties\\=<resources> -DLSID\\=<LSID> -DPIPELINE_ARG.StopAfterTask\\=<PIPELINE_ARG.StopAfterTask> -DGenePatternURL\\=<GenePatternURL>  org.genepattern.server.webapp.RunPipelineSoap <GenePatternURL>getPipelineModel.jsp?name\\=<LSID>&userid\\=<userid> <userid>'}
+
+Generate a complete, valid manifest file in key=value format.

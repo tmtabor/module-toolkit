@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for WeightedVotingXValidation.
+
+Tool Information:
+- Name: WeightedVotingXValidation
+- Version: Added additional feature selection options
+- Language: Java
+- Description: Weighted Voting classification with Leave-One-Out Cross-Validation
+- Repository: 
+
+Planning Data:
+{'module_name': 'WeightedVotingXValidation', 'parameters': [{'name': 'data.filename', 'type': 'FILE', 'description': 'Dataset input data file - res, gct, odf', 'required': True, 'default_value': '', 'file_format': 'res;gct;Dataset'}, {'name': 'class.filename', 'type': 'FILE', 'description': 'Class input file - cls', 'required': True, 'default_value': '', 'file_format': 'cls'}, {'name': 'num.features', 'type': 'java.lang.Integer', 'description': 'number of selected features', 'required': True, 'default_value': '10'}, {'name': 'feature.selection.statistic', 'type': 'java.lang.Integer', 'description': 'statistic to use to perform feature selection', 'required': True, 'default_value': '0', 'choices': '0\\=SNR;1\\=T-Test;2\\=SNR (median);3\\=T-Test (median);4\\=SNR (min std);5\\=T-Test (min std);6\\=SNR (median, min std);7\\=T-Test (median, min std)'}, {'name': 'min.std', 'type': 'java.lang.Float', 'description': 'minimum standard deviation if feature selection statistic includes min std option', 'required': False, 'default_value': ''}, {'name': 'pred.results.file', 'type': 'java.lang.String', 'description': 'Prediction results output file name - odf', 'required': True, 'default_value': '<data.filename_basename>.pred.odf'}, {'name': 'feature.summary.file', 'type': 'java.lang.String', 'description': 'Feature summary output file name - odf', 'required': True, 'default_value': '<data.filename_basename>.feat.odf'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Prediction', 'author': 'Ken Ross, Broad Institute', 'command_line': '<java> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>wvxval.jar org.genepattern.modules.wvxval.WeightedVotingXValidation -t<data.filename> -c<class.filename> -o<pred.results.file> -n<num.features> -f<feature.summary.file> -S<feature.selection.statistic> -M<min.std>'}
+
+Generate a complete, valid manifest file in key=value format.

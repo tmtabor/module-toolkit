@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for PCA.
+
+Tool Information:
+- Name: PCA
+- Version: Updated documentation
+- Language: Java
+- Description: Principal Component Analysis (adapted from MeV, <a href\="http\://mev.tm4.org">http\://mev.tm4.org</a>)
+- Repository: 
+
+Planning Data:
+{'module_name': 'PCA', 'parameters': [{'name': 'input.filename', 'type': 'FILE', 'description': 'input file - .gct, .res, .odf', 'required': True, 'default_value': '', 'file_format': 'res;gct;Dataset'}, {'name': 'compute.pcs.of', 'type': 'java.lang.Integer', 'description': 'Compute principal components of columns (samples) or rows (genes/features)', 'required': True, 'default_value': '3', 'choices': '1\\=rows;3\\=columns'}, {'name': 'output.file', 'type': 'java.lang.String', 'description': 'stub name of the output files', 'required': True, 'default_value': '<input.filename_basename>'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Dimension Reduction', 'author': 'TIGR, http\\://www.tm4.org/mev/, mev@tigr.org', 'command_line': '<java> <java_flags> -cp <libdir>jaxb-rt-1.0-ea.jar<path.separator><libdir>pca.jar<path.separator><libdir>algorithms-gui.jar<path.separator><libdir>algorithms-impl.jar<path.separator><libdir>algorithms.jar<path.separator><libdir>file_support.jar<path.separator><libdir>gp-common.jar<path.separator><libdir>mev_pca.jar<path.separator><libdir>ui_support.jar  edu.mit.wi.genome.gp.mev.PCAAlgorithmWrapper <input.filename> <compute.pcs.of> <output.file>'}
+
+Generate a complete, valid manifest file in key=value format.

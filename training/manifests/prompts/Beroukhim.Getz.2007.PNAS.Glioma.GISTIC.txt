@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Beroukhim.Getz.2007.PNAS.Glioma.GISTIC.
+
+Tool Information:
+- Name: Beroukhim.Getz.2007.PNAS.Glioma.GISTIC
+- Version: latest
+- Language: Java
+- Description: 
+- Repository: 
+
+Planning Data:
+{'module_name': 'Beroukhim.Getz.2007.PNAS.Glioma.GISTIC', 'parameters': [], 'docker_image_tag': '', 'categories': '', 'task_type': 'pipeline', 'author': 'Rameen Beroukhim, Broad Institute', 'command_line': '<java>  -Dgenepattern.properties\\=<resources> -DLSID\\=<LSID> -DPIPELINE_ARG.StopAfterTask\\=<PIPELINE_ARG.StopAfterTask> -DGenePatternURL\\=<GenePatternURL>  org.genepattern.server.webapp.RunPipelineSoap <GenePatternURL>getPipelineModel.jsp?name\\=<LSID>&userid\\=<userid> <userid>'}
+
+Generate a complete, valid manifest file in key=value format.

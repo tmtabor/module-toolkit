@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for CytoscapeViewer.
+
+Tool Information:
+- Name: CytoscapeViewer
+- Version: Updated to Cytoscape 2.5.2
+- Language: Java
+- Description: Visualizes a gene network
+- Repository: 
+
+Planning Data:
+{'module_name': 'CytoscapeViewer', 'parameters': [{'name': 'dataset.file', 'type': 'FILE', 'description': 'Dataset file - .res, .gct', 'required': True, 'default_value': '', 'file_format': 'gct;res;Dataset'}, {'name': 'adjacency.matrix.file', 'type': 'FILE', 'description': 'Adjacency matrix - .adj', 'required': True, 'default_value': '', 'file_format': 'adj'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Visualizer', 'author': 'Marc-Danie Nazaire, gp-help@broad.mit.edu, Broad Institute', 'command_line': '<java> <java_flags> -jar <libdir>cytoscapeViewer.jar <dataset.file> <adjacency.matrix.file> <libdir>'}
+
+Generate a complete, valid manifest file in key=value format.

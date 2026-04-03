@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for SurvivalDifference.
+
+Tool Information:
+- Name: SurvivalDifference
+- Version: latest
+- Language: R
+- Description: Tests for survival difference based on cls file
+- Repository: 
+
+Planning Data:
+{'module_name': 'SurvivalDifference', 'parameters': [{'name': 'input.surv.data.file', 'type': 'FILE', 'description': 'input clinical data including survival time & censor status  -.txt', 'required': True, 'default_value': '', 'file_format': 'txt'}, {'name': 'input.cls.file', 'type': 'FILE', 'description': 'class information file (.cls format)', 'required': False, 'default_value': '', 'file_format': 'cls'}, {'name': 'time.field', 'type': 'java.lang.String', 'description': 'Name of survival time field', 'required': True, 'default_value': 'time'}, {'name': 'censor.field', 'type': 'java.lang.String', 'description': 'Name of censor field (value should be "event\\:1, no event\\: 0")', 'required': True, 'default_value': 'status'}, {'name': 'cls.field', 'type': 'java.lang.String', 'description': 'Name of class field in survival data file (optional)', 'required': False, 'default_value': ''}, {'name': 'test.type', 'type': 'java.lang.Integer', 'description': 'Type of test', 'required': True, 'default_value': '0', 'choices': '0\\=log-rank test;1\\=generalized Wilcoxon test'}, {'name': 'subgroup', 'type': 'java.lang.String', 'description': 'Suggroups (classes) to be compared (e.g., A, C as in 3rd line of cls file)', 'required': False, 'default_value': ''}, {'name': 'output.filename', 'type': 'java.lang.String', 'description': 'Output file name', 'required': True, 'default_value': '<input.surv.data.file_basename>'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Survival Analysis', 'author': 'Yujin Hoshida (Broad Institute)', 'command_line': '<R2.5> <libdir>SurvivalDifference.R SurvivalDifference <input.surv.data.file> -c<input.cls.file> <time.field> <censor.field> -f<cls.field> <test.type> -gr<subgroup> <output.filename>'}
+
+Generate a complete, valid manifest file in key=value format.

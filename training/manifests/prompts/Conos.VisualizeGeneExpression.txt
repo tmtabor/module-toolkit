@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Conos.VisualizeGeneExpression.
+
+Tool Information:
+- Name: Conos.VisualizeGeneExpression
+- Version: Initial version
+- Language: any
+- Description: This is a minimalistic implementation of visualization options for Conos. This module is intended to be used after <a href\="https\://cloud.genepattern.org/gp/pages/index.jsf?lsid\=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.module.analysis\:00410\:0.1">Conos.Cluster</a> has been ran.
+- Repository: https\://github.com/genepattern/Conos.VisualizeGeneExpression
+
+Planning Data:
+{'module_name': 'Conos.VisualizeGeneExpression', 'parameters': [{'name': 'conos_object', 'type': 'FILE', 'description': 'RDS file created by Conos.Cluster', 'required': True, 'default_value': '', 'file_format': 'rds', 'num_values': '0..1'}, {'name': 'genesofinterest', 'type': 'TEXT', 'description': 'A list of gene identifiers. The expression of these genes will be plotted on the embedded map. Gene names need to be separated by a coma and a space (e.g. MS4A1, CD74, LYZ, CD14) and match the identifiers used in the original input data (Gene Symbols, Ensembl IDs, etc).', 'required': True, 'default_value': '', 'num_values': '0..1'}, {'name': 'clustering', 'type': 'TEXT', 'description': 'Option to show clustering information besides gene expression (none, leiden, walktrap, both)', 'required': True, 'default_value': 'none', 'choices': 'none\\=none;leiden\\=leiden;walktrap\\=walktrap;both\\=both', 'num_values': '0..1'}, {'name': 'output_file_name', 'type': 'TEXT', 'description': 'Basename of the file to be saved', 'required': True, 'default_value': 'ConosMarkers', 'num_values': '1..1'}], 'docker_image_tag': 'genepattern/conos\\:2.1', 'categories': 'single-cell;singlecell', 'task_type': 'single-cell', 'author': 'Edwin F. Juarez;UCSD - Mesirov Lab', 'command_line': 'Rscript --no-save --quiet --slave --no-restore <libdir>run_conos_visualizegeneexpression.R --conos_object <conos_object> --genesofinterest <genesofinterest> --clustering <clustering> --output_file_name <output_file_name>'}
+
+Generate a complete, valid manifest file in key=value format.

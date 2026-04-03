@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for ScanpyQC.
+
+Tool Information:
+- Name: ScanpyQC
+- Version: first Jenkins prerelease
+- Language: any
+- Description: Create Scanpy Quality Control Plots to enable unblinded dataset filtering with ScanpyUtilities
+- Repository: 
+
+Planning Data:
+{'module_name': 'ScanpyQC', 'parameters': [{'name': 'data.file', 'type': 'FILE', 'description': "A file containing single-cell data. h5ad, loom and mtx file formats are accepted. A 10x formatted hdf5 file may also be provided along with the 'genome' argument. The file will be internally converted to an h5ad file before proceeding.", 'required': True, 'default_value': '', 'file_format': 'h5;h5ad;loom;mtx', 'num_values': '1..1'}, {'name': 'mtGenes', 'type': 'FILE', 'description': 'A file containing a list of the gene ids for mitochondrial genes. Optional, used for filtering by mitochondrial abundance.', 'required': False, 'default_value': '', 'file_format': 'txt', 'prefix': '--mito.file\\=', 'num_values': '0..1'}, {'name': 'output.basename', 'type': 'TEXT', 'description': 'Base filename used for labeling output files', 'required': True, 'default_value': '<data.file_basename>', 'num_values': '1..1'}, {'name': 'genome', 'type': 'TEXT', 'description': "When converting a 10x formated HDF5 file, the module will internally call read_10x_h5 from the scanpy package. This function expects a genome argument which specifies the name of the data set in the HDF5 file. e.g. 'GRCh38'", 'required': False, 'default_value': '', 'prefix': '--genome\\=', 'num_values': '0..1'}], 'docker_image_tag': 'genepattern/scanpyqc\\:0.100', 'categories': 'singlecell', 'task_type': 'singlecell', 'author': 'Anthony S. Castanza', 'command_line': 'bash /scanpyqc/run_module.sh --python.executable\\=python --src.path\\=/scanpyqc/ --data.file\\=<data.file> <mtGenes> --output.basename\\=<output.basename> <genome>'}
+
+Generate a complete, valid manifest file in key=value format.

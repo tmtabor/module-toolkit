@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for MethylationCNVAnalysis.
+
+Tool Information:
+- Name: MethylationCNVAnalysis
+- Version: Switch defaults to datasets from gpftp
+- Language: R
+- Description: Methylation array preprocessing with the minfi R package and copy-number variation analysis with the conumee R package. Compatible with both 450k or EPIC array data.
+- Repository: 
+
+Planning Data:
+{'module_name': 'MethylationCNVAnalysis', 'parameters': [{'name': 'query.sample.data', 'type': 'FILE', 'description': 'Provide a ZIP or GZ file containing your sample(s) methylation microarray data in the Illumina Demo Dataset folder structure. See documentation for more details.', 'required': True, 'default_value': '', 'file_format': 'tar.gz;gz;zip', 'num_values': '0..1'}, {'name': 'control.sample.names', 'type': 'TEXT', 'description': 'Specify a list of control sample names separated by commas if the control sample data is included in the "sample data" file. Otherwise write "none" if control samples data is separate.', 'required': False, 'default_value': 'none', 'num_values': '0..1'}, {'name': 'control.sample.data', 'type': 'FILE', 'description': 'Provide a ZIP or GZ file containing your control samples methylation microarray data in the Illumina Demo Dataset folder structure. See documentation for more details.', 'required': False, 'default_value': '', 'file_format': 'tar.gz;gz;zip', 'num_values': '0..1'}, {'name': 'genes.to.highlight', 'type': 'FILE', 'description': 'A file with a list of genes (HUGO gene symbols) to highlight in output plots. Format as one gene symbol per line.', 'required': False, 'default_value': 'https\\://datasets.genepattern.org/gpftp/methylation/common_cancer_genes.txt', 'prefix': '--genesfile', 'num_values': '0..1'}, {'name': 'ignore.regions', 'type': 'FILE', 'description': 'A bed file specifying genomic regions to exclude from copy number analysis (hg19).', 'required': False, 'default_value': 'https\\://datasets.genepattern.org/gpftp/methylation/ignore_regions.bed', 'file_format': 'bed', 'num_values': '0..1'}, {'name': 'sex.chromosomes', 'type': 'TEXT', 'description': 'Include analysis of X & Y sex chromosomes.', 'required': True, 'default_value': 'Yes', 'choices': 'Yes\\=Yes;No\\=No', 'num_values': '0..1'}], 'docker_image_tag': 'genepattern/docker-r-3-4-methylationanalysis\\:1.0', 'categories': 'Methylation;CNV Analysis', 'task_type': 'Methylation', 'author': 'Owen Chapman;Clarence Mah;Mesirov Lab', 'command_line': '<Rscript> <libdir>run.R --data <query.sample.data> --controlsdata <control.sample.data> --controls <control.sample.names> --ignorefile <ignore.regions> --xy <sex.chromosomes>'}
+
+Generate a complete, valid manifest file in key=value format.

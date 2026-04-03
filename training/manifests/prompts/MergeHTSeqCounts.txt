@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for MergeHTSeqCounts.
+
+Tool Information:
+- Name: MergeHTSeqCounts
+- Version: Marked as production
+- Language: Python
+- Description: Merges HTSeq read count data files into one file
+- Repository: 
+
+Planning Data:
+{'module_name': 'MergeHTSeqCounts', 'parameters': [{'name': 'input.files', 'type': 'FILE', 'description': 'A directory or one or more text files containing HTSeq read counts', 'required': True, 'default_value': '', 'file_format': 'txt;counts', 'num_values': '0+'}, {'name': 'output.prefix', 'type': 'java.lang.String', 'description': 'The base name of the output file. File extensions will be added automatically.', 'required': True, 'default_value': '<input.files_basename>'}, {'name': 'sampleinfo.file', 'type': 'FILE', 'description': 'A sample info file containing HTSeq filenames and a column to base a cls file on', 'required': False, 'default_value': '', 'file_format': 'txt'}, {'name': 'filenames.column', 'type': 'java.lang.String', 'description': 'The column in the sample info file that contains the filenames.  This is used to match up the class division column up to the appropriate input file. This can be either a column index (starting at 0) or a string matching the header of a column in the sample info file.', 'required': False, 'default_value': '0'}, {'name': 'class.division.column', 'type': 'java.lang.String', 'description': 'The column in the sample info file that specifies a phenotype to use to assign classes and create a class file for the input samples. This is only relevant if a sample info file is provided.', 'required': False, 'default_value': '1'}, {'name': 'sample.name.column', 'type': 'java.lang.String', 'description': 'The column in the sample info file that specifies a sample name to use in the generated gct file.  If no sample info file is provided or no value is specified the columns in the gct file will match the file names of the input files.', 'required': False, 'default_value': ''}], 'docker_image_tag': '', 'categories': 'RNA-seq', 'task_type': 'RNA-seq', 'author': 'Broad Institute & Univeristy of California San Diego', 'command_line': '<python_2.6> <libdir>mergeHTSeqCounts.py --input\\=<input.files> --output\\=<output.prefix> --sampleInfoFile\\=<sampleinfo.file> --filenamesColumn\\=<filenames.column> --classDivisionColumn\\=<class.division.column> --sampleNameColumn\\=<sample.name.column>'}
+
+Generate a complete, valid manifest file in key=value format.

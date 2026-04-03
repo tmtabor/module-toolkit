@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Seurat.VisualizeMarkerExpression.
+
+Tool Information:
+- Name: Seurat.VisualizeMarkerExpression
+- Version: Same as first version, oficial release.
+- Language: any
+- Description: Visualize Marker Expression as violin plots and on a UMap. To be used after Seurat.Clustering
+- Repository: https\://github.com/genepattern/Seurat.VisualizeMarkerExpression/releases/tag/v2
+
+Planning Data:
+{'module_name': 'Seurat.VisualizeMarkerExpression', 'parameters': [{'name': 'input_file', 'type': 'FILE', 'description': 'RDS file to load.', 'required': True, 'default_value': '', 'file_format': 'rds', 'num_values': '0..1'}, {'name': 'genes', 'type': 'TEXT', 'description': 'List of genes to visualize. If you write multiple genes they must be separated by a comma and a space (for example\\: MS4A1, CD8A, CD14).', 'required': True, 'default_value': '', 'num_values': '0..1'}, {'name': 'group_plots', 'type': 'TEXT', 'description': 'How to group plots that are associated with the same marker.', 'required': True, 'default_value': 'Horizontally', 'choices': 'Horizontally\\=Horizontally;Vertically\\=Vertically;No\\=No', 'num_values': '0..1'}, {'name': 'output_file_name', 'type': 'TEXT', 'description': 'Basename of the file to be saved.', 'required': True, 'default_value': 'SeuratMarkers', 'num_values': '0..1'}], 'docker_image_tag': 'genepattern/seurat-suite\\:4.0.3', 'categories': 'single-cell;singlecell', 'task_type': 'single-cell', 'author': 'Edwin F. Juarez;UCSD - Mesirov Lab', 'command_line': 'Rscript --no-save --quiet --slave --no-restore  <libdir>seurat_visualize.R --input_file <input_file> --genes <genes> --group_plots <group_plots> --output_file_name <output_file_name>'}
+
+Generate a complete, valid manifest file in key=value format.

@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for LocatePeaks.
+
+Tool Information:
+- Name: LocatePeaks
+- Version: Updated for R 2.5.0
+- Language: R
+- Description: Locates detected peaks in a spectrum.
+- Repository: 
+
+Planning Data:
+{'module_name': 'LocatePeaks', 'parameters': [{'name': 'peaks.output.filename', 'type': 'FILE', 'description': 'The output from the Peaks module', 'required': True, 'default_value': '', 'file_format': 'Spectrum Peaks'}, {'name': 'output.file', 'type': 'java.lang.String', 'description': 'output file name', 'required': True, 'default_value': '<peaks.output.filename_basename>.locate.odf'}, {'name': 'locate.peaks.as', 'type': 'java.lang.String', 'description': 'max-location of maximum filtered value, area-center of area of the peak', 'required': True, 'default_value': '', 'choices': 'max;area'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Proteomics', 'author': 'D.R. Mani, Broad Institute', 'command_line': '<R2.5> <libdir>pipeline.wrapper.R peaks.locate.wrapper <peaks.output.filename> <output.file> <locate.peaks.as> <libdir>'}
+
+Generate a complete, valid manifest file in key=value format.

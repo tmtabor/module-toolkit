@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for RemoveSaturatedFCSEvents.
+
+Tool Information:
+- Name: RemoveSaturatedFCSEvents
+- Version: latest
+- Language: Java
+- Description: Remove saturated events from an FCS data file
+- Repository: 
+
+Planning Data:
+{'module_name': 'RemoveSaturatedFCSEvents', 'parameters': [{'name': 'Input.FCS.data.file', 'type': 'FILE', 'description': 'An FCS data file to remove saturated events from.', 'required': True, 'default_value': '', 'file_format': 'fcs', 'prefix': '-InputFile\\:'}, {'name': 'Output.FCS.file.name', 'type': 'java.lang.String', 'description': 'The output FCS file name.', 'required': False, 'default_value': '<Input.FCS.data.file_basename>.without_saturated.fcs', 'prefix': '-OutputFile\\:'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Flow Cytometry', 'author': 'Josef Spidlen, BC Cancer Agency', 'command_line': '<java> <java_flags> -jar <libdir>removesaturated.jar <Input.FCS.data.file> <Output.FCS.file.name>'}
+
+Generate a complete, valid manifest file in key=value format.

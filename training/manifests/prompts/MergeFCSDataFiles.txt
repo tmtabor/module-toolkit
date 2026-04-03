@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for MergeFCSDataFiles.
+
+Tool Information:
+- Name: MergeFCSDataFiles
+- Version: latest
+- Language: Java
+- Description: Merge multiple FCS data files into a single FCS datasets; includes multimple subsampling options.
+- Repository: 
+
+Planning Data:
+{'module_name': 'MergeFCSDataFiles', 'parameters': [{'name': 'Input.files', 'type': 'FILE', 'description': 'The input FCS files to be merged; either a zip file or a pointer to a directory or a text file with FCS file names (full path) with one filename per line.', 'required': True, 'default_value': '', 'file_format': 'zip;txt', 'prefix': '-InputFile\\:'}, {'name': 'Subsampling.rate', 'type': 'java.lang.Float', 'description': 'Subsampling rate as percentage of events to be included from each data set, value between 0 and 100, optional, default 100%, cannot be combined with keep n events.', 'required': False, 'default_value': '100', 'prefix': '-SubsamplingRate\\:'}, {'name': 'Keep.n.events', 'type': 'java.lang.Integer', 'description': 'Keep approximately n events from each dataset, optional, cannot be combined with subsampling rate.', 'required': False, 'default_value': '', 'prefix': '-KeepNEvents\\:'}, {'name': 'Random.seed', 'type': 'java.lang.Float', 'description': 'The random seed', 'required': False, 'default_value': '1234567', 'prefix': '-RandomSeed\\:'}, {'name': 'Output.file.name', 'type': 'java.lang.String', 'description': 'The output FCS file name.', 'required': True, 'default_value': 'MergedFCSDataFiles.fcs', 'prefix': '-OutputFile\\:'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Flow Cytometry', 'author': 'Josef Spidlen, BC Cancer Agency', 'command_line': '<java> <java_flags> -jar <libdir>mergefcsdatafiles.jar <Input.files> <Output.file.name> <Subsampling.rate> <Keep.n.events> <Random.seed>'}
+
+Generate a complete, valid manifest file in key=value format.

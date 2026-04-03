@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for ssGSEA.ROC.
+
+Tool Information:
+- Name: ssGSEA.ROC
+- Version: latest
+- Language: any
+- Description: Generate ROC curves and calculate the AUC from ssGSEA results and a binary phenotype classification.
+- Repository: 
+
+Planning Data:
+{'module_name': 'ssGSEA.ROC', 'parameters': [{'name': 'PROJ.gct', 'type': 'FILE', 'description': 'PROJ.gct result from ssGSEA.', 'required': True, 'default_value': '', 'file_format': 'gct', 'num_values': '1..1'}, {'name': 'CLS', 'type': 'FILE', 'description': 'Two Phenotype CLS file for classifying the ssGSEA projections.', 'required': True, 'default_value': '', 'file_format': 'cls', 'num_values': '1..1'}, {'name': 'Reverse', 'type': 'TEXT', 'description': 'Reverse direction of the projections. <br> By default (FALSE) ROCR will calculate statistics for the first phenotype in the cls vs. the second phenotype. <br> Setting this flag to "TRUE" will calculate the second phenotype vs. the first phenotype.', 'required': True, 'default_value': 'FALSE', 'choices': 'FALSE\\=FALSE;TRUE\\=TRUE', 'num_values': '1..1'}, {'name': 'Plot.Top.Results', 'type': 'Integer', 'description': 'Plot ROC curves for the top N gene sets in each direction.', 'required': True, 'default_value': '20', 'num_values': '1..1'}], 'docker_image_tag': 'genepattern/ssgsea_roc\\:1.1', 'categories': 'statistical methods;gsea', 'task_type': 'beta', 'author': 'Anthony S. Castanza;UCSD-MesirovLab', 'command_line': '<Rscript> <libdir>ssGSEA_ROC.R --ssmatrix <PROJ.gct> --clsfile <CLS> --reverse <Reverse> --plotnsets <Plot.Top.Results>'}
+
+Generate a complete, valid manifest file in key=value format.

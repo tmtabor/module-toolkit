@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for STREAM.DetectLeafGenes.
+
+Tool Information:
+- Name: STREAM.DetectLeafGenes
+- Version: inital revision
+- Language: any
+- Description: Detect marker genes for each leaf branch.
+- Repository: 
+
+Planning Data:
+{'module_name': 'STREAM.DetectLeafGenes', 'parameters': [{'name': 'data.file', 'type': 'FILE', 'description': 'A STREAM pkl file containing gene expression data', 'required': True, 'default_value': '', 'file_format': 'pkl', 'num_values': '1..1'}, {'name': 'output.filename', 'type': 'TEXT', 'description': 'output file name prefix', 'required': True, 'default_value': '<data.file_basename>', 'num_values': '1..1'}, {'name': 'root', 'type': 'TEXT', 'description': 'The starting node for detecting leaf genes.', 'required': False, 'default_value': '', 'prefix': '-root', 'num_values': '0..1'}, {'name': 'preference', 'type': 'TEXT', 'description': 'The preference of nodes. The branch with speficied nodes are preferred and will be dealt with first. The higher ranks the node have, The earlier the branch with that node will be analyzed.  Comma delimited eg S3,S4', 'required': False, 'default_value': '', 'prefix': '-preference', 'num_values': '0..1'}, {'name': 'cutoff.zscore', 'type': 'TEXT', 'description': 'The z-score cutoff used for mean values of all leaf branches.', 'required': True, 'default_value': '1.5', 'prefix': '-cutoff_zscore', 'num_values': '1..1'}, {'name': 'cutoff.pvalue', 'type': 'TEXT', 'description': 'The p value cutoff used for Kruskal-Wallis H-test and post-hoc pairwise Conover\\u00e2??s test.', 'required': True, 'default_value': '0.01', 'prefix': '-cutoff_pvalue', 'num_values': '1..1'}, {'name': 'percentile.expr', 'type': 'TEXT', 'description': 'Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions.', 'required': True, 'default_value': '95', 'prefix': '-percentile_expr', 'num_values': '1..1'}, {'name': 'use.precomputed', 'type': 'TEXT', 'description': 'If True, the previously computed scaled gene expression will be used.', 'required': False, 'default_value': '-flag_use_precomputed', 'choices': '\\=Off;-flag_use_precomputed \\=Use precomputed gene list', 'num_values': '0..1'}], 'docker_image_tag': 'genepattern/stream_detectleafgenes\\:0.10', 'categories': 'Single-Cell', 'task_type': 'Single-cell', 'author': 'Ted Liefeld, UCSD School of Medicine.', 'command_line': 'python /stream/leaf_command_line.py -m <data.file> -of <output.filename> <root> <preference> <cutoff.zscore> <cutoff.pvalue> <percentile.expr> <use.precomputed> -n_jobs <job.cpuCount>'}
+
+Generate a complete, valid manifest file in key=value format.

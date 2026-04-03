@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for txt2odf.20211130.colparams.
+
+Tool Information:
+- Name: txt2odf.20211130.colparams
+- Version: Making module public for workshop
+- Language: any
+- Description: This module turns a TXT file into an ODF file which can be used with other GenePattern Modules.THIS MODULE IS FOR USE IN THE Dec 21, 2021 workshop and is in active development
+- Repository: https\://github.com/genepattern/txt2odf.20211130.colparams
+
+Planning Data:
+{'module_name': 'txt2odf.20211130.colparams', 'parameters': [{'name': 'txt_file', 'type': 'FILE', 'description': 'The text file to be reformatted.', 'required': True, 'default_value': '', 'file_format': 'txt', 'num_values': '0..1'}, {'name': 'id_col', 'type': 'TEXT', 'description': 'The name of the column with feature identifiers.', 'required': True, 'default_value': 'id', 'num_values': '0..1'}, {'name': 'stat', 'type': 'TEXT', 'description': 'The name of the column with the test statistic.', 'required': True, 'default_value': 'stat', 'num_values': '0..1'}, {'name': 'prune_gct', 'type': 'TEXT', 'description': 'Whether or not to prune the GCT file to match the TXT file.', 'required': True, 'default_value': 'False', 'choices': 'True\\=True;False\\=False', 'num_values': '0..1'}, {'name': 'gct', 'type': 'FILE', 'description': 'This is the GCT file which was originally used. *Set prune_gct to True if you want this file pruned*', 'required': False, 'default_value': '', 'file_format': 'gct', 'num_values': '0..1'}, {'name': 'cls', 'type': 'FILE', 'description': 'This is the CLS file which was originally used.', 'required': False, 'default_value': '', 'file_format': 'cls', 'num_values': '0..1'}], 'docker_image_tag': 'genepattern/docker-python36\\:0.5', 'categories': 'data format conversion', 'task_type': 'data format conversion', 'author': 'Edwin Juarez;GenePattern - Mesirov Lab', 'command_line': '<python_3.6> <libdir>txt2odf.py <txt_file> <id_col> <stat> <prune_gct> <gct> <cls>'}
+
+Generate a complete, valid manifest file in key=value format.

@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for HISAT2.indexer.
+
+Tool Information:
+- Name: HISAT2.indexer
+- Version: Updating module name and doc location
+- Language: any
+- Description: Indexes one or more Fasta files for use in the HISAT2.aligner.
+- Repository: https\://github.com/genepattern/HISAT2.indexer/tree/v1.9
+
+Planning Data:
+{'module_name': 'HISAT2.indexer', 'parameters': [{'name': 'index.name.prefix', 'type': 'TEXT', 'description': 'The name prefix of the resulting index files and of the zip file which contains them.', 'required': True, 'default_value': 'genome', 'num_values': '1..1'}, {'name': 'fasta.file', 'type': 'FILE', 'description': 'One or more FASTA files (or a zip file containing one or more FASTA files) containing the reference sequences to be aligned to. E.g., <reference_in> might be chr1.fa,chr2.fa,chrX.fa,chrY.fa.', 'required': True, 'default_value': '', 'file_format': 'fasta', 'num_values': '1+'}, {'name': 'gtf.file', 'type': 'FILE', 'description': 'Optional GTF file with information about exons.  If present this will run extract_exons.py and extrac_splice_sites.py on the GTF file and then add the splice sites and exons to the index', 'required': False, 'default_value': '', 'file_format': 'gtf', 'prefix': '-gtf', 'num_values': '0..1'}, {'name': 'dry.run', 'type': 'TEXT', 'description': 'If true, this just generates the hisat2 command lines and exits without executing.', 'required': True, 'default_value': 'False', 'choices': 'True\\=True;False\\=False', 'num_values': '0..1'}], 'docker_image_tag': 'genepattern/docker-hisat2\\:v0.12', 'categories': 'RNA-Seq', 'task_type': 'RNA-Seq', 'author': 'Ted Liefeld;UCSD', 'command_line': 'python <libdir>/hisat_indexer_wrapper.py <gtf.file> -fasta <fasta.file> -indexname <index.name.prefix> -dryRun <dry.run>'}
+
+Generate a complete, valid manifest file in key=value format.

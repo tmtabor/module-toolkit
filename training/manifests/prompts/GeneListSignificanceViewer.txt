@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for GeneListSignificanceViewer.
+
+Tool Information:
+- Name: GeneListSignificanceViewer
+- Version: Rewrite as javascript
+- Language: Javascript
+- Description: Views the results of marker analysis
+- Repository: https\://github.com/genepattern/GeneListSignificanceViewer.git
+
+Planning Data:
+{'module_name': 'GeneListSignificanceViewer', 'parameters': [{'name': 'inputfilename', 'type': 'FILE', 'description': 'odf file with or without features to summarize', 'required': True, 'default_value': '', 'file_format': 'odf;markerlist.odf;Gene List'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'javascript', 'author': 'Joshua Gould, reimplemented in js by Ted Liefeld (UC San Diego, Broad Institute)', 'command_line': 'gene_list_significance_viewer.html ? <inputfilename>'}
+
+Generate a complete, valid manifest file in key=value format.

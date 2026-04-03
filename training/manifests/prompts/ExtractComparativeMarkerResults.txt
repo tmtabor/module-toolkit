@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for ExtractComparativeMarkerResults.
+
+Tool Information:
+- Name: ExtractComparativeMarkerResults
+- Version: Renamed field parameter to statistic
+- Language: Java
+- Description: Creates a derived dataset and feature list file from the results of ComparativeMarkerSelection
+- Repository: 
+
+Planning Data:
+{'module_name': 'ExtractComparativeMarkerResults', 'parameters': [{'name': 'comparative.marker.selection.filename', 'type': 'FILE', 'description': 'The results from ComparativeMarkerSelection - .odf', 'required': True, 'default_value': '', 'file_format': 'Comparative Marker Selection'}, {'name': 'dataset.filename', 'type': 'FILE', 'description': 'The dataset file used to select markers - .gct, .res, Dataset', 'required': True, 'default_value': '', 'file_format': 'gct;res;Dataset'}, {'name': 'statistic', 'type': 'java.lang.String', 'description': 'The statistic to filter features on', 'required': False, 'default_value': '', 'choices': 'Bonferroni;FDR(BH);Feature P;Feature P High;Feature P Low;Fold Change;FWER;maxT;Q Value;Rank;Score'}, {'name': 'min', 'type': 'java.lang.Float', 'description': 'Select features with statistic >\\= min', 'required': False, 'default_value': ''}, {'name': 'max', 'type': 'java.lang.Float', 'description': 'Select features with statistic <\\= max', 'required': False, 'default_value': ''}, {'name': 'number.of.neighbors', 'type': 'java.lang.Integer', 'description': 'Number of neighbors to select by score in each direction', 'required': False, 'default_value': ''}, {'name': 'base.output.name', 'type': 'java.lang.String', 'description': 'The base name for the output files', 'required': True, 'default_value': '<comparative.marker.selection.filename_basename>.filt'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Gene List Selection', 'author': 'Joshua Gould', 'command_line': '<java> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>ExtractComparativeMarkerResults.jar edu.mit.broad.modules.marker.CreateMarkersFileModule <comparative.marker.selection.filename> <dataset.filename> -f<statistic> -n<min> -x<max> -s<number.of.neighbors> -o<base.output.name>'}
+
+Generate a complete, valid manifest file in key=value format.

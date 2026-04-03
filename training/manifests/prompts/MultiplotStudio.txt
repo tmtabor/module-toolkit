@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for MultiplotStudio.
+
+Tool Information:
+- Name: MultiplotStudio
+- Version: Completely rewritten and vastly improved replacement for Multiplot
+- Language: Java
+- Description: Scatterplot visualization tool for analyzing differential gene expression.
+- Repository: 
+
+Planning Data:
+{'module_name': 'MultiplotStudio', 'parameters': [{'name': 'dataFile', 'type': 'FILE', 'description': 'GenePattern dataset (*.gct), Multiplot Studio Workspace file (*.msdata) or CSV (see help for format requirements).', 'required': True, 'default_value': '', 'file_format': 'gct;csv;msdata'}, {'name': 'classFile', 'type': 'FILE', 'description': 'Class file (*.cls). Not required, but lack of a class file will result in fewer calculation options. Ignored if dataFile is a Workspace.', 'required': False, 'default_value': '', 'file_format': 'cls'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Visualizer', 'author': 'Scott Davis (GlaxoSmithKline)', 'command_line': '<java> -Dfile.encoding\\=UTF8 -Dsun.java2d.d3d\\=true -Dsun.java2d.dpiaware\\=true -Dsun.java2d.ddscale\\=true -Dsun.java2d.translaccel\\=true -Xms192m -XX\\:+UseG1GC -jar <libdir>MultiplotStudio.jar <dataFile> <classFile>'}
+
+Generate a complete, valid manifest file in key=value format.

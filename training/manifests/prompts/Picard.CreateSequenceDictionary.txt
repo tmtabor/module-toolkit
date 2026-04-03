@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for Picard.CreateSequenceDictionary.
+
+Tool Information:
+- Name: Picard.CreateSequenceDictionary
+- Version: latest
+- Language: Java
+- Description: Reads FASTA or FASTA.GZ files containing reference sequences, and writes them as a SAM file containing a sequence dictionary
+- Repository: 
+
+Planning Data:
+{'module_name': 'Picard.CreateSequenceDictionary', 'parameters': [{'name': 'reference.sequence.file', 'type': 'FILE', 'description': 'Input reference fasta or fasta.gz', 'required': True, 'default_value': '', 'file_format': 'fasta;fa'}, {'name': 'genome.assembly', 'type': 'java.lang.String', 'description': 'The genome assembly to put into AS field of sequence dictionary entry', 'required': False, 'default_value': ''}, {'name': 'uri', 'type': 'java.lang.String', 'description': 'The uri to put into UR field of sequence dictionary entry', 'required': False, 'default_value': ''}, {'name': 'truncate.names.at.white.space', 'type': 'java.lang.String', 'description': 'Make sequence name the first word from the > line in the reference file', 'required': False, 'default_value': 'no', 'choices': 'true\\=yes;false\\=no'}, {'name': 'num.sequences', 'type': 'java.lang.Integer', 'description': 'Stop after writing this many sequences', 'required': False, 'default_value': ''}, {'name': 'output.file', 'type': 'java.lang.String', 'description': 'The name of the output file', 'required': True, 'default_value': '<reference.sequence.file_basename>.dict'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Preprocess & Utilities', 'author': 'GenePattern', 'command_line': '<java> <java_flags> -cp <libdir>CreateSequenceDictionary.jar<path.separator><libdir>gp-CreateSequenceDictionary.jar org.genepattern.sam.CreateSeqDictWrapper -r<reference.sequence.file> -g<genome.assembly> -u<uri> -t<truncate.names.at.white.space> -n<num.sequences> -o<output.file>'}
+
+Generate a complete, valid manifest file in key=value format.

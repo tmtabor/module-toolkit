@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for BedToGtf.
+
+Tool Information:
+- Name: BedToGtf
+- Version: latest
+- Language: Java
+- Description: Converts BED files to GFF or GTF format
+- Repository: 
+
+Planning Data:
+{'module_name': 'BedToGtf', 'parameters': [{'name': 'bed.file', 'type': 'FILE', 'description': 'A bed file', 'required': True, 'default_value': '', 'file_format': 'bed'}, {'name': 'output.format', 'type': 'java.lang.String', 'description': 'Whether to output a gff file or exon only gtf file. The bed file must contain at least 12 columns in order to generate a gtf file.', 'required': True, 'default_value': 'gtf', 'choices': 'gff;gtf'}, {'name': 'output.prefix', 'type': 'java.land.String', 'description': 'The prefix for the output file', 'required': True, 'default_value': '<bed.file_basename>'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Data Format Conversion', 'author': 'GenePattern', 'command_line': '<java> <java_flags> -cp <libdir>bedToGtf.jar org.genepattern.gtf.BedToGtf <bed.file> <output.prefix> <output.format>'}
+
+Generate a complete, valid manifest file in key=value format.

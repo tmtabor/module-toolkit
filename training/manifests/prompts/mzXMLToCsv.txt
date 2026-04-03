@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for mzXMLToCsv.
+
+Tool Information:
+- Name: mzXMLToCsv
+- Version: latest
+- Language: Java
+- Description: Converts a mzXML file to a zip of csv files
+- Repository: 
+
+Planning Data:
+{'module_name': 'mzXMLToCsv', 'parameters': [{'name': 'input.filename', 'type': 'FILE', 'description': 'input filename - .mzXML', 'required': True, 'default_value': '', 'file_format': 'mzXML'}, {'name': 'output.file', 'type': 'java.lang.String', 'description': 'output file containing zip of csv files', 'required': True, 'default_value': '<input.filename_basename>.zip'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Proteomics', 'author': 'Joshua Gould, Broad Institute', 'command_line': '<java> <java_flags> -cp <libdir>mzXMLToCSV.jar<path.separator><libdir>jrap.jar<path.separator><libdir>xerces.jar org.genepattern.modules.mzxml.Convert <input.filename> <output.file>'}
+
+Generate a complete, valid manifest file in key=value format.

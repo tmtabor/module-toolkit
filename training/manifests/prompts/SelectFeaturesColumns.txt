@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for SelectFeaturesColumns.
+
+Tool Information:
+- Name: SelectFeaturesColumns
+- Version: Added support for .snp, .cn, and .loh files
+- Language: Java
+- Description: Takes a 'column slice' from a .res, .gct, .snp, .cn, .loh, .odf, or .cls file.
+- Repository: 
+
+Planning Data:
+{'module_name': 'SelectFeaturesColumns', 'parameters': [{'name': 'input.filename', 'type': 'FILE', 'description': 'input file - .res, .gct, .snp, .cn, .loh, .odf, or .cls file from which the slice is extracted', 'required': True, 'default_value': '', 'file_format': 'gct;res;Dataset;snp;cn;loh;cls'}, {'name': 'columns', 'type': 'java.lang.String', 'description': 'columns to select (e.g. 0-3, 5, 9). Either columns or a list file must be provided.', 'required': False, 'default_value': ''}, {'name': 'list.filename', 'type': 'FILE', 'description': 'text file containing one identifier per line that specifies the columns to select. Either columns or a list file must be provided.', 'required': False, 'default_value': ''}, {'name': 'output', 'type': 'java.lang.String', 'description': 'output filename - .res, .gct, .snp, .cn, .loh, .odf, .cls', 'required': True, 'default_value': '<input.filename_basename>.slice'}], 'docker_image_tag': '', 'categories': '', 'task_type': 'Gene List Selection', 'author': 'Joshua Gould, Broad Institute', 'command_line': '<java> <java_flags> -cp <libdir>SelectFeaturesColumns.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.selectfeaturescolumns.SelectFeaturesColumns <input.filename> <output> -t<columns> -f<list.filename>'}
+
+Generate a complete, valid manifest file in key=value format.

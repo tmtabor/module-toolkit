@@ -1,0 +1,13 @@
+Generate a complete GenePattern module manifest for spatialGE.STplot.Launcher.
+
+Tool Information:
+- Name: spatialGE.STplot.Launcher
+- Version: Initial version
+- Language: Javascript
+- Description: Generates high-quality figures showing the expression of genes in spatial context.
+- Repository: https\://github.com/genepattern/spatialGE.STplot.Launcher.git
+
+Planning Data:
+{'module_name': 'spatialGE.STplot.Launcher', 'parameters': [{'name': 'dataset', 'type': 'FILE', 'description': 'Spatial transcriptomics data, coming from spatialGE.Preprocessing, spatialGE.STclust or another spatialGE module.', 'required': True, 'default_value': '', 'file_format': 'rds'}, {'name': 'sample.info', 'type': 'FILE', 'description': 'JSON file containing spot/cell and gene statistics for each sample, coming from the spatialGE.Preprocessing module.', 'required': True, 'default_value': '', 'file_format': 'json'}, {'name': 'gene.info', 'type': 'FILE', 'description': 'JSON file containing gene names for each sample, coming from the spatialGE.Preprocessing module.', 'required': True, 'default_value': '', 'file_format': 'json'}, {'name': 'domain.info', 'type': 'FILE', 'description': 'Optionally, a JSON file containing domain/cluster statistics for each sample, coming from the spatialGE.STclust module, may be provided if using clustering data in plots.', 'required': False, 'default_value': '', 'file_format': 'json'}], 'docker_image_tag': '', 'categories': 'spatial transcriptomics, javascript', 'task_type': 'javascript', 'author': 'Thorin Tabor;UCSD - Mesirov Lab', 'command_line': 'app.html ? <dataset> <sample.info> <gene.info> <domain.info>'}
+
+Generate a complete, valid manifest file in key=value format.

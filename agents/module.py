@@ -299,7 +299,7 @@ class ModuleAgent:
             self.logger.print_status(f"Traceback: {traceback.format_exc()}", "DEBUG")
             return False, {'error': error_msg}
 
-    def do_planning(self, tool_info: Dict[str, str], research_data: Dict[str, Any], status: ModuleGenerationStatus = None) -> Tuple[bool, ModulePlan]:
+    def do_planning(self, tool_info: Dict[str, str], research_data: Dict[str, Any], status: ModuleGenerationStatus = None, module_path: Path = None) -> Tuple[bool, ModulePlan]:
         """Run planning phase using planner agent"""
         self.logger.print_section("Planning Phase")
         self.logger.print_status("Starting module planning and parameter analysis")
@@ -364,6 +364,20 @@ class ModuleAgent:
             if status:
                 status.add_usage(result)
                 self.save_status(status)
+
+            # Capture training data for LoRA fine-tuning
+            if module_path is not None:
+                try:
+                    training_record = {
+                        "instruction": prompt.strip(),
+                        "output": result.output.model_dump_json(),
+                    }
+                    jsonl_path = module_path / "plan.jsonl"
+                    with open(jsonl_path, "w") as f:
+                        f.write(json.dumps(training_record) + "\n")
+                    self.logger.print_status(f"Training data saved to {jsonl_path}", "DEBUG")
+                except Exception as capture_err:
+                    self.logger.print_status(f"Warning: could not save plan.jsonl: {capture_err}", "WARNING")
 
             self.logger.print_status("Planning phase completed successfully", "SUCCESS")
             return True, result.output
@@ -1793,7 +1807,7 @@ Make sure the generated artifact follows all guidelines, key requirements and cr
             self.logger.print_section("Planning Phase")
             self.logger.print_status("✓ Planning already complete, using existing plan", "SUCCESS")
         else:
-            planning_success, planning_data = self.do_planning(tool_info, status.research_data, status)
+            planning_success, planning_data = self.do_planning(tool_info, status.research_data, status, module_path=module_path)
             if planning_success:
                 status.planning_data = planning_data
             else:

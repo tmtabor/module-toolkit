@@ -1,0 +1,77 @@
+Create a comprehensive structured plan for the GenePattern module for 'MergeHTSeqCounts'.
+            
+            Tool Information:
+            - Name: MergeHTSeqCounts
+            - Version: Marked as production
+            - Language: Python
+            - Description: Merges HTSeq read count data files into one file
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "MergeHTSeqCounts",
+  "parameters": [
+    {
+      "name": "input.files",
+      "type": "FILE",
+      "description": "A directory or one or more text files containing HTSeq read counts",
+      "required": true,
+      "default_value": "",
+      "file_format": "txt;counts",
+      "num_values": "0+"
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.lang.String",
+      "description": "The base name of the output file. File extensions will be added automatically.",
+      "required": true,
+      "default_value": "<input.files_basename>"
+    },
+    {
+      "name": "sampleinfo.file",
+      "type": "FILE",
+      "description": "A sample info file containing HTSeq filenames and a column to base a cls file on",
+      "required": false,
+      "default_value": "",
+      "file_format": "txt"
+    },
+    {
+      "name": "filenames.column",
+      "type": "java.lang.String",
+      "description": "The column in the sample info file that contains the filenames.  This is used to match up the class division column up to the appropriate input file. This can be either a column index (starting at 0) or a string matching the header of a column in the sample info file.",
+      "required": false,
+      "default_value": "0"
+    },
+    {
+      "name": "class.division.column",
+      "type": "java.lang.String",
+      "description": "The column in the sample info file that specifies a phenotype to use to assign classes and create a class file for the input samples. This is only relevant if a sample info file is provided.",
+      "required": false,
+      "default_value": "1"
+    },
+    {
+      "name": "sample.name.column",
+      "type": "java.lang.String",
+      "description": "The column in the sample info file that specifies a sample name to use in the generated gct file.  If no sample info file is provided or no value is specified the columns in the gct file will match the file names of the input files.",
+      "required": false,
+      "default_value": ""
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "RNA-seq",
+  "task_type": "RNA-seq",
+  "author": "Broad Institute & Univeristy of California San Diego",
+  "command_line": "<python_2.6> <libdir>mergeHTSeqCounts.py --input\\=<input.files> --output\\=<output.prefix> --sampleInfoFile\\=<sampleinfo.file> --filenamesColumn\\=<filenames.column> --classDivisionColumn\\=<class.division.column> --sampleNameColumn\\=<sample.name.column>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,84 @@
+{
+  "module_name": "DeIdentifyFCS",
+  "description": "DeIdentifyFCS an FCS data file; remove keywords from a list or matching a regular expression; useful to anonymize FCS data files and/or to remove specific (e.g., clinical) information",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "input_file_formats": [
+    "fcs"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:74105:1",
+  "plan": "## DeIdentifyFCS GenePattern Module — Implementation Plan\n\n### 1. Overview\nDeIdentifyFCS is a GenePattern module that DeIdentifyFCS an FCS data file; remove keywords from a list or matching a regular expression; useful to anonymize FCS data files and/or to remove specific (e.g., clinical) information\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: Input.FCS.data.file, Remove.keywords, Is.regular.expression.used, Output.FCS.file.name\n- Optional: none\n\n### 3. Command Line\n```\n<java> <java_flags> -jar <libdir>deidentifyfcs.jar -Debug <Input.FCS.data.file> <Remove.keywords> <Is.regular.expression.used> <Output.FCS.file.name>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "deidentifyfcs.jar",
+  "command_line": "<java> <java_flags> -jar <libdir>deidentifyfcs.jar -Debug <Input.FCS.data.file> <Remove.keywords> <Is.regular.expression.used> <Output.FCS.file.name>",
+  "parameters": [
+    {
+      "name": "Input.FCS.data.file",
+      "description": "An FCS data file to be de-identified.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fcs"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-InputFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Remove.keywords",
+      "description": "Comma-separated list of keyword names (escape comma by '\\\\' if part of a keyword name) or regular expression to match keywords to be removed.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-Remove\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Is.regular.expression.used",
+      "description": "Is a regular expression used in the list of keywords to remove? If not (default) a simple comma-separated list of keyword names is expected. In this list, comma may be escaped by '\\\\' if part of a keyword name, e.g., this \\\\, is in the keyword.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "No",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes",
+          "value": "Yes"
+        },
+        {
+          "display": "No, default",
+          "value": "No"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-IsRegExUsed\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.FCS.file.name",
+      "description": "Output FCS file name.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<Input.FCS.data.file_basename>.deidentified.<Input.FCS.data.file_extension>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-OutputFile\\:",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

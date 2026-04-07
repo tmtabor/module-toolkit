@@ -1,0 +1,248 @@
+{
+  "module_name": "ExpressionFileCreator",
+  "description": "Creates a RES or GCT file from a set of Affymetrix CEL files.  For IVT arrays only; use AffySTExpressionFileCreator for ST arrays.",
+  "author": "Joshua Gould, David Eby, gp-help@broad.mit.edu, Broad Institute",
+  "input_file_formats": [
+    "cdf",
+    "clm",
+    "txt",
+    "zip"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:41629:1",
+  "plan": "## ExpressionFileCreator GenePattern Module — Implementation Plan\n\n### 1. Overview\nExpressionFileCreator is a GenePattern module that Creates a RES or GCT file from a set of Affymetrix CEL files.  For IVT arrays only; use AffySTExpressionFileCreator for ST arrays.\n\n### 2. Parameters\nThe module exposes 11 parameters:\n- Required: input.file, method, annotate.probes, output.file\n- Optional: quantile.normalization, background.correct, compute.present.absent.calls, normalization.method, value.to.scale.to, clm.file, cdf.file\n\n### 3. Command Line\n```\nRscript --no-save --quiet --slave --no-restore <libdir>expr.R <libdir> -i<input.file> -o<output.file> -m<method> -q<quantile.normalization> -b<background.correct> -c<compute.present.absent.calls> -n<normalization.method> -l<libdir> -f<clm.file> -v<value.to.scale.to> -e<cdf.file> -a<annotate.probes>\n```\n\n### 4. Docker Image\nDocker image: genepattern/expressionfilecreator\\:v12.5\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "expr.R",
+  "command_line": "Rscript --no-save --quiet --slave --no-restore <libdir>expr.R <libdir> -i<input.file> -o<output.file> -m<method> -q<quantile.normalization> -b<background.correct> -c<compute.present.absent.calls> -n<normalization.method> -l<libdir> -f<clm.file> -v<value.to.scale.to> -e<cdf.file> -a<annotate.probes>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "A zip file of CEL files",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "method",
+      "description": "The method to use. Note that dchip and MAS5 will not work with ST arrays.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "RMA",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "dChip",
+          "value": "dChip"
+        },
+        {
+          "display": "GCRMA",
+          "value": "GCRMA"
+        },
+        {
+          "display": "MAS5",
+          "value": "MAS5"
+        },
+        {
+          "display": "RMA",
+          "value": "RMA"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "quantile.normalization",
+      "description": "(GCRMA and RMA only) Whether to normalize data using quantile normalization",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--quantile.normalization",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "background.correct",
+      "description": "(RMA only) Whether to background correct using RMA background correction",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--background.correct",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "compute.present.absent.calls",
+      "description": "Whether to compute Present/Absent calls",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes (create res file)",
+          "value": "yes"
+        },
+        {
+          "display": "no (create gct file)",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--compute.present.absent.calls",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "normalization.method",
+      "description": "(MAS5 only) The normalization method to apply after expression values are computed. The column having the median of the means is used as the reference unless the parameter value to scale to is given.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "median scaling",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "linear fit",
+          "value": "linear fit"
+        },
+        {
+          "display": "mean scaling",
+          "value": "mean scaling"
+        },
+        {
+          "display": "median scaling",
+          "value": "median scaling"
+        },
+        {
+          "display": "none",
+          "value": "none"
+        },
+        {
+          "display": "quantile normalization",
+          "value": "quantile normalization"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--normalization.method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "value.to.scale.to",
+      "description": "(median/mean scaling only) The value to scale to.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--value.to.scale.to",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "clm.file",
+      "description": "A tab-delimited text file containing one scan, sample, and class per line",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt",
+        "clm"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--clm.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "annotate.probes",
+      "description": "Whether to annotate probes with the gene symbol and description",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--annotate.probes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cdf.file",
+      "description": "Custom CDF file. Leave blank to use default internally provided CDF file (custom cdf file is not implemented for GCRMA).",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cdf"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cdf.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "The base name of the output file(s)",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/expressionfilecreator:v12.5"
+}

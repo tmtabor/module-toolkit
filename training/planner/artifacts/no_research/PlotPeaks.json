@@ -1,0 +1,49 @@
+{
+  "module_name": "PlotPeaks",
+  "description": "Plot peaks",
+  "author": "D.R. Mani, Broad Institute",
+  "input_file_formats": [
+    "Spectrum Peaks"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:71258:1",
+  "plan": "## PlotPeaks GenePattern Module — Implementation Plan\n\n### 1. Overview\nPlotPeaks is a GenePattern module that Plot peaks\n\n### 2. Parameters\nThe module exposes 2 parameters:\n- Required: peaks.output.filename, output.file\n- Optional: none\n\n### 3. Command Line\n```\n<R2.5> <libdir>pipeline.wrapper.R plot.peaks.wrapper <peaks.output.filename> <output.file> <libdir>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "pipeline.wrapper.R",
+  "command_line": "<R2.5> <libdir>pipeline.wrapper.R plot.peaks.wrapper <peaks.output.filename> <output.file> <libdir>",
+  "parameters": [
+    {
+      "name": "peaks.output.filename",
+      "description": "The output from the Peaks module",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "Spectrum Peaks"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--peaks.output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<peaks.output.filename_basename>.pdf",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

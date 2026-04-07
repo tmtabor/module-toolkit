@@ -1,0 +1,70 @@
+Create a comprehensive structured plan for the GenePattern module for 'shRNAscores'.
+            
+            Tool Information:
+            - Name: shRNAscores
+            - Version: changed name of module
+            - Language: R
+            - Description: Outputs fold change, signal to noise and modified score (which deweights highly variable hps from reference control) for RNAI HP scoring
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "shRNAscores",
+  "parameters": [
+    {
+      "name": "gct",
+      "type": "FILE",
+      "description": "",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct"
+    },
+    {
+      "name": "array.info",
+      "type": "FILE",
+      "description": "Array annotation from 'makeArrayInfo' module",
+      "required": true,
+      "default_value": "",
+      "file_format": "txt"
+    },
+    {
+      "name": "reference",
+      "type": "java.lang.String",
+      "description": "Reference to compare each cell line to - name can partially or totally match 'Array_timepoint' column of array.info file",
+      "required": true,
+      "default_value": "DNA"
+    },
+    {
+      "name": "annotation",
+      "type": "FILE",
+      "description": "TRChuV2.chip file (hp annotation)",
+      "required": true,
+      "default_value": "",
+      "file_format": "txt"
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.lang.String",
+      "description": "prefix for output file name",
+      "required": true,
+      "default_value": "test"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "RNAi",
+  "author": "Barbara Weir, Broad Institute",
+  "command_line": "<R2.5> <libdir>HPscores.R HPscores -i<gct> -s<array.info> -r<reference> -a<annotation> -e<output.prefix> -l<libdir>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

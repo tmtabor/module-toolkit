@@ -1,0 +1,280 @@
+{
+  "module_name": "igv.js",
+  "description": "Launches igv.js with input file(s)",
+  "author": "Barbara Hill, Marc-Danie Nazaire, Thorin Tabor, Jim Robinson, Peter Carr (Broad Institute)",
+  "input_file_formats": [
+    "Comparative Marker Selection",
+    "Dataset",
+    "Matrix",
+    "bai",
+    "bam",
+    "bb",
+    "bed",
+    "bedgraph",
+    "bigbed",
+    "bigwig",
+    "bw",
+    "cbs.txt",
+    "clm",
+    "cls",
+    "cn",
+    "csv",
+    "fa",
+    "fai",
+    "fasta",
+    "gct",
+    "gff",
+    "gff3",
+    "glad",
+    "gtf",
+    "gz",
+    "idx",
+    "igv",
+    "loh",
+    "maf",
+    "psl",
+    "res",
+    "sai",
+    "sam",
+    "seg",
+    "snp",
+    "tbi",
+    "tdf",
+    "txt",
+    "vcf",
+    "wig",
+    "xcn",
+    "xls",
+    "xml",
+    "zip"
+  ],
+  "language": "Javascript",
+  "categories": [
+    "viewer"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:56396:1",
+  "plan": "## igv.js GenePattern Module — Implementation Plan\n\n### 1. Overview\nigv.js is a GenePattern module that Launches igv.js with input file(s)\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: input.file, genome\n- Optional: index.file, genome.fasta.file, genome.index.file, genome.cytoband.file, locus\n\n### 3. Command Line\n```\nigv_web.html ? <input.file> <index.file> <genome> <locus>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.py",
+  "command_line": "igv_web.html ? <input.file> <index.file> <genome> <locus>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "Track dataset to be viewed in igv.js",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": [
+        "bam",
+        "bed",
+        "cbs.txt",
+        "clm",
+        "cls",
+        "cn",
+        "Comparative Marker Selection",
+        "csv",
+        "Dataset",
+        "gct",
+        "glad",
+        "igv",
+        "loh",
+        "maf",
+        "Matrix",
+        "sam",
+        "res",
+        "seg",
+        "snp",
+        "txt",
+        "xcn",
+        "xls",
+        "xml",
+        "zip",
+        "gff",
+        "gff3",
+        "gtf",
+        "wig",
+        "psl",
+        "bedgraph",
+        "bw",
+        "bigwig",
+        "bb",
+        "bigbed",
+        "tdf",
+        "vcf",
+        "gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "index.file",
+      "description": "The index file (i.e .bai, .idx, or .tbi).",
+      "required": false,
+      "type": "file",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": [
+        "bai",
+        "sai",
+        "idx",
+        "tbi",
+        "gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-i",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "genome",
+      "description": "Choose the genome for your data.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Select a genome",
+          "value": ""
+        },
+        {
+          "display": "Custom genome (provide files below)",
+          "value": "none"
+        },
+        {
+          "display": "Human (GRCh38/hg38)",
+          "value": "hg38"
+        },
+        {
+          "display": "Human (CRCh37/hg19)",
+          "value": "hg19"
+        },
+        {
+          "display": "Human (hg18)",
+          "value": "hg18"
+        },
+        {
+          "display": "Mouse (GRCm38/mm10)",
+          "value": "mm10"
+        },
+        {
+          "display": "Chimp (SAC 2.1.4/panTro4)",
+          "value": "panTro4"
+        },
+        {
+          "display": "Bonobo (MPI-EVA panpan1.1/panPan2)",
+          "value": "panPan2"
+        },
+        {
+          "display": "Cow (UMD_3.1.1/bosTau8)",
+          "value": "bosTau8"
+        },
+        {
+          "display": "C. elegans (ce11)",
+          "value": "ce11"
+        },
+        {
+          "display": "Dog (Broad CanFam3.1/canFam3)",
+          "value": "canFam3"
+        },
+        {
+          "display": "D. melanogaster (dm6)",
+          "value": "dm6"
+        },
+        {
+          "display": "Gorilla (gorGor4.1/gorGor4)",
+          "value": "gorGor4"
+        },
+        {
+          "display": "Pig (SGSC Sscrofa11.1/susScr11)",
+          "value": "susScr11"
+        },
+        {
+          "display": "Rat (RGCS 6.0/rn6)",
+          "value": "rn6"
+        },
+        {
+          "display": "S. cerevisiae (sacCer3)",
+          "value": "sacCer3"
+        },
+        {
+          "display": "Zebrafish (GRCZ11/danRer11)",
+          "value": "danRer11"
+        },
+        {
+          "display": "Zebrafish (GRCZ10/danRer10)",
+          "value": "danRer10"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--genome",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "genome.fasta.file",
+      "description": "Fasta file to use for a reference genome. Only necessary if genome is not provided above.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "fasta",
+        "fa"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--genome.fasta.file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "genome.index.file",
+      "description": "Index file to use for a reference genome. Only necessary if genome is not provided above.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "fai"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--genome.index.file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "genome.cytoband.file",
+      "description": "Index file to use for a reference genome. Only necessary if genome is not provided above.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt",
+        "gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--genome.cytoband.file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "locus",
+      "description": "Provide a locus or gene of interest for your data. If left blank, igv.js will launch on all.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--locus",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

@@ -1,0 +1,206 @@
+{
+  "module_name": "FLAMEPreprocess",
+  "description": "Performs preprocessing of .fcs or .txt flow cytometric data files",
+  "author": "GenePattern Team",
+  "input_file_formats": [
+    "zip"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:96519:1",
+  "plan": "## FLAMEPreprocess GenePattern Module — Implementation Plan\n\n### 1. Overview\nFLAMEPreprocess is a GenePattern module that Performs preprocessing of .fcs or .txt flow cytometric data files\n\n### 2. Parameters\nThe module exposes 11 parameters:\n- Required: dataset, file.type, data.scale, remove.dead, channels, channel.names, scatter.channels, transformation, logicle.cofactor, arsinh.cofactor, output.prefix\n- Optional: none\n\n### 3. Command Line\n```\n<R-2.7.2> <libdir>preprocess.gp.R parseCmdLine <libdir> <dataset> <remove.dead> <channels> <channel.names> <scatter.channels> <file.type> <transformation> <data.scale> <logicle.cofactor> <arsinh.cofactor> <output.prefix>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "preprocess.gp.R",
+  "command_line": "<R-2.7.2> <libdir>preprocess.gp.R parseCmdLine <libdir> <dataset> <remove.dead> <channels> <channel.names> <scatter.channels> <file.type> <transformation> <data.scale> <logicle.cofactor> <arsinh.cofactor> <output.prefix>",
+  "parameters": [
+    {
+      "name": "dataset",
+      "description": "A .zip file containing flow files in .txt or .fcs format. (The files should be all .txt or all .fcs, but not both.)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dataset",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "file.type",
+      "description": "File type of input sample data.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "fcs",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "fcs",
+          "value": "fcs"
+        },
+        {
+          "display": "txt",
+          "value": "txt"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--file.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "data.scale",
+      "description": "The original data scale. 18-bit (default) or 4-decade.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "262144",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "18-bit",
+          "value": "262144"
+        },
+        {
+          "display": "4-decade",
+          "value": "10000"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--data.scale",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "remove.dead",
+      "description": "Whether to attempt removing dead cells from the samples.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "F",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "T"
+        },
+        {
+          "display": "no",
+          "value": "F"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--remove.dead",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "channels",
+      "description": "A comma-separated list of channel numbers indicating which columns (antibodies) to keep (e.g., 1, 2, 3, 7).",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--channels",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "channel.names",
+      "description": "A comma-separated list of channel/antibody names that corresponds to the channel numbers (e.g., FSC, SSC, CD4, CD45RA).",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--channel.names",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "scatter.channels",
+      "description": "A comma-separated list of scatter channel numbers (e.g., 1, 2, 3).",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "1,2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--scatter.channels",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "transformation",
+      "description": "The transformation to apply",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "logicle",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "none",
+          "value": "none"
+        },
+        {
+          "display": "logicle",
+          "value": "logicle"
+        },
+        {
+          "display": "arsinh",
+          "value": "arsinh"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--transformation",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "logicle.cofactor",
+      "description": "A cofactor that tunes the logicle transformation. The cofactor is usually greater than 0 and less than 10.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--logicle.cofactor",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "arsinh.cofactor",
+      "description": "A cofactor that tunes the arsinh transformation. The cofactor is 0 usually between 0 exclusively and a few thousand.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "250",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--arsinh.cofactor",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "A prefix for output files",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<dataset_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

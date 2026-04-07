@@ -1,0 +1,662 @@
+Create a comprehensive structured plan for the GenePattern module for 'ComBat_Seq'.
+            
+            Tool Information:
+            - Name: ComBat_Seq
+            - Version: Added batch correction tag
+            - Language: any
+            - Description: ComBat_Seq module. A Batch effect adjustment tool for bulk RNA-seq count data. Improvement upon ComBat,  and uses a negative binomial regression to model batch effects. ComBat-seq takes untransformed, raw count matrix as input. Provides adjusted data which preserves the integer nature of counts, so that the adjusted data are compatible with the assumptions of state-of-the-art differential expression software (e.g. edgeR, DESeq2, which request untransformed count data)\nOriginal Documentation: https://github.com/zhangyuqing/ComBat-seq \nCredits go to Zhang et al, https://doi.org/10.1093/nargab/lqaa078
+            
+            Research Results:
+            I now have all the comprehensive information needed to compile the full research report. Let me present it in complete, structured form.
+
+---
+
+# 🧬 Comprehensive Research Report: ComBat_Seq GenePattern Module
+
+---
+
+## 📋 Executive Summary
+
+**ComBat_Seq** is a state-of-the-art batch effect correction tool specifically engineered for bulk RNA-seq raw count data. It represents a significant methodological advancement over its predecessor ComBat, using a **negative binomial (NB) regression framework** to model and remove batch effects while preserving the integer nature of count data. This critical property makes ComBat_Seq output directly compatible with leading differential expression (DE) tools such as **DESeq2** and **edgeR**, which strictly require untransformed, non-negative integer count matrices as input. The GenePattern module wraps the R implementation (distributed as part of the Bioconductor `sva` package) in a reproducible, containerized, GUI-accessible interface.
+
+---
+
+## 1. 🎯 Tool Purpose & Scientific Applications
+
+### 1.1 Core Scientific Problem Addressed
+
+Batch effects in RNA-seq studies are systematic, non-biological sources of variation introduced by technical factors such as:
+- Different sequencing runs, lanes, or flowcells
+- Different laboratory sites or personnel in multi-center studies
+- Temporal variation (e.g., reagent lot changes, seasonal laboratory conditions)
+- Sample processing differences (RNA extraction batches, library preparation kits)
+- Integration of public datasets (GEO, SRA) with new experimental data
+
+These batch effects can obscure true biological signals, introduce false positives/negatives in DE analysis, and confound clustering, dimensionality reduction (PCA/UMAP), and visualization.
+
+### 1.2 Why ComBat_Seq Over Prior Methods
+
+The original ComBat (Johnson et al., 2007) was designed for **microarray data** and uses a **Gaussian/normal distribution** model. When naively applied to RNA-seq data (e.g., on log-CPM transformed counts), it:
+- Produces **continuous, non-integer values** including negatives — incompatible with DESeq2/edgeR
+- Fails to model the **overdispersion** characteristic of RNA-seq count distributions
+- Can introduce artificial signals when applied to transformed data
+
+ComBat_Seq solves these problems by:
+1. **Modeling batch effects on raw counts** using the negative binomial distribution
+2. **Performing quantile-based mapping** of counts to expected distributions without batch effects
+3. **Preserving the integer nature** of all output values
+4. Allowing output to serve as a **drop-in replacement** for raw counts in any downstream analysis
+
+### 1.3 Primary Scientific Applications
+
+| Application Domain | Description |
+|---|---|
+| **Multi-batch DE analysis** | Correct batch effects before running DESeq2/edgeR in multi-site, multi-run studies |
+| **Cross-study meta-analysis** | Integrate disparate public RNA-seq datasets (e.g., from TCGA, GEO) for unified analysis |
+| **Multi-site clinical genomics** | Normalize samples from multiple hospitals/centers in translational research |
+| **Longitudinal studies** | Account for temporal batch effects across sequencing timepoints |
+| **Benchmark/validation studies** | Prepare harmonized reference datasets for classifier training and validation |
+| **Visualization preprocessing** | Generate corrected matrices for PCA, t-SNE, UMAP, and heatmap visualization |
+| **Reproducibility pipelines** | Standardize data integration steps in FAIR-compliant bioinformatics workflows |
+
+---
+
+## 2. 📁 Input/Output Formats & Requirements
+
+### 2.1 Input 1: Raw Count Matrix (PRIMARY — REQUIRED)
+
+| Property | Specification |
+|---|---|
+| **Data type** | Raw, untransformed integer read counts |
+| **Dimensions** | Genes (rows) × Samples (columns) |
+| **Format (GenePattern)** | `.gct` (GCT v1.2) or `.tsv` (tab-separated values) |
+| **Matrix type** | Must be R `matrix` type (not `data.frame`); use `as.matrix()` if needed |
+| **Normalization** | **NONE** — do not supply RPKM, TPM, FPKM, VST, rlog, or CPM |
+| **Minimum batches** | ≥ 2 distinct batch labels |
+| **Minimum samples per batch** | ≥ 2 samples per batch |
+| **Missing values** | NA values trigger a warning but are not blocked; behavior on sparse NA matrices is undefined |
+
+#### GCT File Format (v1.2):
+```
+#1.2
+{n_genes}\t{n_samples}
+Name\tDescription\tSample1\tSample2\t...SampleN
+GENE1\tGENE1_desc\t120\t95\t...
+GENE2\tGENE2_desc\t0\t3\t...
+```
+
+#### TSV File Format:
+```
+gene_id\tSample1\tSample2\t...SampleN
+ENSG000001\t120\t95\t...
+ENSG000002\t0\t3\t...
+```
+
+### 2.2 Input 2: Batch Assignment File (REQUIRED)
+
+A two-column TSV file mapping sample names to batch identifiers:
+
+```tsv
+sample_name    batch
+Sample1        batch1
+Sample2        batch1
+Sample3        batch2
+Sample4        batch2
+```
+
+### 2.3 Input 3: Biological Group/Covariate File (OPTIONAL)
+
+Single-column or multi-column TSV with biological metadata for covariate preservation:
+
+```tsv
+sample_name    group        covariate1
+Sample1        treatment    male
+Sample2        control      female
+Sample3        treatment    male
+Sample4        control      female
+```
+
+### 2.4 Output: Batch-Corrected Count Matrix
+
+| Property | Specification |
+|---|---|
+| **Data type** | Non-negative integers (same dimensionality as input) |
+| **Format (GenePattern)** | `.gct` or `.tsv` (user-selectable) |
+| **Compatibility** | Direct input to DESeq2, edgeR, limma-voom, NOISeq |
+| **Row/Column IDs** | Preserved from input matrix |
+
+---
+
+## 3. ⚙️ Parameter Analysis & Usage Patterns
+
+### 3.1 Complete Parameter Catalog
+
+| Parameter | R Type | Default | Required | GenePattern Type | Description |
+|---|---|---|---|---|---|
+| `counts` | matrix (integer) | — | ✅ YES | FILE | Raw count matrix, gene × sample |
+| `batch` | vector/factor | — | ✅ YES | FILE/TEXT | Batch labels per sample |
+| `group` | vector/factor | `NULL` | Optional | TEXT/FILE | Biological condition to preserve |
+| `covar_mod` | model matrix | `NULL` | Optional | FILE | Multiple biological covariates |
+| `full_mod` | boolean | `TRUE` | Optional | BOOLEAN | Include condition in model |
+| `shrink` | boolean | `FALSE` | Optional | BOOLEAN | Empirical Bayes shrinkage on parameters |
+| `shrink.disp` | boolean | `FALSE` | Optional | BOOLEAN | Shrinkage on dispersion parameters |
+| `gene.subset.n` | integer | `NULL` | Optional | INTEGER | Number of genes for EB estimation |
+| `ref_batch` | character/numeric | `NULL` | Optional | TEXT | Reference batch identifier |
+
+### 3.2 Parameter Grouping for GenePattern GUI
+
+#### 🔴 Group 1: Required Inputs
+- `counts` — Count matrix file (GCT or TSV)
+- `batch` — Batch assignment file (TSV)
+
+#### 🟡 Group 2: Biological Signal Preservation
+- `group` — Primary biological condition vector (e.g., treatment vs. control)
+- `covar_mod` — Model matrix for additional covariates (age, sex, tissue type, etc.)
+- `full_mod` — Whether to include the biological condition in the NB model. **Default: TRUE**. Should be `FALSE` only if no biological group variable is provided (null model).
+
+> ⚠️ **Critical note**: Setting `full_mod=TRUE` while `group=NULL` or when `group` contains only one unique value will automatically trigger the null model (ComBat_seq warns: *"Using null model in ComBat-seq"*). If `group` is completely confounded with `batch`, an error is raised.
+
+#### 🟢 Group 3: Advanced Statistical Options
+- `shrink` — **Default: FALSE**. Set `TRUE` for small sample sizes (< 8 samples per batch) to stabilize EB estimates.
+- `shrink.disp` — **Default: FALSE**. Enable alongside `shrink=TRUE` for additional shrinkage on dispersion estimates.
+- `gene.subset.n` — **Default: NULL (all genes)**. When `shrink=TRUE`, can specify a random subset of genes (e.g., 500–1000) for faster EB hyperparameter estimation. Only relevant when `shrink=TRUE`.
+
+#### 🔵 Group 4: Reference Batch Configuration
+- `ref_batch` — **Default: NULL**. When provided, data from the specified batch is left unchanged and all other batches are adjusted toward it. Useful for: (a) preserving a "gold standard" batch, (b) classifier training where reference batch defines the feature space, (c) multi-center studies where one center's data is the canonical dataset.
+
+### 3.3 Parameter Interaction Rules
+
+```
+RULE 1: shrink.disp and gene.subset.n are only meaningful when shrink=TRUE
+RULE 2: full_mod is automatically set to FALSE if group=NULL (null model fallback)
+RULE 3: covar_mod columns must not be confounded with batch variable
+RULE 4: group and batch must not be completely confounded (error thrown)
+RULE 5: ref_batch value must exactly match one of the levels in the batch vector
+RULE 6: counts must be R matrix type — data.frame inputs cause silent errors in older sva versions
+```
+
+### 3.4 Usage Pattern Examples
+
+```r
+# ─── PATTERN 1: Minimal usage ────────────────────────────────────────────
+# No biological group known or irrelevant
+adjusted <- ComBat_seq(count_matrix, batch=batch, group=NULL, full_mod=FALSE)
+
+# ─── PATTERN 2: Standard with group preservation ─────────────────────────
+# RECOMMENDED for most studies
+adjusted <- ComBat_seq(count_matrix, batch=batch, group=group, full_mod=TRUE)
+
+# ─── PATTERN 3: Reference batch designation ──────────────────────────────
+# Useful for multi-site studies where one site is canonical
+adjusted <- ComBat_seq(count_matrix, batch=batch, group=group, ref_batch="SiteA")
+
+# ─── PATTERN 4: Multiple biological covariates ───────────────────────────
+# Preserve effects of treatment AND sex simultaneously
+covar_mod <- model.matrix(~as.factor(treatment) + as.factor(sex), data=metadata)
+adjusted <- ComBat_seq(count_matrix, batch=batch, covar_mod=covar_mod, full_mod=TRUE)
+
+# ─── PATTERN 5: Small sample / high variance datasets ────────────────────
+# Activate shrinkage for studies with few samples per batch
+adjusted <- ComBat_seq(count_matrix, batch=batch, group=group,
+                       shrink=TRUE, shrink.disp=TRUE, gene.subset.n=500)
+
+# ─── PATTERN 6: Post-correction validation ───────────────────────────────
+# Assess correction quality via PCA
+library(edgeR)
+lcpm_before <- cpm(count_matrix, log=TRUE)
+lcpm_after  <- cpm(adjusted, log=TRUE)
+plotMDS(lcpm_before, col=as.numeric(as.factor(batch)), main="Before")
+plotMDS(lcpm_after,  col=as.numeric(as.factor(batch)), main="After")
+```
+
+---
+
+## 4. 🔧 Installation & Dependency Requirements
+
+### 4.1 R Package Dependencies
+
+| Package | Source | Role | Installation |
+|---|---|---|---|
+| `sva` (≥ v3.36.0) | Bioconductor | Contains ComBat_seq function | `BiocManager::install("sva")` |
+| `edgeR` | Bioconductor | NB dispersion estimation (`estimateGLMCommonDisp`, `estimateGLMTagwiseDisp`, `glmFit`) | `BiocManager::install("edgeR")` |
+| `mgcv` | CRAN | Smooth spline fitting (auxiliary) | `install.packages("mgcv")` |
+| `genefilter` | Bioconductor | Gene-level filtering utilities | `BiocManager::install("genefilter")` |
+| `BiocParallel` | Bioconductor | Parallel computation support | `BiocManager::install("BiocParallel")` |
+
+### 4.2 System Requirements
+
+| Component | Requirement |
+|---|---|
+| **R version** | ≥ 4.0 (Bioconductor 3.12+); R 4.4+ recommended for current Bioc 3.20 |
+| **Bioconductor version** | ≥ 3.12 (for sva v3.36.0+) |
+| **Memory** | Scales with n_genes × n_samples; typical bulk RNA-seq (~20K genes × 100 samples): ~2–4 GB RAM |
+| **CPU** | Single-threaded per default; no built-in parallelization in ComBat_seq itself |
+| **OS** | Linux, macOS, Windows (Docker container recommended for reproducibility) |
+
+### 4.3 Installation Commands
+
+```r
+# Install from Bioconductor (recommended — stable, peer-reviewed)
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("sva")
+
+# Install from GitHub development version (cutting-edge, may be unstable)
+# install.packages("devtools")
+devtools::install_github("jtleek/sva-devel")
+
+# Load and use
+library(sva)
+# ComBat_seq is directly available
+?ComBat_seq
+```
+
+### 4.4 GenePattern Docker Configuration
+
+The GenePattern module should use a dedicated Docker container built on a Bioconductor base image:
+
+```dockerfile
+FROM bioconductor/bioconductor_docker:RELEASE_3_20
+
+RUN R -e "BiocManager::install(c('sva', 'edgeR', 'genefilter', 'BiocParallel'))" \
+    && install2.r --error mgcv
+
+# Copy module R script
+COPY combat_seq_wrapper.R /module/
+ENTRYPOINT ["Rscript", "/module/combat_seq_wrapper.R"]
+```
+
+---
+
+## 5. 🔄 Algorithm Internals & Computational Workflow
+
+### 5.1 Step-by-Step Algorithm Description
+
+```
+STEP 1: INPUT VALIDATION
+   ├── Verify counts is a matrix with non-negative integers
+   ├── Check batch vector length matches ncol(counts)
+   ├── Check for confounding between batch and group/covariates
+   └── Warn if NAs are present in count matrix
+
+STEP 2: DESIGN MATRIX CONSTRUCTION
+   ├── Build batch design matrix (batchmod)
+   ├── Build full biological covariate model (mod) if full_mod=TRUE
+   └── Combine into complete design matrix
+
+STEP 3: DISPERSION ESTIMATION (per batch)
+   ├── For each batch:
+   │   ├── If sufficient residual DF: use estimateGLMTagwiseDisp (gene-wise)
+   │   └── If insufficient DF: fallback to estimateGLMCommonDisp (common)
+   └── Gene-wise dispersion estimates stored per batch
+
+STEP 4: PARAMETER ESTIMATION via NB GLM
+   ├── Fit NB GLM: log(μᵢⱼ) = Xβ + Zγ  [X=bio covariates, Z=batch indicators]
+   ├── Extract batch-specific parameters:
+   │   ├── γᵢₕ: mean shift for gene i in batch h (additive batch effect)
+   │   └── δᵢₕ: dispersion multiplier for gene i in batch h
+   └── Output: raw estimates of gamma (location) and delta (scale) per batch
+
+STEP 5: EMPIRICAL BAYES SHRINKAGE (if shrink=TRUE)
+   ├── Estimate hyperparameters from gene subset (or all genes)
+   ├── Shrink gamma estimates toward grand mean
+   └── Shrink delta estimates toward grand mean (if shrink.disp=TRUE)
+
+STEP 6: BATCH EFFECT REMOVAL via QUANTILE MAPPING
+   ├── For each sample in each batch:
+   │   ├── Compute expected distribution without batch effects
+   │   ├── Map observed counts through quantile function of NB distribution
+   │   └── Round to nearest integer to preserve count nature
+   └── Handle ref_batch: skip adjustment for reference batch samples
+
+STEP 7: OUTPUT
+   └── Return gene × sample integer matrix, batch-corrected
+```
+
+### 5.2 Statistical Model
+
+The core model at the gene level for sample *j* in batch *h*:
+
+```
+Y_ijh ~ NB(μ_ijh, φ_ih)
+
+log(μ_ijh) = α_i + X_j^T β_i + γ_ih + ε_ij
+
+where:
+  α_i       = gene-specific intercept
+  X_j^T β_i = biological covariate effects (preserved)
+  γ_ih      = additive batch effect for gene i in batch h
+  φ_ih      = dispersion parameter, adjusted by δ_ih
+```
+
+The adjusted count is obtained by computing:
+
+```
+Y_ij* = F_NB^{-1}[ F_NB(Y_ijh; μ_ijh, φ_ih); μ_ij*, φ_i* ]
+```
+
+Where `μ_ij*` is the expected mean without batch effects and `φ_i*` is the batch-free dispersion.
+
+---
+
+## 6. 🔬 Comparative Analysis
+
+### 6.1 ComBat_Seq vs. Alternative Batch Correction Methods
+
+| Method | Suitable Data | Output Type | Known Batch Required | Preserves Integer Counts | EB Shrinkage | Notes |
+|---|---|---|---|---|---|---|
+| **ComBat_Seq** ✅ | Bulk RNA-seq raw counts | Integer count matrix | ✅ Yes | ✅ Yes | ✅ Yes | **Best for raw-count bulk RNA-seq with known batches** |
+| **ComBat (original)** | Microarray / normalized continuous | Continuous matrix | ✅ Yes | ❌ No | ✅ Yes | Appropriate for log-normalized data; produces negatives |
+| **limma::removeBatchEffect** | Normalized continuous (log-CPM, etc.) | Continuous matrix | ✅ Yes | ❌ No | ❌ No | Simple linear model; best for visualization only |
+| **RUVSeq** | RNA-seq counts | Count matrix | ❌ No (uses control genes) | ✅ Yes | ❌ No | Handles *unknown* batch sources; requires empirical controls |
+| **SVAseq** | RNA-seq counts | Surrogate variables | ❌ No | N/A (no corrected matrix) | ❌ No | Best for unknown confounders; surrogates used in DE model |
+| **DESeq2/edgeR covariate** | RNA-seq counts (in-model) | DE results only | ✅ Yes | N/A (no corrected matrix) | ❌ No | Statistically optimal for DE; no standalone corrected matrix |
+| **Harmony** | scRNA-seq (PCA embeddings) | Low-dim corrected embeddings | ✅/❌ | N/A | N/A | Primarily for single-cell data integration |
+
+### 6.2 Key Differentiators of ComBat_Seq
+
+> ✅ **Use ComBat_Seq when:**
+> - You have bulk RNA-seq **raw counts** (not normalized)
+> - Batch labels are **known** (sequencing run, site, date, etc.)
+> - You need a **standalone batch-corrected count matrix** for downstream tools
+> - Downstream analysis requires **integer counts** (DESeq2, edgeR, NOISeq)
+> - You want to perform **visualization and DE analysis** on the same corrected matrix
+> - Small batch sizes require empirical Bayes **regularization**
+
+> ❌ **Do NOT use ComBat_Seq when:**
+> - Input data is already normalized (RPKM, TPM, VST, rlog, log-CPM) → use ComBat or limma::removeBatchEffect
+> - Batch labels are **unknown** → use RUVSeq or SVAseq
+> - Data is **single-cell RNA-seq** → use Harmony, Seurat integration, or scVI
+> - Batch is **completely confounded** with biology (e.g., all treated samples in batch 1, all controls in batch 2)
+
+---
+
+## 7. ✅ Validation, Performance & Literature Status
+
+### 7.1 Primary Publication
+
+> **Zhang Y, Parmigiani G, Johnson WE.** ComBat-seq: batch effect adjustment for RNA-seq count data. *NAR Genomics and Bioinformatics.* 2020 Sep 21;**2(3)**:lqaa078.
+> **DOI:** [10.1093/nargab/lqaa078](https://doi.org/10.1093/nargab/lqaa078) | **PMID:** 33015620
+
+### 7.2 Benchmark Datasets Used in Validation
+
+| Dataset | Description | Key Finding |
+|---|---|---|
+| **GFRN (Growth Factor Receptor Network)** | 3-batch bulk RNA-seq study | ComBat-seq collapsed batch clusters in PCA while preserving biological signal; ComBat on logCPM introduced false significant differences between control samples across batches |
+| **Simulated datasets** | Negative binomial simulations with known ground-truth | ComBat-seq showed higher sensitivity and specificity in recovering true DE genes than ComBat+DESeq2 or ComBat+edgeR |
+| **Single-batch simulations** | Null condition testing | ComBat-seq maintained proper Type I error control |
+
+### 7.3 Key Validated Advantages
+
+1. **Eliminates false positive DE genes** introduced when ComBat is applied to logCPM before DESeq2
+2. **Higher statistical power** in recovering true DE genes compared to ComBat → DE pipeline
+3. **No negative values** in output — a persistent problem with ComBat on count data
+4. **Proper Type I error control** validated across simulation scenarios
+5. **Community adoption**: Integrated into official Bioconductor `sva` package (v3.36.0+), cited in Griffith Lab RNA-seq course, endorsed by Bioconductor community
+
+### 7.4 Known Limitations (Literature-Confirmed)
+
+| Limitation | Impact | Mitigation |
+|---|---|---|
+| Reduced power vs. batch-free data at FDR thresholds | Higher FDR in some DE results | Use DESeq2/edgeR's batch covariate model when no standalone corrected matrix is needed |
+| Requires known batch labels | Cannot correct unknown/latent batch effects | Combine with SVAseq or RUVSeq for unknown confounders |
+| Performance degrades with very unbalanced designs | Dispersion estimation instability | Ensure minimum 2–3 samples per batch; use `shrink=TRUE` |
+| Computationally intensive for large matrices | Long runtimes >20K genes × 500 samples | Consider gene subset for shrinkage estimation |
+| Batch–biology confounding is unresolvable | Error thrown; no correction possible | Ensure study design allows separation of batch from biology |
+
+---
+
+## 8. 🖥️ GenePattern Module Integration Considerations
+
+### 8.1 Module Architecture Overview
+
+```
+User Input (GUI)
+      │
+      ▼
+┌─────────────────────────────────────────┐
+│         GenePattern Web Interface        │
+│  ┌──────────────┐  ┌──────────────────┐ │
+│  │ Count Matrix │  │  Batch File      │ │
+│  │ (.gct/.tsv)  │  │  (.tsv)          │ │
+│  └──────┬───────┘  └────────┬─────────┘ │
+│         └────────┬──────────┘           │
+│         ┌────────▼────────┐             │
+│         │  Input Handler  │             │
+│         │  (R Wrapper)    │             │
+│         └────────┬────────┘             │
+└──────────────────┼──────────────────────┘
+                   │ (Docker Container)
+                   ▼
+┌──────────────────────────────────────────┐
+│  ComBat_seq R Function (sva package)     │
+│  ┌────────────────────────────────────┐  │
+│  │ NB GLM → EB Shrinkage → Mapping    │  │
+│  └────────────────────────────────────┘  │
+│         │                                │
+│         ▼                                │
+│  Adjusted Integer Count Matrix           │
+└──────────────────────────────────────────┘
+                   │
+                   ▼
+┌──────────────────────────────────────────┐
+│         Output Handler (R Wrapper)        │
+│  ┌─────────────────┐  ┌───────────────┐  │
+│  │ adjusted_counts │  │ stdout log    │  │
+│  │ .gct or .tsv    │  │ .txt          │  │
+│  └─────────────────┘  └───────────────┘  │
+└──────────────────────────────────────────┘
+```
+
+### 8.2 Recommended GenePattern Parameter Manifest
+
+```xml
+<!-- Required Parameters -->
+<parameter name="input.file" type="FILE" required="true" 
+           fileFormat="gct,tsv"
+           description="Raw count matrix (genes × samples). Must be untransformed integer counts. 
+                        GCT v1.2 or tab-separated values format."/>
+
+<parameter name="batch.file" type="FILE" required="true"
+           fileFormat="tsv"
+           description="Two-column TSV: sample names in column 1, batch labels in column 2.
+                        Sample names must match column headers in input.file."/>
+
+<!-- Biological Signal Group -->
+<parameter name="group.column" type="TEXT" required="false" default=""
+           description="Column name in metadata for primary biological condition (e.g., 'treatment').
+                        When provided, this signal is preserved during batch correction."/>
+
+<parameter name="full.mod" type="BOOLEAN" required="false" default="true"
+           description="If true, include biological condition in the model. Recommended: true.
+                        Set to false only if no group variable is provided (null model)."/>
+
+<!-- Advanced Options Group -->  
+<parameter name="shrink" type="BOOLEAN" required="false" default="false"
+           description="Apply empirical Bayes shrinkage on batch effect estimates. 
+                        Recommended for studies with fewer than 8 samples per batch."/>
+
+<parameter name="shrink.disp" type="BOOLEAN" required="false" default="false"
+           description="Apply shrinkage on dispersion parameter estimates.
+                        Only relevant when shrink=true."/>
+
+<parameter name="gene.subset.n" type="INTEGER" required="false" default=""
+           minValue="100"
+           description="Number of randomly selected genes for EB hyperparameter estimation.
+                        Only used when shrink=true. Leave blank to use all genes (default)."/>
+
+<parameter name="ref.batch" type="TEXT" required="false" default=""
+           description="Reference batch identifier. Data from this batch will not be adjusted;
+                        all other batches are corrected toward this reference. 
+                        Must exactly match a batch label in batch.file."/>
+
+<!-- Output Options Group -->
+<parameter name="output.format" type="TEXT" required="false" default="gct"
+           choiceList="gct,tsv"
+           description="Output file format: GCT (GenePattern standard) or TSV (tab-separated)."/>
+
+<parameter name="output.prefix" type="TEXT" required="false" default="combat_seq_output"
+           description="Prefix for output file names."/>
+```
+
+### 8.3 R Wrapper Script Logic (Pseudocode)
+
+```r
+#!/usr/bin/env Rscript
+# combat_seq_wrapper.R — GenePattern ComBat_Seq Module Wrapper
+
+# ── 1. Parse command-line arguments ────────────────────────────────────────
+args <- parse_genepattern_args()
+
+# ── 2. Load dependencies ────────────────────────────────────────────────────
+library(sva)
+library(edgeR)
+
+# ── 3. Read count matrix (GCT or TSV) ───────────────────────────────────────
+counts <- read_count_matrix(args$input.file)  # handles .gct and .tsv
+counts  <- as.matrix(counts)  # CRITICAL: ensure R matrix type
+
+# ── 4. Read and validate batch file ─────────────────────────────────────────
+batch_df <- read.table(args$batch.file, header=TRUE, sep="\t")
+batch    <- batch_df$batch[match(colnames(counts), batch_df$sample_name)]
+stopifnot("Sample names in batch file do not match count matrix" = !any(is.na(batch)))
+
+# ── 5. Prepare optional parameters ──────────────────────────────────────────
+group       <- if (!is.null(args$group.column)) batch_df[[args$group.column]] else NULL
+ref_batch   <- if (nchar(args$ref.batch) > 0) args$ref.batch else NULL
+gene_n      <- if (!is.null(args$gene.subset.n)) as.integer(args$gene.subset.n) else NULL
+
+# ── 6. Input validation ──────────────────────────────────────────────────────
+validate_inputs(counts, batch, group)  # check confounding, min samples per batch, etc.
+
+# ── 7. Run ComBat_seq ────────────────────────────────────────────────────────
+adjusted <- ComBat_seq(
+  counts        = counts,
+  batch         = batch,
+  group         = group,
+  full_mod      = args$full.mod,
+  shrink        = args$shrink,
+  shrink.disp   = args$shrink.disp,
+  gene.subset.n = gene_n,
+  ref_batch     = ref_batch
+)
+
+# ── 8. Write output ──────────────────────────────────────────────────────────
+write_output(adjusted, format=args$output.format, prefix=args$output.prefix)
+message("ComBat_Seq completed successfully.")
+```
+
+### 8.4 Error Handling Requirements
+
+| Error Condition | Detection | User Message |
+|---|---|---|
+| Counts not integer matrix | `is.integer(counts)` check | "Input counts must be a raw integer matrix. Do not provide normalized data (TPM, FPKM, etc.)." |
+| Batch–group confounding | Internal check in `ComBat_seq` | "Batch and biological group are completely confounded. Please review study design." |
+| Sample name mismatch | `match()` returns NA | "Sample names in batch file do not match count matrix column headers." |
+| Insufficient samples per batch | < 2 samples per batch | "Each batch must have at least 2 samples. Batch [X] has only [N] sample(s)." |
+| Single batch | Only 1 unique batch label | "Only one batch detected. No correction needed. Returning original counts." |
+| Reference batch not found | `ref_batch %in% unique(batch)` | "Reference batch '[X]' not found in batch labels: [available labels]." |
+| Memory overflow | `tryCatch` around main call | "Insufficient memory. Consider reducing the number of genes or samples." |
+
+---
+
+## 9. 📚 Literature & Citation Context
+
+### 9.1 Primary Citation
+```bibtex
+@article{zhang2020combatseq,
+  title   = {ComBat-seq: batch effect adjustment for RNA-seq count data},
+  author  = {Zhang, Yuqing and Parmigiani, Giovanni and Johnson, W Evan},
+  journal = {NAR Genomics and Bioinformatics},
+  volume  = {2},
+  number  = {3},
+  pages   = {lqaa078},
+  year    = {2020},
+  doi     = {10.1093/nargab/lqaa078},
+  pmid    = {33015620}
+}
+```
+
+### 9.2 Related References for Module Documentation
+
+```
+[1] Johnson WE, Li C, Rabinovic A. Adjusting batch effects in microarray expression data 
+    using empirical Bayes methods. Biostatistics. 2007;8(1):118-127.
+    → Original ComBat method (predecessor)
+
+[2] Leek JT, Johnson WE, Parker HS, et al. The sva package for removing batch effects 
+    and other unwanted variation in high-throughput experiments. 
+    Bioinformatics. 2012;28(6):882-883.
+    → sva package hosting ComBat_seq
+
+[3] Love MI, Huber W, Anders S. Moderated estimation of fold change and dispersion for 
+    RNA-seq data with DESeq2. Genome Biology. 2014;15(12):550.
+    → Key downstream tool
+
+[4] Robinson MD, McCarthy DJ, Smyth GK. edgeR: a Bioconductor package for differential 
+    expression analysis of digital gene expression data. 
+    Bioinformatics. 2010;26(1):139-140.
+    → Key downstream tool + provides dispersion estimation functions
+
+[5] Peng Liu et al. Highly effective batch effect correction method for RNA-seq count 
+    data (ComBat-ref). Computational and Structural Biotechnology Journal. 2025.
+    → Follow-on improvement method
+```
+
+### 9.3 Community Adoption Evidence
+- **Integrated** into Bioconductor `sva` package (v3.36.0+, 2021): reflects peer endorsement
+- **Featured** in Griffith Lab RNA-seq Bioinformatics Course as the recommended count-based batch correction approach
+- **Cited** in genome.cshlp.org batch correction methods comparison (2025)
+- **Implemented** in Python ecosystem as `pycombat_seq` within the `inmoose` package
+- **Integrated** in single-cell toolkit `singleCellTK` as `runComBatSeq()` for single-cell use
+- **Module available** in GenePattern public server for accessible GUI-based use
+
+---
+
+## 10. 📌 Summary Recommendations for GenePattern Module Development
+
+| Priority | Action Item |
+|---|---|
+| 🔴 **Critical** | Ensure input count matrix is coerced to `as.matrix()` in the R wrapper to prevent silent failures |
+| 🔴 **Critical** | Validate sample names in batch file against count matrix column headers before calling ComBat_seq |
+| 🔴 **Critical** | Implement confounding detection with a clear, user-readable error message |
+| 🟡 **Important** | Accept both GCT (v1.2) and TSV input formats; auto-detect by file extension |
+| 🟡 **Important** | Expose `ref_batch` as an optional parameter — critical for multi-center translational studies |
+| 🟡 **Important** | Set `shrink=FALSE` as default but clearly document when to enable it (small n < 8/batch) |
+| 🟡 **Important** | Include QC output: brief log file summarizing batch sizes, dispersion estimates, shrinkage status |
+| 🟢 **Recommended** | Add a post-correction PCA plot as optional QC output to visualize batch correction quality |
+| 🟢 **Recommended** | Clearly document in module description that output is compatible with DESeq2, edgeR, limma-voom |
+| 🟢 **Recommended** | Provide sample test data (GCT + batch TSV) for validation of the deployed module |
+| 🔵 **Optional** | Support multi-covariate input via a structured metadata TSV with user-specified covariate columns |
+
+---
+
+## 🗂️ Sources Referenced
+
+| # | Source | Type |
+|---|---|---|
+| 1 | Zhang Y et al. *NAR Genomics and Bioinformatics* 2020 | Primary publication (peer-reviewed) |
+| 2 | github.com/zhangyuqing/ComBat-seq | Original source repository + README |
+| 3 | github.com/genepattern/ComBat_Seq | GenePattern module repository |
+| 4 | rdrr.io/bioc/sva/src/R/ComBat_seq.R | Bioconductor sva package source code |
+| 5 | rdrr.io/bioc/sva/man/ComBat_seq.html | Official function documentation |
+| 6 | bioconductor.org/packages/sva | Bioconductor package homepage |
+| 7 | pubmed.ncbi.nlm.nih.gov/33015620 | PubMed abstract |
+| 8 | rnabio.org/module-03-expression/Batch-Correction | Griffith Lab RNA-seq Course |
+| 9 | pmc.ncbi.nlm.nih.gov (ComBat-ref paper, 2025) | Follow-on comparative benchmarking |
+| 10 | Biostars, Bioconductor Support forums | Community usage patterns and known issues |
+
+---
+
+*This research report was compiled using authoritative primary sources, official documentation, peer-reviewed literature, and community knowledge bases. All technical specifications reflect the current Bioconductor sva package implementation as of 2024–2025.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

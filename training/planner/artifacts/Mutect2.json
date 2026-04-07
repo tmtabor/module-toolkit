@@ -1,0 +1,184 @@
+{
+  "module_name": "Mutect2",
+  "description": "Runs Gatk Mutect2",
+  "author": "Garvit Agarwal",
+  "input_file_formats": [
+    "BAM",
+    "VCF",
+    "bam",
+    "fa",
+    "gz",
+    "intervals",
+    "vcf"
+  ],
+  "language": "Python",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:86332:1",
+  "plan": "## Mutect2 GenePattern Module — Implementation Plan\n\n### 1. Overview\nMutect2 is a GenePattern module that Runs Gatk Mutect2\n\n### 2. Parameters\nThe module exposes 10 parameters:\n- Required: Reference, Tumor.BAM, Output, Tumor.sample\n- Optional: Normal.BAM, Normal.sample, Germline.resource, Pannel.of.Normals, intervals, Parallel.Processing\n\n### 3. Command Line\n```\npython3 <libdir>mutect2Parallel.py -R <Reference>  -I <Tumor.BAM> -O <Output>  -N <Normal.BAM> --tumor_sample <Tumor.sample> --normal_sample <Normal.sample>  --germline_resource <Germline.resource> -L <intervals> -Pon <Pannel.of.Normals> -J <job.cpuCount> <Parallel.Processing>\n```\n\n### 4. Docker Image\nDocker image: broadinstitute/gatk\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "mutect2Parallel.py",
+  "command_line": "python3 <libdir>mutect2Parallel.py -R <Reference>  -I <Tumor.BAM> -O <Output>  -N <Normal.BAM> --tumor_sample <Tumor.sample> --normal_sample <Normal.sample>  --germline_resource <Germline.resource> -L <intervals> -Pon <Pannel.of.Normals> -J <job.cpuCount> <Parallel.Processing>",
+  "parameters": [
+    {
+      "name": "Reference",
+      "description": "Reference genome",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fa"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Reference",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Tumor.BAM",
+      "description": "Input BAM (tumor)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "BAM",
+        "bam"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Tumor.BAM",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output",
+      "description": "Output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Output",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Tumor.sample",
+      "description": "Tumor sample name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Tumor.sample",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Normal.BAM",
+      "description": "Input BAM (normal)",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "BAM",
+        "bam"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Normal.BAM",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Normal.sample",
+      "description": "Normal sample name (Required if Normal.BAM is passed through)",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Normal.sample",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Germline.resource",
+      "description": "Germline-resource file (vcf)",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gz",
+        "VCF",
+        "vcf"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Germline.resource",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Pannel.of.Normals",
+      "description": "Pannel of Normals file (vcf)",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gz",
+        "VCF",
+        "vcf"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Pannel.of.Normals",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "intervals",
+      "description": "One or more genomic intervals over which to operate.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "intervals"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--intervals",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Parallel.Processing",
+      "description": "When selected, will run a separate instance of Mutect2 for each of the 22 chromosomes, outputs a seperate VCF file for each. Can not be used with intervals. Output files will be named chr1_somatic.vcf, chr2_somatic.vcf, ...",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes",
+          "value": "-S"
+        },
+        {
+          "display": "No",
+          "value": ""
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Parallel.Processing",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "broadinstitute/gatk"
+}

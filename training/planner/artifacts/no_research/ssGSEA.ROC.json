@@ -1,0 +1,88 @@
+{
+  "module_name": "ssGSEA.ROC",
+  "description": "Generate ROC curves and calculate the AUC from ssGSEA results and a binary phenotype classification.",
+  "author": "Anthony S. Castanza;UCSD-MesirovLab",
+  "input_file_formats": [
+    "cls",
+    "gct"
+  ],
+  "language": "R",
+  "categories": [
+    "statistical methods",
+    "gsea"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:57530:1",
+  "plan": "## ssGSEA.ROC GenePattern Module — Implementation Plan\n\n### 1. Overview\nssGSEA.ROC is a GenePattern module that Generate ROC curves and calculate the AUC from ssGSEA results and a binary phenotype classification.\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: PROJ.gct, CLS, Reverse, Plot.Top.Results\n- Optional: none\n\n### 3. Command Line\n```\n<Rscript> <libdir>ssGSEA_ROC.R --ssmatrix <PROJ.gct> --clsfile <CLS> --reverse <Reverse> --plotnsets <Plot.Top.Results>\n```\n\n### 4. Docker Image\nDocker image: genepattern/ssgsea_roc\\:1.1\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "ssGSEA_ROC.R",
+  "command_line": "<Rscript> <libdir>ssGSEA_ROC.R --ssmatrix <PROJ.gct> --clsfile <CLS> --reverse <Reverse> --plotnsets <Plot.Top.Results>",
+  "parameters": [
+    {
+      "name": "PROJ.gct",
+      "description": "PROJ.gct result from ssGSEA.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--PROJ.gct",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "CLS",
+      "description": "Two Phenotype CLS file for classifying the ssGSEA projections.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--CLS",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Reverse",
+      "description": "Reverse direction of the projections. <br> By default (FALSE) ROCR will calculate statistics for the first phenotype in the cls vs. the second phenotype. <br> Setting this flag to \"TRUE\" will calculate the second phenotype vs. the first phenotype.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        },
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Reverse",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Plot.Top.Results",
+      "description": "Plot ROC curves for the top N gene sets in each direction.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "20",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Plot.Top.Results",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/ssgsea_roc:1.1"
+}

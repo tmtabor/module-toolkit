@@ -1,0 +1,136 @@
+{
+  "module_name": "PreprocessVelocityTranscriptome",
+  "description": "Extract transcript and intron sequences from the genome sequence using the eisaR package in order to quantify both intronic (unprocessed) and exonic (processed) RNA abundances in each cell with alevin.<br>A necessary preprocessing step to enable RNA velocity analysis.",
+  "author": "Anthony S. Castanza;UCSD-MesirovLab",
+  "input_file_formats": [
+    "FASTA",
+    "fa",
+    "fa.gz",
+    "fasta",
+    "fasta.gz",
+    "gtf",
+    "gtf.gz"
+  ],
+  "language": "R",
+  "categories": [
+    "preprocess & utilities",
+    "single-cell",
+    "singlecell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:87373:1",
+  "plan": "## PreprocessVelocityTranscriptome GenePattern Module — Implementation Plan\n\n### 1. Overview\nPreprocessVelocityTranscriptome is a GenePattern module that Extract transcript and intron sequences from the genome sequence using the eisaR package in order to quantify both intronic (unprocessed) and exonic (processed) RNA abundances in each cell with alevin.<br>A necessary preprocessing step to enable RNA velocity analysis.\n\n### 2. Parameters\nThe module exposes 6 parameters:\n- Required: GTF, Genome.FASTA, Insert.Size, Intron.Flank.Trim, Intron.Extraction, Join.Overlapping.Introns\n- Optional: none\n\n### 3. Command Line\n```\nRscript /module/txome.for.velocity.R --gtf <GTF> --genome <Genome.FASTA> --length <Insert.Size> --trim <Intron.Flank.Trim> --type <Intron.Extraction> --join <Join.Overlapping.Introns>\n```\n\n### 4. Docker Image\nDocker image: genepattern/prepvelocitytxome\\:v1\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "txome.for.velocity.R",
+  "command_line": "Rscript /module/txome.for.velocity.R --gtf <GTF> --genome <Genome.FASTA> --length <Insert.Size> --trim <Intron.Flank.Trim> --type <Intron.Extraction> --join <Join.Overlapping.Introns>",
+  "parameters": [
+    {
+      "name": "GTF",
+      "description": "A GTF file containing the genomic ranges to extract features from for quantification.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gtf.gz",
+        "gtf",
+        "gtf.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--GTF",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Genome.FASTA",
+      "description": "A FASTA file of the genomic sequence corresponding to the organism's GTF file.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fa.gz",
+        "fa",
+        "fa.gz",
+        "FASTA",
+        "fasta",
+        "fasta.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Genome.FASTA",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Insert.Size",
+      "description": "Insert size/RNA read length.<br>For standard 10x Chromium Single Cell 3' v3/v3.1 chemistry the insert size is <b>\"91\"</b>, for 10x Chromium Single Cell 3' v2 the insert size is <b>\"98\"</b> for dual indexed 10x Chromium kits containing an i5 index, the insert size is <b>\"90\"</b>. This value is used to determine valid alignment positions across exon-intron junctions.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Insert.Size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Intron.Flank.Trim",
+      "description": "Adjusts the Insert.Size value so that reads that align to an exon-intron junction must have at least Intron.Flank.Trim base pair alignment to the intron in order to be quantified as an intronic alignment. Typically 1-5 basepairs.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Intron.Flank.Trim",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Intron.Extraction",
+      "description": "Consider transcripts separately (\"separate\") when extracting intronic regions, or collapsed to gene level (\"collapse\").",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "separate",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "separate",
+          "value": "separate"
+        },
+        {
+          "display": "collapse",
+          "value": "collapse"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Intron.Extraction",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Join.Overlapping.Introns",
+      "description": "Some transcripts/genes may have intronic sequences that overlap. These overlapping sequences can be combined into a single record for quantification or be kept separate.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "TRUE"
+        },
+        {
+          "display": "False",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Join.Overlapping.Introns",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/prepvelocitytxome:v1"
+}

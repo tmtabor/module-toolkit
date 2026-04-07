@@ -1,0 +1,58 @@
+Create a comprehensive structured plan for the GenePattern module for 'ExtractFCSKeywords'.
+            
+            Tool Information:
+            - Name: ExtractFCSKeywords
+            - Version: Updated to release candidate from Josef which includes more lenient CFCS library
+            - Language: Java
+            - Description: Extracts keyword(s) value(s) from a Flow Cytometry Standard (FCS) file.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ExtractFCSKeywords",
+  "parameters": [
+    {
+      "name": "Input.FCS.data.file",
+      "type": "FILE",
+      "description": "The input FCS data file from which the module will extract keyword/value pairs.",
+      "required": true,
+      "default_value": "",
+      "file_format": "fcs",
+      "prefix": "-InputFile\\:"
+    },
+    {
+      "name": "Keywords.output.mode",
+      "type": "java.lang.String",
+      "description": "The file format to be used to store the extracted keywords/value pairs.",
+      "required": true,
+      "default_value": "CSV",
+      "choices": "CSV\\=CSV file, default;FCS\\=Text file with FCS text segment chunk",
+      "prefix": "-KeywordsMode\\:"
+    },
+    {
+      "name": "Keywords.output.file.name",
+      "type": "java.lang.String",
+      "description": "The name for the file in which the keyword/value pairs are stored.",
+      "required": true,
+      "default_value": "<Input.FCS.data.file_basename>",
+      "prefix": "-KeywordsOutputFile\\:"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Flow Cytometry",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "command_line": "<java> <java_flags> -jar <libdir>extractfcskeywords.jar <Input.FCS.data.file> <Keywords.output.file.name> <Keywords.output.mode>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

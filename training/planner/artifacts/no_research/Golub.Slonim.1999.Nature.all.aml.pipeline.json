@@ -1,0 +1,20 @@
+{
+  "module_name": "Golub.Slonim.1999.Nature.all.aml.pipeline",
+  "description": "ALL/AML methodology, from Golub and Slonim et al., 1999",
+  "author": "GenePattern",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "pipeline"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:58130:1",
+  "plan": "## Golub.Slonim.1999.Nature.all.aml.pipeline GenePattern Module — Implementation Plan\n\n### 1. Overview\nGolub.Slonim.1999.Nature.all.aml.pipeline is a GenePattern module that ALL/AML methodology, from Golub and Slonim et al., 1999\n\n### 2. Parameters\nThe module exposes 0 parameters:\n- Required: none\n- Optional: none\n\n### 3. Command Line\n```\n<java>  -Dgenepattern.properties\\=<resources> -DLSID\\=<LSID> -DPIPELINE_ARG.StopAfterTask\\=<PIPELINE_ARG.StopAfterTask> -DGenePatternURL\\=<GenePatternURL>  org.genepattern.server.webapp.RunPipelineSoap <GenePatternURL>getPipelineModel.jsp?name\\=<LSID>&userid\\=<userid> <userid>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.sh",
+  "command_line": "<java>  -Dgenepattern.properties=<resources> -DLSID=<LSID> -DPIPELINE_ARG.StopAfterTask=<PIPELINE_ARG.StopAfterTask> -DGenePatternURL=<GenePatternURL>  org.genepattern.server.webapp.RunPipelineSoap <GenePatternURL>getPipelineModel.jsp?name=<LSID>&userid=<userid> <userid>",
+  "parameters": [],
+  "docker_image_tag": ""
+}

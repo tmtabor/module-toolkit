@@ -1,0 +1,79 @@
+{
+  "module_name": "SnpViewer",
+  "description": "Displays a heat map of snp data",
+  "author": "GenePattern",
+  "input_file_formats": [
+    "cn",
+    "snp",
+    "xcn"
+  ],
+  "language": "Java",
+  "categories": [
+    "Variant Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:71605:1",
+  "plan": "## SnpViewer GenePattern Module — Implementation Plan\n\n### 1. Overview\nSnpViewer is a GenePattern module that Displays a heat map of snp data\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: max.memory\n- Optional: dataset.filename, sample.info.filename, sample.list.filename\n\n### 3. Command Line\n```\n<java> -Xmx<max.memory>  -jar <libdir>snpviewer.jar -cnFile <dataset.filename> -sampleInfoFile <sample.info.filename> -sampleListFile <sample.list.filename>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "snpviewer.jar",
+  "command_line": "<java> -Xmx<max.memory>  -jar <libdir>snpviewer.jar -cnFile <dataset.filename> -sampleInfoFile <sample.info.filename> -sampleListFile <sample.list.filename>",
+  "parameters": [
+    {
+      "name": "dataset.filename",
+      "description": "The dataset to display - .snp, .cn, .xcn",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "snp",
+        "xcn",
+        "cn"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dataset.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.info.filename",
+      "description": "Sample information file",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sample.info.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.list.filename",
+      "description": "Sample list file",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sample.list.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.memory",
+      "description": "Maximum memory",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "700m",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.memory",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

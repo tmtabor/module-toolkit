@@ -1,0 +1,255 @@
+{
+  "module_name": "TCGA.ssGSEA.ROC",
+  "description": "Pipeline for ssGSEA_ROC analysis of TCGA samples",
+  "author": "Anthony S. Castanza",
+  "input_file_formats": [
+    "gmt",
+    "gmx",
+    "grp"
+  ],
+  "language": "Java",
+  "categories": [
+    "pipeline",
+    "gsea"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:51459:1",
+  "plan": "## TCGA.ssGSEA.ROC GenePattern Module — Implementation Plan\n\n### 1. Overview\nTCGA.ssGSEA.ROC is a GenePattern module that Pipeline for ssGSEA_ROC analysis of TCGA samples\n\n### 2. Parameters\nThe module exposes 6 parameters:\n- Required: TCGA.SampleSelection1.TCGA.Collection, TCGA.SampleSelection1.Gene.Symbol, TCGA.SampleSelection1.High.Expression, TCGA.SampleSelection1.Low.Expression, ssGSEA2.gene.sets.database.files, ssGSEA2.min.gene.set.size\n- Optional: none\n\n### 3. Command Line\n```\n<java>  -Dgenepattern.properties\\=<resources> -DLSID\\=<LSID> -DPIPELINE_ARG.StopAfterTask\\=<PIPELINE_ARG.StopAfterTask> -DGenePatternURL\\=<GenePatternURL>  org.genepattern.server.webapp.RunPipelineSoap <GenePatternURL>getPipelineModel.jsp?name\\=<LSID>&userid\\=<userid> <userid> TCGA.SampleSelection1.TCGA.Collection\\=<TCGA.SampleSelection1.TCGA.Collection> TCGA.SampleSelection1.Gene.Symbol\\=<TCGA.SampleSelection1.Gene.Symbol> TCGA.SampleSelection1.High.Expression\\=<TCGA.SampleSelection1.High.Expression> TCGA.SampleSelection1.Low.Expression\\=<TCGA.SampleSelection1.Low.Expression> ssGSEA2.gene.sets.database.files\\=<ssGSEA2.gene.sets.database.files> ssGSEA2.min.gene.set.size\\=<ssGSEA2.min.gene.set.size>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.sh",
+  "command_line": "<java>  -Dgenepattern.properties=<resources> -DLSID=<LSID> -DPIPELINE_ARG.StopAfterTask=<PIPELINE_ARG.StopAfterTask> -DGenePatternURL=<GenePatternURL>  org.genepattern.server.webapp.RunPipelineSoap <GenePatternURL>getPipelineModel.jsp?name=<LSID>&userid=<userid> <userid> TCGA.SampleSelection1.TCGA.Collection=<TCGA.SampleSelection1.TCGA.Collection> TCGA.SampleSelection1.Gene.Symbol=<TCGA.SampleSelection1.Gene.Symbol> TCGA.SampleSelection1.High.Expression=<TCGA.SampleSelection1.High.Expression> TCGA.SampleSelection1.Low.Expression=<TCGA.SampleSelection1.Low.Expression> ssGSEA2.gene.sets.database.files=<ssGSEA2.gene.sets.database.files> ssGSEA2.min.gene.set.size=<ssGSEA2.min.gene.set.size>",
+  "parameters": [
+    {
+      "name": "TCGA.SampleSelection1.TCGA.Collection",
+      "description": "TCGA Study for sample selection",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "GBM",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Acute Myeloid Leukemia (LAML)",
+          "value": "LAML"
+        },
+        {
+          "display": "Adrenocortical carcinoma (ACC)",
+          "value": "ACC"
+        },
+        {
+          "display": "Bladder urothelial carcinoma (BLCA)",
+          "value": "BLCA"
+        },
+        {
+          "display": "Brain Lower Grade Glioma (LGG)",
+          "value": "LGG"
+        },
+        {
+          "display": "Breast invasive carcinoma (BRCA)",
+          "value": "BRCA"
+        },
+        {
+          "display": "Cervical and endocervical cancers (CESC)",
+          "value": "CESC"
+        },
+        {
+          "display": "Cholangiocarcinoma (CHOL)",
+          "value": "CHOL"
+        },
+        {
+          "display": "Colon adenocarcinoma (COAD)",
+          "value": "COAD"
+        },
+        {
+          "display": "Colorectal adenocarcinoma (COADREAD)",
+          "value": "COADREAD"
+        },
+        {
+          "display": "Esophageal carcinoma (ESCA)",
+          "value": "ESCA"
+        },
+        {
+          "display": "Glioblastoma multiforme (GBM)",
+          "value": "GBM"
+        },
+        {
+          "display": "Glioma (GBMLGG)",
+          "value": "GBMLGG"
+        },
+        {
+          "display": "Head and Neck squamous cell carcinoma (HNSC)",
+          "value": "HNSC"
+        },
+        {
+          "display": "Kidney Chromophobe (KICH)",
+          "value": "KICH"
+        },
+        {
+          "display": "Kidney renal clear cell carcinoma (KIRC)",
+          "value": "KIRC"
+        },
+        {
+          "display": "Kidney renal papillary cell carcinoma (KIRP)",
+          "value": "KIRP"
+        },
+        {
+          "display": "Liver hepatocellular carcinoma (LIHC)",
+          "value": "LIHC"
+        },
+        {
+          "display": "Lung adenocarcinoma (LUAD)",
+          "value": "LUAD"
+        },
+        {
+          "display": "Lung squamous cell carcinoma (LUSC)",
+          "value": "LUSC"
+        },
+        {
+          "display": "Lymphoid Neoplasm Diffuse Large B-cell Lymphoma (DLBC)",
+          "value": "DLBC"
+        },
+        {
+          "display": "Mesothelioma (MESO)",
+          "value": "MESO"
+        },
+        {
+          "display": "Ovarian serous cystadenocarcinoma (OV)",
+          "value": "OV"
+        },
+        {
+          "display": "Pan-kidney cohort (KICH+KIRC+KIRP) (KIPAN)",
+          "value": "KIPAN"
+        },
+        {
+          "display": "Pancreatic adenocarcinoma (PAAD)",
+          "value": "PAAD"
+        },
+        {
+          "display": "Pheochromocytoma and Paraganglioma (PCPG)",
+          "value": "PCPG"
+        },
+        {
+          "display": "Prostate adenocarcinoma (PRAD)",
+          "value": "PRAD"
+        },
+        {
+          "display": "Rectum adenocarcinoma (READ)",
+          "value": "READ"
+        },
+        {
+          "display": "Sarcoma (SARC)",
+          "value": "SARC"
+        },
+        {
+          "display": "Skin Cutaneous Melanoma (SKCM)",
+          "value": "SKCM"
+        },
+        {
+          "display": "Stomach adenocarcinoma (STAD)",
+          "value": "STAD"
+        },
+        {
+          "display": "Stomach and Esophageal carcinoma (STES)",
+          "value": "STES"
+        },
+        {
+          "display": "Testicular Germ Cell Tumors (TGCT)",
+          "value": "TGCT"
+        },
+        {
+          "display": "Thymoma (THYM)",
+          "value": "THYM"
+        },
+        {
+          "display": "Thyroid carcinoma (THCA)",
+          "value": "THCA"
+        },
+        {
+          "display": "Uterine Carcinosarcoma (UCS)",
+          "value": "UCS"
+        },
+        {
+          "display": "Uterine Corpus Endometrial Carcinoma (UCEC)",
+          "value": "UCEC"
+        },
+        {
+          "display": "Uveal Melanoma (UVM)",
+          "value": "UVM"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--TCGA.SampleSelection1.TCGA.Collection",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "TCGA.SampleSelection1.Gene.Symbol",
+      "description": "HGNC Gene Symbol to use for expression level thresholding",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--TCGA.SampleSelection1.Gene.Symbol",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "TCGA.SampleSelection1.High.Expression",
+      "description": "mRNA expression is greater than or equal to x standard deviations above the mean. <br>\\n(mRNA expression z-scores relative to all samples)",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--TCGA.SampleSelection1.High.Expression",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "TCGA.SampleSelection1.Low.Expression",
+      "description": "mRNA expression is less than or equal to x standard deviations below the mean. <br>\\n(mRNA expression z-scores relative to all samples)",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "-1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--TCGA.SampleSelection1.Low.Expression",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "ssGSEA2.gene.sets.database.files",
+      "description": "Gene sets database from GSEA website.  Upload a gene set if your gene set is not listed as a choice from MsigDB.",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": [
+        "gmt",
+        "gmx",
+        "grp"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--ssGSEA2.gene.sets.database.files",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "ssGSEA2.min.gene.set.size",
+      "description": "Gene sets with overlap smaller than this are excluded from the analysis.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--ssGSEA2.min.gene.set.size",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

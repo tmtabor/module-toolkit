@@ -1,0 +1,80 @@
+Create a comprehensive structured plan for the GenePattern module for 'CummeRbund.SelectedConditionsReport'.
+            
+            Tool Information:
+            - Name: CummeRbund.SelectedConditionsReport
+            - Version: Updated to make use of the R package installer.
+            - Language: unknown
+            - Description: [**Beta Release** Contact gp-help with any issues. Check stdout.txt and stderr.txt for errors] Cuffdiff visualization package providing plots based on a user-provided list of conditions.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "CummeRbund.SelectedConditionsReport",
+  "parameters": [
+    {
+      "name": "cuffdiff.input",
+      "type": "FILE",
+      "description": "A Cuffdiff job, a previous CummeRbund job, or a cuffData.db file from a previous CummeRbund job.",
+      "required": true,
+      "default_value": "",
+      "file_format": "directory;db"
+    },
+    {
+      "name": "selected.conditions",
+      "type": "java.lang.String",
+      "description": "Specifies the conditions (samples) to be used in the plots.  This should be a comma-separated list of conditions, using the same names as in the upstream Cuffdiff job; leave this blank to use all conditions.  If blank, no pairwise comparison plots will be generated.",
+      "required": false,
+      "default_value": "",
+      "prefix": "--selected.conditions\\="
+    },
+    {
+      "name": "output.format",
+      "type": "java.lang.String",
+      "description": "The output file format.",
+      "required": true,
+      "default_value": "pdf",
+      "choices": "pdf;svg;png"
+    },
+    {
+      "name": "feature.level",
+      "type": "java.lang.String",
+      "description": "Feature level for the report.",
+      "required": true,
+      "default_value": "genes",
+      "choices": "genes\\=genes;isoforms\\=isoforms;TSS\\=transcription start site (TSS);CDS\\=coding sequence (CDS)"
+    },
+    {
+      "name": "report.as.aggregate",
+      "type": "java.lang.String",
+      "description": "Controls whether reporting should be done for individual replicates or aggregate condition/sample values.  The default is to use aggregate sample values.  Note that the Volcano plot always shows aggregate samples.",
+      "required": true,
+      "default_value": "yes",
+      "choices": "yes;no"
+    },
+    {
+      "name": "log.transform",
+      "type": "java.lang.String",
+      "description": "Whether or not to log transform the FPKM values.  Note that the FPKM values are always log transformed for the Volcano plots and that the Scatter plot will use a log2 rather than log10 transformation.",
+      "required": true,
+      "default_value": "yes",
+      "choices": "yes;no"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "RNA-seq",
+  "author": "Loyal Goff, MIT Computer Science and Artificial Intelligence Lab; David Eby, Broad Institute",
+  "command_line": "<R2.15_Rscript> --no-save --quiet --slave --no-restore <libdir>run_gp_cummerbund_selected_conditions_report.R <libdir> --cuffdiff.input\\=<cuffdiff.input> <selected.conditions> --output.format\\=<output.format> --feature.level\\=<feature.level> --report.as.aggregate\\=<report.as.aggregate> --log.transform\\=<log.transform>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

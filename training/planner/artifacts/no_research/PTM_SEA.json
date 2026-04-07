@@ -1,0 +1,292 @@
+{
+  "module_name": "PTM_SEA",
+  "description": "PTM-SEA for use with PTMsigDB",
+  "author": "Karsten Krug and D. R. Mani;Broad Institute",
+  "input_file_formats": [
+    "gct",
+    "gmt"
+  ],
+  "language": "R",
+  "categories": [
+    "Proteomics"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:20792:1",
+  "plan": "## PTM_SEA GenePattern Module — Implementation Plan\n\n### 1. Overview\nPTM_SEA is a GenePattern module that PTM-SEA for use with PTMsigDB\n\n### 2. Parameters\nThe module exposes 14 parameters:\n- Required: input.data, output.prefix, pathway.db, normalization, weight, correlation, test.type, score.type, n.permutations, min.overlap, extended.output, export, global.FDR, light.speed\n- Optional: none\n\n### 3. Command Line\n```\nRscript <libdir>ssgsea-cli.R <input.data> <output.prefix> <pathway.db> <normalization> <weight> <correlation> <test.type> <score.type> <n.permutations> <min.overlap> <extended.output> <export>  <global.FDR> <light.speed>\n```\n\n### 4. Docker Image\nDocker image: broadcptac/pgdac_ssgsea\\:4\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "ssgsea-cli.R",
+  "command_line": "Rscript <libdir>ssgsea-cli.R <input.data> <output.prefix> <pathway.db> <normalization> <weight> <correlation> <test.type> <score.type> <n.permutations> <min.overlap> <extended.output> <export>  <global.FDR> <light.speed>",
+  "parameters": [
+    {
+      "name": "input.data",
+      "description": "Input data file (gct format)",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-i",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "Prefix for output file names",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "<input.data_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-o",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "pathway.db",
+      "description": "Pathway database (gmt format)",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gmt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--db",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "normalization",
+      "description": "Sample normalization method",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "rank",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "rank",
+          "value": "rank"
+        },
+        {
+          "display": "log",
+          "value": "log"
+        },
+        {
+          "display": "log.rank",
+          "value": "log.rank"
+        },
+        {
+          "display": "none",
+          "value": "none"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--norm",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "weight",
+      "description": "When weight\\=\\=0, all genes have the same weight; if weight>0 actual values matter and can change the resulting score",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.75",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--weight",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "correlation",
+      "description": "Correlation type",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "z.score",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "z.score",
+          "value": "z.score"
+        },
+        {
+          "display": "rank",
+          "value": "rank"
+        },
+        {
+          "display": "symm.rank",
+          "value": "symm.rank"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--correl",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "test.type",
+      "description": "Test statistic",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "area.under.RES",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "area.under.RES",
+          "value": "area.under.RES"
+        },
+        {
+          "display": "Kolmogorov-Smirnov",
+          "value": "Kolmogorov-Smirnov"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--test",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "score.type",
+      "description": "Enrichment score type",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "NES",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "NES",
+          "value": "NES"
+        },
+        {
+          "display": "ES",
+          "value": "ES"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--score",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "n.permutations",
+      "description": "Number of permutations",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--perm",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.overlap",
+      "description": "Minimum overlap between signature and data set",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--minoverlap",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "extended.output",
+      "description": "If TRUE additional stats on signature coverage etc. will be included as row annotations in the GCT results files",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--extendedoutput",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "export",
+      "description": "For each signature export expression GCT files",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        },
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--export",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "global.FDR",
+      "description": "If TRUE global FDR across all data columns is calculated",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--globalfdr",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "light.speed",
+      "description": "If TRUE processing will be parallized across gene sets",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--lightspeed",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "broadcptac/pgdac_ssgsea:4"
+}

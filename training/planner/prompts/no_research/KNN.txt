@@ -1,0 +1,138 @@
+Create a comprehensive structured plan for the GenePattern module for 'KNN'.
+            
+            Tool Information:
+            - Name: KNN
+            - Version: Set default distance measure to Euclidean
+            - Language: Java
+            - Description: K-nearest neighbors classification
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "KNN",
+  "parameters": [
+    {
+      "name": "train.filename",
+      "type": "FILE",
+      "description": "training data file name - .gct, .res, .odf type \\= Dataset, ignored if a saved model (saved.model.filename) is used",
+      "required": false,
+      "default_value": "",
+      "file_format": "res;gct;Dataset"
+    },
+    {
+      "name": "train.class.filename",
+      "type": "FILE",
+      "description": "class file for training data - .cls, ignored if a saved model (saved.model.filename) is used",
+      "required": false,
+      "default_value": "",
+      "file_format": "cls"
+    },
+    {
+      "name": "saved.model.filename",
+      "type": "FILE",
+      "description": "input KNN model file - .odf type \\= KNN Prediction Model",
+      "required": false,
+      "default_value": "",
+      "file_format": "KNN Prediction Model"
+    },
+    {
+      "name": "model.file",
+      "type": "java.lang.String",
+      "description": "name of output KNN model file  - .odf type \\= KNN Prediction Model",
+      "required": false,
+      "default_value": "<train.filename_basename>.model"
+    },
+    {
+      "name": "test.filename",
+      "type": "FILE",
+      "description": "test data file name - .gct, .res, .odf type \\= Dataset",
+      "required": false,
+      "default_value": "",
+      "file_format": "gct;res;Dataset"
+    },
+    {
+      "name": "test.class.filename",
+      "type": "FILE",
+      "description": "class file for test data - .cls",
+      "required": false,
+      "default_value": "",
+      "file_format": "cls"
+    },
+    {
+      "name": "num.features",
+      "type": "java.lang.Integer",
+      "description": "number of selected features if feature list filename is not specified",
+      "required": false,
+      "default_value": "10"
+    },
+    {
+      "name": "feature.selection.statistic",
+      "type": "java.lang.Integer",
+      "description": "statistic to use to perform feature selection",
+      "required": false,
+      "default_value": "0",
+      "choices": "0\\=SNR;1\\=T-Test;2\\=SNR (median);3\\=T-Test (median);4\\=SNR (min std);5\\=T-Test (min std);6\\=SNR (median, min std);7\\=T-Test (median, min std)"
+    },
+    {
+      "name": "min.std",
+      "type": "java.lang.Float",
+      "description": "minimum standard deviation if feature selection statistic includes min std option",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "feature.list.filename",
+      "type": "FILE",
+      "description": "features to use for prediction",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "num.neighbors",
+      "type": "java.lang.Integer",
+      "description": "number of neighbors for KNN",
+      "required": false,
+      "default_value": "3"
+    },
+    {
+      "name": "weighting.type",
+      "type": "java.lang.String",
+      "description": "weighting type for neighbors",
+      "required": false,
+      "default_value": "distance",
+      "choices": "1\\=none;2\\=One-over-k;3\\=distance"
+    },
+    {
+      "name": "distance.measure",
+      "type": "java.lang.String",
+      "description": "distance measure",
+      "required": false,
+      "default_value": "1",
+      "choices": "2\\=Cosine Distance;1\\=Euclidean Distance"
+    },
+    {
+      "name": "pred.results.file",
+      "type": "java.lang.String",
+      "description": "name of output file for prediction results - .odf",
+      "required": false,
+      "default_value": "<test.filename_basename>.pred.odf"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Prediction",
+  "author": "Joshua Korn, Joshua Gould (Broad Institute)",
+  "command_line": "<java> <java_flags> -cp <libdir>gp-modules.jar org.genepattern.prediction.knn.KNN -t<train.filename> -c<train.class.filename> -T<test.filename> -C<test.class.filename> -o<pred.results.file> -s<saved.model.filename> -m<model.file> -n<num.features> -b<num.neighbors> -w<weighting.type> -f<feature.list.filename> -d<distance.measure> -S<feature.selection.statistic> -M<min.std>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

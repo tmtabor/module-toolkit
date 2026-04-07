@@ -1,0 +1,166 @@
+{
+  "module_name": "CummeRbund.GeneSetReport",
+  "description": "[Beta Release** Contact gp-help with any issues. Check stdout.txt and stderr.txt for errors] Cuffdiff visualization package providing plots based on a user-provided list of genes.",
+  "author": "Loyal Goff, MIT Computer Science and Artificial Intelligence Lab; David Eby, Broad Institute",
+  "input_file_formats": [
+    "db",
+    "txt"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:97514:1",
+  "plan": "## CummeRbund.GeneSetReport GenePattern Module — Implementation Plan\n\n### 1. Overview\nCummeRbund.GeneSetReport is a GenePattern module that [Beta Release** Contact gp-help with any issues. Check stdout.txt and stderr.txt for errors] Cuffdiff visualization package providing plots based on a user-provided list of genes.\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: cuffdiff.input, geneset.file, output.format, feature.level, report.as.aggregate, log.transform\n- Optional: selected.conditions\n\n### 3. Command Line\n```\n<R2.15_Rscript> --no-save --quiet --slave --no-restore <libdir>run_gp_cummerbund_geneset_report.R <libdir> --cuffdiff.input\\=<cuffdiff.input> --geneset.file\\=<geneset.file> <selected.conditions> --output.format\\=<output.format> --feature.level\\=<feature.level> --report.as.aggregate\\=<report.as.aggregate> --log.transform\\=<log.transform>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_gp_cummerbund_geneset_report.R",
+  "command_line": "<R2.15_Rscript> --no-save --quiet --slave --no-restore <libdir>run_gp_cummerbund_geneset_report.R <libdir> --cuffdiff.input=<cuffdiff.input> --geneset.file=<geneset.file> <selected.conditions> --output.format=<output.format> --feature.level=<feature.level> --report.as.aggregate=<report.as.aggregate> --log.transform=<log.transform>",
+  "parameters": [
+    {
+      "name": "cuffdiff.input",
+      "description": "A Cuffdiff job, a previous CummeRbund job, or a cuffData.db file from a previous CummeRbund job.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "directory",
+        "db"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cuffdiff.input",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "geneset.file",
+      "description": "A text file containing the list of genes for this report, one per line.  Each of these can be represented by a gene symbol (short name), gene ID, isoform_id, tss_group_id, or cds_id.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--geneset.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "selected.conditions",
+      "description": "Specifies the conditions (samples) to be used in the plots.  This should be a comma-separated list of conditions, using the same names as in the upstream Cuffdiff job; leave this blank to use all conditions.  If blank, no pairwise comparison plots will be generated.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--selected.conditions\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.format",
+      "description": "The output file format.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "pdf",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "pdf",
+          "value": "pdf"
+        },
+        {
+          "display": "svg",
+          "value": "svg"
+        },
+        {
+          "display": "png",
+          "value": "png"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "feature.level",
+      "description": "Feature level for the report.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "genes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "genes",
+          "value": "genes"
+        },
+        {
+          "display": "isoforms",
+          "value": "isoforms"
+        },
+        {
+          "display": "transcription start site (TSS)",
+          "value": "TSS"
+        },
+        {
+          "display": "coding sequence (CDS)",
+          "value": "CDS"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--feature.level",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "report.as.aggregate",
+      "description": "Controls whether reporting should be done for individual replicates or aggregate condition/sample values.  The default is to use aggregate sample values.  Note that the Volcano plot always shows aggregate samples.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--report.as.aggregate",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "log.transform",
+      "description": "Whether or not to log transform the FPKM values.  Note that the FPKM values are always log transformed for the Volcano plots and that the Scatter plot will use a log2 rather than log10 transformation.  For the Expression Plot and Expression Barplot, this directs that the y-axis will be drawn on a log10 scale.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--log.transform",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

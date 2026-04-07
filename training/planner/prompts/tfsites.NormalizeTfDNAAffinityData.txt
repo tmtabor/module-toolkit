@@ -1,0 +1,443 @@
+Create a comprehensive structured plan for the GenePattern module for 'tfsites.NormalizeTfDNAAffinityData'.
+            
+            Tool Information:
+            - Name: tfsites.NormalizeTfDNAAffinityData
+            - Version: Draft initial release
+            - Language: any
+            - Description: NormalizeTfDnaAffinityData generates a relative affinity dataset which can then be used in other TFSites modules to score binding sites. This tool normalizes a raw affinity dataset relative to the sequence with the highest value that follows the core binding site definition. The resulting dataset will report the relative affinity value for every sequence in the original dataset, ranging from 0 to 1.
+            
+            Research Results:
+            Here is the comprehensive research report for `tfsites.NormalizeTfDNAAffinityData`:
+
+---
+
+# 🧬 Comprehensive Research Report: `tfsites.NormalizeTfDNAAffinityData`
+
+---
+
+## 1. 🔬 Tool Identity & Scientific Context
+
+### Identity
+
+| Field | Details |
+|---|---|
+| **Full Name** | `tfsites.NormalizeTfDNAAffinityData` |
+| **Version** | Draft initial release |
+| **Parent Toolkit** | TFSites (`tfsites.*`) |
+| **Repository** | [github.com/genepattern/tfsites.DefineTfSites](https://github.com/genepattern/tfsites.DefineTfSites) |
+| **Own GitHub Repo** | [github.com/genepattern/tfsites.NormalizeTfDNAAffinityData](https://github.com/genepattern/tfsites.NormalizeTfDNAAffinityData) (confirmed active) |
+| **Collaborating Lab** | Emma Farley Lab, UC San Diego (UCSD) |
+| **Platform** | GenePattern / Broad Institute |
+| **Web Portal** | [tfsites.org](https://tfsites.org) |
+| **Language** | Python 3.x |
+| **Containerization** | Docker (`genepattern/tfsites`, Docker Hub) |
+
+### Scientific Purpose
+
+`NormalizeTfDNAAffinityData` is a **data preprocessing module** that converts raw TF-DNA binding affinity measurements (e.g., from SELEX-seq, HT-SELEX, or Protein Binding Microarray/PBM experiments) into a standardized **relative affinity dataset**, where every k-mer sequence receives a normalized score on a **0.0 to 1.0 scale**. The normalization anchor is the sequence with the **highest raw affinity value that also conforms to the IUPAC-defined core binding site definition** of the transcription factor. This normalized output is the required standard input format for all downstream TFSites binding site prediction, scanning, and annotation modules.
+
+---
+
+## 2. 🏛️ Biological & Scientific Background
+
+### The Farley Lab Paradigm: Enhancer Suboptimization
+
+This module is deeply rooted in a research paradigm pioneered by the Farley Lab (UCSD). Their landmark work demonstrates that developmental enhancers operate via **"suboptimization"** — their TF binding sites have deliberately *reduced* affinity relative to the theoretical optimum. This suboptimality is not a flaw but a feature: it encodes **tissue-specificity and precise gene expression levels**. Single-nucleotide variants that increase TF affinity toward the optimum cause gain-of-function defects and disease phenotypes (e.g., polydactyly, cardiac malformations).
+
+**This motivates the 0–1 relative affinity scale**: a normalized score of 1.0 represents the maximum achievable biological binding, while developmental enhancers typically operate with sites scoring ≤0.3–0.6.
+
+### Key Literature
+
+| Reference | Relevance |
+|---|---|
+| **Farley EK et al. (2015). *Science* 350(6258):aac6948** | Foundational "suboptimization" paper — establishes the biological need for relative affinity quantification |
+| **Farley EK et al. (2016). *PNAS* 113:6508–6513** | Uses relative affinity classes (low ≤0.3; high ≥0.6) to classify ETS/GATA sites in Ciona enhancers |
+| **Lim F, Solvason JJ, Farley EK et al. (2024). *Nature* 626(7997):151–159** | Demonstrates affinity-optimizing variants disrupt vertebrate development; validates the 0–1 framework |
+| **Slattery M et al. (2014). SELEX-seq methods. *Methods Mol Biol*** | Background on SELEX-seq k-mer affinity estimation |
+
+---
+
+## 3. 🔄 Workflow Position & Ecosystem
+
+### TFSites Modular Workflow
+
+```
+Step 1:  tfsites.LoadGenome
+         ↓ (genome FASTA → pickled binary dict)
+         
+Step 2a: tfsites.GenerateMotifDatabase  [for JASPAR PFM data]
+              OR
+Step 2b: tfsites.NormalizeTfDNAAffinityData  ← ★ THIS MODULE
+         (for raw SELEX / PBM / HT-SELEX experimental data)
+         ↓ (normalized affinity TSV, 0.0–1.0)
+         
+Step 3:  tfsites.DefineTfSites
+         ↓ (TF site definitions with affinity thresholds)
+         
+Step 4+: Visualization, Comparison, Annotation
+         • tfsites.VisualizeTfSitesOnSequences
+         • tfsites.CompareAcrossSeqsFromDNA
+         
+Step 6:  tfsites.AffinityScan
+         (scans enhancers using normalized affinity data)
+         
+Advanced: tfsites.AnalyzeGenomeMPRA
+          (GWAS / MPRA genome-scale analysis)
+```
+
+### Analogy with `tfsites.GenerateMotifDatabase`
+
+These two modules serve **parallel roles** in the TFSites ecosystem. `GenerateMotifDatabase` normalizes data from **JASPAR Position Frequency Matrices** (the MFI value of the highest-scoring k-mer matching the IUPAC definition → 1.0). `NormalizeTfDNAAffinityData` performs the **identical normalization logic** but for raw **experimentally-derived affinity data** (SELEX, PBM, HT-SELEX). Together they constitute the two entry points into the normalized affinity database format.
+
+---
+
+## 4. 📥📤 Input/Output Format Specifications
+
+### Input: Raw Affinity Data File
+
+| Attribute | Specification |
+|---|---|
+| **Format** | Tab-separated (TSV) or comma-separated (CSV) |
+| **Structure** | Two-column table: `[sequence] [raw_affinity_value]` |
+| **Column 1** | DNA k-mer sequence (typically 6–12 bp, A/T/G/C only) |
+| **Column 2** | Raw numeric affinity/signal value (e.g., MFI from PBM, enrichment from SELEX) |
+| **Header** | Optional header row |
+| **Data completeness** | Ideally exhaustive k-mer enumeration for the given k length |
+
+**Example Input (`raw_ets_affinity.tsv`):**
+```
+sequence    raw_affinity
+CCGGAAGT    1420.7
+CCGGAAGG    1380.2
+CAGGAAGT    850.4
+ACGGAAGT    310.8
+TTGCATGC    45.2
+```
+
+**Data Source Types Accepted:**
+- 🧪 **SELEX-seq**: k-mer relative enrichment ratios across selection cycles
+- 🔬 **HT-SELEX**: High-throughput SELEX enrichment counts
+- 📊 **PBM (Protein Binding Microarray)**: Median Fluorescence Intensity (MFI) per 8-mer
+- 🔭 **Custom**: Any quantitative TF-DNA binding measurement
+
+### Core Binding Site Definition (Parameter — Not a File)
+
+```
+IUPAC string: e.g., RGGAAWY (ETS), WGATAR (GATA), ACAATGG (SOX)
+
+IUPAC Code Reference:
+  R = A or G    Y = C or T    W = A or T
+  S = C or G    K = G or T    M = A or C
+  B = C, G, T   D = A, G, T   H = A, C, T
+  V = A, C, G   N = any base
+```
+
+Only sequences matching this pattern are candidates for the normalization reference maximum.
+
+### Output: Normalized Affinity Data File
+
+| Attribute | Specification |
+|---|---|
+| **Format** | Tab-separated values (TSV) |
+| **Structure** | Two-column table: `[sequence] [relative_affinity]` |
+| **Value range** | 0.0 (no measurable affinity) → 1.0 (maximum conforming affinity) |
+| **Content** | ALL sequences from original dataset, each rescaled |
+| **Downstream use** | Direct input to `tfsites.AffinityScan`, `tfsites.DefineTfSites` |
+
+**Example Output (`normalized_ets_affinity.tsv`):**
+```
+sequence    relative_affinity
+CCGGAAGT    1.000
+CCGGAAGG    0.972
+CAGGAAGT    0.599
+ACGGAAGT    0.219
+TTGCATGC    0.032
+```
+
+### Normalization Algorithm (Pseudocode)
+
+```python
+# 1. Load raw affinity data
+raw_data = load_tsv(input_file)  # dict: {sequence: raw_value}
+
+# 2. Filter sequences conforming to IUPAC core binding site definition
+conforming = {seq: val for seq, val in raw_data.items() 
+              if matches_iupac(seq, core_definition)}
+
+# 3. Find normalization anchor
+max_value = max(conforming.values())
+
+# 4. Normalize all sequences relative to max
+normalized = {seq: val / max_value for seq, val in raw_data.items()}
+
+# 5. Write output
+write_tsv(output_file, normalized)
+```
+
+---
+
+## 5. ⚙️ Parameter Catalog
+
+### Confirmed / Required Parameters
+
+| # | Parameter Name | Type | Required | Description |
+|---|---|---|---|---|
+| 1 | `raw_affinity_data_file` | `java.io.File` | ✅ Yes | Input TSV/CSV with raw TF-DNA affinity data |
+| 2 | `core_binding_site_definition` | `java.lang.String` | ✅ Yes | IUPAC consensus string for the TF's core binding motif |
+| 3 | `output_file_name` | `java.lang.String` | ❌ No (default: `normalized_affinity_data`) | Prefix/name for output file |
+
+### Inferred Optional Parameters
+
+| # | Parameter Name | Type | Default | Description |
+|---|---|---|---|---|
+| 4 | `sequence_column_index` | `java.lang.Integer` | `1` | Column index of sequence data in input file |
+| 5 | `value_column_index` | `java.lang.Integer` | `2` | Column index of raw affinity value in input file |
+| 6 | `has_header` | `java.lang.Boolean` | `false` | Whether input file has a header row |
+| 7 | `delimiter` | `java.lang.String` | `tab` | Field delimiter (`tab` or `comma`) |
+
+### GenePattern Module Parameter Grouping Recommendation
+
+```
+📁 Required Inputs (Group 1 — High Priority)
+   ├── raw_affinity_data_file         [File upload]
+   └── core_binding_site_definition   [Text string, e.g., RGGAAWY]
+
+📁 Output Options (Group 2 — Medium Priority)
+   └── output_file_name               [Text field with default]
+
+📁 File Format Options (Group 3 — Advanced/Optional)
+   ├── sequence_column_index          [Integer, default=1]
+   ├── value_column_index             [Integer, default=2]
+   ├── has_header                     [Boolean, default=false]
+   └── delimiter                      [Dropdown: tab/comma]
+```
+
+---
+
+## 6. 🛠️ Installation & Technical Requirements
+
+### Docker Environment
+
+```bash
+# Primary deployment method
+docker pull genepattern/tfsites
+
+# Source repository for container
+# https://github.com/genepattern/tfsites.common_docker
+# Described as: "Root container for tfsites.org web portal tools"
+# Covers: All Farley Lab (UCSD) tfsites.* GenePattern modules
+```
+
+| Requirement | Details |
+|---|---|
+| **Docker** | Docker Desktop 4.37.1 or later |
+| **Docker Image** | `genepattern/tfsites` (Docker Hub) |
+| **Language** | Python 3.x |
+| **CPU** | Minimal — single-core sufficient |
+| **Memory** | Low — complete 8-mer affinity table (65,536 entries) fits in ~10 MB |
+| **Disk** | Low — input/output files are compact text tables |
+
+### Python Dependencies (Inferred)
+
+```python
+# Core Python standard library
+import re           # IUPAC pattern matching via regex
+import argparse     # Command-line argument parsing
+import os, sys      # File I/O
+
+# Likely scientific stack (consistent with other tfsites modules)
+import pandas       # Data manipulation and TSV I/O
+import numpy        # Numerical operations for normalization
+```
+
+### GenePattern Module Manifest (Draft Specification)
+
+```xml
+<module name="tfsites.NormalizeTfDNAAffinityData" 
+        version="1" 
+        categories="TFSites; Transcription Factors; Preprocessing"
+        taskType="Analysis"
+        language="any"
+        dockerImage="genepattern/tfsites:latest">
+  
+  <description>
+    Normalizes a raw TF-DNA affinity dataset to a relative scale (0.0-1.0)
+    for use in other TFSites modules. The sequence with the highest affinity 
+    value that conforms to the IUPAC core binding site definition is set to 1.0,
+    and all other sequences are normalized relative to that maximum.
+  </description>
+  
+</module>
+```
+
+---
+
+## 7. 🔗 Common Workflows & Use Cases
+
+### Use Case 1: SELEX-seq Data → TFSites Pipeline
+
+> **Scenario**: A researcher has conducted SELEX-seq for a novel ETS transcription factor and wants to use TFSites to analyze binding sites in *Ciona* heart enhancers.
+
+```
+[SELEX-seq experiment]
+        ↓
+[SELEX R package (Bioconductor) — k-mer enrichment estimation]
+        ↓
+[Raw k-mer affinity TSV exported]
+        ↓ INPUT
+[tfsites.NormalizeTfDNAAffinityData]
+   - raw_affinity_data_file = selex_ets_kmers.tsv
+   - core_binding_site_definition = "RGGAAWY"
+        ↓ OUTPUT
+[normalized_ets_affinity.tsv (0.0–1.0 scale)]
+        ↓
+[tfsites.DefineTfSites → tfsites.AffinityScan]
+        ↓
+[Enhancer binding site annotation & visualization]
+```
+
+### Use Case 2: PBM Data Normalization
+
+> **Scenario**: Using UniPROBE database PBM-derived 8-mer MFI values for a GATA factor.
+
+```
+[UniPROBE database download: GATA1 8-mer MFI table]
+        ↓ INPUT
+[tfsites.NormalizeTfDNAAffinityData]
+   - raw_affinity_data_file = GATA1_8mers_mfi.txt
+   - core_binding_site_definition = "WGATAR"
+        ↓ OUTPUT
+[normalized_gata1_affinity.tsv]
+        ↓
+[tfsites downstream analysis modules]
+```
+
+### Use Case 3: Novel/Understudied TF
+
+> **Scenario**: Characterizing binding sites for a TF not in JASPAR.
+
+```
+[HT-SELEX experiment for novel TF]
+        ↓
+[MEME de novo motif discovery → IUPAC core definition]
+        ↓ INPUT
+[tfsites.NormalizeTfDNAAffinityData]
+   - raw_affinity_data_file = novel_tf_htselex.tsv
+   - core_binding_site_definition = derived IUPAC string
+        ↓ OUTPUT
+[Custom normalized affinity database for novel TF]
+        ↓
+[Full tfsites pipeline for enhancer analysis]
+```
+
+### Biological Applications
+
+| Application Domain | Description |
+|---|---|
+| **Developmental Biology** | Scoring ETS, GATA, SOX, HMX binding site affinity in developmental enhancers |
+| **Disease Genomics / GWAS** | Quantifying how disease-associated SNPs alter TF binding affinity |
+| **Enhancer Engineering** | Designing synthetic enhancers with defined affinity profiles (sub-/super-optimal) |
+| **Comparative Genomics** | Comparing TF site affinity conservation across evolutionary enhancer orthologs |
+| **MPRA Analysis** | Correlating binding affinity with massively parallel reporter assay expression readouts |
+
+---
+
+## 8. 📊 Comparative Analysis
+
+### TFSites Approach vs. Alternative Methods
+
+| Tool/Approach | Method | Key Difference from `NormalizeTfDNAAffinityData` |
+|---|---|---|
+| **MEME Suite (FIMO)** | PWM-based log-odds scoring | Uses statistical position-independence model; cannot represent non-additive k-mer contributions |
+| **SELEX R Package** | Kullback-Leibler divergence cycle enrichment | Generates k-mer enrichment tables; does NOT apply IUPAC-constrained normalization — **complementary upstream step** |
+| **DeepBind** | Deep learning (CNN) affinity prediction | Learns from raw data but no explicit 0-1 normalization or IUPAC constraint |
+| **UniPROBE DB** | Pre-normalized PBM 8-mer data | Static database; `NormalizeTfDNAAffinityData` allows user-defined TFs and custom normalization |
+| **JASPAR + tfsites.GenerateMotifDatabase** | PWM-derived k-mer scoring → normalized | Parallel path: only for TFs in JASPAR; this module handles experimental affinity data |
+
+### Unique Technical Advantages
+
+1. **🎯 IUPAC-Constrained Normalization**: The anchor (1.0) must be a biologically valid binding site sequence — prevents non-specific sequences from distorting the scale.
+2. **📈 Full k-mer Affinity Preservation**: Unlike PWMs that average across positions, preserves true binding affinity for every unique k-mer combination, capturing positional interdependencies.
+3. **🔗 Ecosystem Integration**: Output is natively compatible with every downstream `tfsites.*` module without format conversion.
+4. **🧩 Data Source Agnostic**: Accepts any numeric affinity measurement type (PBM MFI, SELEX enrichment, fluorescence, etc.).
+5. **📐 Biologically Grounded Scale**: The 0–1 relative scale directly maps to the "suboptimization" paradigm — low-affinity sites (≤0.3) vs. high-affinity sites (≥0.6) match biologically characterized functional categories.
+
+---
+
+## 9. ⚠️ Limitations & Caveats
+
+| Limitation | Impact | Mitigation |
+|---|---|---|
+| **Requires pre-existing experimental data** | Cannot be used without raw SELEX/PBM/HT-SELEX data | Pair with `tfsites.GenerateMotifDatabase` for JASPAR-covered TFs |
+| **Draft release status** | May lack production robustness, full error handling, complete documentation | Validate with known datasets (ETS, GATA) before production use |
+| **IUPAC definition quality dependent** | Incorrect IUPAC pattern yields wrong normalization anchor | Use established consensus sequences from literature |
+| **Tight tfsites ecosystem coupling** | Output primarily useful within tfsites workflow | Consider exporting normalized data in PWM format for broader compatibility |
+| **k-mer length not standardized** | Input data may use various k lengths | Document expected k-mer length for each TF |
+| **Strand handling** | May not explicitly handle reverse complement aggregation | Verify convention: is reverse complement of a k-mer treated as the same or separate entry? |
+
+---
+
+## 10. 🔧 GenePattern Module Integration Considerations
+
+### Module Classification
+
+```yaml
+Category:       "TFSites"
+Subcategory:    "Transcription Factor Analysis; Preprocessing"
+Module Type:    Analysis
+Execution:      Docker (genepattern/tfsites)
+Prerequisite Modules: None (data preparation step)
+Downstream Modules:   tfsites.DefineTfSites, tfsites.AffinityScan
+```
+
+### Critical Implementation Notes
+
+1. **IUPAC Pattern Validation**: The `core_binding_site_definition` parameter must be validated client-side to ensure it contains only valid IUPAC characters and matches the k-mer length of the input data. A mismatch here produces silent incorrect results.
+
+2. **Max-Affinity Conformer Must Exist**: If no sequence in the input data matches the IUPAC pattern, the tool must throw a **clear, descriptive error** (not divide-by-zero). This edge case requires explicit handling.
+
+3. **Delimiter Auto-detection**: Consider auto-detecting tab vs. comma from file extension (`.tsv` vs. `.csv`) to improve user experience.
+
+4. **Header Auto-detection**: Check whether first row contains non-numeric values to auto-detect header presence.
+
+5. **Output Format Consistency**: Verify that the exact output column names and delimiter match the expected input format of `tfsites.AffinityScan` and `tfsites.DefineTfSites`.
+
+6. **Value Scaling Note for Documentation**: Emphasize that values > 1.0 are impossible by design; values exactly equal to 1.0 represent the maximum-affinity conforming sequence; scores of 0.0 represent background/non-binding sequences.
+
+### Suggested UI Enhancements for GenePattern
+
+- **IUPAC helper text**: Show IUPAC code lookup table in parameter tooltip
+- **Example datasets**: Provide sample ETS and GATA raw affinity files for validation testing
+- **Validation check output**: Report in job log: (a) which sequence was selected as the max-affinity anchor, (b) total sequences processed, (c) number conforming to IUPAC definition
+
+---
+
+## 11. 📚 References & Sources
+
+| # | Source | URL | Relevance |
+|---|---|---|---|
+| 1 | GenePattern GitHub Org | github.com/genepattern | Confirmed existence of `tfsites.NormalizeTfDNAAffinityData` repository |
+| 2 | tfsites.GenerateMotifDatabase README | github.com/genepattern/tfsites.GenerateMotifDatabase | Parallel normalization logic documented |
+| 3 | tfsites.AffinityScan GitHub | github.com/genepattern/tfsites.AffinityScan | Step 6 workflow position |
+| 4 | tfsites.common_docker | github.com/genepattern/tfsites.common_docker | Docker container details |
+| 5 | Docker Hub: genepattern/tfsites | hub.docker.com/r/genepattern/tfsites | Container image requirements |
+| 6 | TFSites Web Portal | tfsites.org | Toolkit overview |
+| 7 | Farley et al. (2015) | Science 350:aac6948 | Suboptimization paradigm |
+| 8 | Farley et al. (2016) | PNAS 113:6508 | Relative affinity classification (0.3/0.6 thresholds) |
+| 9 | Lim, Farley et al. (2024) | Nature 626:151 | Affinity-optimizing enhancer variants |
+| 10 | Slattery et al. (2014) | SELEX-seq methods | k-mer affinity estimation methodology |
+
+---
+
+> **Summary for GenePattern Module Development**: `tfsites.NormalizeTfDNAAffinityData` is a well-defined, scientifically motivated preprocessing module that occupies a critical gateway role in the TFSites analysis pipeline. Its core logic is straightforward (max-IUPAC-conforming normalization) but the IUPAC constraint, input format flexibility, and tight downstream integration requirements demand careful implementation. The module is implemented in Python, runs in the shared `genepattern/tfsites` Docker container, and requires only two mandatory parameters. Priority implementation items are IUPAC validation, conformer-not-found error handling, and output format consistency with downstream tfsites modules.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

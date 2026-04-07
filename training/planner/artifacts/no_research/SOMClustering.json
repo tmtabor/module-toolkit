@@ -1,0 +1,236 @@
+{
+  "module_name": "SOMClustering",
+  "description": "Self-Organizing Maps algorithm",
+  "author": "GenePattern",
+  "input_file_formats": [
+    "Dataset",
+    "gct",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:66055:1",
+  "plan": "## SOMClustering GenePattern Module — Implementation Plan\n\n### 1. Overview\nSOMClustering is a GenePattern module that Self-Organizing Maps algorithm\n\n### 2. Parameters\nThe module exposes 14 parameters:\n- Required: dataset.filename, output.stub, cluster.range, seed.range, iterations, som.rows, som.cols, initialization, neighborhood, alpha.initial, alpha.final, sigma.initial, sigma.final\n- Optional: cluster.by\n\n### 3. Command Line\n```\n<java> <java_flags> -Domnigene.conf\\=<java.io.tmpdir><file.separator>gp<file.separator>resources -cp <libdir>trove.jar<path.separator><libdir>jaxb-rt-1.0-ea.jar<path.separator><libdir>gp-common.jar<path.separator><libdir>common_cmdline.jar<path.separator><libdir>RunSomAlg.jar<path.separator><libdir>file_support.jar<path.separator><libdir>archiver.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>gp-modules.jar edu.mit.genome.gp.executers.RunSomAlg <dataset.filename> <cluster.range> <iterations> <seed.range> <som.rows> <som.cols> <initialization> <neighborhood> <alpha.initial> <alpha.final> <sigma.initial> <sigma.final> <output.stub> <cluster.by>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "trove.jar<path.separator><libdir>jaxb-rt-1.0-ea.jar<path.separator><libdir>gp-common.jar<path.separator><libdir>common_cmdline.jar<path.separator><libdir>RunSomAlg.jar<path.separator><libdir>file_support.jar<path.separator><libdir>archiver.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>gp-modules.jar",
+  "command_line": "<java> <java_flags> -Domnigene.conf=<java.io.tmpdir><file.separator>gp<file.separator>resources -cp <libdir>trove.jar<path.separator><libdir>jaxb-rt-1.0-ea.jar<path.separator><libdir>gp-common.jar<path.separator><libdir>common_cmdline.jar<path.separator><libdir>RunSomAlg.jar<path.separator><libdir>file_support.jar<path.separator><libdir>archiver.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>gp-modules.jar edu.mit.genome.gp.executers.RunSomAlg <dataset.filename> <cluster.range> <iterations> <seed.range> <som.rows> <som.cols> <initialization> <neighborhood> <alpha.initial> <alpha.final> <sigma.initial> <sigma.final> <output.stub> <cluster.by>",
+  "parameters": [
+    {
+      "name": "dataset.filename",
+      "description": "Dataset (res, gct, or odf dataset)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "res",
+        "gct",
+        "Dataset"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dataset.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.stub",
+      "description": "The base output file name - .odf",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<dataset.filename_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.stub",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cluster.range",
+      "description": "Range of values can be entered and the program will automatically run the algorithm for each number of clusters in the range.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "2-3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cluster.range",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "seed.range",
+      "description": "The seed for the random number generator, is exposed to allow the user to recreate a given session at a later time, (as opposed to allowing the program to generate a random initial seed which could result in different outcomes even if all the other parameters are identical).",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "42",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--seed.range",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "iterations",
+      "description": "How many times the algorithm should try to refine the clusters. Initially, this value can be set low for faster exploration, but should be set high (e.g., 50,000) for good convergence.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "50000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--iterations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cluster.by",
+      "description": "Whether to cluster by rows or columns",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "rows",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "rows",
+          "value": "rows"
+        },
+        {
+          "display": "columns",
+          "value": "columns"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--cluster.by",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "som.rows",
+      "description": "Setting this and som.cols to a non zero value will override cluster.range and the computation will be for the specified geometry",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--som.rows",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "som.cols",
+      "description": "Setting this and som.rows to a non zero value will override cluster.range and the computation will be for the specified geometry",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--som.cols",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "initialization",
+      "description": "How to select inital random centroids",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "Random_Vectors",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Random_Vectors",
+          "value": "Random_Vectors"
+        },
+        {
+          "display": "Random_Datapoints",
+          "value": "Random_Datapoints"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--initialization",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "neighborhood",
+      "description": "Neighborhood function determining how centroids near the target centroid are updated",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "Bubble",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Bubble",
+          "value": "Bubble"
+        },
+        {
+          "display": "Gaussian",
+          "value": "Gaussian"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--neighborhood",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "alpha.initial",
+      "description": "Initial learning weight for centroid updates",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--alpha.initial",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "alpha.final",
+      "description": "Final learning weight for centroid updates",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.005",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--alpha.final",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sigma.initial",
+      "description": "Initial sigma to determine update neighborhood size around the target centroid",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "5.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sigma.initial",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sigma.final",
+      "description": "Final sigma to determine update neighborhood size around the target centroid",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sigma.final",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

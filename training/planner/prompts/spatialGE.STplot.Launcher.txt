@@ -1,0 +1,465 @@
+Create a comprehensive structured plan for the GenePattern module for 'spatialGE.STplot.Launcher'.
+            
+            Tool Information:
+            - Name: spatialGE.STplot.Launcher
+            - Version: Initial version
+            - Language: Javascript
+            - Description: Generates high-quality figures showing the expression of genes in spatial context.
+            
+            Research Results:
+            I now have all the research data compiled. Let me deliver the comprehensive final report:
+
+---
+
+# 🔬 Comprehensive Research Report: `spatialGE.STplot.Launcher`
+
+---
+
+## 1. 🧬 Tool Purpose & Scientific Applications
+
+### Overview
+
+`spatialGE.STplot.Launcher` is a **GenePattern visualization launcher module** written in JavaScript that serves as the interactive front-end for the `spatialGE.STplot` R analysis module. It wraps the `STplot()` function from the `spatialGE` R package (developed by the FridleyLab at Moffitt Cancer Center), providing a **point-and-click web interface** for generating publication-quality spatial transcriptomics expression figures — requiring zero R programming knowledge from the end user.
+
+### Scientific Purpose
+
+The module generates **"quilt plots"** — spatially registered scatter plots in which each tissue spot or single cell is plotted at its measured tissue coordinate and colored by:
+- **Gene expression level** (one or multiple genes simultaneously)
+- **Cluster membership** (from the `STclust` spatial clustering algorithm)
+- **Categorical/continuous metadata** (cell types, QC metrics, etc.)
+
+### Key Scientific Applications
+
+| Application | Description |
+|---|---|
+| **Tumor Microenvironment (TME) Mapping** | Visualize immune/stromal/tumor cell markers in their spatial tissue context |
+| **Spatial Heterogeneity Exploration** | Identify regions of high/low gene expression within and across tissue sections |
+| **Post-Clustering Validation** | Visually verify cluster assignments from `STclust` in spatial context |
+| **Biomarker Localization** | Pinpoint spatial distribution of clinically relevant genes (e.g., *CD8A*, *FOXP3*, *MKI67*) |
+| **Multi-Sample Comparison** | Compare expression patterns across multiple tissue sections in one function call |
+| **Quality Control** | Visualize QC metrics (total counts, number of genes) over tissue to identify technical artifacts |
+
+### Supported Spatial Platforms
+
+- **10X Genomics Visium** (spot-based, primary use case)
+- **NanoString CosMx-SMI** (single-cell spatial resolution)
+- **NanoString GeoMx DSP** (ROI-based, bulk spatial)
+- **Custom CSV/TSV** gene expression matrices with spatial coordinate files
+
+---
+
+## 2. 📥📤 Input/Output Formats & Requirements
+
+### Inputs
+
+| Input | Format | Description |
+|---|---|---|
+| **STlist RDS file** | `.RDS` (R serialized object) | **Primary required input.** An S4 `STlist` object produced by `spatialGE.Preprocessing`, `spatialGE.STclust`, or any upstream spatialGE module. Contains: count matrices, spatial coordinates, metadata, and optionally cluster results and H&E images |
+| **Gene Names** | Comma-separated string | One or more HGNC gene symbols to visualize (e.g., `"CD8A,CD4,FOXP3"`) |
+| **Sample Names** | Comma-separated or multi-select | Subset of samples within the STlist; defaults to all samples |
+| **Visualization Parameters** | Form fields | Color palette, point size, text size, data type |
+
+### The STlist Object (Key Input)
+
+The `STlist` is a GenePattern/spatialGE-native S4 object with slots:
+- **`counts`**: List of sparse count matrices (genes × spots) per sample
+- **`spatial_meta`**: List of data frames with spatial coordinates (x, y) and metadata per spot
+- **`tr_counts`**: Log-normalized transformed count matrices
+- **`clust_results`**: Cluster assignment results from STclust (if upstream clustering was performed)
+- **`images`**: Optional H&E image data per sample
+
+### Outputs
+
+| Output | Format | Description |
+|---|---|---|
+| **Quilt Plot Images** | PNG / PDF | One high-resolution spatial scatter plot per gene × sample combination |
+| **Combined Figure** | PDF / PNG | Multi-panel figure compiling all plots |
+| **Potentially updated RDS** | `.RDS` | Preserved STlist with plot metadata (version-dependent) |
+
+> 📌 **Output Scale Example**: For 3 genes × 4 samples → 12 individual plots produced.
+
+---
+
+## 3. 🎛️ Parameter Analysis & Usage Patterns
+
+### Complete STplot() Function Signature
+
+```r
+STplot(
+  x,              # REQUIRED: STlist S4 object
+  samples = NULL, # Optional: subset of sample names
+  genes   = NULL, # Optional: gene name(s) to plot
+  plot_meta = NULL, # Optional: metadata column name to plot
+  ks        = "dtc", # Optional: cluster k value(s) to display
+  ws        = NULL,  # Optional: spatial weight(s) from STclust
+  deepSplit = NULL,  # Optional: deepSplit level from STclust
+  color_pal = NULL,  # Optional: color palette name
+  data_type = "tr",  # Optional: "tr" | "raw" | "sct"
+  ptsize    = NULL,  # Optional: point/spot size
+  txsize    = NULL   # Optional: text/label size
+)
+```
+
+### Parameter Reference Table
+
+| Parameter | Type | Default | GenePattern Widget | Biological/Technical Significance |
+|---|---|---|---|---|
+| `x` | STlist (RDS) | **Required** | File chooser | The entire spatial dataset. Contains all count matrices, coordinates, and cluster results |
+| `genes` | character vector | NULL | Multi-line text / tag input | Gene(s) to visualize. Must match gene names in the count matrix exactly (case-sensitive) |
+| `samples` | character vector | NULL (all) | Multi-select dropdown | Limit visualization to specific tissue sections. Critical for large multi-sample experiments |
+| `plot_meta` | character | NULL | Dropdown (populated from STlist metadata) | Visualize metadata instead of expression; used to display STclust cluster assignments |
+| `ks` | char/numeric | `"dtc"` | Dropdown / text | Number of clusters (k). `"dtc"` = dynamic tree cut auto-selection. Only used with cluster visualization |
+| `ws` | numeric vector | NULL (all) | Numeric input / multi-select | Spatial weighting parameter from STclust (0 = no spatial constraint → 1 = maximum spatial constraint) |
+| `deepSplit` | numeric | NULL | Integer input | Controls tree-cutting sensitivity in hierarchical clustering. Higher = more clusters |
+| `color_pal` | character | NULL → "BuRd" | Dropdown | Color palette name from `khroma` (e.g., `"BuRd"`, `"YlOrRd"`, `"viridis"`) or `RColorBrewer` |
+| `data_type` | character | `"tr"` | Dropdown | `"tr"` = log-normalized (recommended for visualization); `"raw"` = raw counts; `"sct"` = SCTransform |
+| `ptsize` | numeric | NULL (auto) | Numeric slider | Spot/point size. Critical to adjust for dense (CosMx single-cell) vs. sparse (Visium spots) data |
+| `txsize` | numeric | NULL (auto) | Numeric slider | Font size for axis labels and titles |
+
+### Logical Parameter Groupings (for GenePattern Module Design)
+
+```
+GROUP 1 — Data Input
+  └── x (STlist RDS file) ← required
+
+GROUP 2 — Feature Selection [mutually exclusive primary visualization targets]
+  ├── genes          ← For gene expression mode
+  └── plot_meta      ← For metadata/cluster visualization mode
+  
+GROUP 3 — Sample & Cluster Filtering
+  ├── samples        ← Which tissue sections to include
+  ├── ks             ← Which cluster k-value to display (cluster mode only)
+  ├── ws             ← Which spatial weight to display (cluster mode only)
+  └── deepSplit      ← Which deepSplit level (cluster mode only)
+
+GROUP 4 — Visual Aesthetics
+  ├── color_pal      ← Color scheme
+  ├── data_type      ← What data layer to color by
+  ├── ptsize         ← Spot size
+  └── txsize         ← Text size
+```
+
+### Validated Color Palettes (from khroma + RColorBrewer)
+
+| Palette Name | Type | Use Case |
+|---|---|---|
+| `"BuRd"` (default) | Diverging | Continuous expression, emphasizes highs and lows |
+| `"YlOrRd"` | Sequential | High-expression focus, publication-friendly |
+| `"BuGn"` | Sequential | Continuous, lighter color ramps |
+| `"viridis"` | Sequential | Perceptually uniform, colorblind-safe |
+| `"magma"` | Sequential | Dark background-compatible |
+| `"Set1"`, `"Set2"` | Categorical | Cluster/metadata discrete categories |
+
+---
+
+## 4. ⚙️ Installation & Dependency Requirements
+
+### spatialGE R Package Installation
+
+```r
+# From CRAN (stable, recommended)
+install.packages("spatialGE")
+
+# From GitHub (development version)
+devtools::install_github("FridleyLab/spatialGE")
+```
+
+### Core R Dependencies
+
+| Package | Role in STplot |
+|---|---|
+| `ggplot2` | **Core plotting engine** — all quilt plots are ggplot2 objects |
+| `khroma` | Color palettes (BuRd, YlOrRd, etc.) |
+| `RColorBrewer` | Additional color palettes |
+| `ggnewscale` | Multiple color scales in one ggplot2 figure (multi-gene plots) |
+| `reshape2` / `tidyr` | Data reshaping for plotting |
+| `tibble` | Modern data frames for metadata |
+| `Matrix` | Sparse matrix support for count data |
+| `dynamicTreeCut` | Dynamic tree cutting for STclust (ks="dtc") |
+| `ape` | Phylogenetic tree operations (hierarchical clustering) |
+| `spatstat` | Spatial statistics infrastructure |
+| `pdist` | Pairwise distance calculations |
+
+### System Requirements
+
+| Component | Requirement |
+|---|---|
+| **R version** | ≥ 4.0 (recommended ≥ 4.2) |
+| **Operating System** | Linux (production), macOS/Windows (development) |
+| **RAM** | 8–32 GB depending on dataset size (Visium ~10K spots; CosMx ~100K+ cells) |
+| **Storage** | Proportional to number of samples; STlist RDS files can be 100 MB–2 GB |
+| **CPU** | Multi-core beneficial for multi-sample STplot generation |
+| **Docker** | GenePattern module containerized via Docker image |
+
+### GenePattern-Specific Dependencies
+
+- **JavaScript runtime** (Node.js or browser-based) for the Launcher UI
+- **GenePattern server** with R executor capability
+- **Docker container** with `spatialGE` and all R dependencies pre-installed
+
+---
+
+## 5. 🔄 Common Workflows & Use Cases
+
+### Position in the Full GenePattern spatialGE Pipeline
+
+```
+[Raw Data: Visium / CosMx / GeoMx / CSV]
+         │
+         ▼
+┌─────────────────────────┐
+│ spatialGE.Preprocessing │  ← Data ingestion, QC filtering, 
+│ (R module)              │    log-normalization, pseudobulk
+└────────────┬────────────┘
+             │ STlist.RDS
+             ▼
+┌──────────────────────────────────────────┐
+│ spatialGE.STplot.Launcher (JS module)    │  ← THIS MODULE
+│   → launches spatialGE.STplot (R module) │    Interactive parameter config
+│   → Quilt plots of gene expression       │    + R analysis execution
+└────────────┬─────────────────────────────┘
+             │ (parallel or downstream)
+             ▼
+┌─────────────────────────┐
+│ spatialGE.STclust       │  ← Spatially-aware clustering
+│ (R module)              │
+└────────────┬────────────┘
+             │ STlist.RDS (with cluster results)
+             ▼
+┌──────────────────────────────────────────┐
+│ spatialGE.STplot.Launcher (JS module)    │  ← ALSO USED HERE
+│   → Visualize cluster assignments        │    to map STclust results
+└────────────┬─────────────────────────────┘
+             ▼
+┌─────────────────────────────────────────────────────────┐
+│ spatialGE.STenrich / STdiff / SThet / STgradient        │
+│ (downstream analysis modules)                           │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Typical Scientific Workflows
+
+#### Workflow A — Exploratory Gene Expression Mapping (Early Analysis)
+1. Load preprocessed STlist RDS from `spatialGE.Preprocessing`
+2. Set `data_type = "tr"` (log-normalized)
+3. Enter immune marker panel: `genes = "CD8A, CD4, FOXP3, CD68, EPCAM"`
+4. Use default color palette `"BuRd"`
+5. **Output**: 5-panel quilt plots per sample → identify immune infiltration patterns
+
+#### Workflow B — Post-Clustering Visualization (Mid/Late Analysis)
+1. Load STlist RDS output of `spatialGE.STclust`
+2. Set `plot_meta = "clust_result"` (cluster assignment column)
+3. Set `ks = "dtc"` or specific integer
+4. Set `ws = 0.025` (to display the spatially-weighted result)
+5. **Output**: Color-coded cluster maps for each tissue section
+
+#### Workflow C — Multi-Sample Comparison
+1. Load multi-sample STlist (e.g., 6 patient tumor biopsies)
+2. Set `genes = "MKI67"` (proliferation marker)
+3. Leave `samples = NULL` (all samples)
+4. **Output**: 6 quilt plots, same color scale, enabling cross-patient comparison
+
+#### Workflow D — Publication Figure Generation
+1. Select specific `samples` for the figure
+2. Fine-tune `ptsize` for spot density of the platform
+3. Set `txsize` for journal font requirements
+4. Select `color_pal = "YlOrRd"` for publication aesthetics
+5. Export PNG/PDF at high resolution
+
+---
+
+## 6. 🔌 GenePattern Integration Considerations
+
+### Module Architecture
+
+The `spatialGE.STplot.Launcher` follows the **GenePattern Launcher Pattern**:
+
+```
+User Browser
+    │
+    ▼
+[JavaScript Launcher Module]
+    │  Reads STlist RDS via server
+    │  Dynamically populates:
+    │    - Gene name dropdown (from STlist gene symbols)
+    │    - Sample name dropdown (from STlist sample names)
+    │    - Metadata column dropdown (from STlist metadata)
+    │
+    ▼
+[User configures parameters interactively]
+    │
+    ▼
+[Launches spatialGE.STplot R execution module]
+    │  Passes all parameters as command-line arguments
+    │
+    ▼
+[R script executes STplot() on the server]
+    │
+    ▼
+[Output PNG/PDF returned to GenePattern Results]
+```
+
+### Key Integration Design Considerations
+
+| Consideration | Details |
+|---|---|
+| **RDS Deserialization in JS** | The JavaScript Launcher must parse the RDS file (using a server-side R call or `rpy2`-style bridge) to dynamically populate gene/sample/metadata dropdowns from the actual data |
+| **Parameter Validation** | Gene names must be validated against the STlist gene index; invalid gene names cause silent R errors |
+| **Mutual Exclusivity** | `genes` and `plot_meta` are logically exclusive — the UI should enforce only one is used at a time |
+| **Conditional Parameters** | `ks`, `ws`, `deepSplit` should only appear/activate when `plot_meta` is selected (cluster mode) |
+| **Output Naming** | Files should be named `{gene}_{sample}_STplot.png` for traceability |
+| **Memory Management** | Large multi-sample STlists may require memory limits; consider chunked processing for >10 samples |
+| **Color Palette Validation** | Validate `color_pal` strings against known khroma/RColorBrewer palette names |
+| **Docker Container** | Must include R, spatialGE, ggplot2, khroma, RColorBrewer, and all CRAN/Bioc dependencies |
+
+### Recommended Module Manifest Parameters
+
+```yaml
+# Suggested module.yaml structure
+name: spatialGE.STplot.Launcher
+language: JavaScript
+version: 1.0.0
+categories: [Spatial Transcriptomics, Visualization]
+parameters:
+  - name: input.stlist
+    type: FILE
+    fileFormat: RDS
+    required: true
+    description: STlist RDS file from spatialGE.Preprocessing or spatialGE.STclust
+    
+  - name: genes
+    type: TEXT
+    required: false
+    description: Comma-separated gene names (e.g., CD8A,CD4,FOXP3)
+    
+  - name: plot.meta
+    type: TEXT
+    required: false
+    description: Metadata column name to visualize (e.g., cluster assignments)
+    
+  - name: samples
+    type: TEXT
+    required: false
+    description: Comma-separated sample names (leave blank for all)
+    
+  - name: color.pal
+    type: CHOICE
+    choices: [BuRd, YlOrRd, BuGn, viridis, magma, Set1, Set2]
+    default: BuRd
+    
+  - name: data.type
+    type: CHOICE
+    choices: [tr, raw, sct]
+    default: tr
+    description: tr=log-normalized, raw=raw counts, sct=SCTransform
+    
+  - name: ks
+    type: TEXT
+    default: dtc
+    description: Cluster k value(s); 'dtc' for dynamic tree cut
+    
+  - name: ws
+    type: TEXT
+    required: false
+    description: Spatial weight from STclust (0-1)
+    
+  - name: ptsize
+    type: FLOAT
+    required: false
+    description: Point size (leave blank for auto)
+    
+  - name: txsize
+    type: FLOAT
+    required: false
+    description: Text size (leave blank for auto)
+```
+
+---
+
+## 7. 🆚 Comparative Analysis
+
+| Tool | Object | Language | Multi-Sample | Cluster Overlay | Spatial Stats Integration | GenePattern Accessible |
+|---|---|---|---|---|---|---|
+| **spatialGE.STplot.Launcher** | STlist (RDS) | R/JS | ✅ Native | ✅ STclust | ✅ Full suite | ✅ **Yes** |
+| Seurat SpatialFeaturePlot | Seurat Object | R | ⚠️ One at a time | ✅ | ⚠️ Limited | ❌ |
+| Squidpy spatial_scatter | AnnData | Python | ✅ | ✅ | ✅ | ❌ |
+| STUtility ST.FeaturePlot | STUtility Object | R | ⚠️ | ⚠️ | ❌ | ❌ |
+| BayesSpace featurePlot | SpatialExperiment | R | ⚠️ | ✅ Post-clustering | ⚠️ | ❌ |
+| OSTA plotVisium | SpatialExperiment | R | ⚠️ | ⚠️ | ⚠️ | ❌ |
+
+**Key Differentiators of spatialGE.STplot:**
+1. 🏆 **Only tool natively integrated into the GenePattern web ecosystem** — no coding required
+2. 🏆 **True multi-sample support** — all tissue sections visualized in a single call with consistent scaling
+3. 🏆 **Platform-agnostic** — Visium, CosMx, GeoMx, and CSV all handled uniformly
+4. 🏆 **Unified spatial analytics ecosystem** — seamlessly chains with STclust, STdiff, STenrich in the same pipeline
+5. 🏆 **Cancer/TME-validated** — published specifically for tumor microenvironment heterogeneity research
+
+---
+
+## 8. 📚 Scientific Literature & Validation
+
+### Primary Citations
+
+1. **Ospina OE, Wilson CM, Soupir AC, et al.** "spatialGE: quantification and visualization of the tumor microenvironment heterogeneity using spatial transcriptomics." *Bioinformatics*. 2022;38(9):2645–2647. DOI: [10.1093/bioinformatics/btac145](https://doi.org/10.1093/bioinformatics/btac145). PMID: 35258565.
+   > *Introduces STplot and the STlist framework; validates on 10X Visium melanoma dataset (Thrane et al.)*
+
+2. **Ospina OE, Manjarres-Betancur R, Gonzalez-Calderon G, et al.** "spatialGE Is a User-Friendly Web Application That Facilitates Spatial Transcriptomics Data Analysis." *Cancer Research*. 2025;85(5):848. DOI: [10.1158/0008-5472.CAN-24-1895](https://doi.org/10.1158/0008-5472.CAN-24-1895). PMID: 39636739.
+   > *Validates the full web application and point-and-click interface for STplot and the complete spatialGE suite; demonstrates on Visium, CosMx, and GeoMx datasets*
+
+### Validation Datasets Referenced
+- Melanoma spatial transcriptomics (Thrane et al., Visium)
+- Triple-negative breast cancer (TNBC, Visium)
+- CosMx-SMI multi-cell type datasets
+- GeoMx DSP spatial proteomics datasets
+
+---
+
+## 9. ⚠️ Known Limitations & Caveats
+
+| Limitation | Impact | Mitigation |
+|---|---|---|
+| **No H&E image overlay** in STplot | Cannot co-register expression with tissue histology directly in STplot | Use `load_images()` + `plot_image()` separately, or use Seurat for H&E overlays |
+| **Gene names must be exact** | Case-sensitive; invalid names fail silently or with cryptic R error | JavaScript Launcher should dynamically populate gene names from the actual STlist |
+| **Large multi-sample outputs** | 10+ samples × 5+ genes = 50+ output files | Implement output compression/bundling |
+| **Memory scaling** | CosMx data with 100K+ cells can require 16–32 GB RAM | Memory monitoring in GenePattern executor |
+| **RDS portability** | STlist RDS files are R-version and platform-sensitive | Pin R version in Docker container |
+| **Static quilt plots** | STplot produces static ggplot2 images, not interactive | Complement with the `spatialGE` web app for interactive exploration |
+| **Cluster params dependency** | `ks`, `ws`, `deepSplit` only work if STclust was run first | Validate upstream results in Launcher UI before enabling cluster visualization mode |
+
+---
+
+## 10. 📋 Summary for GenePattern Module Development
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    QUICK REFERENCE SUMMARY                          │
+├─────────────────────────────────────────────────────────────────────┤
+│ Module Name:    spatialGE.STplot.Launcher                           │
+│ Language:       JavaScript (Launcher) + R (Execution)               │
+│ R Function:     STplot() from spatialGE v1.2.2 (CRAN)              │
+│ Input:          STlist RDS file (from Preprocessing/STclust)        │
+│ Output:         PNG/PDF quilt plots of spatial gene expression       │
+│ Key Param:      genes (expression mode) or plot_meta (cluster mode)  │
+│ Default Palette: BuRd (khroma); default data: log-normalized ("tr") │
+│ Platforms:      Visium, CosMx, GeoMx, CSV/TSV                      │
+│ Citation:       Ospina et al., Bioinformatics 2022 + Cancer Res 2025 │
+│ License:        GPL-3 (spatialGE R package)                         │
+│ Docker:         Required — pin R ≥ 4.0, spatialGE, ggplot2, khroma  │
+│ Priority Areas: Dynamic gene/sample dropdown population from RDS     │
+│                 Conditional parameters (cluster mode vs. gene mode)  │
+│                 Output file naming and bundling                       │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+This module represents a scientifically rigorous, publication-validated, and clinically relevant component of GenePattern's spatial transcriptomics suite, filling the critical niche of **accessible, no-code spatial gene expression visualization** for the broader biomedical research community.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

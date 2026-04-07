@@ -1,0 +1,221 @@
+{
+  "module_name": "NMFClustering",
+  "description": "GPU-backed implementation of non-negative Matrix Factorization (NMF) Consensus Clustering.",
+  "author": "Ted Liefeld;UCSD School of Medicine",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "Shell",
+  "categories": [
+    "clustering"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:54547:1",
+  "plan": "## NMFClustering GenePattern Module — Implementation Plan\n\n### 1. Overview\nNMFClustering is a GenePattern module that GPU-backed implementation of non-negative Matrix Factorization (NMF) Consensus Clustering.\n\n### 2. Parameters\nThe module exposes 13 parameters:\n- Required: dataset.filename, k.initial, k.final, num.clusterings, max.iterations, random.seed, output.filename.prefix, stop.convergence, stop.frequency, kl.error.diff.max, output.file.type, parallelization.strategy, keep.intermediate.files\n- Optional: none\n\n### 3. Command Line\n```\n/expanse/projects/mesirovlab/genepattern/modules/NMFClustering_v7/runitprod.bash --numtasks\\=<job.cpuCount>  --jobdir\\=$PWD    --inputfile\\=<dataset.filename> --mink\\=<k.initial> --maxk\\=<k.final>  --startseed\\=<random.seed> --seeds\\=<num.clusterings> --consecutive\\=<stop.convergence> --maxiterations\\=<max.iterations> --outputfileprefix\\=<output.filename.prefix>  --interval\\=<stop.frequency>  --outputfiletype\\=<output.file.type> --parastrategy\\=<parallelization.strategy> <keep.intermediate.files> --klerrordiffmax\\=<kl.error.diff.max>  --inputfiletype\\=gct\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.sh",
+  "command_line": "/expanse/projects/mesirovlab/genepattern/modules/NMFClustering_v7/runitprod.bash --numtasks=<job.cpuCount>  --jobdir=$PWD    --inputfile=<dataset.filename> --mink=<k.initial> --maxk=<k.final>  --startseed=<random.seed> --seeds=<num.clusterings> --consecutive=<stop.convergence> --maxiterations=<max.iterations> --outputfileprefix=<output.filename.prefix>  --interval=<stop.frequency>  --outputfiletype=<output.file.type> --parastrategy=<parallelization.strategy> <keep.intermediate.files> --klerrordiffmax=<kl.error.diff.max>  --inputfiletype=gct",
+  "parameters": [
+    {
+      "name": "dataset.filename",
+      "description": "",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dataset.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "k.initial",
+      "description": "",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--k.initial",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "k.final",
+      "description": "",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--k.final",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.clusterings",
+      "description": "Number of clusterings per value of K\\n",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.clusterings",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.iterations",
+      "description": "Maximum number of NMF iterations per clustering",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "2000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.iterations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "random.seed",
+      "description": "Seed for random number generator",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--random.seed",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename.prefix",
+      "description": "Prefix to append to all output files.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "<dataset.filename_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename.prefix",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "stop.convergence",
+      "description": "How many \"no change\" checks are needed to stop NMF iterations before max iterations is reached(convergence).",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "40",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--stop.convergence",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "stop.frequency",
+      "description": "Frequency (NMF iterations) of \"no change\" checks",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--stop.frequency",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "kl.error.diff.max",
+      "description": "Max error for KL divergence.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "5.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--kl.error.diff.max",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file.type",
+      "description": "Output file type.  gct or h5ad",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "gct",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "gct",
+          "value": "gct"
+        },
+        {
+          "display": "h5",
+          "value": "h5"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.file.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "parallelization.strategy",
+      "description": "",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "inputmatrix",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "inputmatrix",
+          "value": "inputmatrix"
+        },
+        {
+          "display": "kfactor",
+          "value": "kfactor"
+        },
+        {
+          "display": "serial",
+          "value": "serial"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--parallelization.strategy",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "keep.intermediate.files",
+      "description": "Whether to keep all W and H matrices (1 per k per seed)",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "\\",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "No",
+          "value": "\\"
+        },
+        {
+          "display": "Yes",
+          "value": "--keepintermediatefiles"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--keep.intermediate.files",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

@@ -1,0 +1,500 @@
+Create a comprehensive structured plan for the GenePattern module for 'ComparativeMarkerSelection'.
+            
+            Tool Information:
+            - Name: ComparativeMarkerSelection
+            - Version: Updated to run in its own R 2.5 container - allowing q values to be computed.
+            - Language: any
+            - Description: Identify differentially expressed genes that can discriminate between distinct classes of samples.
+            
+            Research Results:
+            Now I have all the research data I need. Let me synthesize everything into the comprehensive final report.
+
+---
+
+# 🧬 ComparativeMarkerSelection — Comprehensive Research Report
+
+**Tool:** ComparativeMarkerSelection | **Version:** v11 (R 2.5 Container) | **Platform:** GenePattern (Broad Institute)
+**Repository:** https://github.com/genepattern/ComparativeMarkerSelection/tree/v11
+**Primary Citation:** Gould J, Getz G, Monti S, Reich M, Mesirov JP. *Comparative gene marker selection suite.* Bioinformatics. 2006;22(15):1924–5. [PMID: 16709585]
+
+---
+
+## 1. 🎯 Tool Purpose & Scientific Applications
+
+### 1.1 Core Purpose
+ComparativeMarkerSelection is a bioinformatics module within the GenePattern analysis platform designed to **identify differentially expressed genes (marker genes) that can discriminate between two distinct biological sample classes**. It operates on gene expression data, ranking every gene in a dataset by how well its expression profile separates the two phenotypic classes, and assigns rigorous statistical significance to each ranking.
+
+The module implements the analytical layer of the *Comparative Gene Marker Selection Suite* — a three-module ecosystem that together covers analysis, visualization, and result extraction for differential expression workflows.
+
+### 1.2 Scientific Background & Foundational Methods
+The tool's roots trace to the landmark **Golub et al. (1999)** *Science* paper on molecular classification of cancer using gene expression. That work introduced the **Signal-to-Noise Ratio (SNR)** metric — one of ComparativeMarkerSelection's core test statistics — and established the canonical ALL/AML leukemia dataset still used as the example dataset for the module today.
+
+The module bridges **permutation statistics** (Good, 2000) with modern **multiple hypothesis testing (MHT) correction** frameworks (Benjamini-Hochberg 1995; Westfall & Young 1993; Storey & Tibshirani 2003), making it one of the most statistically comprehensive single-gene differential expression tools available within GenePattern.
+
+### 1.3 Key Scientific Applications
+
+| Application Domain | Description |
+|---|---|
+| **Cancer Subtype Discovery** | Identify genes distinguishing tumor subtypes (e.g., ALL vs. AML leukemia) |
+| **Biomarker Discovery** | Find candidate genes for clinical diagnostics or prognosis |
+| **Phenotype-Expression Correlation** | Link molecular signatures to clinical phenotypes |
+| **Class Prediction Preprocessing** | Generate ranked gene lists as input for classifiers (e.g., k-NN, SVM) |
+| **Pathway Analysis Input** | Feed ranked marker lists into GSEA or other pathway-enrichment analyses |
+| **Treatment Response Studies** | Compare treated vs. untreated or responder vs. non-responder profiles |
+| **Microarray Quality Validation** | Verify separation of biological classes in expression data |
+
+### 1.4 What Makes v11 Different
+The critical upgrade in v11 is the **containerization in a dedicated R 2.5 Docker environment**, which resolves a key prior limitation: the `qvalue` R package (Storey/Bioconductor) is now fully bundled within the container. This enables **Q-value computation** — a statistically more powerful FDR estimation method than BH because it explicitly estimates π₀ (the fraction of truly null hypotheses), thereby increasing sensitivity for detecting true positives in large genomic screens.
+
+---
+
+## 2. 📁 Input/Output Formats & Requirements
+
+### 2.1 Input Files
+
+#### Primary Expression File (Required)
+The module accepts two gene expression matrix formats:
+
+**GCT Format (`.gct`)** — most common
+```
+#1.2
+<num_genes>\t<num_samples>
+Name\tDescription\tSample1\tSample2\t...
+GENE_ID_1\tDescription1\t5.23\t3.11\t...
+GENE_ID_2\tDescription2\t1.04\t7.82\t...
+```
+- Tab-delimited text
+- First line: `#1.2` (format version)
+- Second line: `nrows` and `ncols`
+- Third line: column headers (Name, Description, then sample names)
+- Subsequent lines: one gene per row
+
+**RES Format (`.res`)** — Affymetrix-specific
+- Similar to GCT but includes additional per-sample **"call" columns** (A/P/M: Absent/Present/Marginal)
+- Used with older Affymetrix microarray workflows
+
+#### Class Labels File (Required)
+
+**CLS Format (`.cls`)** — space-delimited (NOT tab-delimited)
+```
+38 2 1
+# ALL AML
+0 0 0 1 1 1 0 0 ...
+```
+- Line 1: `<total_samples> <num_classes> 1`
+- Line 2: `# <class0_name> <class1_name>` (comment line with class names)
+- Line 3: space-delimited integer labels (0 or 1) for each sample in order
+
+> ⚠️ **Critical Note:** CLS files must be **space-delimited**, not tab-delimited. Tab-delimited CLS files are the most common cause of input errors.
+
+### 2.2 Input Data Requirements & Constraints
+
+| Constraint | Details |
+|---|---|
+| **Minimum samples per class** | **3 samples per class** (hard minimum; module will fail with fewer) |
+| **Recommended samples per class** | ≥10 per class for reliable p-values with 1000 permutations |
+| **Data type** | Continuous expression values (microarray intensities, RPKM/FPKM/TPM for RNA-seq) |
+| **Log transformation** | Module assumes **non-log-transformed** data by default; if log-transformed, set `log.transformed.data=yes` |
+| **Two-class only** | Strictly designed for binary class comparisons; multi-class not supported |
+| **Data scale** | No strict requirements, but SNR statistic is sensitive to the `min.std` threshold |
+
+### 2.3 Output Files
+
+**Primary Output: `.comp.marker.odf`**
+
+The output file uses GenePattern's proprietary **ODF (Output Description Format)** — a structured tab-delimited text format with a metadata header block:
+
+```
+ODF 1.0
+HeaderLines=N
+Model=ComparativeMarkerSelection
+DataLines=<num_genes>
+...header key-value pairs...
+<column headers>
+<data rows>
+```
+
+Each row (one per gene) contains the following columns:
+
+| Column | Type | Description |
+|---|---|---|
+| `Rank` | Integer | Gene rank (1 = most discriminatory) |
+| `Score` | Float | Value of the test statistic (t-stat or SNR) |
+| `Feature P` | Float | Permutation-based nominal p-value |
+| `Feature P Low` | Float | Estimated lower bound for feature p-value |
+| `Feature P High` | Float | Estimated upper bound for feature p-value |
+| `FDR (BH)` | Float | Benjamini-Hochberg FDR estimate |
+| `Q Value` | Float | Storey FDR estimate (estimates π₀) — **new in v11** |
+| `Bonferroni` | Float | Bonferroni-corrected p-value |
+| `maxT` | Float | Westfall-Young maxT adjusted p-value (FWER) |
+| `FWER` | Float | Family-wise error rate |
+| `Fold Change` | Float | Ratio of mean expression (class 1 / class 0) |
+
+> **Output filename convention:** `<input_file_stem>.comp.marker.odf` (e.g., `all_aml_train.comp.marker.odf`)
+
+---
+
+## 3. ⚙️ Parameter Analysis & Usage Patterns
+
+### 3.1 Complete Parameter Catalog
+
+#### Group 1: Required Inputs
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `input.filename` | File (GCT/RES) | ✅ Yes | — | Gene expression dataset |
+| `cls.filename` | File (CLS) | ✅ Yes | — | Sample class labels |
+
+#### Group 2: Statistical Test Configuration
+
+| Parameter | Type | Required | Default | Options | Description |
+|---|---|---|---|---|---|
+| `test.statistic` | Enum | No | `t-test` | `t-test`, `SNR`, `paired t-test` | Statistical test for differential expression scoring |
+| `test.direction` | Enum | No | `2-sided` | `2-sided`, `class 0`, `class 1` | Direction of hypothesis test |
+| `min.std` | Float | No | `0` | ≥0 | Min standard deviation per class; filters low-variance genes |
+
+**Test Statistic Details:**
+- **`t-test`** (default): Standard two-sample Student's t-test. Most widely applicable; assumes approximately normal distributions within each class.
+- **`SNR` (Signal-to-Noise Ratio)**: `(μ₁ - μ₀) / (σ₁ + σ₀)` — from Golub et al. 1999. Directly measures the separation of class means in units of the combined standard deviations. Sensitive to `min.std` threshold.
+- **`paired t-test`**: For matched/paired experimental designs (e.g., before/after treatment on same patients). Samples must be ordered such that pairs are consecutively aligned.
+
+**Test Direction Details:**
+- **`2-sided`**: Tests for differential expression in either direction — gene is a marker if overexpressed in *either* class.
+- **`class 0`**: One-sided test; identifies genes preferentially upregulated in class 0.
+- **`class 1`**: One-sided test; identifies genes preferentially upregulated in class 1.
+
+#### Group 3: Permutation Configuration
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `number.of.permutations` | Integer | No | `1000` | Number of random permutations for null distribution |
+| `complete` | Boolean | No | `no` | If `yes`, compute p-values from ALL possible permutations |
+| `balanced` | Boolean | No | `no` | If `yes`, use balanced permutations (equal class sizes per permutation) |
+| `random.seed` | Integer | No | `779948241` | Random seed for reproducibility |
+| `smooth.p.values` | Boolean | No | `yes` | Apply smoothing to estimated p-values |
+
+**Critical permutation guidance:**
+- **Default (1000 random permutations):** Appropriate for datasets with ≥10 samples per class. Provides reliable p-value estimates.
+- **`complete=yes`:** Overrides `number.of.permutations`. Computes the *exact* p-value from the complete permutation space. **Only use this when the total number of possible permutations is < 1000** (i.e., very small datasets). For n₀ samples in class 0 and n₁ in class 1, total permutations = C(n₀+n₁, n₀).
+- **`balanced=yes`:** Ensures each permuted dataset maintains equal class representation, which can reduce variability in the null distribution estimate.
+- **`random.seed`:** Setting a fixed seed ensures fully reproducible results. The default seed (779948241) is fixed across runs for consistency.
+
+#### Group 4: Data Preprocessing Flags
+
+| Parameter | Type | Required | Default | Options | Description |
+|---|---|---|---|---|---|
+| `log.transformed.data` | Boolean | No | `no` | `yes`, `no` | Flag indicating whether input data is log₂-transformed |
+
+> ⚠️ **Most common error:** Providing log-transformed microarray data without setting this flag to `yes`. The fold-change calculation (linear ratio of means) will be **incorrect** if the data is already on a log scale and this parameter is not set. The test statistic itself (t-test/SNR) is computed on whatever scale is provided; only fold change is affected.
+
+#### Group 5: Output Configuration
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `output.filename` | String | No | `<input_stem>.comp.marker.odf` | Name for the output ODF file |
+
+### 3.2 Parameter Interaction Patterns
+
+```
+┌─────────────────────────────────────────────────────────┐
+│              PARAMETER DECISION TREE                     │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  Study Design?                                           │
+│  ├── Paired samples → test.statistic = "paired t-test"  │
+│  └── Independent → t-test (default) or SNR              │
+│                                                          │
+│  Dataset size (samples per class)?                       │
+│  ├── <10 samples → consider complete=yes (if possible)  │
+│  └── ≥10 samples → number.of.permutations=1000 (default)│
+│                                                          │
+│  Data transformation?                                    │
+│  ├── Raw intensities → log.transformed.data=no           │
+│  └── Log₂-transformed → log.transformed.data=yes         │
+│                                                          │
+│  Biological question?                                    │
+│  ├── Any differential expression → test.direction=2-sided│
+│  ├── Class 0 upregulated genes → test.direction=class 0  │
+│  └── Class 1 upregulated genes → test.direction=class 1  │
+│                                                          │
+│  Reproducibility needed?                                 │
+│  └── Set fixed random.seed value                        │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 3.3 Statistical Output Interpretation Guide
+
+| Metric | Statistical Framework | Typical Threshold | Best Used When |
+|---|---|---|---|
+| **Feature P** | Permutation nominal p-value | <0.05 | Exploratory analysis, large datasets |
+| **FDR (BH)** | Benjamini-Hochberg 1995 | <0.05 or <0.25 | Standard FDR control; conservative |
+| **Q Value** | Storey & Tibshirani 2003 | <0.05 or <0.10 | When power is important; estimates π₀ |
+| **Bonferroni** | Classical FWER correction | <0.05 | When false positives are very costly |
+| **maxT** | Westfall-Young FWER | <0.05 | Strong FWER control with permutations |
+| **FWER** | Family-wise error rate | <0.05 | Strict error rate control |
+| **Fold Change** | Linear ratio of means | >2x or >1.5x | Biological significance screening |
+
+> **BH vs. Q-value:** The Q-value method (Storey) provides more statistical power than BH because it estimates what fraction of genes are truly differentially expressed (1−π₀) and adjusts accordingly. BH is more conservative but makes no assumptions about π₀. For genomic screens with many true positives, Q-value is preferred. This is the key reason for the R container upgrade in v11.
+
+---
+
+## 4. 🛠️ Installation & Dependency Requirements
+
+### 4.1 Runtime Architecture (v11)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│               GenePattern Server                            │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │           Docker Container (R 2.5)                    │  │
+│  │  ┌─────────────────┐   ┌─────────────────────────┐   │  │
+│  │  │   R Runtime     │   │ R Package Dependencies  │   │  │
+│  │  │   Version 2.5   │   │ • qvalue (Storey/Bioc)  │   │  │
+│  │  │                 │   │ • Base R statistics      │   │  │
+│  │  └─────────────────┘   └─────────────────────────┘   │  │
+│  │  ┌─────────────────────────────────────────────────┐  │  │
+│  │  │   CMS Analysis Scripts (R)                      │  │  │
+│  │  │   • comparativeMarkerSelection.R                │  │  │
+│  │  │   • Permutation engine                          │  │  │
+│  │  │   • Multiple testing corrections                │  │  │
+│  │  │   • ODF file writer                             │  │  │
+│  │  └─────────────────────────────────────────────────┘  │  │
+│  └───────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 4.2 Dependency Stack
+
+| Component | Details | Purpose |
+|---|---|---|
+| **Docker** | Container runtime | Isolation, reproducibility |
+| **R** | Version 2.5 (containerized) | Core computation language |
+| **qvalue** | Bioconductor package (Storey) | Q-value/FDR estimation |
+| **Base R stats** | `t.test`, permutation functions | Core statistical tests |
+| **GenePattern server** | v3.x+ | Module execution environment |
+
+### 4.3 Execution Environment Options
+
+1. **GenePattern Public Server** (cloud.genepattern.org): No installation required; run directly in browser
+2. **Local GenePattern Server**: Requires GenePattern server installation + Docker
+3. **GenePattern Notebook (Jupyter)**: Available via GenePattern Python client library
+4. **Programmatic Access**: GenePattern REST API
+
+### 4.4 Version History & Key Changes
+
+| Version | Key Change | Significance |
+|---|---|---|
+| **v11** | R 2.5 Docker container; Q-value computation enabled | Reproducibility + statistical power upgrade |
+| **v10** | Prior stable release | Lacked containerized Q-value support |
+| **<v10** | Earlier iterations | Various algorithm and format refinements |
+
+---
+
+## 5. 🔬 Common Workflows & Use Cases
+
+### 5.1 Standard Differential Expression Workflow (Microarray)
+
+```
+Raw CEL/Expression Files
+        │
+        ▼
+┌─────────────────────┐
+│  ExpressionFile-    │  Convert raw Affymetrix to GCT/RES
+│  Creator            │  (RMA normalization, log transform)
+└─────────┬───────────┘
+          │  .gct file
+          ▼
+┌─────────────────────┐
+│  PreprocessDataset  │  Threshold, floor/ceiling, row normalize
+│                     │  Filter low-expression/low-variation genes
+└─────────┬───────────┘
+          │  .preprocessed.gct
+          ▼
+┌─────────────────────┐        ┌──────────────┐
+│  Comparative-       │◄───────│  .cls file   │
+│  MarkerSelection    │        │  (class labels)│
+│  (v11)              │        └──────────────┘
+└─────────┬───────────┘
+          │  .comp.marker.odf
+          ▼
+┌─────────────────────┐
+│  ComparativeMarker  │  Interactive review: scatter plots,
+│  SelectionViewer    │  rank plots, expression profiles,
+│                     │  significance filtering
+└─────────┬───────────┘
+          │  Selected gene list
+          ▼
+┌─────────────────────┐
+│  ExtractComparative │  Create filtered GCT file with
+│  MarkerResults      │  only significant markers
+└─────────┬───────────┘
+          │  .gct (marker genes only)
+          ▼
+┌─────────────────────┐
+│  HeatMapViewer      │  Confirm class separation visually
+│                     │  in marker gene expression patterns
+└─────────────────────┘
+```
+
+### 5.2 Extended Analysis Workflows
+
+**Workflow A: Biomarker Discovery → Pathway Analysis**
+```
+ComparativeMarkerSelection → Ranked gene list → GSEA → Pathway enrichment
+```
+
+**Workflow B: Expression → Classification**
+```
+ComparativeMarkerSelection → Top N marker genes → KNNclassify/PredictionAnalysis
+```
+
+**Workflow C: Multi-Dataset Validation**
+```
+Training set CMS → Marker genes → Apply to test set → Validate discrimination
+```
+*(Tutorial uses all_aml_train.gct → run CMS → validate on all_aml_test.gct)*
+
+**Workflow D: ssGSEA Integration**
+```
+ssGSEA (gene-set scores per sample) → ComparativeMarkerSelection
+(identifies gene sets most discriminatory between classes)
+```
+
+### 5.3 Use Case Scenarios by Data Type
+
+| Data Type | Recommended Settings | Notes |
+|---|---|---|
+| **Affymetrix microarray (raw)** | log.transformed.data=no after RMA | RMA outputs log₂; set flag to yes |
+| **Affymetrix microarray (log₂ norm)** | log.transformed.data=yes | Fold change will be log₂ ratio |
+| **RNA-seq TPM/FPKM** | log.transformed.data=no (or yes if pre-logged) | Less ideal statistically than count-based methods |
+| **Small dataset (<20 total)** | complete=yes | All possible permutations; more accurate |
+| **Paired design** | test.statistic=paired t-test | Order matters: pairs must be adjacent |
+| **SNR for ranking** | test.statistic=SNR, min.std=0.2 | Classic Golub 1999 approach |
+
+---
+
+## 6. 🔗 GenePattern Module Integration Considerations
+
+### 6.1 Module Ecosystem Position
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│             GenePattern Differential Expression Suite            │
+├────────────────┬───────────────────────────────┬────────────────┤
+│   UPSTREAM     │         CORE MODULE            │   DOWNSTREAM   │
+│                │                                │                │
+│ PreprocessData │  ComparativeMarkerSelection    │ CMS-Viewer     │
+│ ExprFileCreate │  ━━━━━━━━━━━━━━━━━━━━━━━━━━   │ ExtractCMR     │
+│ CollapseDataset│  Input:  GCT/RES + CLS         │ HeatMapViewer  │
+│ ClsFileCreator │  Output: .comp.marker.odf      │ GSEA           │
+│ ssGSEA         │  Engine: R 2.5 container       │ KNNclassify    │
+└────────────────┴───────────────────────────────┴────────────────┘
+```
+
+### 6.2 Module XML Specification (Key Fields for v11)
+
+```xml
+<!-- Key module.xml parameters for GenePattern module definition -->
+<module>
+  <name>ComparativeMarkerSelection</name>
+  <version>11</version>
+  <description>Identify differentially expressed genes that can 
+    discriminate between distinct classes of samples.</description>
+  <categories>Gene List Selection</categories>
+  <language>any</language>
+  <cpu_type>any</cpu_type>
+  <os>any</os>
+  
+  <!-- Docker container for R 2.5 with qvalue -->
+  <job.docker.image>genepattern/comparativemarkerselection:2.5</job.docker.image>
+  
+  <!-- Command line template -->
+  <command>Rscript /path/to/comparativeMarkerSelection.R 
+    --input <input.filename>
+    --cls <cls.filename>
+    --test <test.statistic>
+    --nperm <number.of.permutations>
+    --log <log.transformed.data>
+    --complete <complete>
+    --balanced <balanced>
+    --seed <random.seed>
+    --smooth <smooth.p.values>
+    --direction <test.direction>
+    --min.std <min.std>
+    --output <output.filename>
+  </command>
+</module>
+```
+
+### 6.3 Parameter Grouping for UI Organization
+
+| GenePattern UI Group | Parameters | Priority |
+|---|---|---|
+| **Required Inputs** | `input.filename`, `cls.filename` | Required |
+| **Statistical Test** | `test.statistic`, `test.direction`, `min.std` | High |
+| **Permutation Settings** | `number.of.permutations`, `complete`, `balanced`, `random.seed`, `smooth.p.values` | Medium |
+| **Data Preprocessing** | `log.transformed.data` | High (error-prone) |
+| **Output** | `output.filename` | Low |
+
+### 6.4 Known Limitations & Integration Caveats
+
+| Issue | Impact | Mitigation |
+|---|---|---|
+| **Two-class only** | Cannot handle multiclass designs | Document clearly; suggest preprocessing to create binary comparisons |
+| **Not count-data aware** | Suboptimal for raw RNA-seq counts | Recommend DESeq2/edgeR for count data; CMS appropriate for TPM/FPKM |
+| **Minimum 3 samples/class** | Will fail with tiny datasets | Input validation in module wrapper |
+| **Log-transform flag** | Fold change errors if misset | Explicit warning in UI; mark as important parameter |
+| **Complete permutations** | Computationally explosive for large n | Document usage limits; compute max feasible permutations |
+| **Q-value in v11** | Requires R 2.5 container | This is why containerization is essential |
+| **ODF format** | Proprietary format, not directly interoperable | Document conversion; provide downstream module connections |
+
+### 6.5 Comparative Tool Positioning
+
+| Tool | Best For | CMS Advantage |
+|---|---|---|
+| **DESeq2 / edgeR** | RNA-seq count data | CMS better for normalized continuous data; simpler interface |
+| **limma** | Complex multi-factor designs | CMS simpler for straightforward 2-class; comprehensive MHT |
+| **SAM** | Similar use case | CMS has deeper GenePattern integration + more MHT options |
+| **GSEA** | Gene-set level analysis | CMS is gene-level; complementary (CMS output feeds GSEA) |
+| **Wilcoxon** | Non-parametric comparisons | CMS adds permutation-based MHT corrections |
+
+---
+
+## 7. 📚 Key References
+
+| Reference | DOI/PMID | Relevance |
+|---|---|---|
+| Gould J, Getz G, Monti S, Reich M, Mesirov JP (2006). *Comparative gene marker selection suite.* **Bioinformatics** 22(15):1924–5 | PMID: 16709585; DOI: 10.1093/bioinformatics/btl196 | **Primary publication** for this module suite |
+| Golub T, Slonim D, et al. (1999). *Molecular Classification of Cancer.* **Science** 286:531–537 | PMID: 10521349 | SNR statistic origin; canonical leukemia example dataset |
+| Storey JD, Tibshirani R (2003). *Statistical significance for genomewide studies.* **PNAS** 100:9440–9445 | PMID: 12883005 | Basis for Q-value method (key v11 addition) |
+| Benjamini Y, Hochberg Y (1995). *Controlling the false discovery rate.* **JRSS-B** 57:289–300 | — | Basis for FDR (BH) method |
+| Westfall PH, Young SS (1993). *Resampling-Based Multiple Testing.* Wiley | — | Basis for maxT FWER method |
+| Good P (2000). *Permutation Tests*, 2nd Ed. Springer-Verlag | — | Permutation testing framework |
+| Reich M et al. (2006). *GenePattern 2.0.* **Nature Genetics** 38:500–501 | PMID: 16642009 | GenePattern platform description |
+| PMC3893799 | PMCID: PMC3893799 | Protocol paper: *Using GenePattern for Gene Expression Analysis* |
+
+---
+
+## 8. 🔑 Summary of Key Findings for GenePattern Module Development
+
+> **✅ Module Readiness:** ComparativeMarkerSelection v11 is a mature, well-documented, scientifically validated module with a clean two-input design (GCT + CLS) and a single primary output (ODF).
+
+**Critical Implementation Points:**
+1. **Docker container is mandatory** for v11 — the R 2.5 container bundles the `qvalue` package required for Q-value computation.
+2. **12 configurable parameters** fall into 5 logical groups: inputs, test configuration, permutation settings, data flags, and output naming.
+3. **`log.transformed.data`** is the highest-risk parameter — must be prominently exposed in the UI with clear documentation.
+4. **`complete=yes` caveat** must be enforced programmatically: total permutations scale combinatorially and can make runtime infeasible for datasets with ≥10 samples per class.
+5. **Output ODF format** is GenePattern-native and directly consumable by `ComparativeMarkerSelectionViewer` and `ExtractComparativeMarkerResults` — these downstream modules should be noted in documentation.
+6. **Minimum 3 samples/class** should be validated at module invocation before computation begins.
+7. The **canonical example dataset** (all_aml_train.gct / all_aml_train.cls from Golub 1999) provides a reliable validation benchmark during module testing.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

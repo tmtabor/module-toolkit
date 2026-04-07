@@ -1,0 +1,56 @@
+{
+  "module_name": "MultiplotStudio",
+  "description": "Scatterplot visualization tool for analyzing differential gene expression.",
+  "author": "Scott Davis (GlaxoSmithKline)",
+  "input_file_formats": [
+    "cls",
+    "csv",
+    "gct",
+    "msdata"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:88530:1",
+  "plan": "## MultiplotStudio GenePattern Module — Implementation Plan\n\n### 1. Overview\nMultiplotStudio is a GenePattern module that Scatterplot visualization tool for analyzing differential gene expression.\n\n### 2. Parameters\nThe module exposes 2 parameters:\n- Required: dataFile\n- Optional: classFile\n\n### 3. Command Line\n```\n<java> -Dfile.encoding\\=UTF8 -Dsun.java2d.d3d\\=true -Dsun.java2d.dpiaware\\=true -Dsun.java2d.ddscale\\=true -Dsun.java2d.translaccel\\=true -Xms192m -XX\\:+UseG1GC -jar <libdir>MultiplotStudio.jar <dataFile> <classFile>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "MultiplotStudio.jar",
+  "command_line": "<java> -Dfile.encoding=UTF8 -Dsun.java2d.d3d=true -Dsun.java2d.dpiaware=true -Dsun.java2d.ddscale=true -Dsun.java2d.translaccel=true -Xms192m -XX:+UseG1GC -jar <libdir>MultiplotStudio.jar <dataFile> <classFile>",
+  "parameters": [
+    {
+      "name": "dataFile",
+      "description": "GenePattern dataset (*.gct), Multiplot Studio Workspace file (*.msdata) or CSV (see help for format requirements).",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "csv",
+        "msdata"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dataFile",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "classFile",
+      "description": "Class file (*.cls). Not required, but lack of a class file will result in fewer calculation options. Ignored if dataFile is a Workspace.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--classFile",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

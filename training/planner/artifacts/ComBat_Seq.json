@@ -1,0 +1,180 @@
+{
+  "module_name": "ComBat_Seq",
+  "description": "ComBat_Seq module. A Batch effect adjustment tool for bulk RNA-seq count data. Improvement upon ComBat,  and uses a negative binomial regression to model batch effects. ComBat-seq takes untransformed, raw count matrix as input. Provides adjusted data which preserves the integer nature of counts, so that the adjusted data are compatible with the assumptions of state-of-the-art differential expression software (e.g. edgeR, DESeq2, which request untransformed count data)\\nOriginal Documentation\\: https\\://github.com/zhangyuqing/ComBat-seq \\nCredits go to Zhang et al, https\\://doi.org/10.1093/nargab/lqaa078",
+  "author": "Edwin Huang;Mesirov Lab",
+  "input_file_formats": [
+    "cls",
+    "csv",
+    "gct",
+    "tsv"
+  ],
+  "language": "R",
+  "categories": [
+    "batch correction"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:62064:1",
+  "plan": "## ComBat_Seq GenePattern Module — Implementation Plan\n\n### 1. Overview\nComBat_Seq is a GenePattern module that ComBat_Seq module. A Batch effect adjustment tool for bulk RNA-seq count data. Improvement upon ComBat,  and uses a negative binomial regression to model batch effects. ComBat-seq takes untransformed, raw count matrix as input. Provides adjusted data which preserves the integer nature of counts, so that the adjusted data are compatible with the assumptions of state-of-the-art differential expression software (e.g. edgeR, DESeq2, which request untransformed count data)\\nOriginal Documentation\\: https\\://github.com/zhangyuqing/ComBat-seq \\nCredits go to Zhang et al, https\\://doi.org/10.1093/nargab/lqaa078\n\n### 2. Parameters\nThe module exposes 9 parameters:\n- Required: input.matrix, batch.information, output.type\n- Optional: covariates, output.prefix, shrink, shrink_disp, gene.subset.n, covariance.matrix\n\n### 3. Command Line\n```\nRscript /opt/genepatt/src/ComBat-seq_wrapper.R --input_matrix <input.matrix>  --input_class <batch.information> --file_name <output.prefix> --shrink <shrink> --shrink_disp <shrink_disp> --output_type <output.type>  <gene.subset.n> <covariance.matrix> <covariates>\n```\n\n### 4. Docker Image\nDocker image: genepattern/combat_seq\\:v1.3\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "ComBat-seq_wrapper.R",
+  "command_line": "Rscript /opt/genepatt/src/ComBat-seq_wrapper.R --input_matrix <input.matrix>  --input_class <batch.information> --file_name <output.prefix> --shrink <shrink> --shrink_disp <shrink_disp> --output_type <output.type>  <gene.subset.n> <covariance.matrix> <covariates>",
+  "parameters": [
+    {
+      "name": "input.matrix",
+      "description": "The input counts matrix. Can be a GCT or a .tsv (tab separated value) file. Rows should be genes, column should be samples, and the value are counts. File format documentation for GCT files\\: https\\://www.genepattern.org/file-formats-guide",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "csv",
+        "tsv",
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.matrix",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "batch.information",
+      "description": "File containing batch and group (optional) information. Example of the file is here\\: https\\://github.com/genepattern/ComBat_Seq/blob/develop/README.md. Can be a CLS file containing batch information (CLS documentation here\\: https\\://www.genepattern.org/file-formats-guide)\\n\\nFirst row contains sample information (sample names).\\nSecond row contains batch information of each sample (a batch number for each sample).\\nThird row contains group information of each sample (biological variable for each sample).\\n\\nhttps\\://www.genepattern.org/file-formats-guide",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "csv",
+        "tsv",
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--batch.information",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "covariates",
+      "description": "Row names for covariates to use for this run of ComBat Seq. Separate by commas.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cov",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.prefix",
+      "description": "Prefix for output name.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "<input.matrix_basename>_batch_corrected",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.type",
+      "description": "Filetype to output. Can be GCT, TSV, or both",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "GCT",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "GCT",
+          "value": "GCT"
+        },
+        {
+          "display": "TSV",
+          "value": "TSV"
+        },
+        {
+          "display": "both",
+          "value": "both"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "shrink",
+      "description": "Whether to apply empirical Bayes estimation on parameters.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "No",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes",
+          "value": "Yes"
+        },
+        {
+          "display": "No",
+          "value": "No"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--shrink",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "shrink_disp",
+      "description": "Whether to apply empirical Bayes estimation on dispersion.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "No",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes",
+          "value": "Yes"
+        },
+        {
+          "display": "No",
+          "value": "No"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--shrink_disp",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gene.subset.n",
+      "description": "Number of genes to use in empirical Bayes estimation, only useful when shrink \\= Yes",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gene_n",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "covariance.matrix",
+      "description": "If you wish to specify multiple biological variables. Model matrix for other covariates to include in the linear model besides batch and condition of interest.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cov_mat",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/combat_seq:v1.3"
+}

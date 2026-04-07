@@ -1,0 +1,231 @@
+{
+  "module_name": "STREAM.Preprocess",
+  "description": "Preprocess single cell RNA-seq data to prepare it for the STREAM trajectory analysis. This module will normalize, log transform, filter and remove mitochondiral genes.",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "input_file_formats": [
+    "gz",
+    "pkl",
+    "tsv",
+    "tsv.gz"
+  ],
+  "language": "Python",
+  "categories": [
+    "Single-Cell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:26815:1",
+  "plan": "## STREAM.Preprocess GenePattern Module — Implementation Plan\n\n### 1. Overview\nSTREAM.Preprocess is a GenePattern module that Preprocess single cell RNA-seq data to prepare it for the STREAM trajectory analysis. This module will normalize, log transform, filter and remove mitochondiral genes.\n\n### 2. Parameters\nThe module exposes 13 parameters:\n- Required: data.file\n- Optional: cell.label.file, cell.label.color.file, output.filename, normalize, log.transform, remove.mitochondrial.genes, min.percent.genes, min.count.genes, min.percent.cells, min.count.cells, min.num.cells, expression.cutoff\n\n### 3. Command Line\n```\npython /stream/preprocess_command_line.py -m <data.file> <cell.label.file> <cell.label.color.file> <output.filename> <min.percent.genes> <min.count.genes> <min.num.cells> <min.percent.cells> <min.count.cells> <expression.cutoff> <normalize> <log.transform> <remove.mitochondrial.genes>\n```\n\n### 4. Docker Image\nDocker image: genepattern/stream_preprocess\\:0.2\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "preprocess_command_line.py",
+  "command_line": "python /stream/preprocess_command_line.py -m <data.file> <cell.label.file> <cell.label.color.file> <output.filename> <min.percent.genes> <min.count.genes> <min.num.cells> <min.percent.cells> <min.count.cells> <expression.cutoff> <normalize> <log.transform> <remove.mitochondrial.genes>",
+  "parameters": [
+    {
+      "name": "data.file",
+      "description": "A csv/tsv/pkl file containing gene expression data",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "pkl",
+        "gz",
+        "tsv",
+        "tsv.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cell.label.file",
+      "description": "A tsv file containing cell labels.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gz",
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-l",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "cell.label.color.file",
+      "description": "A tsv file containing cell label colors expressed as hex values.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gz",
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-c",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.filename",
+      "description": "The output file name prefix.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-of",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "normalize",
+      "description": "Normalize gene expression based on library size.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": ""
+        },
+        {
+          "display": "TRUE",
+          "value": "--norm"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--normalize",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "log.transform",
+      "description": "Log2 transform the dataset.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": ""
+        },
+        {
+          "display": "TRUE",
+          "value": "--log2"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--log.transform",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "remove.mitochondrial.genes",
+      "description": "Remove mitochondrial genes.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": ""
+        },
+        {
+          "display": "TRUE",
+          "value": "--remove_mt_genes"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--remove.mitochondrial.genes",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min.percent.genes",
+      "description": "The minimum percentage of genes expressed to keep a cell.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min_percent_genes",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min.count.genes",
+      "description": "The minimum number of read counts for each gene to keep a cell.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min_count_genes",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min.percent.cells",
+      "description": "The minimum percentage of cells expressing a gene to keep the gene.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min_percent_cells",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min.count.cells",
+      "description": "The minimum number of read counts for one cell to keep a gene.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min_count_cells",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min.num.cells",
+      "description": "The minimum number of cells expression a gene.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min_num_cells",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "expression.cutoff",
+      "description": "The expression cutoff used to determine if a gene is expressed. If expression is greater than expr_cutoff,the gene is considered 'expressed'.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--expression_cutoff",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/stream_preprocess:0.2"
+}

@@ -1,0 +1,296 @@
+{
+  "module_name": "ConsensusClustering",
+  "description": "Resampling-based clustering method",
+  "author": "Stefano Monti, Broad Institute",
+  "input_file_formats": [
+    "Dataset",
+    "gct",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:78990:1",
+  "plan": "## ConsensusClustering GenePattern Module — Implementation Plan\n\n### 1. Overview\nConsensusClustering is a GenePattern module that Resampling-based clustering method\n\n### 2. Parameters\nThe module exposes 15 parameters:\n- Required: input.filename, kmax, resampling.iterations, output.stub\n- Optional: seed.value, clustering.algorithm, cluster.by, distance.measure, resample, merge.type, descent.iterations, normalize.type, normalization.iterations, create.heat.map, heat.map.size\n\n### 3. Command Line\n```\n<run-with-env> -u Java -u R-2.5 java <java_flags> -cp <libdir>Acme.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>geneweaver.jar<path.separator><libdir>RunSomAlg.jar<path.separator><libdir>jaxb-rt-1.0-ea.jar<path.separator><libdir>file_support.jar<path.separator><libdir>archiver.jar<path.separator><libdir>trove.jar<path.separator><libdir>gp-common.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>cc.jar edu.mit.broad.modules.cc.CC <input.filename> <kmax> <resampling.iterations> <normalize.type> -N <normalization.iterations> -@<seed.value> -S <resample> -t <clustering.algorithm> <cluster.by> -D <distance.measure> -L <merge.type> -i <descent.iterations> -o <output.stub> -s -d <create.heat.map> -z <heat.map.size> -l0 -v0 -b<libdir>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "Acme.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>geneweaver.jar<path.separator><libdir>RunSomAlg.jar<path.separator><libdir>jaxb-rt-1.0-ea.jar<path.separator><libdir>file_support.jar<path.separator><libdir>archiver.jar<path.separator><libdir>trove.jar<path.separator><libdir>gp-common.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>cc.jar",
+  "command_line": "<run-with-env> -u Java -u R-2.5 java <java_flags> -cp <libdir>Acme.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>geneweaver.jar<path.separator><libdir>RunSomAlg.jar<path.separator><libdir>jaxb-rt-1.0-ea.jar<path.separator><libdir>file_support.jar<path.separator><libdir>archiver.jar<path.separator><libdir>trove.jar<path.separator><libdir>gp-common.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>cc.jar edu.mit.broad.modules.cc.CC <input.filename> <kmax> <resampling.iterations> <normalize.type> -N <normalization.iterations> -@<seed.value> -S <resample> -t <clustering.algorithm> <cluster.by> -D <distance.measure> -L <merge.type> -i <descent.iterations> -o <output.stub> -s -d <create.heat.map> -z <heat.map.size> -l0 -v0 -b<libdir>",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "description": "The data to be clustered (.gct, .res, .odf)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "res",
+        "Dataset"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "kmax",
+      "description": "Try K\\=2,3,...,kmax clusters (must be > 1)",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--kmax",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "resampling.iterations",
+      "description": "Number of resampling iterations",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "20",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--resampling.iterations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "seed.value",
+      "description": "Random number generator seed",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "12345",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--seed.value",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "clustering.algorithm",
+      "description": "Type of clustering algorithm",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "HIERARCHICAL",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Hierarchical",
+          "value": "HIERARCHICAL"
+        },
+        {
+          "display": "SOM",
+          "value": "SOM"
+        },
+        {
+          "display": "NMF",
+          "value": "NMF"
+        },
+        {
+          "display": "KMeans",
+          "value": "KMEANS"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--clustering.algorithm",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cluster.by",
+      "description": "Whether to cluster by rows/genes or columns/experiments",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "columns",
+          "value": ""
+        },
+        {
+          "display": "rows",
+          "value": "-c"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--cluster.by",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "distance.measure",
+      "description": "Distance measure",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "EUCLIDEAN",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Euclidean",
+          "value": "EUCLIDEAN"
+        },
+        {
+          "display": "Pearson",
+          "value": "PEARSON"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--distance.measure",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "resample",
+      "description": "resampling scheme (one of 'subsample[ratio]', 'features[nfeat]', 'nosampling'). The default is subsampling with a proportion of 0.80. NOTE\\: The square brackets should not be included (i.e subsample0.7, features210).",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "subsample",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--resample",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "merge.type",
+      "description": "Ignored when algorithm other than hierarchical selected",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "average",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "average",
+          "value": "average"
+        },
+        {
+          "display": "complete",
+          "value": "complete"
+        },
+        {
+          "display": "single",
+          "value": "single"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--merge.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "descent.iterations",
+      "description": "Number of SOM/NMF iterations",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "2000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--descent.iterations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.stub",
+      "description": "Stub pre-pended to all the output file names",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.filename_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.stub",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "normalize.type",
+      "description": "row-wise, column-wise, both",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "-n1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "row-wise",
+          "value": "-n1"
+        },
+        {
+          "display": "column-wise",
+          "value": "-n2"
+        },
+        {
+          "display": "both",
+          "value": "-n3"
+        },
+        {
+          "display": "none",
+          "value": ""
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--normalize.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "normalization.iterations",
+      "description": "number of row/column normalization iterations (supercedes normalize.type)",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--normalization.iterations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "create.heat.map",
+      "description": "Whether to create heatmaps (one for each cluster number)",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": ""
+        },
+        {
+          "display": "yes",
+          "value": "-p"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--create.heat.map",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "heat.map.size",
+      "description": "point size of a consensus matrix's heat map (between 1 and 20)",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--heat.map.size",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

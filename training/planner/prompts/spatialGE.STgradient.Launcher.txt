@@ -1,0 +1,465 @@
+Create a comprehensive structured plan for the GenePattern module for 'spatialGE.STgradient.Launcher'.
+            
+            Tool Information:
+            - Name: spatialGE.STgradient.Launcher
+            - Version: Initial version
+            - Language: Javascript
+            - Description: Reads the output of spatialGE.STclust and then launches an analysis to test for genes for which there is evidence of expression spatial gradients with respect to a "reference" tissue niche/domain (e.g., higher expression closer to reference tissue niche, lower expression as farther from reference tissue niche).
+            
+            Research Results:
+            Now I have all the information needed to compile the definitive, comprehensive research report. Let me present it:
+
+---
+
+# 🧬 Comprehensive Research Report: `spatialGE.STgradient.Launcher`
+
+---
+
+## 1. EXECUTIVE SUMMARY
+
+`spatialGE.STgradient.Launcher` is a **JavaScript-based interactive bridge module** in the GenePattern platform that occupies a critical position in the spatialGE spatial transcriptomics analysis pipeline. It sits between `spatialGE.STclust` (tissue niche detection) and `spatialGE.STgradient` (the core R-based gradient analysis engine). Its primary function is to **read the upstream clustering output, dynamically present the user with data-derived choices** (namely, which tissue niche/cluster to use as the spatial reference), and then **configure and launch** the downstream `spatialGE.STgradient` analysis module.
+
+The underlying statistical methodology — implemented in the `spatialGE` R package (v1.2.0, Fridley Lab, Moffitt Cancer Center) — calculates **Spearman's rank correlation coefficients** between gene expression levels and the minimum Euclidean distance of each spot from a user-designated "reference" tissue niche, enabling detection of genes whose expression systematically increases or decreases as a function of spatial proximity to that reference domain.
+
+---
+
+## 2. SCIENTIFIC BACKGROUND & PURPOSE
+
+### 2.1 Biological Problem Addressed
+
+Tissues are spatially organized, and gene expression does not merely differ between discrete tissue compartments — it often **transitions continuously** along spatial axes between tissue niches. Traditional differential expression analysis compares groups (cluster A vs. cluster B), but fails to capture the **gradient nature** of many biological processes:
+
+- Tumor-stroma interface gene expression gradients
+- Inflammatory front infiltration patterns
+- Developmental zone transitions (e.g., proliferative vs. post-mitotic zones)
+- Hypoxia gradients emanating from necrotic cores
+- Morphogen gradients in developmental biology
+
+STgradient was specifically designed to ask: *"For a given reference tissue niche (e.g., tumor), which genes show systematic, distance-dependent expression changes across the surrounding tissue?"*
+
+### 2.2 Statistical Framework
+
+The algorithm follows these steps:
+
+```
+1. INPUT:  STlist with STclust-defined tissue niches
+2. REFERENCE: User designates one niche (e.g., "tumor") as the reference
+3. DISTANCE: For each non-reference spot, compute minimum Euclidean distance to 
+             the nearest reference spot (or alternative distance summary metric)
+4. CORRELATION: Compute Spearman's ρ between gene expression and distance vector
+   - ρ < 0: Gene expression DECREASES as distance from reference INCREASES
+             (i.e., higher expression closer to reference niche)
+   - ρ > 0: Gene expression INCREASES as distance from reference INCREASES
+             (i.e., lower expression closer to reference niche)
+5. SIGNIFICANCE: Permutation testing to compute empirical p-values
+6. CORRECTION: Multiple testing adjustment (FDR/BH method)
+7. OUTPUT: Updated STlist + results table with ρ, p-value, adj.p-value per gene
+```
+
+### 2.3 Validated Applications
+
+| Study | Application | Key Finding |
+|---|---|---|
+| PMC11228800 (Melanoma Leptomeningeal Disease) | Tumor-stroma spatial gradients | Identified NFKB-TNFA signaling enrichment near tumor boundary; results validated by in vivo mouse experiments |
+| PMC11244876 (spatialGE Web App) | Tumor vs. non-tumor niche gradients in melanoma | Demonstrated complete STclust → STgradient → STenrich workflow |
+| PMC11873723 (Cancer Research 2025) | Multiple cancer spatial transcriptomics datasets | Validated as "hypothesis-generative tool" for spatial biology |
+
+---
+
+## 3. MODULE ARCHITECTURE & ROLE IN GENEPATTERN PIPELINE
+
+### 3.1 The GenePattern spatialGE Pipeline
+
+```
+┌─────────────────────┐
+│  Raw Data Input      │  10X Visium / CosMx / CSV+coordinates
+│  (STnormalize)       │
+└──────────┬──────────┘
+           ↓
+┌─────────────────────┐
+│  spatialGE.STclust  │  Tissue niche/domain detection
+│  (R module)         │  Output: STlist.RDS with cluster assignments
+└──────────┬──────────┘
+           ↓
+┌──────────────────────────────┐   ◄─── THIS MODULE
+│  spatialGE.STgradient.       │
+│  Launcher (JavaScript)       │  Reads STlist.RDS → Extracts cluster names
+│                              │  → Presents interactive UI to user
+│                              │  → Collects reference niche + parameters
+│                              │  → Submits configured job
+└──────────┬───────────────────┘
+           ↓
+┌─────────────────────┐
+│  spatialGE.STgradient│  Core R statistical analysis
+│  (R module)          │  Spearman correlations + permutation tests
+└──────────┬──────────┘
+           ↓
+┌─────────────────────────────────┐
+│  Results: CSV table + RDS + Plots│  Gradient gene lists, ρ values, p-values
+└─────────────────────────────────┘
+           ↓
+┌─────────────────────┐
+│  spatialGE.STenrich  │  (Optional) Gene set enrichment on gradient genes
+│  Launcher            │
+└─────────────────────┘
+```
+
+### 3.2 The Launcher Design Pattern
+
+The `Launcher` pattern in GenePattern is a specialized design where a **JavaScript UI module** acts as an intelligent intermediary:
+
+| Characteristic | Description |
+|---|---|
+| **Language** | JavaScript (front-end/UI logic) |
+| **Role** | Dynamic parameter collection, not statistical computation |
+| **Key Capability** | Reads upstream RDS output to populate dropdowns dynamically |
+| **What it launches** | `spatialGE.STgradient` (the R-based computational module) |
+| **User interaction** | Presents a UI form where users select reference cluster from a list extracted from their actual clustering results |
+
+This design is critical because the **reference cluster name is data-dependent** — it comes from what STclust labeled the clusters in the user's specific dataset (e.g., "cluster_1", "tumor", "niche_A"), and cannot be hardcoded in advance.
+
+---
+
+## 4. INPUT/OUTPUT SPECIFICATIONS
+
+### 4.1 Inputs to the Launcher
+
+| Input | Format | Description | Required |
+|---|---|---|---|
+| `stlist_input` | `.RDS` file | STlist S4 object output from `spatialGE.STclust`, containing raw counts, normalized counts, spatial coordinates, and cluster assignments | **Required** |
+
+### 4.2 Parameters Collected by the Launcher UI
+
+These are the parameters the Launcher presents to the user before submitting to `spatialGE.STgradient`:
+
+| Parameter | R Argument | Type | Default | Description |
+|---|---|---|---|---|
+| **Reference Cluster** | `ref` | String (dropdown) | *(none)* | **[CRITICAL]** The tissue niche/domain to use as the spatial reference point. Distances are computed FROM all non-reference spots TO the nearest reference spot. Dynamically populated from STclust output. |
+| **Top Genes** | `topgenes` | Integer | `2000` | Number of top variably expressed genes to test. Higher values are more comprehensive but computationally costlier. |
+| **Samples** | `samples` | Multi-select | `NULL` (all) | Which samples in the multi-sample STlist to include. |
+| **Annotation Column** | `annot` | String | `NULL` | Which metadata column holds cluster assignments (if multiple clustering results exist). |
+| **Exclude Clusters** | `exclude` | Multi-select | `NULL` | Cluster names to exclude from distance calculations and testing. |
+| **Remove Outliers** | `out_rm` | Boolean | `FALSE` | Whether to apply outlier spot removal prior to analysis. |
+| **Distance Limit** | `limit` | Numeric | `NULL` | Maximum distance threshold; spots beyond this distance are excluded from correlation. |
+| **Distance Summary** | `distsumm` | Select | `"min"` | How to summarize distance to reference (`"min"` = minimum distance to any reference spot). |
+| **Min. Neighborhood** | `min_nb` | Integer | `3` | Minimum number of spots required in the reference niche (quality control). |
+| **Robust Correlation** | `robust` | Boolean | `TRUE` | Use robust Spearman correlation implementation. |
+| **Neighborhood Distance Threshold** | `nb_dist_thr` | Numeric | `NULL` | Distance threshold for defining the local neighborhood. |
+| **Log-transform Distances** | `log_dist` | Boolean | `FALSE` | Apply log-transformation to distance values before computing correlations. |
+| **CPU Cores** | `cores` | Integer | `NULL` | Number of cores for parallel processing. |
+| **Verbose** | `verbose` | Boolean | `TRUE` | Print progress to console/log. |
+
+### 4.3 Outputs of the Downstream `spatialGE.STgradient` Module
+
+| Output | Format | Description |
+|---|---|---|
+| Updated STlist | `.RDS` | S4 STlist object with gradient results embedded; ready for STenrich or visualization |
+| Results Table | `.CSV`/`.TSV` | Per-gene results: `gene`, `sample`, `spearman_rho`, `p_value`, `adj_p_value`, `gradient_direction` |
+| Visualization Plots | `.PNG`/`.PDF` | Spatial plots showing gradient gene expression across tissue; scatter plots of expression vs. distance |
+
+---
+
+## 5. PARAMETER ANALYSIS & GROUPING
+
+### 5.1 Recommended GenePattern Parameter Groups
+
+**Group 1: Required Inputs** *(High Priority)*
+```
+- stlist_input      [File upload — RDS from STclust]
+- ref               [Dropdown — dynamically populated from STclust clusters]
+```
+
+**Group 2: Gene Selection** *(Medium Priority)*
+```
+- topgenes          [Integer — default 2000]
+- annot             [String — annotation column name]
+```
+
+**Group 3: Distance Configuration** *(Medium Priority)*
+```
+- distsumm          [Select: "min"]
+- limit             [Numeric — optional cutoff]
+- log_dist          [Boolean — FALSE]
+- nb_dist_thr       [Numeric — optional]
+```
+
+**Group 4: Sample & Cluster Filtering** *(Medium Priority)*
+```
+- samples           [Multi-select — defaults to all]
+- exclude           [Multi-select — clusters to exclude]
+```
+
+**Group 5: Quality Control** *(Medium Priority)*
+```
+- out_rm            [Boolean — FALSE]
+- min_nb            [Integer — 3]
+- robust            [Boolean — TRUE]
+```
+
+**Group 6: Computational Resources** *(Low Priority / Advanced)*
+```
+- cores             [Integer — NULL = auto]
+- verbose           [Boolean — TRUE]
+```
+
+### 5.2 Key Parameter Relationships & Biological Significance
+
+```
+ref + distsumm="min"  →  Standard setup: minimum distance to any tumor/reference spot
+                          (most common biologically meaningful configuration)
+
+ref + limit           →  Restrict analysis to spots within a spatial "zone of influence"
+                          around the reference niche (useful for local gradient analysis)
+
+log_dist=TRUE         →  Appropriate when distance distribution is highly right-skewed
+                          (common in large tissue sections or diffuse reference niches)
+
+out_rm=TRUE           →  Important for Visium data with tissue folding artifacts or
+                          edge effects that create spurious expression-distance correlations
+
+topgenes ↑            →  More comprehensive but slower; use 5000 for discovery studies;
+                          2000 (default) balances speed and coverage
+```
+
+---
+
+## 6. UNDERLYING R PACKAGE SPECIFICATIONS
+
+### 6.1 Package Identity
+
+| Attribute | Value |
+|---|---|
+| Package | `spatialGE` |
+| CRAN URL | https://cran.r-project.org/package=spatialGE |
+| Version | 1.2.0 (current) |
+| Developing Lab | Fridley Lab, Moffitt Cancer Center |
+| Web Application | https://spatialge.moffitt.org |
+
+### 6.2 Key Dependencies
+
+| Dependency | Category | Purpose |
+|---|---|---|
+| `Seurat` | Core | `FindVariableFeatures()` for top variable gene selection |
+| `dplyr` | Data manipulation | Results table processing |
+| `ggplot2` | Visualization | Gradient plots |
+| `pheatmap` | Visualization | Heatmaps of gradient genes |
+| `Matrix` | Data structures | Sparse count matrix support |
+| `BiocParallel` / `parallel` | Computation | Multi-core permutation testing |
+| `methods` | R core | S4 class system for STlist |
+
+### 6.3 Supported Data Platforms
+
+| Platform | Support Level | Notes |
+|---|---|---|
+| 10X Genomics Visium | Full | Primary development platform; SpaceRanger output directories |
+| NanoString CosMx | Full | Single-molecule spatial data |
+| CSV/TSV + Coordinates | Full | Generic format for any spatial platform |
+| Slide-seq / MERFISH | Partial | Via CSV/TSV conversion |
+
+### 6.4 Installation
+
+```r
+# CRAN (stable)
+install.packages("spatialGE")
+
+# GitHub (development)
+devtools::install_github("FridleyLab/spatialGE")
+
+# System requirements: R >= 4.0, recommended 4.2+
+# RAM: Minimum 8GB; 16-32GB recommended for large Visium datasets
+# OS: Linux, macOS, Windows (Linux preferred for HPC)
+```
+
+---
+
+## 7. COMMON WORKFLOWS & USE CASES
+
+### 7.1 Standard Tumor Microenvironment Workflow
+
+```
+Use Case: Identify genes with expression gradients emanating from/toward tumor niche
+
+1. STclust identifies: ["tumor", "stroma", "immune", "normal_epithelium"]
+2. STgradient.Launcher presents dropdown with these cluster names
+3. User selects ref = "tumor"
+4. Analysis computes: For each gene, does expression correlate with distance from tumor?
+5. Results: 
+   - Genes with ρ < 0 (closer to tumor = higher expression): e.g., immunosuppression genes
+   - Genes with ρ > 0 (farther from tumor = higher expression): e.g., normal tissue markers
+```
+
+### 7.2 Inflammatory Zone Analysis
+
+```
+Use Case: Characterize inflammation gradients in diseased tissue
+
+1. STclust identifies: ["inflammatory_core", "perilesional", "normal"]
+2. User selects ref = "inflammatory_core"
+3. Results reveal cytokine and chemokine gradients emanating from inflammation center
+4. Follow-up: STenrich tests for enriched pathways among gradient genes
+```
+
+### 7.3 Multi-Sample Comparative Analysis
+
+```
+Use Case: Compare gradients across multiple patient samples
+
+1. STclust applied across N patient biopsies simultaneously
+2. STgradient.Launcher: user selects samples = ["patient_1", "patient_3"] 
+   and ref = "tumor" (common to both)
+3. Results compared across samples for recurrent gradient patterns
+4. Identifies reproducible spatial biomarkers
+```
+
+---
+
+## 8. COMPARATIVE POSITIONING
+
+| Tool | Reference-Based | Requires Clustering | Statistical Method | GenePattern Integration | Ease of Use |
+|---|---|---|---|---|---|
+| **spatialGE STgradient** | ✅ Yes | ✅ Yes (STclust) | Spearman ρ + permutation | ✅ Native | ⭐⭐⭐⭐⭐ |
+| LSGI | ❌ No | ❌ No | PCA landscape | ❌ None | ⭐⭐⭐ |
+| SpatialGradient Screening | ❌ No | ❌ No | Regression-based | ❌ None | ⭐⭐⭐ |
+| niche-DE | ✅ Yes | ✅ Yes | Negative binomial model | ❌ None | ⭐⭐⭐ |
+| GASTON | ❌ No | ❌ No | Deep learning | ❌ None | ⭐⭐ |
+| C-Side | ✅ Yes | ✅ Yes | Spatial regression | ❌ None | ⭐⭐ |
+
+**Key Competitive Advantages of spatialGE STgradient:**
+1. **Biologically interpretable framework**: Reference-niche anchoring aligns naturally with how pathologists and biologists think about tissue architecture
+2. **Non-parametric robustness**: Spearman correlation makes no distributional assumptions about count data
+3. **Seamless pipeline integration**: STlist ecosystem preserves all upstream results; outputs feed directly into STenrich
+4. **GenePattern-native**: Only tool with pre-built GenePattern module ecosystem
+5. **Clinically validated**: Published applications in cancer spatial transcriptomics with experimental validation
+
+---
+
+## 9. GENEPATTERN MODULE INTEGRATION CONSIDERATIONS
+
+### 9.1 JavaScript Launcher Implementation Requirements
+
+```javascript
+// Core responsibilities of the Launcher:
+
+1. RECEIVE: Path to RDS file (STlist from STclust)
+
+2. PARSE: Extract cluster/niche names from STlist
+   - Options: 
+     (a) Invoke R subprocess: Rscript -e "readRDS(args[1])@spatial_meta[[1]]$clust"
+     (b) Read a companion JSON sidecar file generated by STclust
+   - Result: Array of cluster names, e.g., ["cluster_1", "cluster_2", "tumor", ...]
+
+3. RENDER: Dynamic HTML form with:
+   - Dropdown for 'ref' (populated from extracted cluster names)
+   - Multi-select for 'exclude' (same cluster names)
+   - Multi-select for 'samples' (sample names from STlist)
+   - Numeric inputs for topgenes, min_nb, limit, nb_dist_thr
+   - Boolean toggles for out_rm, robust, log_dist, verbose
+   - Select for distsumm ("min")
+   - Numeric for cores
+
+4. VALIDATE: Client-side validation
+   - ref must be selected (required)
+   - topgenes must be positive integer
+   - min_nb must be >= 1
+   - exclude should not include ref
+
+5. SUBMIT: GenePattern job submission API call to spatialGE.STgradient
+   with all parameters properly formatted
+```
+
+### 9.2 Critical Integration Notes
+
+| Concern | Recommendation |
+|---|---|
+| **RDS Parsing** | STclust should emit a companion JSON sidecar with cluster names/sample names to avoid requiring R in the Launcher JS layer |
+| **Reference Cluster Naming** | STclust output should standardize cluster name format; document expected naming conventions (numeric, character, or labeled) |
+| **Multi-sample Support** | Launcher must handle STlists with 1-N samples; `samples` parameter should default to all |
+| **Large Dataset Performance** | Set default `cores = 4` in GenePattern environment; expose as advanced parameter |
+| **Docker Container** | R container should include spatialGE + all dependencies; version pin spatialGE to >= 1.2.0 |
+| **Output Routing** | Updated RDS feeds into STenrich.Launcher or visualization modules |
+| **Error Handling** | Validate that `ref` cluster has >= `min_nb` spots before submission |
+
+### 9.3 Suggested GenePattern Module Manifest (module.json) Key Fields
+
+```json
+{
+  "name": "spatialGE.STgradient.Launcher",
+  "description": "Interactive launcher that reads spatialGE.STclust output and configures a spatial gene expression gradient analysis. Tests genes for evidence of expression gradients with respect to a reference tissue niche/domain.",
+  "version": "1.0.0",
+  "language": "JavaScript",
+  "taskType": "Launcher",
+  "categories": ["Spatial Transcriptomics", "RNA-seq"],
+  "parameters": {
+    "stlist_rds": {"type": "FILE", "required": true, "description": "RDS file (STlist from spatialGE.STclust)"},
+    "ref": {"type": "TEXT", "required": true, "description": "Reference tissue niche/domain name"},
+    "topgenes": {"type": "INTEGER", "default": 2000, "description": "Number of top variable genes to test"},
+    "distsumm": {"type": "TEXT", "default": "min", "choices": ["min"], "description": "Distance summary method"},
+    "out_rm": {"type": "BOOLEAN", "default": false},
+    "log_dist": {"type": "BOOLEAN", "default": false},
+    "robust": {"type": "BOOLEAN", "default": true},
+    "min_nb": {"type": "INTEGER", "default": 3},
+    "cores": {"type": "INTEGER", "default": 4}
+  }
+}
+```
+
+---
+
+## 10. LITERATURE & CITATION GUIDE
+
+| Reference | Relevance | Citation |
+|---|---|---|
+| **Primary spatialGE R Package Paper** | Foundational methodology paper | Ospina OE et al. *spatialGE: quantification and visualization of the tumor microenvironment heterogeneity using spatial transcriptomics.* Bioinformatics Advances, 2022. PMC9890305 |
+| **STgradient Validation Study** | First published use of STgradient | PMC11228800 - Melanoma leptomeningeal disease spatial transcriptomics (2024) |
+| **spatialGE Web App Paper** | Demonstrates complete pipeline workflow | PMC11244876 - *spatialGE: A user-friendly web application to democratize spatial transcriptomics analysis* (2024) |
+| **Cancer Research 2025** | Most recent clinical validation | PMC11873723 - *spatialGE Is a User-Friendly Web Application That Facilitates Spatial Transcriptomics Data Analysis.* Cancer Res 85(5):848 (2025) |
+| **STdiff Methods Paper** | Spatial mixed model companion method | Ospina OE et al. *Sci Rep* 14:10967 (2024) - provides context for statistical framework |
+
+---
+
+## 11. KNOWN LIMITATIONS & CAVEATS
+
+| Limitation | Details | Mitigation |
+|---|---|---|
+| **Requires prior clustering** | STgradient depends on STclust output; cluster quality directly affects gradient results | Ensure robust STclust parameters before proceeding |
+| **Reference niche subjectivity** | User must manually identify which cluster represents the biologically meaningful reference | Provide biological annotation guidance in documentation |
+| **Assumes continuous gradients** | Spearman correlation assumes monotonic expression-distance relationship; non-monotonic patterns are missed | Supplement with STenrich for non-linear spatial patterns |
+| **Spot-level resolution** | Designed for Visium-like spot data; may need adaptation for single-cell resolution platforms | Verify spot size vs. biological gradient scale |
+| **Sparsity sensitivity** | Lowly expressed genes may have spurious gradient signals | `topgenes` parameter helps by filtering to high-variance genes |
+| **Distance metric** | Only Euclidean distance with `"min"` summary currently available | Future versions may support other distance metrics |
+| **Multiple testing burden** | Testing 2000+ genes requires stringent FDR correction; may miss subtle gradients | Adjust `topgenes` and significance threshold based on study goals |
+
+---
+
+## 12. SUMMARY & RECOMMENDATIONS FOR GENEPATTERN MODULE DEVELOPMENT
+
+### Priority Action Items
+
+1. ✅ **Implement RDS sidecar protocol**: Have `spatialGE.STclust` emit a JSON file alongside the RDS containing cluster names, sample names, and metadata — this eliminates the need for R subprocess calls in the JavaScript Launcher
+
+2. ✅ **Dynamic dropdown population**: The critical feature of this Launcher is the data-driven `ref` parameter dropdown; this is the primary reason the module exists as a JavaScript Launcher rather than a standard R module
+
+3. ✅ **Parameter validation**: Validate that the selected `ref` cluster exists in the STlist and has ≥ `min_nb` spots before job submission
+
+4. ✅ **Pin spatialGE version**: Use `spatialGE >= 1.2.0` in the Docker container to ensure STgradient function signature compatibility
+
+5. ✅ **Pipeline chaining**: Ensure the output RDS from `spatialGE.STgradient` is properly named and routable to `spatialGE.STenrich.Launcher` and visualization modules
+
+6. ✅ **Documentation**: Emphasize biological interpretation of Spearman ρ sign (negative = higher near reference, positive = higher far from reference) in the module help page
+
+7. ✅ **Example datasets**: Provide a small Visium melanoma dataset pre-processed through STclust as a test case for the full STgradient pipeline
+
+---
+
+*Research conducted using authoritative sources: CRAN spatialGE package documentation (v1.2.0), GenePattern official spatial transcriptomics documentation, FridleyLab/spatialGE GitHub repository, PubMed/PMC primary literature (PMC9890305, PMC11228800, PMC11244876, PMC11873723), and comparative tool analysis across the spatial gradient analysis landscape.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

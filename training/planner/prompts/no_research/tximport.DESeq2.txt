@@ -1,0 +1,137 @@
+Create a comprehensive structured plan for the GenePattern module for 'tximport.DESeq2'.
+            
+            Tool Information:
+            - Name: tximport.DESeq2
+            - Version: latest
+            - Language: any
+            - Description: Imports RNA-seq quantifications from frequently used pipelines using the tximport package and outputs a DESeq2 "normalized counts" file in .GCT format suitable for use with GSEA, and/or a TPM .GCT suitable for ssGSEA.<br>\nIf a Sample Info file is provided containing assignments of samples to phenotypes, gene level differential expression will be calculated using DESeq2 for the two phenotypes.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "tximport.DESeq2",
+  "parameters": [
+    {
+      "name": "Quantifications",
+      "type": "FILE",
+      "description": "Output files from the respective pipeline. Files must be named with the sample ID and the appropriate extension for the quantification tool.\\n<br>\\nExample\\:\\n\".genes.results\" files output from RSEM\\: Sample_1.genes.results\\n<br>\\n\".quant.sf\" or \".quant.sf.gz\" files output from Salmon/Sailfish\\: Sample_1.quant.sf/Sample_1.quant.sf.gz\\n<br>\\n\".abundance.h5\" or \".abundance.tsv\" files output from Kallisto\\: Sample_1.abundance.h5/Sample_1.abundance.h5.gz/Sample_1.abundance.tsv/Sample_1.abundance.tsv.gz\\n<br><br>\\nAll files must have been quantified using the same application and the same transcriptome.\\n<br>\\nSupports gzip (.gz) files.",
+      "required": true,
+      "default_value": "",
+      "file_format": "gz;h5;results;sf;tsv",
+      "num_values": "1+"
+    },
+    {
+      "name": "Sample.Info",
+      "type": "FILE",
+      "description": "<b>Optional</b> tab delimited text file containing Sample ID to Phenotype mappings. Sample IDs should match exactly the ID used in the input file (without the file extension).<br>\\nIf provided, this file will be used to compute deferentially expressed genes using DESeq2.\\n<br>By default, Log2(FC) will be calculated for the first Factor level vs the second Factor level (Phenotype_A vs. Phenotype_B).\\n<br><br>\\n<style type\\=\"text/css\">\\n.tg  {border-collapse\\:collapse;border-spacing\\:0;}\\n.tg td{border-color\\:black;border-style\\:solid;border-width\\:1px;font-family\\:Arial, sans-serif;font-size\\:12px;}\\n.tg th{border-color\\:black;border-style\\:solid;border-width\\:1px;font-family\\:Arial, sans-serif;font-size\\:12px;\\n  font-weight\\:normal;}\\n.tg .tg-0pky{border-color\\:inherit;text-align\\:left;vertical-align\\:top}\\n</style>\\n<table class\\=\"tg\">\\n<tbody>\\n  <tr>\\n    <th class\\=\"tg-0pky\">SampleID</th>\\n    <th class\\=\"tg-0pky\">Factor</th>\\n  </tr>\\n  <tr>\\n    <td class\\=\"tg-0pky\">Sample_1</td>\\n    <td class\\=\"tg-0pky\">Phenotype_A</td>\\n  </tr>\\n  <tr>\\n    <td class\\=\"tg-0pky\">Sample_2</td>\\n    <td class\\=\"tg-0pky\">Phenotype_A</td>\\n  </tr>\\n  <tr>\\n    <td class\\=\"tg-0pky\">Sample_3</td>\\n    <td class\\=\"tg-0pky\">Phenotype_B</td>\\n  </tr>\\n  <tr>\\n    <td class\\=\"tg-0pky\">Sample_4</td>\\n    <td class\\=\"tg-0pky\">Phenotype_B</td>\\n  </tr>\\n</tbody>\\n</table>\\n<br>\\nCovariates can be provided as additional \"Factor\" columns. The first factor column (the second column in the table) will always be used as the primary factor for the differential expression analysis.",
+      "required": false,
+      "default_value": "",
+      "file_format": "txt",
+      "num_values": "0..1"
+    },
+    {
+      "name": "Quant.Type",
+      "type": "TEXT",
+      "description": "Select the type of quantifications to be imported.",
+      "required": true,
+      "default_value": "SALMON",
+      "choices": "RSEM\\=RSEM .genes.results;SALMON\\=Salmon .quant.sf;SAILFISH\\=Sailfish .quant.sf;KallistoH5\\=Kallisto .abundance.h5;KallistoTSV\\=Kallisto .abundance.tsv",
+      "num_values": "1..1"
+    },
+    {
+      "name": "Transcriptome.Database",
+      "type": "FILE",
+      "description": "For Salmon/Sailfish/Kallisto data providing the transcriptome file used to quantify the data is <b>required</b> and must be provided in GTF/GFF3 format. This parameter is not utilized for RSEM data.<br/>(Supports gzip [.gz] files).<br/>",
+      "required": false,
+      "default_value": "",
+      "file_format": "gff3;gtf;gz",
+      "num_values": "0..1"
+    },
+    {
+      "name": "Output.Normalized.Counts",
+      "type": "TEXT",
+      "description": "Compute count normalization with DESeq2 and output the normalized matrix. This is the ideal output for compatibility with GSEA.",
+      "required": true,
+      "default_value": "TRUE",
+      "choices": "TRUE\\=TRUE;FALSE\\=FALSE",
+      "num_values": "1..1"
+    },
+    {
+      "name": "Output.TPM",
+      "type": "TEXT",
+      "description": "Transcripts per million (TPM) quantifications will be extracted and output. This is the ideal output for compatibility with ssGSEA.",
+      "required": true,
+      "default_value": "TRUE",
+      "choices": "TRUE\\=TRUE;FALSE\\=FALSE",
+      "num_values": "1..1"
+    },
+    {
+      "name": "output.file.base",
+      "type": "TEXT",
+      "description": "The base name of the output file(s). File extensions will be added automatically.",
+      "required": true,
+      "default_value": "Merged.Data",
+      "num_values": "1..1"
+    },
+    {
+      "name": "Reverse.Sign",
+      "type": "TEXT",
+      "description": "If computing differentially expressed genes, by default, Log2(FC) will be calculated for the first Factor level vs the second Factor level (Phenotype_A vs. Phenotype_B). Setting Reverse.Sign \\= TRUE will reverse the direction of the calculation and Log2(FC) will be calculated for the second Factor level vs the first Factor level (Phenotype_B vs. Phenotype_A).",
+      "required": true,
+      "default_value": "FALSE",
+      "choices": "TRUE\\=TRUE;FALSE\\=FALSE",
+      "num_values": "1..1"
+    },
+    {
+      "name": "Annotate.DEGs",
+      "type": "TEXT",
+      "description": "If a Sample Info file and a Transcriptome Database have been provided, setting Annotate DEGs to TRUE will attempt to add gene symbols to the computed differential expression analysis.<br>Note\\: This does not affect the .GCT files which will still output only the underlying Gene IDs.",
+      "required": true,
+      "default_value": "TRUE",
+      "choices": "TRUE\\=TRUE;FALSE\\=FALSE",
+      "num_values": "1..1"
+    },
+    {
+      "name": "Split.Identifiers",
+      "type": "TEXT",
+      "description": "Some pipelines produce a gene label that combines a reference ID and a Gene Symbol joined by an underscore (e.g. ENSG00000141510_TP53).\\n<br>\\n<b>TRUE</b> will attempt to split these into the reference ID and the Gene Symbol. The reference ID will be used as the NAME column of the GCT and the Gene Symbol will be used as the Description.\\n<br>\\n<b>FALSE</b> will leave the identifiers as-is.\\n",
+      "required": true,
+      "default_value": "TRUE",
+      "choices": "TRUE\\=TRUE;FALSE\\=FALSE",
+      "num_values": "1..1"
+    },
+    {
+      "name": "Min.Count.Filter",
+      "type": "Integer",
+      "description": "Keep genes with more than <Min.Count.Filter> counts summed over all samples (default\\: 1 count; 0 \\= disabled)",
+      "required": true,
+      "default_value": "1",
+      "num_values": "1..1"
+    },
+    {
+      "name": "random.seed",
+      "type": "TEXT",
+      "description": "Integer used to configure the workspace. Setting this to a constant ensures uniformity for any operations that use random numbers.",
+      "required": true,
+      "default_value": "779948241",
+      "num_values": "1..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/tximport_deseq2\\:1.0",
+  "categories": "differential expression",
+  "task_type": "differential expression",
+  "author": "Anthony S. Castanza;UCSD-MesirovLab",
+  "command_line": "<Rscript> <libdir>tximport.deseq2.R --quant\\=<Quantifications> --type\\=<Quant.Type> --txdb\\=<Transcriptome.Database> --info\\=<Sample.Info> --counts\\=<Output.Normalized.Counts> --tpm\\=<Output.TPM> --basename\\=<output.file.base> --annotate\\=<Annotate.DEGs> --reverse\\=<Reverse.Sign> --split\\=<Split.Identifiers>  --filter\\=<Min.Count.Filter> --seed\\=<random.seed>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

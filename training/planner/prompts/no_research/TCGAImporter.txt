@@ -1,0 +1,76 @@
+Create a comprehensive structured plan for the GenePattern module for 'TCGAImporter'.
+            
+            Tool Information:
+            - Name: TCGAImporter
+            - Version: Adding metadata to the docker container & updating to version 1.5 of the CLI.
+            - Language: Python
+            - Description: This module imports data from TCGA by taking in a GDC manifest file, downloading the files listed on that manifest, renaming them to be human-friendly, and compiling them into a GCT file to be computer-friendly.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "TCGAImporter",
+  "parameters": [
+    {
+      "name": "manifest",
+      "type": "FILE",
+      "description": "The relative path of the manifest used to download the data. This file is obtained from the GDC data portal (https\\://portal.gdc.cancer.gov/).",
+      "required": true,
+      "default_value": "",
+      "file_format": "txt",
+      "num_values": "0..1"
+    },
+    {
+      "name": "output_file_name",
+      "type": "TEXT",
+      "description": "The base name to use for output files. E.g., if you type \"TCGA_dataset\" then the GCT file will be named \"TCGA_dataset.gct\"",
+      "required": false,
+      "default_value": "TCGA_dataset",
+      "num_values": "0..1"
+    },
+    {
+      "name": "gct",
+      "type": "TEXT",
+      "description": "whether or not to create a gct file",
+      "required": true,
+      "default_value": "True",
+      "choices": "True\\=True;False\\=False",
+      "num_values": "0..1"
+    },
+    {
+      "name": "translate_gene_id",
+      "type": "TEXT",
+      "description": "Whether or not to translate ENSEMBL IDs (e.g., ENSG00000012048) to Hugo Gene Symbol (e.g., BRCA1)",
+      "required": true,
+      "default_value": "True",
+      "choices": "False\\=False;True\\=True",
+      "num_values": "0..1"
+    },
+    {
+      "name": "cls",
+      "type": "java.lang.String",
+      "description": "Whether or not to translate create a cls file separating Normal and Tumor classes based on TCGA Sample ID.",
+      "required": true,
+      "default_value": "True",
+      "choices": "False\\=False;True\\=True",
+      "num_values": "0..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/docker-download-from-gdc\\:1.5",
+  "categories": "Data Format Conversion",
+  "task_type": "Data Format Conversion",
+  "author": "Edwin F. Juarez & Andy Zhang;UCSD -- Mesirov Lab",
+  "command_line": "python /usr/local/bin/TCGAImporter/download_from_manifest.py -m <manifest> -o <output_file_name> -g <gct> -t <translate_gene_id> -c <cls>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,132 @@
+{
+  "module_name": "tfsites.NormalizeTfDNAAffinityData",
+  "description": "NormalizeTfDnaAffinityData generates a relative affinity dataset which can then be used in other TFSites modules to score binding sites. This tool normalizes a raw affinity dataset relative to the sequence with the highest value that follows the core binding site definition. The resulting dataset will report the relative affinity value for every sequence in the original dataset, ranging from 0 to 1.",
+  "author": "Joe Solvason",
+  "input_file_formats": [
+    "tsv"
+  ],
+  "language": "Python",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:62669:1",
+  "plan": "## tfsites.NormalizeTfDNAAffinityData GenePattern Module — Implementation Plan\n\n### 1. Overview\ntfsites.NormalizeTfDNAAffinityData is a GenePattern module that NormalizeTfDnaAffinityData generates a relative affinity dataset which can then be used in other TFSites modules to score binding sites. This tool normalizes a raw affinity dataset relative to the sequence with the highest value that follows the core binding site definition. The resulting dataset will report the relative affinity value for every sequence in the original dataset, ranging from 0 to 1.\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: raw.data, output.filename, core.binding.site.definition, DNA.sequence.column, affinity.column, header.present, output.image.as.svg\n- Optional: none\n\n### 3. Command Line\n```\npython /build/tfsites-webportal/01-normalizeTfDnaAffinityData/01-normalizeTfDnaAffinityData.py -r <raw.data> -b <core.binding.site.definition> -d <DNA.sequence.column> -a <affinity.column>  -p <header.present> -S <output.image.as.svg> -o <output.filename>\n```\n\n### 4. Docker Image\nDocker image: genepattern/tfsites\\:16.3\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "01-normalizeTfDnaAffinityData.py",
+  "command_line": "python /build/tfsites-webportal/01-normalizeTfDnaAffinityData/01-normalizeTfDnaAffinityData.py -r <raw.data> -b <core.binding.site.definition> -d <DNA.sequence.column> -a <affinity.column>  -p <header.present> -S <output.image.as.svg> -o <output.filename>",
+  "parameters": [
+    {
+      "name": "raw.data",
+      "description": "File containing the raw affinity dataset.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--raw.data",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "Base name of the output files.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "relative-aff-data_site\\=<core.binding.site.definition>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "core.binding.site.definition",
+      "description": "IUPAC definition of the core transcription factor binding site(see <a href\\=\"https\\://www.bioinformatics.org/sms/iupac.html\">here</a>). The length of the IUPAC definition should be the same length k as the k-mers in the raw affinity file.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "NNGGAWNN",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--core.binding.site.definition",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "DNA.sequence.column",
+      "description": "Number of the column containing the DNA sequences in the raw affinity file (1-indexed, 1 is the first column).",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--DNA.sequence.column",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "affinity.column",
+      "description": "Number of the column containing the raw affinity values in the input file (1-indexed, 1 is the first column).",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "4",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--affinity.column",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "header.present",
+      "description": "If True, a header exists in the PBM data file. If False, no header exists.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        },
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--header.present",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.image.as.svg",
+      "description": "If True, a header exists in the PBM data file. If False, no header exists.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        },
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.image.as.svg",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/tfsites:16.3"
+}

@@ -1,0 +1,102 @@
+{
+  "module_name": "Single.Cell.ssGSEA",
+  "description": "Perform Single Cell ssGSEA. Can be used after Seurat.Clustering module.",
+  "author": "Alexander T. Wenzel & John Jun",
+  "input_file_formats": [
+    "chip",
+    "gmt",
+    "h5ad",
+    "h5seurat",
+    "rds"
+  ],
+  "language": "Shell",
+  "categories": [
+    "gsea",
+    "pathway analysis",
+    "projection",
+    "single-cell",
+    "singlecell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:46202:1",
+  "plan": "## Single.Cell.ssGSEA GenePattern Module — Implementation Plan\n\n### 1. Overview\nSingle.Cell.ssGSEA is a GenePattern module that Perform Single Cell ssGSEA. Can be used after Seurat.Clustering module.\n\n### 2. Parameters\nThe module exposes 5 parameters:\n- Required: input_file, gene_set_database_file, output_file_name, cluster_data_label\n- Optional: chip_file\n\n### 3. Command Line\n```\nbash <libdir>sc_ssGSEA_driver.sh <input_file> <gene_set_database_file> <output_file_name> <job.cpuCount> <cluster_data_label> <chip_file>\n```\n\n### 4. Docker Image\nDocker image: atwenzel/sc_ssgsea\\:v1.3.0\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "sc_ssGSEA_driver.sh",
+  "command_line": "bash <libdir>sc_ssGSEA_driver.sh <input_file> <gene_set_database_file> <output_file_name> <job.cpuCount> <cluster_data_label> <chip_file>",
+  "parameters": [
+    {
+      "name": "input_file",
+      "description": "Input Seurat RDS, h5seurat, or h5ad file.",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "rds",
+        "h5ad",
+        "h5seurat"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input_file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gene_set_database_file",
+      "description": "Gene sets database from GSEA website. Upload a gene set if your gene set is not listed as a choice from MsigDB.",
+      "required": true,
+      "type": "file",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": [
+        "gmt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gene_set_database_file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output_file_name",
+      "description": "Base name of the output files to be saved.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "scGSEA_scores",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output_file_name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "chip_file",
+      "description": "Chip file containing Gene ID to Gene Symbol mappings. Leave blank if the gene names are already in gene symbols.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "chip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--chip_file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "cluster_data_label",
+      "description": "Name of the label for cluster metadata. The default label is <seurat_clusters> that is generated from the Seurat.Clustering module.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "seurat_clusters",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cluster_data_label",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "atwenzel/sc_ssgsea:v1.3.0"
+}

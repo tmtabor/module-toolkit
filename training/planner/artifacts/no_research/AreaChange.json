@@ -1,0 +1,136 @@
+{
+  "module_name": "AreaChange",
+  "description": "Calculates fraction of area under the spectrum that is attributable to signal (area after noise removal / original area)",
+  "author": "D.R. Mani, Broad Institute",
+  "input_file_formats": [
+    "csv"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:63229:1",
+  "plan": "## AreaChange GenePattern Module — Implementation Plan\n\n### 1. Overview\nAreaChange is a GenePattern module that Calculates fraction of area under the spectrum that is attributable to signal (area after noise removal / original area)\n\n### 2. Parameters\nThe module exposes 8 parameters:\n- Required: spectrum.filename, quality.threshold, output.file\n- Optional: low.Da, high.Da, window.filter, factor, smooth\n\n### 3. Command Line\n```\n<R2.5> <libdir>pipeline.wrapper.R areachange.wrapper <spectrum.filename> <output.file> <quality.threshold> <libdir> -l<low.Da> -h<high.Da> -w<window.filter> -f<factor> -s<smooth>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "pipeline.wrapper.R",
+  "command_line": "<R2.5> <libdir>pipeline.wrapper.R areachange.wrapper <spectrum.filename> <output.file> <quality.threshold> <libdir> -l<low.Da> -h<high.Da> -w<window.filter> -f<factor> -s<smooth>",
+  "parameters": [
+    {
+      "name": "spectrum.filename",
+      "description": "spectrum data file - .csv",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "csv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--spectrum.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "low.Da",
+      "description": "minimum M/Z to include",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--low.Da",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "high.Da",
+      "description": "maximum M/Z to include",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--high.Da",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "quality.threshold",
+      "description": "discard spectra with quality < quality threshold",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.45",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--quality.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "window.filter",
+      "description": "window filter size",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--window.filter",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "factor",
+      "description": "factor to multiply standard deviation by",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--factor",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "smooth",
+      "description": "averaging function",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "median",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "median",
+          "value": "median"
+        },
+        {
+          "display": "mean",
+          "value": "mean"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--smooth",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "output file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<spectrum.filename_basename>.area.odf",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

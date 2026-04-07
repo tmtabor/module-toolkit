@@ -1,0 +1,62 @@
+Create a comprehensive structured plan for the GenePattern module for 'ReorderByClass'.
+            
+            Tool Information:
+            - Name: ReorderByClass
+            - Version: Fixed default value for class file output name
+            - Language: Java
+            - Description: Reorder the samples in an expression dataset and class file by class
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ReorderByClass",
+  "parameters": [
+    {
+      "name": "expression.data.filename",
+      "type": "FILE",
+      "description": "Expression data - .res, .gct, .odf",
+      "required": true,
+      "default_value": "",
+      "file_format": "res;gct;Dataset"
+    },
+    {
+      "name": "class.filename",
+      "type": "FILE",
+      "description": "Class file - .cls",
+      "required": true,
+      "default_value": "",
+      "file_format": "cls"
+    },
+    {
+      "name": "expression.data.file.output.name",
+      "type": "java.lang.String",
+      "description": "Name of expression data output file",
+      "required": true,
+      "default_value": "<expression.data.filename_basename>_reordered"
+    },
+    {
+      "name": "class.file.output.name",
+      "type": "java.lang.String",
+      "description": "Name of class output file",
+      "required": true,
+      "default_value": "<class.filename_basename>_reordered"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Joshua Gould, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>ReorderByClass.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.reorderbyclass.ReorderByClass <expression.data.filename> <class.filename> <expression.data.file.output.name> <class.file.output.name>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

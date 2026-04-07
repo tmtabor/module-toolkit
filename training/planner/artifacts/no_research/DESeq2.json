@@ -1,0 +1,149 @@
+{
+  "module_name": "DESeq2",
+  "description": "A Differential Expression workflow for RNA-Seq data based on the DESeq2 package from Bioconductor",
+  "author": "David Eby;Broad Institute",
+  "input_file_formats": [
+    "cls",
+    "gct"
+  ],
+  "language": "R",
+  "categories": [
+    "differential expression"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:81229:1",
+  "plan": "## DESeq2 GenePattern Module — Implementation Plan\n\n### 1. Overview\nDESeq2 is a GenePattern module that A Differential Expression workflow for RNA-Seq data based on the DESeq2 package from Bioconductor\n\n### 2. Parameters\nThe module exposes 8 parameters:\n- Required: input.file, cls.file, output.file.base, qc.plot.format, fdr.threshold, top.N.count, random.seed\n- Optional: confounding.variable.cls.file\n\n### 3. Command Line\n```\nRscript --no-save --quiet --slave --no-restore <libdir>run_gp_deseq2.R <libdir> --input.file\\=<input.file> --cls.file\\=<cls.file> <confounding.variable.cls.file> --output.file.base\\=<output.file.base> --qc.plot.format\\=<qc.plot.format> --fdrThreshold\\=<fdr.threshold> --topNCount\\=<top.N.count> --randomSeed\\=<random.seed>\n```\n\n### 4. Docker Image\nDocker image: genepattern/deseq2\\:v3\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_gp_deseq2.R",
+  "command_line": "Rscript --no-save --quiet --slave --no-restore <libdir>run_gp_deseq2.R <libdir> --input.file=<input.file> --cls.file=<cls.file> <confounding.variable.cls.file> --output.file.base=<output.file.base> --qc.plot.format=<qc.plot.format> --fdrThreshold=<fdr.threshold> --topNCount=<top.N.count> --randomSeed=<random.seed>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "A GCT file containing raw RNA-Seq counts, such as is produced by MergeHTSeqCounts",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cls.file",
+      "description": "A categorical CLS file specifying the phenotype classes for the samples in the GCT file.  This should contain exactly two classes with the control specified first.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cls.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "confounding.variable.cls.file",
+      "description": "A categorical CLS file specifying an additional confounding variable, mapped to the input file samples.  Use this for a two-factor comparison.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--confounding.variable.cls.file\\=",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.file.base",
+      "description": "The base name of the output file(s). File extensions will be added automatically.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file.base",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "qc.plot.format",
+      "description": "Choose a file format for the QC plots (or skip them completely)",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "skip",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "pdf",
+          "value": "pdf"
+        },
+        {
+          "display": "svg",
+          "value": "svg"
+        },
+        {
+          "display": "png",
+          "value": "png"
+        },
+        {
+          "display": "skip (do not produce QC plots)",
+          "value": "skip"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--qc.plot.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "fdr.threshold",
+      "description": "FDR threshold to use in filtering before creating the reports of top up-regulated and down-regulated genes",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--fdr.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "top.N.count",
+      "description": "Max gene count to use when creating the reports of top up-regulated and down-regulated genes",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "20",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--top.N.count",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "random.seed",
+      "description": "Seed to use for randomization",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "779948241",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--random.seed",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/deseq2:v3"
+}

@@ -1,0 +1,20 @@
+{
+  "module_name": "Lu.Getz.Miska.Nature.June.2005.mouse.lung.pipeline",
+  "description": "Normal/tumor classifier and kNN prediction of mouse lung samples",
+  "author": "Gad Getz, Broad Institute",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "Java;R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:68047:1",
+  "plan": "## Lu.Getz.Miska.Nature.June.2005.mouse.lung.pipeline GenePattern Module — Implementation Plan\n\n### 1. Overview\nLu.Getz.Miska.Nature.June.2005.mouse.lung.pipeline is a GenePattern module that Normal/tumor classifier and kNN prediction of mouse lung samples\n\n### 2. Parameters\nThe module exposes 0 parameters:\n- Required: none\n- Optional: none\n\n### 3. Command Line\n```\n<java>  -Dgenepattern.properties\\=<resources> -DLSID\\=<LSID> -DPIPELINE_ARG.StopAfterTask\\=<PIPELINE_ARG.StopAfterTask> -DGenePatternURL\\=<GenePatternURL>  org.genepattern.server.webapp.RunPipelineSoap <GenePatternURL>getPipelineModel.jsp?name\\=<LSID>&userid\\=<userid> <userid>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.py",
+  "command_line": "<java>  -Dgenepattern.properties=<resources> -DLSID=<LSID> -DPIPELINE_ARG.StopAfterTask=<PIPELINE_ARG.StopAfterTask> -DGenePatternURL=<GenePatternURL>  org.genepattern.server.webapp.RunPipelineSoap <GenePatternURL>getPipelineModel.jsp?name=<LSID>&userid=<userid> <userid>",
+  "parameters": [],
+  "docker_image_tag": ""
+}

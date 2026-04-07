@@ -1,0 +1,421 @@
+Create a comprehensive structured plan for the GenePattern module for 'DifferentialExpressionViewer'.
+            
+            Tool Information:
+            - Name: DifferentialExpressionViewer
+            - Version: Renamed from ComparativeMarkerSelectionViewer
+            - Language: any
+            - Description: Views differential expression results such as from the ComparativeMarkerSelection module. Formerly known as ComparativeMarkerSelectionViewer.
+            
+            Research Results:
+            Here is the complete, PhD-level research report on **DifferentialExpressionViewer**:
+
+---
+
+# 🔬 Comprehensive Research Report: DifferentialExpressionViewer (GenePattern Module)
+
+---
+
+## 📋 Executive Summary
+
+**DifferentialExpressionViewer** is a GenePattern visualization module (v10+), formerly known as **ComparativeMarkerSelectionViewer** (v8 and earlier). It is an interactive, browser-based visualizer designed to explore and interpret differential expression results, primarily from the ComparativeMarkerSelection algorithm. It occupies a critical position in the Broad Institute GenePattern differential expression analysis ecosystem and is directly backed by a peer-reviewed publication in *Bioinformatics* (Gould et al., 2006; PMID: [16709585](https://pubmed.ncbi.nlm.nih.gov/16709585/)).
+
+---
+
+## 1. 🎯 Tool Purpose & Scientific Applications
+
+### Primary Purpose
+DifferentialExpressionViewer provides **interactive, multi-panel visual exploration** of differential expression results. It connects statistical analysis output with the original expression data to allow biologists and bioinformaticians to:
+- Identify, rank, and filter genes/features that discriminate between two biological classes
+- Visualize per-gene expression profiles across all samples
+- Apply multiple significance-filtering strategies simultaneously
+- Export filtered results for downstream analysis
+
+### Scientific Applications
+| Application | Description |
+|---|---|
+| **Biomarker Discovery** | Identify genes most strongly associated with a phenotype (disease vs. control, treated vs. untreated) |
+| **Cancer Subtype Classification** | Canonical use: distinguish ALL vs. AML leukemia (Golub et al., 1999) |
+| **Clinical Genomics** | Validate candidate markers by visual inspection of individual gene expression profiles |
+| **Multi-correction Comparison** | Compare significance across FDR, Q-Value, Bonferroni, and FWER simultaneously |
+| **RNA-Seq DE Visualization** | Via DESeq2ToOdf/txt2odf converters, view DESeq2, edgeR, or limma results |
+| **Hypothesis Generation** | Exploratory data analysis to prioritize genes for validation |
+
+### Biological Context
+The module operates in the context of **two-class differential expression analysis**: given expression data from samples belonging to two phenotypic groups, it visualizes which genes are statistically most discriminative. This paradigm spans array-based expression (Affymetrix, Agilent), RNA-seq count-based data (via ODF conversion), and other feature-level quantifications.
+
+---
+
+## 2. 📁 Input/Output Formats & Requirements
+
+### Input Files
+
+#### Required Input 1: ComparativeMarkerSelection Results (ODF Format)
+- **Extension:** `.odf` (e.g., `all_aml_train.comp.marker.odf`)
+- **Format Type:** GenePattern-proprietary Output Data Format (**NOT** the OASIS ODF standard)
+- **Structure:**
+```
+ODF 1.0
+HeaderLines=7
+Model=ComparativeMarkerSelection
+DataLines=<N_GENES>
+COLUMN_TYPES:  String  String  float  float  float  float  float  float  float  int
+COLUMN_NAMES:  Feature  Description  Score  FDR(BH)  Q Value  maxT  FWER  Feature-Specific-P-Value  Bonferroni  Rank
+<gene1>  <description>  <score>  <fdr>  <qval>  <maxT>  <fwer>  <p_val>  <bonf>  <rank>
+...
+```
+
+#### Required Input 2: Expression Dataset (GCT or RES Format)
+- **Extension:** `.gct` (recommended) or `.res`
+- **Purpose:** Supplies the raw expression data used to draw per-gene expression profiles and heatmaps in the upper viewer panel
+- **GCT Structure:**
+```
+#1.2
+<num_rows>  <num_cols>
+Name  Description  Sample1  Sample2  ...
+GENE_1  gene description  5.2  3.1  ...
+```
+
+### ODF Column Definitions (Critical for Module Understanding)
+
+| Column | Type | Description |
+|---|---|---|
+| `Feature` | String | Gene/probe identifier |
+| `Description` | String | Gene name or annotation |
+| `Score` | Float | Test statistic value (t-stat or SNR); **positive = upregulated in class 0, negative = upregulated in class 1** |
+| `FDR(BH)` | Float | False Discovery Rate — Benjamini-Hochberg correction |
+| `Q Value` | Float | FDR estimate by Storey method |
+| `maxT` | Float | Family-Wise Error Rate by Westfall-Young permutation |
+| `FWER` | Float | Family-Wise Error Rate |
+| `Feature-Specific-P-Value` | Float | Permutation-based p-value specific to each feature |
+| `Bonferroni` | Float | Bonferroni-corrected p-value |
+| `Rank` | Integer | Integer rank by score (Rank 1 = most discriminative for class 0) |
+
+### Output
+> ⚠️ **This is a Visualizer module — it produces no file output by default.**
+
+| Output Type | Mechanism | Format |
+|---|---|---|
+| Interactive viewer | Displayed in GenePattern web UI | Web-based (JavaScript/Java) |
+| Table export | File → Save Table | Tab-delimited TXT (Excel-compatible) |
+| Custom scatter plots | View → Custom Plot | On-screen only |
+
+**Note:** The table export respects active filters — only currently visible/filtered rows are exported.
+
+### Compatible ODF Sources (Expanded Compatibility)
+Beyond ComparativeMarkerSelection, the viewer accepts ODF files converted from:
+- **DESeq2ToOdf** module (`https://github.com/genepattern/DESeq2ToOdf`) — for DESeq2 RNA-seq results
+- **txt2odf** module (`https://www.genepattern.org/modules/docs/txt2odf/2/`) — for any tab-delimited DE results
+
+---
+
+## 3. ⚙️ Parameter Analysis & Usage Patterns
+
+### Module Parameters (GenePattern Manifest)
+
+| Parameter Name | Required | Type | Description | Default |
+|---|---|---|---|---|
+| `comparative.marker.selection.filename` | ✅ Yes | File (`.odf`) | ODF output from ComparativeMarkerSelection | — |
+| `dataset.filename` | ✅ Yes | File (`.gct`, `.res`) | Original expression dataset used as CMS input | — |
+
+### In-Viewer Interactive Controls (Runtime Parameters)
+
+#### Filtering Controls
+| Control | Function | Typical Values |
+|---|---|---|
+| **P-value threshold** | Filter by Feature-Specific-P-Value | 0.01, 0.05 |
+| **FDR threshold** | Filter by Benjamini-Hochberg FDR | 0.05, 0.1, 0.25 |
+| **Score threshold** | Filter by test statistic magnitude | varies by dataset |
+| **Fold change threshold** | Filter by expression ratio | 1.5, 2.0 |
+| **Number of features** | Show top N features | 50, 100, 200 |
+| **Show only above threshold** | Boolean toggle | yes/no |
+
+#### Visualization Controls
+| Control | Function |
+|---|---|
+| **Column sort** | Click any column header to reorder results |
+| **Column Show/Hide** | Toggle visibility of specific ODF columns |
+| **Class of interest** | Focus coloring/ranking on class 0 or class 1 |
+| **Upper panel mode** | Switch between Expression Profile / Heatmap / Bar Chart |
+| **Custom Plot axes** | Select any two statistics for XY scatter comparison |
+
+### Parameter Grouping Recommendations for GenePattern Module
+
+```
+[Group 1: Required Inputs]
+  - comparative.marker.selection.filename  (ODF, required)
+  - dataset.filename                       (GCT/RES, required)
+
+[Group 2: Display Filtering]  
+  - p.value.threshold                      (float, optional, default: none)
+  - fdr.threshold                          (float, optional, default: none)
+  - score.threshold                        (float, optional, default: none)
+  - fold.change.threshold                  (float, optional, default: none)
+  - number.of.features                     (integer, optional, default: all)
+  - show.only.features.above.threshold     (boolean, optional, default: false)
+
+[Group 3: View Configuration]
+  - column.to.sort.by                      (string, optional, default: Score)
+  - class.of.interest                      (integer 0|1, optional, default: 0)
+  - feature.annotation.file               (file, optional)
+```
+
+---
+
+## 4. 🛠️ Installation & Dependency Requirements
+
+### Module Type
+- **Task Type:** Visualizer (GenePattern classification)
+- **Language:** Any (viewer-type, rendering handled client-side or via server)
+- **Platform:** GenePattern web application server
+
+### Key Technical Dependencies
+
+| Dependency | Version | Purpose |
+|---|---|---|
+| GenePattern Server | ≥ 3.9 | Hosting environment |
+| ODF format support | Built-in | File parsing |
+| GCT/RES format support | Built-in | Expression data parsing |
+| Java (legacy versions) | ≥ Java 7 | Required for v8 Java-based viewer |
+| Web browser | Modern | Interface rendering |
+
+### Deployment Notes
+- **v8 (ComparativeMarkerSelectionViewer):** Java-based applet; GenePattern released compatibility fixes for Java 7 in June 2014
+- **v10 (DifferentialExpressionViewer):** Updated architecture; available at `https://github.com/genepattern/DifferentialExpressionViewer/tree/v10`
+- **GenePattern Server Installation:** Module is installable through the GenePattern module repository; no external package manager (pip/conda) required for the viewer itself
+- **Docker:** GenePattern modules are increasingly containerized for reproducibility; the v10 repository likely contains a Dockerfile
+
+### Licensing
+- **Author/Owner:** Broad Institute
+- **Contact:** gp-help@broadinstitute.org
+- **License:** Consistent with GenePattern suite (open academic license; see repository for specific terms)
+
+---
+
+## 5. 🔄 Common Workflows & Use Cases
+
+### Standard GenePattern Differential Expression Pipeline
+
+```
+┌─────────────────────┐
+│   Raw Expression    │  (.gct / .res)
+│   Data (GCT/RES)    │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐     ┌──────────────┐
+│  PreprocessDataset  │◄────│  CLS file    │
+│  (normalization,    │     │  (phenotypes)│
+│   filtering)        │     └──────────────┘
+└──────────┬──────────┘
+           │  preprocessed.gct
+           ▼
+┌─────────────────────┐
+│ ComparativeMarker   │  Computes t-test / SNR
+│    Selection        │  + permutation FDR/FWER
+└──────────┬──────────┘
+           │  .comp.marker.odf
+           ├─────────────────────────────────┐
+           ▼                                 ▼
+┌──────────────────────┐     ┌───────────────────────────┐
+│ DifferentialExpression│     │ ExtractComparativeMarker   │
+│     Viewer           │     │     Results               │
+│ (Interactive viz)    │     │ (Filtered gene list/GCT)  │
+└──────────────────────┘     └──────────┬────────────────┘
+                                        │  filtered.gct
+                                        ▼
+                             ┌───────────────────────┐
+                             │     HeatMapViewer      │
+                             │ (Expression heatmap of │
+                             │   top DE genes)        │
+                             └───────────────────────┘
+```
+
+### RNA-Seq Extended Workflow (DESeq2 Integration)
+
+```
+RNA-seq Counts → DESeq2 (R) → TXT output → DESeq2ToOdf → ODF file
+                                                              │
+                                            GCT expression ──┼──► DifferentialExpressionViewer
+                                                              │
+                                                              ▼
+                                                    Interactive DE Visualization
+```
+
+### Use Case Scenarios
+
+#### Use Case 1: Two-Class Cancer Biomarker Discovery
+1. Run `ComparativeMarkerSelection` on tumor vs. normal GCT + CLS
+2. Open `DifferentialExpressionViewer` with ODF + GCT
+3. Sort by FDR, set threshold ≤ 0.05
+4. Inspect expression profiles of top candidates
+5. Export filtered table → Excel for reporting
+
+#### Use Case 2: Multi-Correction Comparison
+1. Load ODF into viewer
+2. Use `View > Custom Plot`
+3. Set X-axis = FDR(BH), Y-axis = Q Value
+4. Identify genes where corrections agree/disagree
+5. Select consensus significant markers
+
+#### Use Case 3: RNA-Seq DESeq2 Results Visualization
+1. Run DESeq2 in R, export results TXT
+2. Run `DESeq2ToOdf` module in GenePattern
+3. Load resulting ODF + normalized counts GCT into `DifferentialExpressionViewer`
+4. Explore results interactively
+
+---
+
+## 6. 🔗 GenePattern Integration Considerations
+
+### Module Positioning in GenePattern Ecosystem
+
+| Related Module | Relationship | File Exchange |
+|---|---|---|
+| `ComparativeMarkerSelection` | **Primary upstream** — generates ODF | → ODF to Viewer |
+| `PreprocessDataset` | Upstream preprocessing | → GCT to CMS |
+| `ExtractComparativeMarkerResults` | Downstream extraction | ← ODF from CMS |
+| `HeatMapViewer` | Downstream visualization | ← GCT from Extract |
+| `DESeq2ToOdf` | ODF conversion bridge | → ODF to Viewer |
+| `txt2odf` | Generic ODF converter | → ODF to Viewer |
+| `DiffEx` | Alternative DE approach (IC/Pearson) | Parallel |
+| `MultiplotStudio` | Alternative scatter/volcano plot | Parallel |
+
+### Critical Integration Notes
+
+1. **File Chaining:** The module is designed for seamless chaining — the ODF output from ComparativeMarkerSelection should auto-populate `comparative.marker.selection.filename` in GenePattern's pipeline interface
+
+2. **Visualizer Classification:** As a `taskType=Visualizer` module, it does not produce standard file outputs for downstream modules — this must be explicitly documented in the GenePattern manifest
+
+3. **Backwards Compatibility:** The rename from `ComparativeMarkerSelectionViewer` to `DifferentialExpressionViewer` must be handled carefully:
+   - Legacy pipelines referencing the old name need migration guidance
+   - Module aliases may be needed on GenePattern servers
+   - Documentation must reference both names
+
+4. **Expanded ODF Compatibility:** The viewer can now serve as a **universal differential expression result viewer** for:
+   - Array-based data (via ComparativeMarkerSelection)
+   - RNA-seq DESeq2 results (via DESeq2ToOdf)
+   - Generic DE results (via txt2odf)
+   This is a significant expansion of the module's utility beyond its original scope
+
+5. **Export Format:** The tab-delimited export is filter-aware — this behavior should be prominently documented as it affects reproducibility
+
+6. **Multi-class Datasets:** When the input dataset has >2 phenotypes, ComparativeMarkerSelection generates multiple ODF files (one per comparison). The viewer must be run separately on each
+
+---
+
+## 7. 📊 Comparative Analysis
+
+| Feature | DifferentialExpressionViewer | HeatMapViewer (GP) | MultiplotStudio (GP) | IGV | Morpheus |
+|---|---|---|---|---|---|
+| **ODF input** | ✅ Native | ❌ | ✅ | ❌ | ❌ |
+| **GCT input** | ✅ | ✅ | ✅ | ❌ | ✅ |
+| **Expression profile** | ✅ | ✅ | ❌ | ✅ | ✅ |
+| **Statistical filtering** | ✅ Multi-metric | ❌ | ✅ | ❌ | ✅ |
+| **Custom XY scatter** | ✅ | ❌ | ✅ | ❌ | ✅ |
+| **GenePattern native** | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **Standalone use** | ❌ | ❌ | ❌ | ✅ | ✅ |
+| **RNA-seq support** | ✅ (via ODF) | ✅ | ✅ | ✅ | ✅ |
+| **Genome browser** | ❌ | ❌ | ❌ | ✅ | ❌ |
+| **Table export** | ✅ | ❌ | ✅ | ✅ | ✅ |
+
+**Key Differentiator:** DifferentialExpressionViewer is the **only GenePattern-native module** that directly consumes the ODF format produced by ComparativeMarkerSelection while simultaneously displaying the underlying expression data — making it uniquely suited for the standard GenePattern differential expression workflow.
+
+---
+
+## 8. 📚 Literature & Citation
+
+### Primary Citation
+> **Gould J, Getz G, Monti S, Reich M, Mesirov JP.**
+> *Comparative gene marker selection suite.*
+> **Bioinformatics.** 2006 Aug 1;22(15):1924-5.
+> DOI: [10.1093/bioinformatics/btl196](https://doi.org/10.1093/bioinformatics/btl196) | PMID: [16709585](https://pubmed.ncbi.nlm.nih.gov/16709585/)
+
+### Foundational Dataset Citation
+> **Golub TR, Slonim DK, et al.**
+> *Molecular Classification of Cancer: Class Discovery and Class Prediction by Gene Expression Monitoring.*
+> **Science.** 1999;286:531-537.
+
+### Protocol Reference
+> **Kuehn H, et al.**
+> *Using GenePattern for Gene Expression Analysis.*
+> **Current Protocols in Bioinformatics.** 2008;22:7.12.1–7.12.39.
+> PMC: [PMC3893799](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3893799/)
+
+### Platform Citation
+> **Reich M, et al.** *GenePattern 2.0.* **Nature Genetics.** 2006;38:500-501.
+
+---
+
+## 9. ⚠️ Known Issues, Limitations & Caveats
+
+| Issue | Details | Mitigation |
+|---|---|---|
+| **Java compatibility** | Legacy v8 required Java 7 fixes (2014) | v10 addresses this |
+| **Visualizer-only output** | No file output for pipeline chaining | Use ExtractComparativeMarkerResults for downstream files |
+| **Filter export behavior** | Save Table only exports filtered rows | Document prominently; may surprise users expecting full export |
+| **GEO2R differences** | Results differ from NCBI GEO2R | Different methodologies (permutation vs. limma); expected and documented |
+| **Score interpretation** | Direction of score depends on class label assignment | Document class 0 vs. class 1 conventions explicitly |
+| **Two-class limitation** | One ODF = one pairwise comparison | For >2 classes, multiple viewer sessions needed |
+| **Standalone unavailability** | Requires GenePattern server | Cannot run locally outside GenePattern environment |
+| **Rename legacy support** | Old name (ComparativeMarkerSelectionViewer) in existing pipelines | Provide alias support and migration documentation |
+
+---
+
+## 10. 📝 GenePattern Module Manifest Recommendations
+
+```properties
+# Suggested manifest entries for DifferentialExpressionViewer v10
+name=DifferentialExpressionViewer
+description=Views differential expression results such as from the ComparativeMarkerSelection module. Formerly known as ComparativeMarkerSelectionViewer.
+version=10
+taskType=Visualizer
+author=Broad Institute
+contact=gp-help@broadinstitute.org
+categories=Gene Expression;Differential Expression;Visualization
+
+# Parameters
+p1_name=comparative.marker.selection.filename
+p1_description=The output file from ComparativeMarkerSelection (or DESeq2ToOdf/txt2odf) in ODF format
+p1_type=FILE
+p1_fileFormat=odf
+p1_optional=false
+
+p2_name=dataset.filename
+p2_description=The expression dataset used as input to ComparativeMarkerSelection, in GCT or RES format
+p2_type=FILE
+p2_fileFormat=gct;res
+p2_optional=false
+
+# Privacy/License
+privacy=public
+quality=production
+os=any
+language=any
+```
+
+---
+
+## Summary & Recommendations for GenePattern Module Development
+
+1. **Module Identity:** Clearly document the rename history — users searching for "ComparativeMarkerSelectionViewer" must find this module; implement an alias or redirect in the GenePattern module registry
+
+2. **Parameter Design:** The core parameters are minimal (2 required files), but the in-viewer interactive controls are rich. For the GenePattern manifest, focus on clean file type specifications (`.odf`, `.gct/.res`) with validated file format checking
+
+3. **Workflow Integration:** Emphasize the module's role as the **central visualization hub** in the standard GenePattern DE pipeline, and document all three ODF-compatible upstream sources (CMS, DESeq2ToOdf, txt2odf)
+
+4. **Documentation Priority:** The score direction convention (positive = class 0, negative = class 1) is a frequent source of user confusion and must be prominently documented
+
+5. **Export Behavior:** The filter-aware export behavior (`File > Save Table`) must be clearly documented to prevent reproducibility issues
+
+6. **Version Migration:** Provide explicit notes that ComparativeMarkerSelectionViewer v8 pipelines are compatible with DifferentialExpressionViewer v10 when ODF format is unchanged
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

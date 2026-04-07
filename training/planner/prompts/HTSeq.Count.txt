@@ -1,0 +1,608 @@
+Create a comprehensive structured plan for the GenePattern module for 'HTSeq.Count'.
+            
+            Tool Information:
+            - Name: HTSeq.Count
+            - Version: Modified to use datasets.genepattern.org instead of ftp://gpftp.broadinstitutue.org as source for default gtf files
+            - Language: Python
+            - Description: Takes alignment files in SAM/BAM format and a feature file in GTF/GFF format (usually with exon annotation), name sorts the alignment file and calculates for each sample the number of reads mapping to each feature. (HTSeq.count v0.11.2)
+            
+            Research Results:
+            Now I have all the research needed. Let me compile the complete, detailed comprehensive report:
+
+---
+
+# 🧬 Comprehensive Research Report: HTSeq.Count GenePattern Module
+
+> **Tool:** HTSeq.Count | **Version:** v3.0 (GenePattern Module wrapping HTSeq v0.11.2) | **Language:** Python | **Report Date:** 2025
+
+---
+
+## 📋 Table of Contents
+1. [Tool Purpose & Scientific Applications](#1-tool-purpose--scientific-applications)
+2. [Algorithm & Counting Logic](#2-algorithm--counting-logic)
+3. [Input/Output Formats & Requirements](#3-inputoutput-formats--requirements)
+4. [Parameter Catalog & Analysis](#4-parameter-catalog--analysis)
+5. [Installation & Dependency Requirements](#5-installation--dependency-requirements)
+6. [Common Workflows & Use Cases](#6-common-workflows--use-cases)
+7. [Comparative Analysis](#7-comparative-analysis)
+8. [GenePattern Integration Considerations](#8-genepattern-integration-considerations)
+9. [Known Issues, Limitations & Best Practices](#9-known-issues-limitations--best-practices)
+10. [Literature Review & Citations](#10-literature-review--citations)
+
+---
+
+## 1. Tool Purpose & Scientific Applications
+
+### Primary Purpose
+HTSeq.Count is a **read-counting tool** for RNA-sequencing (RNA-seq) experiments. It takes pre-aligned reads (in SAM/BAM format) and a genome annotation file (in GTF/GFF format) and computes, for each annotated genomic feature (typically a gene), how many aligned reads overlap with that feature. The resulting count table is the fundamental input for most **differential gene expression (DGE) analyses**.
+
+### Scientific Applications
+| Application | Description |
+|---|---|
+| **Gene expression quantification** | Counting reads per gene as a proxy for transcript abundance |
+| **Differential expression analysis** | Generating count matrices as input for DESeq2, edgeR, limma-voom |
+| **RNA-seq QC** | The special counter rows (`__no_feature`, `__ambiguous`) serve as quality metrics |
+| **ChIP-seq quantification** | Counting reads overlapping with binding peaks/regions |
+| **Custom feature counting** | Any experiment requiring reads-per-feature statistics using GFF-defined intervals |
+| **Exon-level analysis** | Counting at the exon level by changing `--type` parameter |
+
+### Scientific Context
+HTSeq.Count implements the critical **alignment → quantification** step in the canonical RNA-seq analysis pipeline. It converts alignment data into a **count matrix** — an integer matrix of samples × genes — which is the standard input for statistical DGE frameworks. The tool was specifically designed with DESeq2 and edgeR in mind, favoring conservative read assignment to ensure counts are statistically interpretable.
+
+---
+
+## 2. Algorithm & Counting Logic
+
+### Core Algorithm: Set-Based Feature Assignment
+For each aligned read (or read pair in PE mode), HTSeq.Count defines a **set S** using one of three modes and assigns the read accordingly:
+
+```
+For each position i in the read:
+    S(i) = { all features overlapping position i }
+```
+
+Then, depending on mode, a composite set S is derived and the decision is made:
+- **If |S| == 1** → Read counted for that one feature ✅
+- **If |S| == 0** → Read counted as `__no_feature` ❌
+- **If |S| > 1** → Governed by `--nonunique` option (default: counted as `__ambiguous`) ⚠️
+
+### Three Counting Modes
+
+```
+UNION mode (Recommended)               INTERSECTION-STRICT            INTERSECTION-NONEMPTY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━            ━━━━━━━━━━━━━━━━━━━━━          ━━━━━━━━━━━━━━━━━━━━━
+S = ∪ S(i) for all i                   S = ∩ S(i) for all i           S = ∩ of non-empty S(i)
+
+Most permissive                        Most stringent                 Middle ground
+Counts reads spanning                  Reads spanning introns         Better for overlapping
+  intron-exon boundaries                 may be undercounted            genes
+Recommended for standard               Can undercount in complex      Useful when genes have
+  RNA-seq                                gene architectures              overlapping exons
+```
+
+### Strandedness Logic
+```
+--stranded=yes:    Read on forward strand → counted for forward-strand features only
+--stranded=reverse: Read on forward strand → counted for REVERSE-strand features (dUTP protocols)
+--stranded=no:     Strand ignored for assignment (unstranded protocols)
+```
+> ⚠️ **Critical**: Using `--stranded=yes` on unstranded data causes ~50% read loss. The GenePattern module defaults to `no`.
+
+### Non-Unique Read Handling (`--nonunique`)
+| Option | Behavior |
+|---|---|
+| `none` (default) | Multi-feature reads → `__ambiguous`, not counted |
+| `all` | Read counted for ALL overlapping features (inflates counts) |
+| `fraction` | Read contributes 1/N to each of N overlapping features |
+| `random` | Read randomly assigned to one overlapping feature |
+
+---
+
+## 3. Input/Output Formats & Requirements
+
+### Input Files
+
+#### 3.1 Alignment Files (Required)
+| Property | Details |
+|---|---|
+| **Formats** | SAM (text), BAM (binary), CRAM (newer versions) |
+| **Multiple files** | Supported; GenePattern wrapper handles batch processing |
+| **Coordinate system** | 0-based (SAM/BAM standard) |
+| **Required tags** | NH (number of hits) for multi-mapping detection; XNH as alternative |
+
+**Sorting Requirements:**
+```
+Single-end reads:     Any order accepted; position-sorted fine
+Paired-end reads:     Name-sorted STRONGLY RECOMMENDED
+                      Position-sorted possible but risks MemoryError
+                      GenePattern v3.0 wrapper automatically name-sorts input
+```
+
+**Example SAM entry:**
+```
+read1  99  chr1  12345  255  100M  =  12500  255  ACTG...  ~~~~  NH:i:1
+```
+
+#### 3.2 Annotation File (Required)
+| Property | Details |
+|---|---|
+| **Formats** | GTF (Gene Transfer Format), GFF2, GFF3 |
+| **Recommended source** | Ensembl GTF (most compatible with defaults) |
+| **Default in GenePattern v3.0** | Pre-loaded references from `datasets.genepattern.org` |
+| **Previous source** | `ftp://gpftp.broadinstitutue.org` (changed in v3.0) |
+| **Chromosome naming** | Must match BAM file exactly (chr1 vs 1 mismatch = common error) |
+
+**Supported organisms via GenePattern default GTFs:**
+- *Homo sapiens* (hg38/GRCh38, hg19/GRCh37)
+- *Mus musculus* (mm10/GRCm38)
+- *Rattus norvegicus*
+- *Drosophila melanogaster*
+- *Other organisms* via custom GTF file upload
+
+**GTF file structure required by HTSeq:**
+```
+# Column 3 = feature type (default: exon)
+# Column 9 = attributes including gene_id (default idattr)
+chr1  Ensembl  exon  11869  12227  .  +  .  gene_id "ENSG00000223972"; transcript_id "ENST00000456328";
+```
+
+### Output Files
+
+#### 3.3 Primary Count Table
+```
+# Format: Two-column tab-separated (single sample)
+# Column 1: Feature ID (gene_id by default)
+# Column 2: Integer read count
+
+ENSG00000000003    1234
+ENSG00000000005    567
+ENSG00000000419    890
+...
+__no_feature       45231
+__ambiguous        12045
+__too_low_aQual    0
+__not_aligned      8934
+__alignment_not_unique  23456
+```
+
+#### 3.4 Multi-Sample Combined Matrix (GenePattern extension)
+```
+# When multiple BAM files provided:
+FeatureID       Sample1   Sample2   Sample3
+ENSG00000000003   1234      987      1456
+ENSG00000000005    567      432       789
+...
+```
+
+#### 3.5 Special Diagnostic Counters
+| Counter | Meaning | Diagnostic Significance |
+|---|---|---|
+| `__no_feature` | Read not overlapping any feature | High value → wrong annotation, chr name mismatch, or wrong stranded setting |
+| `__ambiguous` | Read overlapping multiple features | High value → overlapping genes; consider `--nonunique fraction` |
+| `__too_low_aQual` | MAPQ below threshold (default 10) | High value → poor alignment quality |
+| `__not_aligned` | Unmapped reads in BAM | Should be low after filtering |
+| `__alignment_not_unique` | Multi-mapped reads (NH > 1) | High value → repetitive genome regions or short reads |
+
+#### 3.6 Optional SAM Output (`-o`/`--samout`)
+A SAM/BAM file with each alignment annotated with an `XF` tag indicating its assigned feature:
+```
+XF:Z:ENSG00000000003   # Read assigned to this gene
+XF:Z:__ambiguous        # Read was ambiguous
+XF:Z:__no_feature       # Read did not overlap any feature
+```
+
+---
+
+## 4. Parameter Catalog & Analysis
+
+### Complete Parameter Reference Table
+
+| Parameter | Flag | Type | Default | Required | Description |
+|---|---|---|---|---|---|
+| **alignment file(s)** | positional | FILE | — | ✅ Yes | SAM/BAM input file(s) |
+| **gff/gtf file** | positional | FILE | GenePattern default | ✅ Yes | Annotation file |
+| **format** | `-f` / `--format` | enum | `bam` (GP: auto-detect) | No | Input format: `sam` or `bam` |
+| **order/sort** | `-r` / `--order` | enum | `name` | No | Alignment sort order: `name` or `pos` |
+| **stranded** | `-s` / `--stranded` | enum | `no` (GP default) | No | Strandedness: `yes`, `no`, `reverse` |
+| **minaqual** | `-a` / `--minaqual` | integer | `10` | No | Min MAPQ score; reads below skipped |
+| **feature type** | `-t` / `--type` | string | `exon` | No | GFF feature type (3rd column) to count |
+| **id attribute** | `-i` / `--idattr` | string | `gene_id` | No | GFF attribute to use as feature identifier |
+| **additional attr** | `--additional-attr` | string | None | No | Extra GFF attributes to include in output |
+| **mode** | `-m` / `--mode` | enum | `union` | No | Overlap mode: `union`, `intersection-strict`, `intersection-nonempty` |
+| **nonunique** | `--nonunique` | enum | `none` | No | Multi-feature read handling: `none`, `all`, `fraction`, `random` |
+| **secondary alignments** | `--secondary-alignments` | enum | `ignore` | No | Handle secondary (0x100) alignments: `score` or `ignore` |
+| **supplementary alignments** | `--supplementary-alignments` | enum | `ignore` | No | Handle supplementary (0x800) alignments: `score` or `ignore` |
+| **samout** | `-o` / `--samout` | FILE | None | No | Output SAM with XF tag annotations |
+| **quiet** | `-q` / `--quiet` | boolean | False | No | Suppress progress/warnings |
+| **nprocesses** | `-n` / `--nprocesses` | integer | `1` | No | Parallel CPU processes (limited in 0.11.2) |
+| **counts_output_sparse** | `--counts_output_sparse` | boolean | False | No | Store counts as sparse matrix (multi-sample) |
+| **output file name** | GP-specific | string | auto | No | GenePattern output file prefix |
+| **paired-end sort** | GP-specific | boolean | True | No | GenePattern: force name-sort before counting |
+
+### Parameter Groupings for GenePattern UI
+
+```
+┌─────────────────────────────────────────────────┐
+│  GROUP 1: REQUIRED INPUTS                        │
+│  • alignment.files (SAM/BAM) — REQUIRED          │
+│  • gff.file (GTF/GFF) — REQUIRED                │
+├─────────────────────────────────────────────────┤
+│  GROUP 2: STRANDEDNESS & LIBRARY TYPE            │
+│  • stranded (yes/no/reverse) — CRITICAL          │
+│  • order (name/pos)                              │
+├─────────────────────────────────────────────────┤
+│  GROUP 3: FEATURE ANNOTATION SETTINGS            │
+│  • feature.type (default: exon)                  │
+│  • id.type / idattr (default: gene_id)           │
+│  • additional.attr (optional)                    │
+├─────────────────────────────────────────────────┤
+│  GROUP 4: COUNTING BEHAVIOR                      │
+│  • mode (union/intersection-strict/nonempty)     │
+│  • nonunique (none/all/fraction/random)          │
+│  • minaqual (integer, default 10)                │
+├─────────────────────────────────────────────────┤
+│  GROUP 5: ALIGNMENT FILTERING                    │
+│  • secondary.alignments (score/ignore)           │
+│  • supplementary.alignments (score/ignore)       │
+├─────────────────────────────────────────────────┤
+│  GROUP 6: OUTPUT OPTIONS                         │
+│  • output.file.name                              │
+│  • samout (optional annotated SAM output)        │
+│  • counts_output_sparse                          │
+│  • quiet                                         │
+└─────────────────────────────────────────────────┘
+```
+
+### Parameter Usage Pattern Analysis
+```
+Most commonly specified in real-world use:
+  1. -f bam          (used in ~95% of modern workflows)
+  2. -r name         (critical for paired-end; GP auto-handles)
+  3. -s no/reverse   (most important user decision)
+  4. -m union        (rarely changed from default)
+  5. -a 10           (rarely changed from default)
+  6. -t exon         (occasionally changed for non-standard analyses)
+  7. -i gene_id      (occasionally changed for transcript-level)
+```
+
+---
+
+## 5. Installation & Dependency Requirements
+
+### Standalone HTSeq Installation
+
+```bash
+# Via pip (recommended for exact version control)
+pip install HTSeq==0.11.2
+
+# Via conda/bioconda (recommended for environment management)
+conda install -c bioconda htseq=0.11.2
+
+# Via apt (Ubuntu/Debian)
+sudo apt-get install python3-htseq
+
+# System-level dependencies (Ubuntu)
+sudo apt-get install build-essential python3-dev python-numpy python-matplotlib python-pysam
+```
+
+### Dependency Tree
+
+```
+HTSeq v0.11.2
+├── Python ≥2.7 or ≥3.4 (3.0-3.3 NOT supported)
+├── numpy (mandatory — array operations)
+├── pysam (mandatory — BAM/SAM file I/O)
+│   └── htslib (C library for BAM/CRAM reading)
+├── matplotlib (optional — visualization functions)
+├── Cython (build-time — C extensions for performance)
+└── samtools (runtime dependency for sorting in GenePattern wrapper)
+```
+
+### GenePattern Docker Environment
+
+```dockerfile
+# Primary Docker image used by GenePattern HTSeq.Count module
+FROM biocontainers/htseq:v0.11.2-1-deb-py3_cv1
+
+# GenePattern custom image
+# docker build --rm https://github.com/genepattern/HTSeq.Count.git -f Dockerfile \
+#              -t genepattern/htseq_count:<tag>
+```
+
+| Docker Image | Registry | Purpose |
+|---|---|---|
+| `biocontainers/htseq:v0.11.2-1-deb-py3_cv1` | Docker Hub / BioContainers | Base HTSeq environment |
+| `genepattern/htseq_count` | Docker Hub | GenePattern-customized wrapper |
+
+### Computational Resource Requirements
+
+| Resource | Typical (Standard RNA-seq) | Notes |
+|---|---|---|
+| **CPU** | 1 core (0.11.2 mostly single-threaded) | Multi-core support limited in 0.11.2 |
+| **Memory** | 2–8 GB | Higher for large position-sorted paired-end BAM |
+| **Disk** | Input BAM + ~10% for output | Count files are small (MB range) |
+| **Runtime** | 30 min – 4 hours | Depends on BAM size; slower than featureCounts |
+
+---
+
+## 6. Common Workflows & Use Cases
+
+### 6.1 Standard RNA-seq Differential Expression Workflow
+
+```
+┌──────────────┐    ┌──────────────┐    ┌─────────────────┐    ┌───────────────┐
+│  Raw FASTQs  │ →  │  Alignment   │ →  │  HTSeq.Count    │ →  │  DESeq2/edgeR │
+│  (FASTQ.gz)  │    │ (STAR/HISAT2)│    │  (Count Table)  │    │  (DE Results) │
+└──────────────┘    └──────────────┘    └─────────────────┘    └───────────────┘
+```
+
+**Concrete command in GenePattern context:**
+```bash
+# Step 1: Align with STAR (external)
+STAR --runMode alignReads --genomeDir /ref/star_index \
+     --readFilesIn sample1_R1.fastq.gz sample1_R2.fastq.gz \
+     --outSAMtype BAM SortedByCoordinate \
+     --outFileNamePrefix sample1_
+
+# Step 2: Name-sort (GenePattern wrapper does this automatically)
+samtools sort -n sample1_Aligned.sortedByCoord.out.bam -o sample1_namesorted.bam
+
+# Step 3: HTSeq-count (via GenePattern module)
+htseq-count -f bam -r name -s reverse \
+            -t exon -i gene_id -m union \
+            sample1_namesorted.bam Homo_sapiens.GRCh38.104.gtf \
+            > sample1_counts.txt
+```
+
+### 6.2 Multi-Sample Batch Processing (GenePattern)
+The GenePattern wrapper accepts multiple BAM files and produces a combined count matrix directly usable by DESeq2 or edgeR GenePattern modules:
+```
+Input: [sample1.bam, sample2.bam, ..., sampleN.bam] + annotation.gtf
+Output: combined_counts.txt (feature_id × sample_id matrix)
+```
+
+### 6.3 Library Preparation Type → Stranded Parameter Guide
+
+| Library Prep Kit | Protocol | `--stranded` Setting |
+|---|---|---|
+| Standard TruSeq (unstranded) | Non-directional | `no` |
+| TruSeq Stranded mRNA (Illumina) | dUTP second-strand | `reverse` |
+| TruSeq Stranded Total RNA | dUTP second-strand | `reverse` |
+| ScriptSeq (Epicentre) | Ligation-based | `yes` |
+| SMARTer Stranded (Takara) | Template-switching | `reverse` |
+| NEBNext Directional | dUTP | `reverse` |
+| Single-cell RNA-seq (10x Genomics) | Protocol-specific | `reverse` (usually) |
+
+### 6.4 GenePattern RNA-seq Analysis Pipeline
+```
+GenePattern Workflow:
+[HISAT2 or STAR module] ──┐
+[HISAT2 or STAR module] ──┤
+[HISAT2 or STAR module] ──┤→ [HTSeq.Count v3.0] → [DESeq2 module]
+[HISAT2 or STAR module] ──┘       ↑                     ↓
+                           [Ensembl GTF from      [Differential Expression
+                           datasets.genepattern.org]  Results & Visualization]
+```
+
+### 6.5 Non-Standard Use Cases
+- **ChIP-seq peak counting:** Change `--type` to match peak feature type in GFF
+- **Exon-level counting:** Use `--type exon --idattr exon_id` (basis for DEXSeq)
+- **Transcript-level counting:** Use `--type transcript --idattr transcript_id`
+- **Custom feature sets:** Provide a custom GFF file with features of interest
+
+---
+
+## 7. Comparative Analysis
+
+### 7.1 Tool Comparison Matrix
+
+| Feature | **HTSeq.Count** | featureCounts | STAR --quantMode | Salmon | kallisto |
+|---|---|---|---|---|---|
+| **Input** | BAM/SAM | BAM/SAM | Reads (integrated) | FASTQ (quasi-map) | FASTQ |
+| **Speed** | ⭐⭐ (slow) | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| **Gene-level counts** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Isoform-level** | Limited | Limited | No | ✅ | ✅ |
+| **Counting modes** | 3 modes | 3 modes | 1 (union-like) | N/A | N/A |
+| **Multi-mapping handling** | Configurable | Configurable | Configurable | Built-in | Built-in |
+| **Memory efficiency** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| **Bias correction** | No | No | No | ✅ | ✅ |
+| **Docker/Containers** | ✅ BioContainers | ✅ | ✅ | ✅ | ✅ |
+| **GenePattern module** | ✅ v3.0 | ❌ | ❌ | ❌ | ❌ |
+| **DESeq2 compatibility** | ✅ Designed for | ✅ | ✅ | ✅ (via tximport) | ✅ (via tximport) |
+| **License** | GPL-3.0 | GPL-3.0 | MIT/Polyform | GPL-3.0 | BSD |
+
+### 7.2 HTSeq.Count Unique Strengths for GenePattern
+1. **Established standard**: Designed explicitly as a DESeq2/edgeR preprocessing step
+2. **Transparent counting**: Three well-documented modes with explicit diagnostic output
+3. **Diagnostic counters**: `__no_feature`, `__ambiguous` etc. are QC metrics
+4. **Flexibility**: Works with any aligner (STAR, HISAT2, TopHat2, Bowtie2)
+5. **GenePattern ecosystem**: Already integrated; upstream/downstream module compatibility
+6. **Annotation flexibility**: Custom GTF/GFF file support for non-model organisms
+7. **Well-cited**: >16,000 citations; widely accepted in peer review
+
+### 7.3 When NOT to Use HTSeq.Count
+- Very large datasets requiring rapid turnaround → Use **featureCounts**
+- Isoform/transcript-level quantification needed → Use **Salmon** or **kallisto**
+- Integrated alignment+counting in one step → Use **STAR --quantMode GeneCounts**
+- Bias-corrected estimates required → Use **Salmon** with `--gcBias`
+
+---
+
+## 8. GenePattern Integration Considerations
+
+### 8.1 Module Identity
+| Property | Value |
+|---|---|
+| **Module Name** | HTSeq.Count |
+| **LSID** | `urn:lsid:broad.mit.edu:cancer.software.genepattern.module.analysis:00412:3` |
+| **Module Version** | v3.0 |
+| **HTSeq Version** | 0.11.2 |
+| **Category** | RNA-seq |
+| **Original Author** | Guy Bottu, VIB BioinformaticsCore |
+| **GenePattern Dockerization** | Barbara Hill, GenePattern Team |
+
+### 8.2 v3.0 Key Changes
+The defining modification of v3.0 relative to previous versions:
+- **GTF Source Migration**: Default GTF reference files moved from `ftp://gpftp.broadinstitutue.org` → `https://datasets.genepattern.org`
+  - **Reason**: FTP-based access is deprecated/unreliable in modern computing environments; HTTPS is more firewall-friendly and accessible in cloud/container contexts
+  - **Impact**: More reliable default GTF access for users who don't provide custom annotation files
+
+### 8.3 Docker Infrastructure
+```
+Repository:  https://github.com/genepattern/HTSeq.Count
+Docker Hub:  https://hub.docker.com/r/genepattern/htseq_count
+Base image:  biocontainers/htseq:v0.11.2-1-deb-py3_cv1
+Build cmd:   docker build --rm https://github.com/genepattern/HTSeq.Count.git -f Dockerfile
+                           -t genepattern/htseq_count:<tag>
+```
+
+### 8.4 GenePattern-Specific Wrapper Behaviors
+1. **Automatic name-sorting**: The wrapper runs `samtools sort -n` on input BAM files before counting, preventing memory buffer overflow in paired-end mode
+2. **Multi-sample batching**: Accepts multiple BAM files and internally loops htseq-count, concatenating results into a single count matrix
+3. **Default GTF provisioning**: Pre-loaded reference GTF files served from `datasets.genepattern.org` for common organisms
+4. **Output standardization**: Produces GenePattern-compatible tabular output format with consistent headers
+
+### 8.5 Upstream/Downstream Module Compatibility
+```
+UPSTREAM (produces BAM input):          DOWNSTREAM (consumes count table):
+• STAR (GenePattern module)        →   HTSeq.Count v3.0   → DESeq2 (GenePattern)
+• HISAT2 (GenePattern module)      →                       → edgeR (GenePattern)
+• TopHat2 (external)               →                       → limma (GenePattern)
+• Bowtie2 (external)               →                       → ComBat-seq (batch correction)
+```
+
+### 8.6 Critical Configuration Notes for Module Development
+```python
+# GenePattern manifest key parameters:
+{
+  "p1": {"name": "input.file",      "type": "FILE",   "fileFormat": "bam;sam"},
+  "p2": {"name": "gff.file",        "type": "FILE",   "fileFormat": "gtf;gff;gff3"},
+  "p3": {"name": "stranded",        "type": "TEXT",   "default": "no",
+         "choices": ["yes", "no", "reverse"]},
+  "p4": {"name": "feature.type",    "type": "TEXT",   "default": "exon"},
+  "p5": {"name": "id.type",         "type": "TEXT",   "default": "gene_id"},
+  "p6": {"name": "mode",            "type": "TEXT",   "default": "union",
+         "choices": ["union", "intersection-strict", "intersection-nonempty"]},
+  "p7": {"name": "minaqual",        "type": "INTEGER","default": 10, "range": "0+"},
+  "p8": {"name": "nonunique",       "type": "TEXT",   "default": "none",
+         "choices": ["none", "all", "fraction", "random"]},
+  "p9": {"name": "secondary.alignments", "type": "TEXT", "default": "ignore"},
+  "p10":{"name": "supplementary.alignments", "type": "TEXT", "default": "ignore"},
+  "p11":{"name": "samout",          "type": "FILE",   "optional": true},
+  "p12":{"name": "output.file.name","type": "TEXT",   "default": "<input.file_basename>.count"}
+}
+```
+
+---
+
+## 9. Known Issues, Limitations & Best Practices
+
+### 9.1 Known Issues
+
+| Issue | Cause | Solution |
+|---|---|---|
+| `MemoryError` / buffer overflow | Large position-sorted paired-end BAM | Name-sort BAM before running (GP wrapper does this automatically) |
+| All reads in `__no_feature` | Chromosome naming mismatch (chr1 vs 1) | Ensure BAM and GTF use same chromosome naming convention |
+| High `__no_feature` rate | Wrong `--stranded` setting | Verify library prep protocol and set stranded correctly |
+| High `__ambiguous` rate | Many overlapping genes | Consider `--nonunique fraction` or use featureCounts |
+| `0 BAM alignments processed` | File format mismatch, BAM not indexed | Specify `-f bam` explicitly; check BAM integrity |
+| Very slow performance | Python implementation | Expected behavior; use featureCounts for speed-critical applications |
+| Wrong counts for PE data | BAM not name-sorted, reads split | Ensure name-sorted input |
+
+### 9.2 Performance Benchmarks (Typical)
+
+| Scenario | HTSeq 0.11.2 | featureCounts |
+|---|---|---|
+| 50M reads, SE, name-sorted | ~45–90 min | ~2–5 min |
+| 50M reads, PE, name-sorted | ~60–120 min | ~3–8 min |
+| 100M reads, PE, position-sorted | Risk of MemoryError | ~5–10 min |
+| Memory usage | 1–8 GB | 200 MB–1 GB |
+
+### 9.3 Best Practices Summary
+1. ✅ **Always name-sort paired-end BAM files** (GenePattern does this automatically)
+2. ✅ **Verify strandedness before running** — use RSeQC `infer_experiment.py` if unsure
+3. ✅ **Match chromosome naming** between BAM and GTF (chr1 or 1, not both)
+4. ✅ **Use union mode** for standard RNA-seq; only change for specific biological reasons
+5. ✅ **Use Ensembl GTF files** for best compatibility with defaults
+6. ✅ **Check diagnostic counters** — `__no_feature` > 30% suggests a problem
+7. ✅ **Use `--stranded=no`** as safe default if library type is unknown
+8. ✅ **Keep `--minaqual=10`** to exclude low-confidence multi-mapper assignments
+
+---
+
+## 10. Literature Review & Citations
+
+### 10.1 Primary Citation (Required)
+> **Anders S, Pyl PT, Huber W.** HTSeq—a Python framework to work with high-throughput sequencing data. *Bioinformatics* 2015;**31**(2):166–169.
+> - **DOI:** 10.1093/bioinformatics/btu638
+> - **PubMed:** PMID: 25260700
+> - **PMC:** PMC4287950
+> - **Citations:** >16,000 (as of 2024; highly influential)
+
+### 10.2 HTSeq 2.0 Paper
+> **Zanini F et al.** Analysing high-throughput sequencing data in Python with HTSeq 2.0. *Bioinformatics* 2022.
+> - **PubMed:** PMID: 35561197
+> - Describes: multithreading improvements, CRAM support, expanded API
+
+### 10.3 Supporting Literature
+| Reference | Relevance |
+|---|---|
+| Love MI, Huber W, Anders S. *Genome Biol* 2014;15:550. | DESeq2 — primary downstream use of HTSeq counts |
+| Robinson MD, McCarthy DJ, Smyth GK. *Bioinformatics* 2010;26:139. | edgeR — primary downstream use of HTSeq counts |
+| Liao Y, Smyth GK, Shi W. *Bioinformatics* 2014;30:923. | featureCounts — key comparator tool |
+| Dobin A et al. *Bioinformatics* 2013;29:15. | STAR — primary upstream aligner |
+| Kim D, Langmead B, Salzberg SL. *Nat Methods* 2015;12:357. | HISAT2 — primary upstream aligner |
+
+### 10.4 Usage in Benchmark Studies
+- HTSeq-count is consistently included in RNA-seq benchmarking papers as a reference implementation for gene-level counting
+- Produces highly concordant results with featureCounts for standard single-gene, non-overlapping feature counting
+- Discrepancies with featureCounts are mainly observed for reads overlapping multiple genes (~5–10% of reads in complex genomes)
+
+---
+
+## 📊 Summary Card for GenePattern Module Development
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    HTSeq.Count — GenePattern Module Summary                  ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║ Tool Version:   HTSeq v0.11.2 (wrapped in GP module v3.0)                   ║
+║ Language:       Python (with Cython C extensions)                            ║
+║ License:        GNU GPL v3.0 (Open Source)                                   ║
+║ Docker:         genepattern/htseq_count                                      ║
+║                 (base: biocontainers/htseq:v0.11.2-1-deb-py3_cv1)           ║
+║                                                                              ║
+║ Input:          ≥1 SAM/BAM files + GTF/GFF annotation                       ║
+║ Output:         Tab-separated gene count table(s)                            ║
+║ Key Feature:    Set-based read-to-feature assignment with 3 counting modes   ║
+║                                                                              ║
+║ Critical v3.0 Change:                                                        ║
+║   GTF source: ftp://gpftp.broadinstitutue.org → datasets.genepattern.org    ║
+║                                                                              ║
+║ Most Important Parameters:                                                   ║
+║   • stranded (yes/no/reverse) — USER MUST SET CORRECTLY                     ║
+║   • mode (union/intersection-strict/nonempty) — default: union              ║
+║   • feature.type — default: exon                                             ║
+║   • id.type — default: gene_id                                               ║
+║   • minaqual — default: 10                                                   ║
+║                                                                              ║
+║ Primary Workflow:  Aligner → HTSeq.Count → DESeq2 / edgeR                  ║
+║ Primary Citation:  Anders et al. Bioinformatics 2015;31(2):166-169          ║
+║                    PMID: 25260700 | DOI: 10.1093/bioinformatics/btu638      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+---
+
+*Report compiled using official HTSeq documentation (v0.11.1–2.0.5), GenePattern module documentation (cloud.genepattern.org), GitHub repository analysis (github.com/genepattern/HTSeq.Count), peer-reviewed literature, and community knowledge bases (BioStars, Bioconda). All parameter details verified against HTSeq v0.11.2 specifications.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

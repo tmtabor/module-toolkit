@@ -1,0 +1,603 @@
+Create a comprehensive structured plan for the GenePattern module for 'CellTypist'.
+            
+            Tool Information:
+            - Name: CellTypist
+            - Version: latest
+            - Language: Python
+            - Description: 
+            Example Data Provided (for reference only):
+            - demo_2000_cells.h5ad (.h5ad) — URL
+            The user has this format available, so the module MUST accept it. However, do
+            NOT restrict the file_formats field to only this extension — include every
+            format the tool legitimately supports. The example data tells you what to
+            include, not what to exclude.
+            Where a [hint: ...] is shown, use it to assign the file to the correct
+            parameter (e.g. a file hinted 'tumor_sample' maps to the tumor BAM input,
+            'germline_resource' maps to the germline VCF parameter, etc.).
+
+            
+            Research Results:
+            Now I have all the information needed to compile the definitive comprehensive research report. Let me present this in full structured detail:
+
+---
+
+# 🧬 CellTypist — Comprehensive Bioinformatics Tool Research Report
+
+**Prepared for GenePattern Module Development**
+**Tool Version:** 1.7.1 (latest) | **Language:** Python | **License:** MIT
+
+---
+
+## 1. 🔬 Tool Purpose & Scientific Applications
+
+### Overview
+**CellTypist** is an automated cell type annotation tool for single-cell RNA sequencing (scRNA-seq) datasets developed by the **Teichmann Lab at the Wellcome Sanger Institute**. It employs **logistic regression classifiers optimized by the stochastic gradient descent (SGD) algorithm** to rapidly and precisely assign cell type identities to individual cells in scRNA-seq experiments.
+
+### Scientific Mission
+CellTypist was originally developed to support the **Human Cell Atlas (HCA)** project for exploring tissue adaptation of cell types using semi-automatic annotations at scale. It has since evolved into a full annotation platform with:
+- Built-in, curated pre-trained models across tissues and organisms
+- A community working group curating ontologies and model updates
+- An online portal for no-code analysis
+
+### Primary Applications
+| Application Domain | Description |
+|---|---|
+| **Immune Cell Profiling** | Annotate T cells, B cells, NK cells, monocytes, macrophages, dendritic cells, and all major immune subtypes |
+| **Cross-Tissue Analysis** | Transfer cell type labels across tissues from reference to query datasets |
+| **Disease Research** | COVID-19 immune landscape characterization, disease-specific immune infiltrates |
+| **Developmental Biology** | Annotate fetal/embryonic cell populations (lung, brain, gut, pan-fetal) |
+| **Large-Scale Atlases** | Process 100K–1M+ cell datasets via mini-batch training and inference |
+| **Custom Annotation** | Train user-specific models for any organism, tissue, or novel nomenclature |
+
+### Biological Validation & Scientific Impact
+- **Primary Paper:** Domínguez Conde et al. (2022). *Cross-tissue immune cell analysis reveals tissue-specific features in humans.* **Science 376(6594)**. DOI: [10.1126/science.abl5197](https://doi.org/10.1126/science.abl5197)
+  - CellTypist annotated **>330,000 immune cells** from **16 tissues** in **12 human donors**
+  - Covered lymphoid, mucosal, and exocrine sites
+- **v2.0 Paper:** Xu et al. (2023). *Automatic cell-type harmonization and integration across Human Cell Atlas datasets.* **Cell 186:5876–5891.e20**
+  - Introduced CellHint — predictive clustering tree for cross-dataset harmonization
+- **Community benchmarking:** Bioinformatics community comparisons consistently rank CellTypist among the most accurate tools alongside scANVI (scvi-tools), with its primary advantage being speed and ease of use in Python workflows.
+
+---
+
+## 2. 📂 Input / Output Formats & Requirements
+
+### 2.1 Input Formats
+
+| Format | Extension | Notes |
+|---|---|---|
+| **AnnData (HDF5)** | `.h5ad` | ✅ **Recommended** — primary format; stores expression matrix + metadata |
+| **Comma-Separated Values** | `.csv` | Cell-by-gene matrix; raw counts acceptable (auto-normalized by tool) |
+| **Tab-Separated Values** | `.tsv` / `.tab` / `.txt` | Cell-by-gene matrix; same handling as CSV |
+| **Market Exchange / 10x** | `.mtx` | Sparse matrix format; requires companion `gene_file` and `cell_file` |
+| **AnnData in-memory** | Python object | Pass an `AnnData` object directly (already loaded in session) |
+
+> **ℹ️ Example data:** `demo_2000_cells.h5ad` — A 2,000-cell human immune cell dataset used in the official CellTypist tutorial, exactly the expected format.
+
+### 2.2 Critical Input Preprocessing Requirements
+
+> ⚠️ **This is one of the most important requirements for correct CellTypist operation.**
+
+Input expression matrices **MUST** be:
+1. **Normalized** to 10,000 counts per cell (CP10K):
+   ```python
+   sc.pp.normalize_total(adata, target_sum=1e4)
+   ```
+2. **Log1p-transformed:**
+   ```python
+   sc.pp.log1p(adata)
+   ```
+
+**Special cases:**
+- `.csv` raw count files: CellTypist **automatically** applies normalization
+- `.h5ad` files: Pre-normalized log-transformed matrix **expected** in `adata.X`
+- `check_expression=True` (default) will warn if the data doesn't appear log-normalized
+
+### 2.3 Output Files & Formats
+
+| Output | Format | Description |
+|---|---|---|
+| **`predicted_labels.csv`** | CSV | Per-cell predicted labels + confidence scores; includes `majority_voting` column if enabled |
+| **`probability_matrix.csv`** | CSV | Full probability matrix: rows=cells, columns=cell types |
+| **`decision_matrix.csv`** | CSV | Raw logistic regression decision scores per cell type |
+| **`annotated.h5ad`** | AnnData (.h5ad) | Input AnnData enriched with annotation columns in `.obs` |
+| **UMAP plot** | PDF/PNG | UMAP colored by predicted cell type labels |
+| **Probability plots** | PDF/PNG | Per-cell-type probability distribution plots (optional) |
+| **Dotplot** | PDF/PNG | Marker gene × predicted cell type dotplot |
+
+### 2.4 AnnotationResult Object Attributes
+
+When `celltypist.annotate()` is called, it returns an `AnnotationResult` object with:
+
+| Attribute | Type | Content |
+|---|---|---|
+| `predicted_labels` | `pandas.DataFrame` | Columns: `predicted_labels` and (if enabled) `over_clustering`, `majority_voting` |
+| `decision_matrix` | `pandas.DataFrame` | Shape: cells × cell types, raw decision scores |
+| `probability_matrix` | `pandas.DataFrame` | Shape: cells × cell types, softmax probabilities |
+| `adata` | `AnnData` | Input data as AnnData object |
+
+### 2.5 AnnData `.obs` Columns Added
+
+| Column | Condition | Description |
+|---|---|---|
+| `predicted_labels` | Always | Per-cell CellTypist prediction |
+| `conf_score` | Always | Confidence score for predicted label |
+| `over_clustering` | `majority_voting=True` | Leiden cluster assignment |
+| `majority_voting` | `majority_voting=True` | Majority-voted label per cluster |
+
+---
+
+## 3. ⚙️ Parameter Analysis & Usage Patterns
+
+### 3.1 `celltypist.annotate()` — Prediction Function
+
+**Full Signature:**
+```python
+celltypist.annotate(
+    filename,
+    model=None,
+    transpose_input=False,
+    gene_file=None,
+    cell_file=None,
+    dtype='float32',
+    check_expression=True,
+    majority_voting=False,
+    over_clustering=None,
+    min_prop=0,
+    mode='best match',
+    p_thres=0.5
+)
+```
+
+#### Parameter Reference Table
+
+| Parameter | Type | Default | Required | Description & Biological Significance |
+|---|---|---|---|---|
+| `filename` | str / AnnData | — | ✅ Yes | Input data path or in-memory AnnData object |
+| `model` | str / Model | `Immune_All_Low.pkl` | Recommended | Pre-built model name, path to custom `.pkl`, or Model object |
+| `transpose_input` | bool | `False` | No | Set `True` if matrix is gene-by-cell (rows=genes, cols=cells) |
+| `gene_file` | str | `None` | Conditional | Path to gene names file (required only for `.mtx` input) |
+| `cell_file` | str | `None` | Conditional | Path to cell barcodes file (required only for `.mtx` input) |
+| `dtype` | str | `'float32'` | No | Expression matrix dtype; `'float32'` balances precision and memory |
+| `check_expression` | bool | `True` | No | Validates input is log-normalized; produces warning if suspicious |
+| `majority_voting` | bool | `False` | No | **Key parameter**: refines noisy per-cell predictions via over-clustering + voting |
+| `over_clustering` | str / float | `None` | No | Over-clustering source: column name in `.obs`, path to file, or Leiden resolution float |
+| `min_prop` | float [0,1] | `0` | No | Minimum fraction of cells in a cluster that must agree to assign label (vs. `'Heterogeneous'`) |
+| `mode` | str | `'best match'` | No | `'best match'`: single-label; `'prob match'`: multi-label for cells with multiple high-probability types |
+| `p_thres` | float [0,1] | `0.5` | No | Probability cutoff for multi-label mode (`'prob match'`); ignored in `'best match'` |
+
+---
+
+### 3.2 `celltypist.train()` — Custom Model Training Function
+
+**Full Signature:**
+```python
+celltypist.train(
+    X=None, labels=None, genes=None, transpose_input=False,
+    with_mean=True, check_expression=True,
+    C=1.0, solver=None, max_iter=None, n_jobs=None,
+    use_SGD=False, alpha=0.0001, use_GPU=False,
+    mini_batch=False, batch_number=100, batch_size=1000,
+    epochs=10, balance_cell_type=False,
+    feature_selection=False, top_genes=300,
+    date='', details='', url='', source='', version=''
+)
+```
+
+#### Parameter Reference Table — Training
+
+| Parameter | Type | Default | Group | Description |
+|---|---|---|---|---|
+| `X` | str / AnnData | — | **Input** | Training expression matrix (path or AnnData) |
+| `labels` | str / array | — | **Input** | Cell type labels — obs column name or array of strings |
+| `genes` | str / array | `None` | **Input** | Gene names — var column name or array; auto-detected from AnnData |
+| `transpose_input` | bool | `False` | **Input** | Transpose if gene-by-cell format |
+| `with_mean` | bool | `True` | **Preprocessing** | Center data during scaling (StandardScaler) |
+| `check_expression` | bool | `True` | **Preprocessing** | Validate log-normalized input |
+| `C` | float | `1.0` | **Model** | Inverse regularization strength; smaller → stronger L2 regularization |
+| `solver` | str | `None` | **Model** | Optimizer: `'saga'` (global default), `'sgd'` (when use_SGD=True) |
+| `max_iter` | int | `None` | **Model** | Max training iterations; `None` = adaptive by dataset size |
+| `n_jobs` | int | `None` | **Compute** | Parallel CPU threads; `-1` = use all cores |
+| `use_SGD` | bool | `False` | **Compute** | Use SGD optimization (faster for large datasets) |
+| `alpha` | float | `0.0001` | **Model** | L2 regularization weight for SGD solver |
+| `use_GPU` | bool | `False` | **Compute** | GPU-accelerated training (requires cuML/RAPIDS) |
+| `mini_batch` | bool | `False` | **Large Scale** | Enable mini-batch training for very large datasets |
+| `batch_number` | int | `100` | **Large Scale** | Batches sampled per training epoch |
+| `batch_size` | int | `1000` | **Large Scale** | Cells per mini-batch (1,000 recommended) |
+| `epochs` | int | `10` | **Large Scale** | Number of training epochs |
+| `balance_cell_type` | bool | `False` | **Large Scale** | Balance cell type frequencies during mini-batch sampling |
+| `feature_selection` | bool | `False` | **Feature** | Two-pass training: first SGD for gene importance, then LR on top genes |
+| `top_genes` | int | `300` | **Feature** | Number of top informative genes to retain |
+| `date`, `details`, `url`, `source`, `version` | str | `''` | **Metadata** | Model provenance metadata stored in `.pkl` |
+
+### 3.3 `AnnotationResult` Key Methods
+
+```python
+# Export to tables
+predictions.to_table(folder='output/', prefix='my_run', xlsx=False)
+
+# Convert to annotated AnnData
+adata = predictions.to_adata(
+    insert_labels=True,      # Add predicted_labels to .obs
+    insert_conf=True,        # Add confidence scores to .obs
+    insert_conf_by='predicted_labels',  # Column to base confidence on
+    insert_decision=False,   # Add decision matrix to .obsm
+    insert_prob=True,        # Add probability matrix to .obsm (recommended)
+    prefix=''                # Prefix for added column names
+)
+
+# Generate visualization plots
+predictions.to_plots(
+    folder='output/',
+    prefix='my_run',
+    plot_probability=False,  # Generate per-cell-type probability plots
+    format='pdf'             # 'pdf' or 'png'
+)
+
+# Cell type frequency summary
+freq_df = predictions.summary_frequency(by='majority_voting')
+```
+
+### 3.4 Model Management
+
+```python
+import celltypist
+from celltypist import models
+
+# List all available models with descriptions
+models.models_description()
+
+# Download specific model(s)
+models.download_models(model='Immune_All_Low.pkl')
+models.download_models(model=['Immune_All_Low.pkl', 'Immune_All_High.pkl'])
+
+# Update all to latest
+models.update_models(force_update=True)
+
+# Get model from path
+my_model = models.Model.load('/path/to/custom_model.pkl')
+```
+
+---
+
+## 4. 📦 Installation & Dependency Requirements
+
+### 4.1 Installation Methods
+
+```bash
+# PyPI (recommended for most users)
+pip install celltypist
+
+# Bioconda (for conda environments)
+conda install -c conda-forge -c bioconda celltypist
+
+# Latest development version
+pip install git+https://github.com/Teichlab/celltypist.git
+```
+
+### 4.2 Dependency Stack
+
+| Dependency | Minimum Version | Role | Required? |
+|---|---|---|---|
+| **Python** | ≥ 3.6 | Runtime | ✅ Core |
+| **scanpy** | ≥ 1.7.0 | scRNA-seq data processing, visualization | ✅ Core |
+| **anndata** | ≥ 0.7.4 | Data format management | ✅ Core |
+| **scikit-learn** | latest | Logistic regression classifiers | ✅ Core |
+| **numpy** | latest | Numerical computing | ✅ Core |
+| **scipy** | ≥ 1.4 | Sparse matrix operations | ✅ Core |
+| **pandas** | latest | DataFrame handling | ✅ Core |
+| **h5py** | ≥ 2.10.0 | HDF5 (.h5ad) file I/O | ✅ Core |
+| **requests** | latest | Model downloading from server | ✅ Core |
+| **leidenalg** | latest | Over-clustering for majority voting | ⚠️ Required for `majority_voting=True` |
+| **python-igraph** | latest | Graph construction for Leiden | ⚠️ Required for `majority_voting=True` |
+| **matplotlib** | latest | Plot generation | ⚠️ Required for `to_plots()` |
+| **seaborn** | latest | Enhanced visualizations | Optional |
+| **cuML (RAPIDS)** | latest | GPU-accelerated training | Optional, for `use_GPU=True` |
+
+### 4.3 Recommended Conda Environment
+
+```yaml
+name: celltypist_env
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.10
+  - scanpy=1.9+
+  - anndata=0.9+
+  - leidenalg
+  - python-igraph
+  - pip
+  - pip:
+    - celltypist
+```
+
+---
+
+## 5. 🔄 Common Workflows & Use Cases
+
+### Workflow 1: Standard Immune Cell Annotation (Most Common)
+
+```python
+import scanpy as sc
+import celltypist
+
+# 1. Load data
+adata = sc.read_h5ad('cells.h5ad')
+
+# 2. Preprocess (REQUIRED if raw counts)
+sc.pp.normalize_total(adata, target_sum=1e4)
+sc.pp.log1p(adata)
+
+# 3. Download model (first time only)
+celltypist.models.download_models(model='Immune_All_Low.pkl')
+
+# 4. Annotate
+predictions = celltypist.annotate(adata, model='Immune_All_Low.pkl')
+
+# 5. Export results
+adata_annotated = predictions.to_adata(insert_labels=True, insert_conf=True, insert_prob=True)
+predictions.to_table(folder='output/', prefix='immune_annotation')
+```
+
+### Workflow 2: Majority Voting (Recommended for Production)
+
+```python
+# Majority voting reduces false positives from individual cell noise
+predictions = celltypist.annotate(
+    adata,
+    model='Immune_All_High.pkl',  # High-resolution model
+    majority_voting=True,
+    min_prop=0.1                  # At least 10% cells must agree
+)
+# Results include both predicted_labels AND majority_voting columns
+```
+
+### Workflow 3: Multi-Label Classification (Transitional States)
+
+```python
+# For cells that could belong to multiple types (e.g., transitional states)
+predictions = celltypist.annotate(
+    adata,
+    model='Immune_All_Low.pkl',
+    mode='prob match',
+    p_thres=0.5  # Any cell type with >50% probability gets labeled
+)
+```
+
+### Workflow 4: Custom Model Training
+
+```python
+# Train on your own labeled dataset
+labeled_adata = sc.read_h5ad('labeled_reference.h5ad')
+# adata.obs['cell_type'] contains your labels
+
+new_model = celltypist.train(
+    labeled_adata,
+    labels='cell_type',
+    feature_selection=True,   # Reduces noise by selecting top genes
+    top_genes=300,
+    n_jobs=8
+)
+
+# Save and reuse
+new_model.write('my_custom_model.pkl')
+
+# Apply to query data
+predictions = celltypist.annotate(query_adata, model='my_custom_model.pkl')
+```
+
+### Workflow 5: Large Dataset Mini-Batch Training
+
+```python
+# For datasets with 100K–1M+ cells
+large_model = celltypist.train(
+    large_adata,
+    labels='cell_type',
+    mini_batch=True,
+    epochs=10,
+    batch_size=1000,
+    batch_number=100,
+    balance_cell_type=True,   # Correct for class imbalance
+    feature_selection=True,
+    top_genes=300,
+    n_jobs=-1                 # Use all cores
+)
+```
+
+---
+
+## 6. 🗂️ Available Pre-Trained Models
+
+| Model File | Organism | Tissue/Context | Cell Types | Notes |
+|---|---|---|---|---|
+| `Immune_All_Low.pkl` | Human | Pan-tissue immune | 36 | **Best general-purpose starter** |
+| `Immune_All_High.pkl` | Human | Pan-tissue immune | 98 | High-resolution subtypes |
+| `COVID19_Immune_Landscape.pkl` | Human | Multi-tissue (COVID-19) | Multiple | Disease + health context |
+| `Healthy_COVID19_PBMC.pkl` | Human | PBMC | Multiple | Peripheral blood focus |
+| `Human_Lung_Atlas.pkl` | Human | Lung | Multiple | Lung-specific cell types |
+| `Cells_Lung_Airway.pkl` | Human | Lung/Airway | Multiple | Includes airway epithelium |
+| `Nuclei_Lung_Airway.pkl` | Human | Lung/Airway | Multiple | **snRNA-seq** (nuclei) data |
+| `Cells_Intestinal_Tract.pkl` | Human | Intestine | Multiple | Gut immune + epithelial |
+| `Cells_Fetal_Lung.pkl` | Human | Fetal lung | Multiple | Developmental cells |
+| `Pan_Fetal_Human.pkl` | Human | Multiple (fetal) | Multiple | Pan-organ fetal atlas |
+| `Adult_Mouse_Gut.pkl` | **Mouse** | Gut | Multiple | Non-human model organism |
+| `Developing_Mouse_Brain.pkl` | **Mouse** | Brain (developing) | Multiple | Neuroscience focus |
+
+> **Model Selection Guidance:**
+> - General immune analysis → Start with `Immune_All_Low.pkl` (coarse) or `Immune_All_High.pkl` (fine)
+> - Tissue-specific studies → Use tissue-matched model where available
+> - Nuclear transcriptomics (snRNA-seq) → Use `Nuclei_Lung_Airway.pkl` or train custom model
+> - Mouse data → `Adult_Mouse_Gut.pkl` or `Developing_Mouse_Brain.pkl`
+
+---
+
+## 7. 📊 Comparative Analysis
+
+| Feature | **CellTypist** | SingleR | scType | scANVI | Seurat Label Transfer |
+|---|---|---|---|---|---|
+| **Algorithm** | Logistic Regression (SGD) | Spearman Correlation | Marker gene scoring | Variational Autoencoder | CCA anchors |
+| **Language** | Python | R | R/Python | Python | R |
+| **Pre-trained Models** | ✅ 12 built-in | ✅ Built-in refs | ✅ Tissue DB | ❌ Train only | ❌ Reference needed |
+| **Custom Training** | ✅ Full support | ❌ | ❌ | ✅ | Limited |
+| **Multi-label** | ✅ `prob match` mode | ❌ | ❌ | ❌ | ❌ |
+| **Majority Voting** | ✅ Built-in | ❌ | ❌ | ❌ | ❌ |
+| **Scalability** | ✅ Mini-batch for 1M+ | ⚠️ Moderate | ✅ Fast | ⚠️ GPU helps | ⚠️ Memory intensive |
+| **GPU Support** | ✅ Optional | ❌ | ❌ | ✅ | ❌ |
+| **Feature Selection** | ✅ SGD-based | ❌ | Marker-based | ✅ | ❌ |
+| **Batch Correction** | ❌ (separate step) | ❌ | ❌ | ✅ Built-in | Partial |
+| **AnnData Native** | ✅ | ❌ | Partial | ✅ | ❌ |
+| **Online Portal** | ✅ celltypist.org | ❌ | ❌ | ❌ | ❌ |
+
+**CellTypist's Key Differentiators:**
+- Only tool with **both** extensive pre-trained immune models AND full custom training capability in Python
+- Unique **majority voting** mechanism for cluster-level noise reduction
+- **Multi-label mode** for transitional/hybrid cell states
+- Best integration with **scanpy/AnnData ecosystem** (scverse)
+- Backed by **large-scale biological validation** (Science 2022)
+
+---
+
+## 8. 🔧 GenePattern Module Integration Considerations
+
+### 8.1 Recommended Module Structure
+The tool lends itself to **two related GenePattern modules:**
+
+#### Module A: `CellTypist` (Prediction/Annotation — Primary)
+| Parameter Group | Parameters | Priority |
+|---|---|---|
+| **Input** | `input.file` (.h5ad, .csv, .mtx, .txt, .tsv) | Critical |
+| **Model** | `model.name` (dropdown of 12 built-ins + custom), `custom.model.file` (.pkl upload) | Critical |
+| **Classification** | `mode` (best match / prob match), `p.threshold` (default: 0.5) | High |
+| **Majority Voting** | `majority.voting` (bool), `min.prop` (default: 0), `over.clustering` | High |
+| **Input Processing** | `transpose.input` (bool), `check.expression` (bool) | Medium |
+| **Output** | `output.prefix`, `output.format` (csv/h5ad/plots), `plot.probability` | Medium |
+
+#### Module B: `CellTypist.Train` (Custom Model Training — Secondary)
+| Parameter Group | Parameters | Priority |
+|---|---|---|
+| **Input** | `training.data` (.h5ad), `labels.column`, `genes.column` | Critical |
+| **Feature Selection** | `feature.selection` (bool), `top.genes` (default: 300) | High |
+| **Optimization** | `C` (default: 1.0), `n.jobs`, `use.SGD` | High |
+| **Large Scale** | `mini.batch`, `batch.size`, `batch.number`, `epochs`, `balance.cell.type` | Medium |
+| **GPU** | `use.GPU` | Low |
+| **Metadata** | `model.details`, `model.version`, `model.source` | Low |
+
+### 8.2 Key Implementation Notes
+
+1. **Model Handling Strategy:**
+   - Support both named built-in models (string dropdown) AND uploaded custom `.pkl` files
+   - Pre-bundle or cache built-in models in Docker container to avoid internet dependency at runtime
+   - Model storage path: `~/.celltypist/data/models/`
+
+2. **Preprocessing Gate:**
+   - If input is raw counts (CSV), auto-apply `normalize_total(target_sum=1e4)` + `log1p`
+   - If input is h5ad, assume pre-normalized (but offer `check_expression` validation)
+   - Document preprocessing requirement prominently
+
+3. **Output Files (standardized for GenePattern):**
+   ```
+   output/
+   ├── {prefix}_predicted_labels.csv     # Per-cell annotations
+   ├── {prefix}_probability_matrix.csv   # Full probability scores
+   ├── {prefix}_annotated.h5ad           # Annotated AnnData object
+   ├── {prefix}_umap.pdf                 # UMAP visualization
+   └── {prefix}_dotplot.pdf              # Marker gene dotplot
+   ```
+
+4. **Majority Voting Dependencies:**
+   - Requires `leidenalg` and `python-igraph` — must be in Docker container
+   - If input h5ad already has neighbor graph computed, CellTypist uses it; otherwise auto-computed
+
+5. **Memory / Compute Requirements:**
+   - Standard datasets (1K–100K cells): 4–16 GB RAM, standard CPU
+   - Large datasets (100K–1M cells): 32+ GB RAM, mini-batch mode recommended
+   - GPU training optional but can be offered as advanced parameter
+
+6. **Error Handling to Implement:**
+   - Gene name mismatch between input and model (tool reports proportion matched)
+   - Unnormalized input detection (`check_expression` warnings)
+   - Missing majority voting dependencies (graceful fallback to simple prediction)
+   - Custom model file format validation
+
+7. **Python Script Template:**
+```python
+import scanpy as sc
+import celltypist
+from celltypist import models
+import os, sys
+
+def run_celltypist(input_file, model_name, majority_voting, mode,
+                   p_thres, min_prop, output_prefix, ...):
+    # Load data
+    if input_file.endswith('.h5ad'):
+        adata = sc.read_h5ad(input_file)
+    else:  # CSV/TSV/MTX
+        adata = sc.read_csv(input_file).T
+        sc.pp.normalize_total(adata, target_sum=1e4)
+        sc.pp.log1p(adata)
+
+    # Download/load model
+    if not model_name.endswith('.pkl') or not os.path.exists(model_name):
+        models.download_models(model=model_name)
+
+    # Run annotation
+    predictions = celltypist.annotate(
+        adata,
+        model=model_name,
+        majority_voting=majority_voting,
+        mode=mode,
+        p_thres=p_thres,
+        min_prop=min_prop
+    )
+
+    # Export outputs
+    predictions.to_table(folder='./', prefix=output_prefix)
+    adata_out = predictions.to_adata(insert_labels=True, insert_conf=True, insert_prob=True)
+    adata_out.write_h5ad(f'{output_prefix}_annotated.h5ad')
+    predictions.to_plots(folder='./', prefix=output_prefix, format='pdf')
+```
+
+---
+
+## 9. 📚 Key References
+
+| Reference | Description |
+|---|---|
+| [Domínguez Conde et al., Science 2022](https://doi.org/10.1126/science.abl5197) | Primary CellTypist paper — cross-tissue immune atlas |
+| [Xu et al., Cell 2023](https://doi.org/10.1016/j.cell.2023.11.026) | CellTypist v2.0 — HCA harmonization, CellHint |
+| [GitHub Repository](https://github.com/Teichlab/celltypist) | Source code, README, examples |
+| [ReadTheDocs v1.7.1](https://celltypist.readthedocs.io/) | Official API documentation |
+| [CellTypist Portal](https://www.celltypist.org/) | Online portal, model catalog, tutorials |
+| [PyPI Package](https://pypi.org/project/celltypist/) | Latest release, install instructions |
+| [Tutorial: Classification](https://celltypist.readthedocs.io/en/latest/notebook/celltypist_tutorial.html) | Step-by-step annotation walkthrough |
+| [Tutorial: Multi-label](https://celltypist.readthedocs.io/en/latest/notebook/celltypist_tutorial_ml.html) | Multi-label classification tutorial |
+
+---
+
+## 10. ⚠️ Known Limitations & Caveats
+
+| Limitation | Impact | Mitigation |
+|---|---|---|
+| **Python-only** | No native R interface | Use reticulate in R; GenePattern abstracts this |
+| **Pre-trained models focused on immune cells** | Limited for stromal, epithelial, or rare cells | Use tissue-specific models; train custom |
+| **Requires log-normalized input for h5ad** | Common user error with raw count h5ad files | Add auto-detection + normalization in module |
+| **Internet needed for model download** | Fails in air-gapped environments | Pre-bundle models in Docker container |
+| **Majority voting needs neighbor graph** | Adds compute time; graph auto-built if absent | Pre-compute in preprocessing workflow |
+| **Gene name matching** | Cross-species / alias genes may not match | Report matching statistics; use gene aliases |
+| **Imbalanced training data** | Underrepresented cell types perform poorly | Use `balance_cell_type=True` in training |
+| **No batch correction** | Cross-dataset transfer may suffer from batch effects | Apply harmony/scVI before CellTypist |
+
+---
+
+**Summary:** CellTypist is a well-validated, actively maintained, Python-native cell type annotation tool with strong scientific foundations, 12 curated pre-trained models, and a comprehensive API suitable for both routine annotation and large-scale atlas projects. It is an excellent candidate for a GenePattern module, particularly for immune cell annotation workflows, and can be deployed cleanly in a Docker container with Python 3.10+, scanpy, anndata, leidenalg, and the pre-bundled model files.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

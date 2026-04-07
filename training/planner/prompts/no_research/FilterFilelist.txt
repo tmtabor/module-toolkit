@@ -1,0 +1,74 @@
+Create a comprehensive structured plan for the GenePattern module for 'FilterFilelist'.
+            
+            Tool Information:
+            - Name: FilterFilelist
+            - Version: latest
+            - Language: Java
+            - Description: a helper module which generates a filtered filelist from the input filelist and some filter parameters.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "FilterFilelist",
+  "parameters": [
+    {
+      "name": "input.filelist",
+      "type": "FILE",
+      "description": "the initial input filelist, a file containing a list of filepaths",
+      "required": true,
+      "default_value": "",
+      "prefix": "--input.filelist\\="
+    },
+    {
+      "name": "includePattern",
+      "type": "java.lang.String",
+      "description": "an optional list of filename patterns to match, e.g. *.cls,*.gct",
+      "required": false,
+      "default_value": "",
+      "prefix": "--includePattern\\="
+    },
+    {
+      "name": "type",
+      "type": "java.lang.String",
+      "description": "Include files, directories, or both files and directories in the output filelist",
+      "required": false,
+      "default_value": "f",
+      "choices": "\\=all;f\\=file;d\\=dir",
+      "prefix": "--type\\="
+    },
+    {
+      "name": "errorOnEmptySet",
+      "type": "java.lang.String",
+      "description": "Whether the module should output stderr if the output result is empty",
+      "required": false,
+      "default_value": "",
+      "choices": "\\=no;yes\\=yes",
+      "prefix": "--errorOnEmptySet\\="
+    },
+    {
+      "name": "output.filename",
+      "type": "java.lang.String",
+      "description": "the name of the output file, if none specified, write to stdout",
+      "required": false,
+      "default_value": "<input.filelist_basename>.filtered.<input.filelist_extension>",
+      "prefix": "--output.filename\\="
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Peter Carr, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>FilterFilelist.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar<path.separator><libdir>jakarta-oro-2.0.8.jar org.genepattern.module.filterfilelist.FilterFilelist <input.filelist> <includePattern> <type> <errorOnEmptySet> <output.filename>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

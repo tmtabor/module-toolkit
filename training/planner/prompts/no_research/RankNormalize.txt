@@ -1,0 +1,79 @@
+Create a comprehensive structured plan for the GenePattern module for 'RankNormalize'.
+            
+            Tool Information:
+            - Name: RankNormalize
+            - Version: Updated to make use of the R package installer and add HTML documentation.
+            - Language: R2.15.3
+            - Description: Normalize the rows in a data set by rank
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "RankNormalize",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "The dataset to be normalized",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct;res"
+    },
+    {
+      "name": "output.file.name",
+      "type": "java.lang.String",
+      "description": "The name to be given to the output file.",
+      "required": true,
+      "default_value": "<input.file_basename>.NORM.<input.file_extension>"
+    },
+    {
+      "name": "scale.to.value",
+      "type": "java.lang.Float",
+      "description": "Result values will be scaled to this value by multiplication after normalization.  Leave this blank to scale to the number of rows in the data set.",
+      "required": false,
+      "default_value": "",
+      "prefix": "--scale.to.value\\="
+    },
+    {
+      "name": "threshold",
+      "type": "java.lang.Float",
+      "description": "Minimum threshold for values in the data set.  Any data set value below this will be increased to the threshold value before normalization.  If more than one of these parameters is specified, the order of precedence is threshold, then ceiling, then shift.",
+      "required": false,
+      "default_value": "",
+      "prefix": "--threshold\\="
+    },
+    {
+      "name": "ceiling",
+      "type": "java.lang.Float",
+      "description": "Maximum ceiling for values in the data set.  Any data set value above this will be decreased to the ceiling value before normalization.  If more than one of these parameters is specified, the order of precedence is threshold, then ceiling, then shift.",
+      "required": false,
+      "default_value": "",
+      "prefix": "--ceiling\\="
+    },
+    {
+      "name": "shift",
+      "type": "java.lang.Float",
+      "description": "Shift all values in the data set.  The shift value will be added to all data set values before normalization.  If more than one of these parameters is specified, the order of precedence is threshold, then ceiling, then shift.",
+      "required": false,
+      "default_value": "",
+      "prefix": "--shift\\="
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Statistical Methods",
+  "author": "Pablo Tamayo, David Eby, Broad Institute",
+  "command_line": "<R2.15_Rscript> --no-save --quiet --slave --no-restore <libdir>run_rank_normalize.R <libdir> --input.file\\=<input.file> --output.file.name\\=<output.file.name> <scale.to.value> <threshold> <ceiling> <shift>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

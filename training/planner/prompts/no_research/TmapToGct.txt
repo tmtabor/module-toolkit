@@ -1,0 +1,71 @@
+Create a comprehensive structured plan for the GenePattern module for 'TmapToGct'.
+            
+            Tool Information:
+            - Name: TmapToGct
+            - Version: latest
+            - Language: Perl
+            - Description: Converts a TMAP file to GCT format
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "TmapToGct",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "Input file in TMAP format",
+      "required": true,
+      "default_value": "",
+      "file_format": "tmap"
+    },
+    {
+      "name": "row.labels",
+      "type": "java.lang.String",
+      "description": "Select row labels to be written to GCT file",
+      "required": true,
+      "default_value": "Cufflinks gene ID",
+      "choices": "ref_gene_id\\=Reference gene name;ref_id\\=Reference transcript ID;cuff_gene_id\\=Cufflinks gene ID;cuff_id\\=Cufflinks transcript ID;major_iso_id\\=Major isoform ID"
+    },
+    {
+      "name": "row.descriptions",
+      "type": "java.lang.String",
+      "description": "Select row descriptions to be written to GCT file",
+      "required": true,
+      "default_value": "Cufflinks transcript ID",
+      "choices": "ref_gene_id\\=Reference gene name;ref_id\\=Reference transcript ID;cuff_gene_id\\=Cufflinks gene ID;cuff_id\\=Cufflinks transcript ID;major_iso_id\\=Major isoform ID"
+    },
+    {
+      "name": "filter.rows",
+      "type": "java.lang.String",
+      "description": "Filter rows with invalid row names (ie., \"-\")",
+      "required": true,
+      "default_value": "no",
+      "choices": "no\\=no;yes\\=yes"
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.lang.String",
+      "description": "A label that will be used to name the GCT output file",
+      "required": true,
+      "default_value": "<input.file_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Data Format Conversion",
+  "author": "GenePattern",
+  "command_line": "<perl> <libdir>TmapToGct.pl -input <input.file> -rownames <row.labels> -rowdesc <row.descriptions> -filterDashRowNames <filter.rows> -output <output.prefix>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

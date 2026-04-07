@@ -1,0 +1,49 @@
+Create a comprehensive structured plan for the GenePattern module for 'RemoveSaturatedFCSEvents'.
+            
+            Tool Information:
+            - Name: RemoveSaturatedFCSEvents
+            - Version: latest
+            - Language: Java
+            - Description: Remove saturated events from an FCS data file
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "RemoveSaturatedFCSEvents",
+  "parameters": [
+    {
+      "name": "Input.FCS.data.file",
+      "type": "FILE",
+      "description": "An FCS data file to remove saturated events from.",
+      "required": true,
+      "default_value": "",
+      "file_format": "fcs",
+      "prefix": "-InputFile\\:"
+    },
+    {
+      "name": "Output.FCS.file.name",
+      "type": "java.lang.String",
+      "description": "The output FCS file name.",
+      "required": false,
+      "default_value": "<Input.FCS.data.file_basename>.without_saturated.fcs",
+      "prefix": "-OutputFile\\:"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Flow Cytometry",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "command_line": "<java> <java_flags> -jar <libdir>removesaturated.jar <Input.FCS.data.file> <Output.FCS.file.name>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

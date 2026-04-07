@@ -1,0 +1,89 @@
+{
+  "module_name": "CopyNumberDivideByNormals",
+  "description": "Determines the copy number of a target SNP",
+  "author": "David Twomey and Joshua Gould",
+  "input_file_formats": [
+    "snp",
+    "txt",
+    "xls"
+  ],
+  "language": "Java",
+  "categories": [
+    "Variant Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:74072:1",
+  "plan": "## CopyNumberDivideByNormals GenePattern Module — Implementation Plan\n\n### 1. Overview\nCopyNumberDivideByNormals is a GenePattern module that Determines the copy number of a target SNP\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: sample.info.file, include.genotype.calls, output.file.name\n- Optional: snp.file\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>snp.jar<path.separator><libdir>opencsv-1.7.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>commons-math-1.2.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>log4j-1.2.13.jar org.genepattern.modules.DivideByNormals.DivideByNormals <snp.file> <sample.info.file> <output.file.name> <include.genotype.calls>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "snp.jar<path.separator><libdir>opencsv-1.7.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>commons-math-1.2.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>log4j-1.2.13.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>snp.jar<path.separator><libdir>opencsv-1.7.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>commons-math-1.2.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>log4j-1.2.13.jar org.genepattern.modules.DivideByNormals.DivideByNormals <snp.file> <sample.info.file> <output.file.name> <include.genotype.calls>",
+  "parameters": [
+    {
+      "name": "snp.file",
+      "description": "SNP file containing both normal and target samples.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "snp"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--snp.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.info.file",
+      "description": "dChip format sample info file containing Ploidy(numeric) and Sample columns",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt",
+        "xls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sample.info.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "include.genotype.calls",
+      "description": "Whether to include genotype calls from the input snp file if they exist.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "cn",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes (create xcn file)",
+          "value": "xcn"
+        },
+        {
+          "display": "no (create cn file)",
+          "value": "cn"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--include.genotype.calls",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file.name",
+      "description": "Output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<snp.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file.name",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

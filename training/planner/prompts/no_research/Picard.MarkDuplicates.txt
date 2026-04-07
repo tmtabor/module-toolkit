@@ -1,0 +1,83 @@
+Create a comprehensive structured plan for the GenePattern module for 'Picard.MarkDuplicates'.
+            
+            Tool Information:
+            - Name: Picard.MarkDuplicates
+            - Version: Added sorting collection size ratio parameter and modified to print warning message about failed file delete attempts to stdout
+            - Language: Java
+            - Description: Examines aligned records in the supplied SAM or BAM file to locate duplicate reads.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "Picard.MarkDuplicates",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "A SAM or BAM file",
+      "required": true,
+      "default_value": "",
+      "file_format": "sam;bam"
+    },
+    {
+      "name": "remove.duplicates",
+      "type": "java.lang.String",
+      "description": "Whether to remove duplicates",
+      "required": true,
+      "default_value": "false",
+      "choices": "true\\=yes;false\\=no"
+    },
+    {
+      "name": "max.file.handles",
+      "type": "java.lang.String",
+      "description": "Maximum number of file handles to keep open when spilling read ends to disk",
+      "required": true,
+      "default_value": "8000"
+    },
+    {
+      "name": "read.name.regex",
+      "type": "java.lang.String",
+      "description": "Regular expression that can be used to parse read names in the input file",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "optical.duplicate.distance",
+      "type": "java.lang.String",
+      "description": "The maximum offset between two duplicate clusters in order to consider them optical duplicates. This should usually be set to some fairly small number (e.g. 5-10 pixels) unless using later versions of the Illumina pipeline that multiply pixel values by 10, in which case 50-100 is more normal",
+      "required": true,
+      "default_value": "100"
+    },
+    {
+      "name": "sorting.collection.size.ratio",
+      "type": "java.lang.String",
+      "description": "This number, plus the maximum RAM available to the JVM, determine the memory footprint used by some of the sorting collections.  If you are running out of memory, try reducing this number",
+      "required": true,
+      "default_value": "0.25"
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.lang.String",
+      "description": "The prefix to use for the output file name",
+      "required": true,
+      "default_value": "<input.file_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Picard Tools",
+  "command_line": "<java> <java_flags> -cp <libdir>MarkDuplicates.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>gp-MarkDuplicates.jar org.genepattern.sam.MarkDuplicatesWrapper -inputFileName <input.file> -removeDup <remove.duplicates> -maxFileH <max.file.handles> -rnRegex <read.name.regex> -dist <optical.duplicate.distance> -outputFileName <output.prefix> -ratio <sorting.collection.size.ratio>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

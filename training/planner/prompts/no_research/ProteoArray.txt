@@ -1,0 +1,47 @@
+Create a comprehensive structured plan for the GenePattern module for 'ProteoArray'.
+            
+            Tool Information:
+            - Name: ProteoArray
+            - Version: latest
+            - Language: Java
+            - Description: LC-MS proteomic data processing module
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ProteoArray",
+  "parameters": [
+    {
+      "name": "input.zip.filename",
+      "type": "FILE",
+      "description": "zip file of LC-MS runs in mzXML format.",
+      "required": true,
+      "default_value": "",
+      "file_format": "zip"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "output filename",
+      "required": true,
+      "default_value": "<input.zip.filename_basename>.prot"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Proteomics",
+  "author": "Brian Piening (Fred Hutchinson Cancer Research Center)",
+  "command_line": "<java> <java_flags> -cp <libdir>ProteoArray.jar<path.separator><libdir>jrap.jar<path.separator><libdir>xerces.jar org.fhcrc.edi.proteoArray.ProteoArray <input.zip.filename> <output.file>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

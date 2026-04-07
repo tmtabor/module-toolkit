@@ -1,0 +1,612 @@
+Create a comprehensive structured plan for the GenePattern module for 'Tangram'.
+            
+            Tool Information:
+            - Name: Tangram
+            - Version: Docker image update to v1.0
+            - Language: any
+            - Description: A method for spatial alignment of single cell transcriptomic data. See <a href=https://github.com/genepattern/Tangram/blob/main/README.md>documentation</a> for details on use cases.
+            
+            Research Results:
+            Now I have all the research data needed. Let me compile the full comprehensive report:
+
+---
+
+# 🔬 Comprehensive Research Report: Tangram — Spatial Alignment of Single-Cell Transcriptomic Data
+
+---
+
+## 1. 📋 EXECUTIVE SUMMARY
+
+**Tangram** is a deep-learning-based computational framework published in *Nature Methods* (2021) for aligning single-cell (sc) or single-nucleus (sn) RNA-seq data to various forms of spatially resolved transcriptomics data. It bridges the gap between the transcriptomic resolution of scRNA-seq and the spatial context of spatial transcriptomics, enabling transcriptome-wide spatial gene expression mapping at single-cell resolution. The GenePattern module wraps the canonical `tangram-sc` Python package (Broad Institute/MIT) in a Docker container (v1.0), making it accessible through a GUI-driven, reproducible workflow.
+
+---
+
+## 2. 🧬 TOOL PURPOSE AND SCIENTIFIC BACKGROUND
+
+### 2.1 Core Problem Statement
+Spatial transcriptomics technologies (e.g., 10x Visium, MERFISH, STARmap, Slide-seq) capture gene expression with spatial context but face trade-offs:
+- **Low-plex methods** (Visium): Measure thousands of genes but at ~10–100 cells/spot resolution
+- **High-plex imaging** methods (MERFISH, smFISH): Single-cell resolution but limited gene panels (100–1,000 genes)
+- **scRNA-seq**: Full transcriptome (~20,000 genes) but lacks spatial context
+
+**Tangram's solution**: Learn an optimal probabilistic mapping matrix **M** (cells × spots) that places each single cell from scRNA-seq into its most probable spatial location, using a shared set of overlapping genes as training signal.
+
+### 2.2 Peer-Reviewed Publication
+| Field | Value |
+|-------|-------|
+| **Title** | Deep learning and alignment of spatially resolved single-cell transcriptomes with Tangram |
+| **Authors** | Biancalani\* T., Scalia\* G., Buffoni L., Avasthi R., Lu Z., Sanger A., Bharat N., Shekhar S., Naisarghi G., Stancheva V., Yanagawa T., Poirier M., Bhatt U., Klucznik J., Weissman J., Regev A. |
+| **Journal** | *Nature Methods* |
+| **Year** | 2021 |
+| **Volume/Pages** | 18, 1352–1362 |
+| **DOI** | 10.1038/s41592-021-01264-7 |
+| **PMID** | 34711971 |
+| **Institution** | Broad Institute & MIT |
+
+### 2.3 Key Scientific Capabilities
+1. **Single-cell spatial deconvolution**: Resolve which individual cells occupy which spatial locations in tissue sections
+2. **Transcriptome-wide gene expression imputation**: Predict the spatial expression of ~20,000 genes from only 100–1,000 spatially measured genes
+3. **Cell type mapping**: Project scRNA-seq cell type annotations (e.g., Leiden clusters, curated cell types) onto spatial coordinates
+4. **Multi-modal integration**: Map RNA-seq, ATAC-seq (via SHARE-seq), or other modalities onto spatial supports
+5. **Histology integration**: Align to histological image landmarks from Allen Brain Atlas ISH images
+6. **Cross-atlas mapping**: Used in Allen Brain Cell Atlas developmental mouse brain cell type mapping (*Nature* 2021)
+
+---
+
+## 3. 🗂️ INPUT/OUTPUT FORMATS AND REQUIREMENTS
+
+### 3.1 Primary Input Files
+
+| Input | Format | Description | Required |
+|-------|--------|-------------|----------|
+| **Single-cell data** (`adata_sc`) | `.h5ad` (AnnData) | scRNA-seq or snRNA-seq expression matrix (cells × genes) with cell type annotations in `.obs` | ✅ Required |
+| **Spatial data** (`adata_sp`) | `.h5ad` (AnnData) | Spatial gene expression matrix (spots/voxels × genes) with spatial coordinates (`x`, `y`) in `.obs` | ✅ Required |
+| **Training gene list** | `.txt` / `.csv` | Optional list of marker genes (DEGs) to use as training features | ⬜ Optional |
+
+#### Single-Cell AnnData Requirements (`adata_sc`):
+```
+AnnData object
+  .X        : cell × gene expression matrix (raw counts or normalized)
+  .obs      : cell metadata — MUST include cell type/cluster annotation column
+  .var      : gene metadata (gene names as index)
+  .uns      : will be populated by tg.pp_adatas() with 'training_genes', 'overlap_genes'
+```
+
+#### Spatial AnnData Requirements (`adata_sp`):
+```
+AnnData object
+  .X        : spot × gene expression matrix
+  .obs      : spot metadata — MUST include spatial coordinates ('x', 'y')
+              Optional: 'cell_count' per voxel for constrained mode
+  .var      : gene metadata (gene names as index)
+  .uns      : will be populated by tg.pp_adatas() with density priors
+```
+
+### 3.2 Primary Output Files
+
+| Output | Format | Description |
+|--------|--------|-------------|
+| **Mapping matrix** (`adata_map`) | `.h5ad` | AnnData (cells × spots) — the core probabilistic mapping matrix **M**; rows=sc cells, cols=spatial voxels |
+| **Projected gene expression** | `.h5ad` | Spatial AnnData (spots × all_genes) — transcriptome-wide spatial expression predicted from sc data |
+| **Cell type proportions** | Embedded in spatial `.h5ad` | Per-spot cell type fraction estimates in `.obs` |
+| **Training history** | Embedded in `.uns` | Per-epoch training scores stored in `adata_map.uns['training_history']` |
+
+#### Output `adata_map` Structure:
+```
+AnnData object with n_obs × n_vars = n_sc_cells × n_spatial_spots
+  .obs      : single-cell metadata (from adata_sc)
+  .var      : spatial spot metadata (from adata_sp)
+  .X        : mapping matrix M (probability of cell i being at spot j)
+  .uns      : {'training_genes': [...], 'train_genes_df': DataFrame, 
+               'training_history': {'main_loss': [...], 'kl_reg': [...]}}
+```
+
+### 3.3 Intermediate Processing Steps
+```python
+# Step 1: Preprocess — find common genes, compute density priors
+tg.pp_adatas(ad_sc, ad_sp, genes=marker_genes)
+# → Adds to adata_sp.obs: 'uniform_density', 'rna_count_based_density'
+# → Adds to both .uns: 'training_genes', 'overlap_genes'
+
+# Step 2: Map
+ad_map = tg.map_cells_to_space(ad_sc, ad_sp, mode='cells', ...)
+
+# Step 3a: Gene imputation — project all sc genes to space
+ad_ge = tg.project_genes(ad_map, ad_sc)
+
+# Step 3b: Cell type projection
+tg.project_cell_annotations(ad_map, ad_sp, annotation='cell_type')
+```
+
+### 3.4 Compatible Spatial Technologies
+
+| Technology | Type | Resolution | Mode Recommendation |
+|------------|------|------------|---------------------|
+| MERFISH | Imaging-based | Single-cell | `cells` |
+| STARmap | Imaging-based | Single-cell | `cells` |
+| smFISH | Imaging-based | Single-cell | `cells` |
+| seqFISH+ | Imaging-based | Single-cell | `cells` |
+| 10x Visium | Sequencing-based | ~10–100 cells/spot | `constrained` (if cell counts known) or `cells` |
+| Slide-seq / Slide-seqV2 | Sequencing-based | Near single-cell (~10 µm) | `cells` |
+| Spatial Transcriptomics (original) | Sequencing-based | ~100 cells/spot | `constrained` |
+| Allen ISH / histological images | Imaging | Brain region | `cells` |
+
+---
+
+## 4. ⚙️ PARAMETER ANALYSIS AND USAGE PATTERNS
+
+### 4.1 Complete Parameter Reference for `map_cells_to_space()`
+
+#### **Group A: Essential Inputs**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `adata_sc` | AnnData | — | Pre-processed single-cell AnnData (after `pp_adatas`) |
+| `adata_sp` | AnnData | — | Pre-processed spatial AnnData (after `pp_adatas`) |
+
+#### **Group B: Mapping Mode Configuration**
+| Parameter | Type | Default | Options / Notes |
+|-----------|------|---------|----------------|
+| `mode` | str | `'cells'` | `'cells'`: map individual cells; `'clusters'`: map cluster centroids (recommended when sc/sn from different sample); `'constrained'`: cell-level with voxel cell-count constraint |
+| `cluster_label` | str | `None` | Column in `adata_sc.obs` containing cluster/cell-type labels — **required for `clusters` mode** |
+| `target_count` | int | `None` | Desired total number of cells to map — used in `constrained` mode (typically `adata_sp.obs.cell_count.sum()`) |
+| `density_prior` | str/array | `'rna_count_based'` | `'rna_count_based'`: weights by RNA counts; `'uniform'`: equal weights; or custom numpy array of per-voxel fractions (required for `constrained`) |
+
+#### **Group C: Training/Optimization Parameters**
+| Parameter | Type | Default | Biological Significance |
+|-----------|------|---------|------------------------|
+| `num_epochs` | int | `1000` | Training iterations; increase for complex datasets or until loss plateaus; typical range 500–3000 |
+| `learning_rate` | float | `0.1` | Gradient descent step size; lower values → more stable but slower convergence |
+| `scale` | bool | `True` | Normalize expression matrices before training; recommended `True` |
+| `random_state` | int | `None` | Set integer seed for reproducibility |
+| `device` | str | `'cpu'` | `'cpu'` or `'cuda'` (GPU); GPU dramatically accelerates large datasets |
+
+#### **Group D: Loss Function Hyperparameters (Lambda Terms)**
+| Parameter | Type | Default | Role in Objective Function |
+|-----------|------|---------|---------------------------|
+| `lambda_g1` | float | `1` | **Primary gene expression term** — cosine similarity between predicted and observed spatial gene expression; main learning signal |
+| `lambda_g2` | float | `0` | Voxel-gene regularization term — encourages voxel-level consistency |
+| `lambda_d` | float | `0` | Cell density KL divergence penalty — penalizes deviation from `density_prior` |
+| `lambda_r` | float | `0` | General regularization term — reduces overfitting |
+| `lambda_count` | float | `1` | Cell count regularization — used only in `constrained` mode to enforce per-voxel cell counts |
+| `lambda_f_reg` | float | `1` | F-regularization — used in `constrained` mode |
+
+> ⚠️ **Lambda Tuning Note**: `lambda_g1=1` is the core term and should rarely be changed. `lambda_d` can be increased (e.g., 0.1–1.0) when spatial density information is reliable. In `constrained` mode, `lambda_count` and `lambda_f_reg` work together to enforce cell count constraints.
+
+#### **Group E: Preprocessing / Cross-Validation Parameters**
+| Parameter | Type | Default | Notes |
+|-----------|------|---------|-------|
+| `cv_train_genes` | list/float | `None` | For cross-validation: list of genes held out from training to assess generalization, or float (fraction) for random holdout |
+| `verbose` | bool | `True` | Print training progress (score, KL reg) every 100 epochs |
+
+### 4.2 Preprocessing Function: `pp_adatas()`
+```
+tg.pp_adatas(adata_sc, adata_sp, genes=None)
+```
+| Parameter | Description |
+|-----------|-------------|
+| `adata_sc` | Single-cell AnnData |
+| `adata_sp` | Spatial AnnData |
+| `genes` | List of training genes (recommended: 100–1,000 cell-type marker DEGs). If `None`, all overlapping genes are used |
+
+**Actions performed:**
+1. Finds intersection of genes between sc and spatial datasets
+2. Annotates `training_genes` in `.uns` of both AnnData objects
+3. Removes all-zero genes from consideration
+4. Computes `uniform_density` and `rna_count_based_density` in `adata_sp.obs`
+
+### 4.3 Gene Selection Best Practices
+- **Recommended**: 100–1,000 differentially expressed genes, stratified across cell types
+- **Rationale**: Training genes should be informative markers; whole-transcriptome training can work but is slower and may overfit sparse data
+- **Cross-validation**: Use `cv_train_genes` to hold out test genes and validate mapping quality on unseen genes
+- **Source**: Compute DEGs using `scanpy.tl.rank_genes_groups()` prior to running Tangram
+
+### 4.4 Mode Selection Guide
+```
+Is spatial data single-cell resolution (MERFISH, STARmap)?
+  → YES: Use mode='cells'
+  
+Is spatial data low-resolution (Visium, old ST)?
+  → Do you have per-spot cell count estimates?
+     → YES: Use mode='constrained', provide target_count and density_prior
+     → NO:  Use mode='cells' with density_prior='rna_count_based'
+
+Is the sc/sn data from a DIFFERENT sample/donor than the spatial data?
+  → YES: Use mode='clusters' with cluster_label='your_celltype_column'
+```
+
+---
+
+## 5. 🛠️ INSTALLATION AND DEPENDENCY REQUIREMENTS
+
+### 5.1 Python Package Installation
+```bash
+# Recommended: create isolated environment
+conda create -n tangram-env python=3.8
+conda activate tangram-env
+
+# Install PyTorch first (CPU or GPU version)
+pip install torch  # CPU
+# OR for GPU:
+pip install torch --index-url https://download.pytorch.org/whl/cu118
+
+# Install Tangram
+pip install tangram-sc
+
+# Install additional dependencies (usually auto-installed)
+pip install scanpy anndata squidpy
+```
+
+### 5.2 Full Dependency Matrix
+| Package | Version Requirement | Purpose |
+|---------|-------------------|---------|
+| **Python** | ≥ 3.8.5 | Runtime |
+| **PyTorch** | ≥ 1.8.0 | Deep learning optimization engine, autograd |
+| **scanpy** | ≥ 1.7.0 | AnnData I/O, single-cell preprocessing |
+| **anndata** | ≥ 0.7.0 | Core data structure |
+| **numpy** | ≥ 1.19.0 | Numerical computation |
+| **pandas** | ≥ 1.2.0 | Data manipulation |
+| **scipy** | ≥ 1.6.0 | Statistical functions |
+| **scikit-learn** | ≥ 0.24.0 | ML utilities |
+| **matplotlib** | ≥ 3.3.0 | Visualization |
+| **seaborn** | ≥ 0.11.0 | Statistical visualization |
+| **tqdm** | ≥ 4.60.0 | Progress bars |
+
+### 5.3 Optional Integrations
+| Tool | Use |
+|------|-----|
+| **squidpy** | Extended spatial analysis pipeline (tutorial provided) |
+| **scvi-tools** | Alternative implementation via `scvi.external.Tangram` |
+| **CUDA/GPU** | Dramatically accelerates training; enabled via `device='cuda'` |
+
+### 5.4 GenePattern Docker Image
+- **Image**: `genepattern/tangram:v1.0`
+- **Base**: Python 3.8 with all dependencies pre-installed
+- **Registry**: Docker Hub (`genepattern` organization)
+- **Reproducibility**: Pinned package versions ensure consistent results
+
+### 5.5 Computational Resource Requirements
+| Dataset Size | RAM | Storage | CPU Time | GPU Time |
+|-------------|-----|---------|----------|----------|
+| Small (< 5K cells, < 5K spots) | 8 GB | 1 GB | ~5 min | < 1 min |
+| Medium (5K–20K cells, 5K–10K spots) | 16–32 GB | 5 GB | 30–90 min | 5–15 min |
+| Large (> 20K cells, > 10K spots) | 64+ GB | 20+ GB | 2–8 hrs | 30–60 min |
+
+---
+
+## 6. 🔄 COMMON WORKFLOWS AND USE CASES
+
+### 6.1 Workflow 1: Cell-Type Deconvolution of Visium Data
+**Goal**: Determine proportions of each cell type in low-resolution spatial spots
+
+```python
+import tangram as tg
+import scanpy as sc
+import numpy as np
+
+# Load data
+ad_sc = sc.read_h5ad("scrna_seq.h5ad")      # Annotated scRNA-seq
+ad_sp = sc.read_h5ad("visium_spatial.h5ad") # 10x Visium data
+
+# Select training genes (top 100 markers per cell type)
+sc.tl.rank_genes_groups(ad_sc, "cell_type", method="wilcoxon")
+markers = sc.get.rank_genes_groups_df(ad_sc, None)
+markers = markers[markers["pvals_adj"] < 0.01].head(500)["names"].tolist()
+
+# Preprocess
+tg.pp_adatas(ad_sc, ad_sp, genes=markers)
+
+# Map with constrained mode
+ad_map = tg.map_cells_to_space(
+    ad_sc, ad_sp,
+    mode="constrained",
+    target_count=ad_sp.obs.cell_count.sum(),
+    density_prior=np.array(ad_sp.obs.cell_count) / ad_sp.obs.cell_count.sum(),
+    num_epochs=1000, device="cpu"
+)
+
+# Project cell type annotations to space
+tg.project_cell_annotations(ad_map, ad_sp, annotation="cell_type")
+# → ad_sp.obs now has columns: 'cell_type_A', 'cell_type_B', ... (fractions per spot)
+```
+
+### 6.2 Workflow 2: Transcriptome-Wide Gene Expression Imputation
+**Goal**: Predict spatial expression of unmeasured genes using sc reference
+
+```python
+# Preprocess with ALL overlapping genes or targeted set
+tg.pp_adatas(ad_sc, ad_sp, genes=None)  # Use all genes
+
+# Map at cell level
+ad_map = tg.map_cells_to_space(ad_sc, ad_sp, mode="cells", num_epochs=1000)
+
+# Project ALL sc genes to spatial coordinates
+ad_ge = tg.project_genes(ad_map, ad_sc)
+# → ad_ge: spatial AnnData with all ~20K genes imputed at spot level
+```
+
+### 6.3 Workflow 3: Cluster-Level Mapping (Cross-Sample)
+**Goal**: Map cell types when sc and spatial data are from different individuals/samples
+
+```python
+# Same tissue type but different donors
+tg.pp_adatas(ad_sc, ad_sp, genes=markers)
+
+# Use cluster mode — maps average expression per cell type
+ad_map = tg.map_cells_to_space(
+    ad_sc, ad_sp,
+    mode="clusters",
+    cluster_label="cell_subclass",  # Column in ad_sc.obs
+    num_epochs=1000
+)
+```
+
+### 6.4 Workflow 4: Multi-Modal Alignment
+**Goal**: Map chromatin accessibility (ATAC-seq) or other modalities to spatial data
+
+```python
+# Using paired RNA+ATAC data (e.g., SHARE-seq)
+# Map the RNA component to spatial, then use mapping to project ATAC peaks
+ad_rna_map = tg.map_cells_to_space(ad_rna_sc, ad_sp, mode="cells")
+# Project ATAC peaks using the same mapping matrix
+ad_atac_spatial = tg.project_genes(ad_rna_map, ad_atac_sc)
+```
+
+### 6.5 Workflow 5: Cross-Validation Quality Assessment
+**Goal**: Evaluate mapping quality using held-out test genes
+
+```python
+tg.pp_adatas(ad_sc, ad_sp, genes=None)
+cv_genes = ad_sc.uns["training_genes"][:50]  # Hold out 50 genes
+ad_map = tg.map_cells_to_space(ad_sc, ad_sp, cv_train_genes=cv_genes)
+# → Scores on held-out genes reflect generalization quality
+```
+
+---
+
+## 7. 🆚 COMPARATIVE ANALYSIS
+
+### 7.1 Benchmarking Results Summary
+
+Based on *Nature Methods* benchmarking (Kleshchevnikov et al. 2022) and comprehensive PMC benchmarks (2023):
+
+| Method | Gene Imputation Rank | Deconvolution Rank | Speed | Framework |
+|--------|---------------------|-------------------|-------|-----------|
+| **Tangram** | ⭐⭐⭐ **Top-3** | ⭐⭐ Good | Moderate (GPU-acceleratable) | PyTorch |
+| cell2location | ⭐⭐ Good | ⭐⭐⭐ **Top-3** | Slow (Bayesian MCMC-like) | PyMC3/Pyro |
+| RCTD (spacexr) | ⭐ Fair | ⭐⭐⭐ **Top-3** | Fast | R |
+| SpatialDWLS (Giotto) | ⭐ Fair | ⭐⭐⭐ **Top-3** | Fast | R |
+| CytoSPACE | N/A | ⭐⭐ Good (cell-level) | Fast | Python |
+| gimVI | ⭐⭐⭐ **Top-3** | ⭐ Fair | Moderate | scVI |
+| SpaGE | ⭐⭐⭐ **Top-3** | ⭐ Fair | Fast | Python |
+| Seurat anchor | ⭐ Fair | ⭐⭐ Good | Moderate | R/Seurat |
+
+### 7.2 Tangram's Unique Advantages
+
+| Feature | Tangram | Competitors |
+|---------|---------|-------------|
+| **Gene imputation (transcriptome-wide)** | ✅ Best-in-class | gimVI/SpaGE competitive |
+| **Multi-modal support** (ATAC+RNA) | ✅ Yes | Mostly RNA only |
+| **GPU acceleration** | ✅ Native CUDA | Limited |
+| **Multiple spatial technology support** | ✅ 6+ platforms | Technology-specific |
+| **Cell-level OR cluster-level** | ✅ Both modes | Usually one mode |
+| **Deep learning flexibility** | ✅ Tunable loss | Fixed statistical models |
+| **Probabilistic cell assignment** | ✅ Full probability matrix | Some only proportions |
+| **Uncertainty quantification** | ⚠️ Limited (vs. cell2location) | cell2location: full Bayesian |
+| **Speed** | ⚠️ Moderate | RCTD faster |
+| **Scalability (>50K cells)** | ⚠️ Memory-intensive | cell2location better |
+
+### 7.3 When to Use Tangram vs. Alternatives
+
+| Use Case | Recommended Tool |
+|----------|-----------------|
+| Gene imputation / spatial prediction of unmeasured genes | **Tangram** or gimVI |
+| Precise cell-type deconvolution of Visium spots | cell2location or RCTD |
+| Fast R-based pipeline | RCTD (spacexr) or SpatialDWLS |
+| Cell-level assignment with no cell count info | **Tangram** or CytoSPACE |
+| Cross-sample mapping (different donors) | **Tangram** (clusters mode) |
+| Multi-modal (RNA+ATAC) | **Tangram** |
+| Full Bayesian uncertainty | cell2location |
+| Seurat ecosystem integration | Seurat anchor-based |
+
+---
+
+## 8. 📐 MATHEMATICAL FRAMEWORK
+
+### 8.1 Optimization Objective
+Tangram learns a mapping matrix **M** ∈ ℝ^(n_cells × n_spots) with constraints:
+- Each row sums to 1 (softmax normalization): M represents probability distribution of a cell over space
+- Each column sum represents relative cell density per voxel
+
+**Loss function:**
+```
+L(M) = -λ_g1 · cosine_similarity(M^T · S_sc, S_sp)   # Gene expression alignment
+      - λ_g2 · voxel_gene_term                         # Voxel-level consistency  
+      + λ_d  · KL(M^T · 1 || density_prior)           # Density regularization
+      + λ_r  · ||M||_F                                 # Frobenius norm regularization
+      + λ_count · count_reg                            # Cell count constraint (constrained mode)
+      + λ_f_reg · f_regularization                     # F-regularization (constrained mode)
+```
+
+Where:
+- **S_sc**: single-cell expression matrix (cells × training_genes)
+- **S_sp**: spatial expression matrix (spots × training_genes)
+- **KL**: Kullback-Leibler divergence
+- Optimization via PyTorch autograd (Adam optimizer)
+
+### 8.2 Training Score Interpretation
+```
+Score: 0.9xx, KL reg: 0.00x   ← Good convergence
+Score: 0.2xx, KL reg: 0.3xx   ← Early training / sparse data (can still be valid)
+```
+The score reflects cosine similarity on training genes; higher = better gene expression alignment. Low scores on sparse data (Visium) don't necessarily indicate failure — check held-out gene predictions.
+
+---
+
+## 9. ⚠️ KNOWN LIMITATIONS AND CAVEATS
+
+### 9.1 Technical Limitations
+1. **Memory scaling**: Mapping matrix M is (n_cells × n_spots); for 50K cells × 10K spots = 500M floats ≈ 2 GB RAM minimum
+2. **Non-convex optimization**: Results may differ across runs without `random_state`; multiple runs recommended for robustness
+3. **Gene sparsity sensitivity**: Performance degrades with highly sparse spatial data; gene selection becomes critical
+4. **Cell count assumption**: In `cells` mode, each cell is assumed to be placed once; doesn't model multiple copies
+
+### 9.2 Biological Caveats
+1. **Assumes tissue similarity**: Best performance when sc and spatial data are from the same tissue type/region
+2. **Cell type diversity**: If rare cell types are absent from spatial data, mapping may be forced and incorrect
+3. **Cross-sample mapping**: `clusters` mode recommended when using sc atlas data mapped to spatial from different samples
+4. **No spatial neighborhood model**: Base Tangram doesn't incorporate spatial autocorrelation (addressed in refinement strategies paper, Bioinformatics 2025)
+
+### 9.3 Practical Issues
+- GPU memory overflow with very large datasets → use `mode='clusters'` or batch processing
+- Training instability with `lambda_d > 0` when density prior is poorly estimated
+- Gene name mismatches between sc and spatial datasets will silently reduce training gene count
+
+### 9.4 Recent Refinements (Bioinformatics 2025)
+Stahl et al. identified and addressed key issues:
+- Informative gene subset selection is critical
+- Cell filtering of low-quality cells improves mapping
+- Regularization tuning reduces inconsistent mappings
+- Neighborhood information incorporation improves spatial coherence
+
+---
+
+## 10. 🔌 GENEPATTERN MODULE INTEGRATION CONSIDERATIONS
+
+### 10.1 Module Architecture
+```
+genepattern/Tangram (Docker v1.0)
+├── Docker Image: genepattern/tangram:v1.0
+├── Wrapper Script: run_tangram.py (Python)
+├── Input Parameters (exposed via GenePattern UI)
+└── Output: .h5ad files + optional TSV/CSV summaries
+```
+
+### 10.2 Recommended GenePattern Parameter Groups
+
+#### **Group 1: Input Files** *(Required)*
+| GP Parameter Name | Type | Maps To | Notes |
+|------------------|------|---------|-------|
+| `sc.data.file` | File | `adata_sc` (.h5ad) | Single-cell AnnData |
+| `spatial.data.file` | File | `adata_sp` (.h5ad) | Spatial AnnData |
+| `marker.genes.file` | File | `genes` list | Optional .txt/.csv gene list |
+
+#### **Group 2: Mapping Configuration** *(Core)*
+| GP Parameter Name | Type | Default | Maps To |
+|------------------|------|---------|---------|
+| `mapping.mode` | Dropdown | `cells` | `mode` (`cells`/`clusters`/`constrained`) |
+| `cell.type.label` | String | `cell_type` | `cluster_label` |
+| `density.prior` | Dropdown | `rna_count_based` | `density_prior` |
+| `target.cell.count` | Integer | — | `target_count` |
+
+#### **Group 3: Training Parameters** *(Advanced)*
+| GP Parameter Name | Type | Default | Maps To |
+|------------------|------|---------|---------|
+| `num.epochs` | Integer | `1000` | `num_epochs` |
+| `learning.rate` | Float | `0.1` | `learning_rate` |
+| `random.state` | Integer | — | `random_state` |
+| `device` | Dropdown | `cpu` | `device` (`cpu`/`cuda`) |
+
+#### **Group 4: Loss Hyperparameters** *(Expert)*
+| GP Parameter Name | Type | Default | Maps To |
+|------------------|------|---------|---------|
+| `lambda.g1` | Float | `1.0` | `lambda_g1` |
+| `lambda.d` | Float | `0.0` | `lambda_d` |
+| `lambda.g2` | Float | `0.0` | `lambda_g2` |
+| `lambda.r` | Float | `0.0` | `lambda_r` |
+
+#### **Group 5: Output Options**
+| GP Parameter Name | Type | Default | Description |
+|------------------|------|---------|-------------|
+| `output.prefix` | String | `tangram_output` | Prefix for output filenames |
+| `project.genes` | Boolean | `True` | Whether to run `project_genes()` |
+| `project.annotations` | Boolean | `True` | Whether to run `project_cell_annotations()` |
+
+### 10.3 Recommended Command-Line Template
+```bash
+python /usr/local/bin/run_tangram.py \
+    --sc-data <sc.data.file> \
+    --spatial-data <spatial.data.file> \
+    --marker-genes <marker.genes.file> \
+    --mode <mapping.mode> \
+    --cell-type-label <cell.type.label> \
+    --density-prior <density.prior> \
+    --num-epochs <num.epochs> \
+    --learning-rate <learning.rate> \
+    --lambda-g1 <lambda.g1> \
+    --lambda-d <lambda.d> \
+    --random-state <random.state> \
+    --device <device> \
+    --output-prefix <output.prefix>
+```
+
+### 10.4 Expected Output Files for GenePattern
+| File | Format | Content |
+|------|--------|---------|
+| `{prefix}_mapping.h5ad` | AnnData | Core mapping matrix M (cells × spots) |
+| `{prefix}_spatial_projected.h5ad` | AnnData | Projected gene expression (spots × all genes) |
+| `{prefix}_cell_type_proportions.csv` | CSV | Per-spot cell type fraction table |
+| `{prefix}_training_history.csv` | CSV | Per-epoch loss/score for QC |
+| `{prefix}_training_genes.txt` | TXT | List of genes used for training |
+
+### 10.5 Error Handling Recommendations
+1. **Gene overlap check**: Warn if fewer than 50 training genes overlap between sc and spatial
+2. **Memory estimate**: Pre-compute M matrix size and warn if > 4 GB
+3. **Mode validation**: If `mode='constrained'` but no `target_count` provided, raise informative error
+4. **Cell type label**: Validate `cluster_label` column exists in `adata_sc.obs`
+5. **Device check**: If `device='cuda'` but no GPU available, fall back to CPU with warning
+
+---
+
+## 11. 📚 REFERENCE LITERATURE
+
+1. **Biancalani T. et al.** (2021). Deep learning and alignment of spatially resolved single-cell transcriptomes with Tangram. *Nature Methods*, 18, 1352–1362. DOI: 10.1038/s41592-021-01264-7
+
+2. **Kleshchevnikov V. et al.** (2022). Benchmarking spatial and single-cell transcriptomics integration methods. *Nature Methods*, 19, 662–670. DOI: 10.1038/s41592-022-01481-8
+
+3. **Zhang M. et al.** (2021). Spatially resolved cell atlas of the mouse primary motor cortex by MERFISH. *Nature*, 598, 137–143. (Used Tangram for cross-atlas mapping)
+
+4. **Liao J. et al.** (2022). A comprehensive benchmarking with practical guidelines for cellular deconvolution of spatial transcriptomics. *Nature Communications*. PMC10027878
+
+5. **Stahl M. et al.** (2025). Refinement strategies for Tangram for reliable single-cell to spatial mapping. *Bioinformatics*, 41(Suppl 1), i552. DOI: 10.1093/bioinformatics/btaf199. PMC12261478
+
+6. **Zhao E. et al.** (2021). Spatial transcriptomics at subspot resolution with BayesSpace. *Nature Biotechnology*. (Benchmarked against Tangram)
+
+7. **Chen A. et al.** (2023). High-resolution alignment of single-cell and spatial transcriptomes with CytoSPACE. *Nature Biotechnology*. DOI: 10.1038/s41587-023-01697-9
+
+---
+
+## 12. 📊 SUMMARY TABLE
+
+| Attribute | Value |
+|-----------|-------|
+| **Tool Name** | Tangram |
+| **PyPI Package** | `tangram-sc` |
+| **Current Version** | 1.0.4 |
+| **GenePattern Docker** | `genepattern/tangram:v1.0` |
+| **License** | BSD 3-Clause |
+| **Language** | Python |
+| **Primary Publication** | *Nature Methods* 18, 1352–1362 (2021) |
+| **Citations** | > 1,000 (as of 2024) |
+| **Primary Input** | AnnData `.h5ad` (sc + spatial) |
+| **Primary Output** | AnnData `.h5ad` (mapping matrix + projections) |
+| **Mapping Modes** | `cells`, `clusters`, `constrained` |
+| **Compatible Platforms** | MERFISH, STARmap, smFISH, Visium, Slide-seq, seqFISH+ |
+| **GPU Support** | ✅ PyTorch CUDA |
+| **Key Strength** | Transcriptome-wide gene imputation + multi-modal |
+| **Key Limitation** | Memory-intensive; limited uncertainty quantification |
+| **GenePattern Priority** | ✅ High — fills spatial transcriptomics gap in GP platform |
+
+---
+
+> **Research conducted by:** PhD-level bioinformatics analysis using official documentation (tangram-sc.readthedocs.io v0.4.0), broadinstitute/Tangram GitHub (master branch), genepattern/Tangram GitHub, Nature Methods publication, and peer-reviewed benchmarking studies. All information current as of 2025.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

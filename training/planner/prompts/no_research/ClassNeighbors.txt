@@ -1,0 +1,133 @@
+Create a comprehensive structured plan for the GenePattern module for 'ClassNeighbors'.
+            
+            Tool Information:
+            - Name: ClassNeighbors
+            - Version: Added email address to owner contact
+            - Language: Java
+            - Description: Select genes that most closely resemble a profile
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ClassNeighbors",
+  "parameters": [
+    {
+      "name": "data.filename",
+      "type": "FILE",
+      "description": "Dataset file - .res, .gct, .odf",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "class.filename",
+      "type": "FILE",
+      "description": "class file - .cls, .odf",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "marker.gene.list.file",
+      "type": "java.lang.String",
+      "description": "output filename for marker gene list results - .odf file",
+      "required": true,
+      "default_value": "<data.filename_basename>.genelist"
+    },
+    {
+      "name": "marker.data.set.file",
+      "type": "java.lang.String",
+      "description": "output filename for marker data - .gct file",
+      "required": true,
+      "default_value": "<data.filename_basename>.neighbors"
+    },
+    {
+      "name": "num.neighbors",
+      "type": "java.lang.String",
+      "description": "number of neighbors to find",
+      "required": true,
+      "default_value": "50"
+    },
+    {
+      "name": "num.permutations",
+      "type": "java.lang.Integer",
+      "description": "number of permutations in permutation test",
+      "required": true,
+      "default_value": "100"
+    },
+    {
+      "name": "user.pval",
+      "type": "java.lang.Float",
+      "description": "user-set significance value for permutation test",
+      "required": true,
+      "default_value": "0.5"
+    },
+    {
+      "name": "mean.or.median",
+      "type": "java.lang.String",
+      "description": "use mean or median for feature selection",
+      "required": false,
+      "default_value": "mean",
+      "choices": "\\=mean;-d\\=median"
+    },
+    {
+      "name": "ttest.or.snr",
+      "type": "java.lang.String",
+      "description": "use signal-to-noise or t-test to select neighbors",
+      "required": false,
+      "default_value": "t-test",
+      "choices": "\\=t-test;-S\\=SNR"
+    },
+    {
+      "name": "filter.data",
+      "type": "java.lang.String",
+      "description": "if no, values below will be ignored",
+      "required": true,
+      "default_value": "no",
+      "choices": "yes;no"
+    },
+    {
+      "name": "min.threshold",
+      "type": "java.lang.Integer",
+      "description": "minimum threshold for data",
+      "required": true,
+      "default_value": "10"
+    },
+    {
+      "name": "max.threshold",
+      "type": "java.lang.Integer",
+      "description": "maximum threshold for data",
+      "required": true,
+      "default_value": "16000"
+    },
+    {
+      "name": "min.fold.diff",
+      "type": "java.lang.Integer",
+      "description": "minimum fold difference for filtering genes",
+      "required": true,
+      "default_value": "5"
+    },
+    {
+      "name": "min.abs.diff",
+      "type": "java.lang.Integer",
+      "description": "minimum absolute difference for filtering genes",
+      "required": true,
+      "default_value": "50"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Gene List Selection",
+  "author": "Ken Ross",
+  "command_line": "<java> <java_flags> -cp <libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>RunMarkerSelection.jar edu.mit.wi.genome.expresso.alg.RunMarkerSelection.RunMarkerSelection -t <data.filename> -c <class.filename> -H -m <min.threshold> -M <max.threshold> -f -F <min.fold.diff> -D <min.abs.diff> -o <marker.gene.list.file> -p -P <num.permutations>  -N <num.neighbors> -l <user.pval> -O <marker.data.set.file> -G <filter.data> <mean.or.median> <ttest.or.snr>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

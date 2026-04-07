@@ -1,0 +1,174 @@
+{
+  "module_name": "AffySTExpressionFileCreator",
+  "description": "Creates a GCT file from a set of CEL files from Affymetrix ST arrays.",
+  "author": "David Eby & Barbara A Hill, Broad Institute ; Anthony Castanza, UCSD",
+  "input_file_formats": [
+    "bz2",
+    "cel",
+    "clm",
+    "gz",
+    "tar",
+    "txt",
+    "xz",
+    "zip"
+  ],
+  "language": "R",
+  "categories": [
+    "preprocess & utilities"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:31186:1",
+  "plan": "## AffySTExpressionFileCreator GenePattern Module — Implementation Plan\n\n### 1. Overview\nAffySTExpressionFileCreator is a GenePattern module that Creates a GCT file from a set of CEL files from Affymetrix ST arrays.\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: input.file, normalize, background.correct, qc.plot.format, annotate.rows, output.file.base\n- Optional: clm.file\n\n### 3. Command Line\n```\nRscript /AffySTEFC/run_gp_affyst_efc.R /AffySTEFC/ --input.file\\=<input.file> --normalize\\=<normalize> --background.correct\\=<background.correct> --qc.plot.format\\=<qc.plot.format> <clm.file> --annotate.rows\\=<annotate.rows> --output.file.base\\=<output.file.base>\n```\n\n### 4. Docker Image\nDocker image: genepattern/affy-st-expression-file-creator\\:2\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_gp_affyst_efc.R",
+  "command_line": "Rscript /AffySTEFC/run_gp_affyst_efc.R /AffySTEFC/ --input.file=<input.file> --normalize=<normalize> --background.correct=<background.correct> --qc.plot.format=<qc.plot.format> <clm.file> --annotate.rows=<annotate.rows> --output.file.base=<output.file.base>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "One or more Affymetrix ST CEL files uploaded individually, or as a ZIP or TAR file, or supplied through a directory input.  CEL files can be uncompressed or in GZ format. TAR files can be uncompressed, or in GZ, XZ, or BZ2 format.  The parameter will accept multiple inputs in any of these forms.",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": [
+        "bz2",
+        "cel",
+        "directory",
+        "gz",
+        "tar",
+        "xz",
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "normalize",
+      "description": "Whether to normalize data using quantile normalization",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--normalize",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "background.correct",
+      "description": "Whether to perform background correction",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--background.correct",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "qc.plot.format",
+      "description": "Choose a file format for the QC plots (or skip them completely)",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "skip",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "pdf",
+          "value": "pdf"
+        },
+        {
+          "display": "svg",
+          "value": "svg"
+        },
+        {
+          "display": "png",
+          "value": "png"
+        },
+        {
+          "display": "skip (do not produce QC plots)",
+          "value": "skip"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--qc.plot.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "clm.file",
+      "description": "A tab-delimited text file containing one scan, sample, and class per line",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "clm",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--clm.file\\=",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "annotate.rows",
+      "description": "Whether to annotate rows with the gene symbol and description. Unsupported array types will produce blank annotations.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--annotate.rows",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file.base",
+      "description": "The base name of the output file(s). File extensions will be added automatically.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<job_id>.expression.gct",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file.base",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/affy-st-expression-file-creator:2"
+}

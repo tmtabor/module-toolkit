@@ -1,0 +1,67 @@
+{
+  "module_name": "CARTXValidation",
+  "description": "Classification and Regression Tree Cross-Validation",
+  "author": "Joshua Gould, D. R. Mani",
+  "input_file_formats": [
+    "cls",
+    "gct",
+    "res"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:27502:1",
+  "plan": "## CARTXValidation GenePattern Module — Implementation Plan\n\n### 1. Overview\nCARTXValidation is a GenePattern module that Classification and Regression Tree Cross-Validation\n\n### 2. Parameters\nThe module exposes 3 parameters:\n- Required: data.filename, cls.filename, prediction.results.file\n- Optional: none\n\n### 3. Command Line\n```\n<R2.5> <libdir>cart.R runCartCV <data.filename> <cls.filename> <prediction.results.file> <libdir>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "cart.R",
+  "command_line": "<R2.5> <libdir>cart.R runCartCV <data.filename> <cls.filename> <prediction.results.file> <libdir>",
+  "parameters": [
+    {
+      "name": "data.filename",
+      "description": "The data file - .gct, .res",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "res"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cls.filename",
+      "description": "The class file - .cls",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cls.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "prediction.results.file",
+      "description": "The name of the output file for prediction results",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.filename_basename>.pred.odf",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--prediction.results.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

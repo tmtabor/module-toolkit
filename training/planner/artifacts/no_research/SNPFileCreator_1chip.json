@@ -1,0 +1,245 @@
+{
+  "module_name": "SNPFileCreator_1chip",
+  "description": "Processes Affymetrix SNP probe-level data into expression values",
+  "author": "David Twomey",
+  "input_file_formats": [
+    "zip"
+  ],
+  "language": "Java",
+  "categories": [
+    "Variant Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:18367:1",
+  "plan": "## SNPFileCreator_1chip GenePattern Module — Implementation Plan\n\n### 1. Overview\nSNPFileCreator_1chip is a GenePattern module that Processes Affymetrix SNP probe-level data into expression values\n\n### 2. Parameters\nThe module exposes 11 parameters:\n- Required: chip.type, normalization.method, reference.method, model.method, allele.specific, sort.snp.file, output.file, output.file.format\n- Optional: network.directory.name, zip.file, reference.file\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>snp.jar<path.separator><libdir>commons-math-1.1.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>log4j-1.2.13.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.cg.modules.PreProcess.PreProcess -lib<libdir> -cdf<chip.type> -dir<network.directory.name> -zip<zip.file> -rmt<reference.method> -ref<reference.file> -out<output.file> -mmt<model.method> -oclno -olcyes -txtno -nmt<normalization.method> -gifgenome.info.6.0_build35 -srt<sort.snp.file> -als<allele.specific> -fmt<output.file.format> -log<libdir>log4j.properties\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "snp.jar<path.separator><libdir>commons-math-1.1.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>log4j-1.2.13.jar<path.separator><libdir>gp-modules.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>snp.jar<path.separator><libdir>commons-math-1.1.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>log4j-1.2.13.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.cg.modules.PreProcess.PreProcess -lib<libdir> -cdf<chip.type> -dir<network.directory.name> -zip<zip.file> -rmt<reference.method> -ref<reference.file> -out<output.file> -mmt<model.method> -oclno -olcyes -txtno -nmt<normalization.method> -gifgenome.info.6.0_build35 -srt<sort.snp.file> -als<allele.specific> -fmt<output.file.format> -log<libdir>log4j.properties",
+  "parameters": [
+    {
+      "name": "network.directory.name",
+      "description": "Networked directory name where the CEL (and optionally TXT) files reside.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--network.directory.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "zip.file",
+      "description": "A zip file containing CEL (and optionally TXT) files.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--zip.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "chip.type",
+      "description": "Specify the chip type.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "GenomeWideSNP_6.cdf",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "GenomeWideSNP_5.cdf",
+          "value": "GenomeWideSNP_5.cdf"
+        },
+        {
+          "display": "GenomeWideSNP_6.cdf",
+          "value": "GenomeWideSNP_6.cdf"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--chip.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "normalization.method",
+      "description": "The normalization method to apply.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "None",
+          "value": "0"
+        },
+        {
+          "display": "Quantile Normalization(dChip)",
+          "value": "1"
+        },
+        {
+          "display": "Invariant Set Normalization(dChip)",
+          "value": "2"
+        },
+        {
+          "display": "Divide by median, multiply by 1000",
+          "value": "3"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--normalization.method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reference.method",
+      "description": "Reference method to use in normalization",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "median",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Median",
+          "value": "median"
+        },
+        {
+          "display": "Reference Supplied",
+          "value": "reference"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--reference.method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reference.file",
+      "description": "Reference file to use. Leave blank if reference method is median.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reference.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "model.method",
+      "description": "The summarization method to apply.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Average Difference",
+          "value": "1"
+        },
+        {
+          "display": "Median Probe",
+          "value": "3"
+        },
+        {
+          "display": "Trimmed Mean",
+          "value": "4"
+        },
+        {
+          "display": "Median Polish",
+          "value": "5"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--model.method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "allele.specific",
+      "description": "Create Allele Specific probe intensities",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Allele-Specific",
+          "value": "yes"
+        },
+        {
+          "display": "Non Allele-Specific",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--allele.specific",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sort.snp.file",
+      "description": "Sorts output file by chromosome and location. Filters out probesets without location information",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Sort",
+          "value": "yes"
+        },
+        {
+          "display": "Do no sort",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--sort.snp.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "The name of the output file.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file.format",
+      "description": "Output file format",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "mpg",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Cancer Genome Format",
+          "value": "cg"
+        },
+        {
+          "display": "Med Pop Format",
+          "value": "mpg"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.file.format",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

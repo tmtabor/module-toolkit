@@ -1,0 +1,175 @@
+Create a comprehensive structured plan for the GenePattern module for 'STREAM.ElasticPrincipalGraph'.
+            
+            Tool Information:
+            - Name: STREAM.ElasticPrincipalGraph
+            - Version: inital revision
+            - Language: any
+            - Description: STREAM (Single-cell Trajectories Reconstruction, Exploration And Mapping) is an interactive pipeline capable of disentangling and visualizing complex branching trajectories from both single-cell transcriptomic and epigenomic data. STREAM.ElasticPrincipalGraph is uses elastic principal graph learning to calculate a pseudotime trajectory.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "STREAM.ElasticPrincipalGraph",
+  "parameters": [
+    {
+      "name": "data.file",
+      "type": "FILE",
+      "description": "A STREAM pkl file containing preprocessed, dimension reduced gene expression data that has had a structure seeded into it.",
+      "required": true,
+      "default_value": "",
+      "file_format": "pkl",
+      "num_values": "1..1"
+    },
+    {
+      "name": "epg.beta",
+      "type": "TEXT",
+      "description": "Beta parameter of the penalized elastic energy.",
+      "required": true,
+      "default_value": "0.0",
+      "prefix": "-epg_beta",
+      "num_values": "1..1"
+    },
+    {
+      "name": "figure.width",
+      "type": "TEXT",
+      "description": "figure width",
+      "required": false,
+      "default_value": "8",
+      "prefix": "-fig_width",
+      "num_values": "0..1"
+    },
+    {
+      "name": "figure.legend.num.columns",
+      "type": "TEXT",
+      "description": "The number of columns that the legend has.",
+      "required": true,
+      "default_value": "3",
+      "prefix": "-fig_legend_ncol",
+      "num_values": "1..1"
+    },
+    {
+      "name": "figure.height",
+      "type": "TEXT",
+      "description": "figure height",
+      "required": false,
+      "default_value": "8",
+      "prefix": "-fig_height",
+      "num_values": "0..1"
+    },
+    {
+      "name": "output.filename",
+      "type": "TEXT",
+      "description": "output file name prefix",
+      "required": true,
+      "default_value": "",
+      "num_values": "1..1"
+    },
+    {
+      "name": "epg.num.nodes",
+      "type": "TEXT",
+      "description": "Number of nodes for elastic principal graph.",
+      "required": true,
+      "default_value": "50",
+      "prefix": "-epg_n_nodes",
+      "num_values": "1..1"
+    },
+    {
+      "name": "incremental.number.of.nodes",
+      "type": "TEXT",
+      "description": "Incremental number of nodes for elastic principal graph when epg_n_nodes is not big enough.",
+      "required": true,
+      "default_value": "30",
+      "prefix": "-incr_n_nodes",
+      "num_values": "1..1"
+    },
+    {
+      "name": "epg.trimming.radius",
+      "type": "TEXT",
+      "description": "Maximal distance from a node to the points it controls in the embedding.",
+      "required": true,
+      "default_value": "Inf",
+      "prefix": "-epg_trimmingradius",
+      "num_values": "1..1"
+    },
+    {
+      "name": "component.x",
+      "type": "TEXT",
+      "description": "Component used for x-axis in plots,",
+      "required": true,
+      "default_value": "0",
+      "prefix": "-comp1",
+      "num_values": "1..1"
+    },
+    {
+      "name": "component.y",
+      "type": "TEXT",
+      "description": "Component used for y-axis in plots,",
+      "required": true,
+      "default_value": "1",
+      "prefix": "-comp2",
+      "num_values": "1..1"
+    },
+    {
+      "name": "num.components",
+      "type": "TEXT",
+      "description": "Number of components to be plotted.",
+      "required": true,
+      "default_value": "3",
+      "prefix": "-n_comp",
+      "num_values": "1..1"
+    },
+    {
+      "name": "epg.alpha",
+      "type": "TEXT",
+      "description": "Alpha parameter of the penalized elastic energy.",
+      "required": true,
+      "default_value": "0.02",
+      "prefix": "-epg_alpha",
+      "num_values": "1..1"
+    },
+    {
+      "name": "epg.lambda",
+      "type": "TEXT",
+      "description": "Lambda parameter used to compute the elastic energy.",
+      "required": true,
+      "default_value": "0.02",
+      "prefix": "-epg_lambda",
+      "num_values": "1..1"
+    },
+    {
+      "name": "epg.mu",
+      "type": "TEXT",
+      "description": "Mu parameter used to compute the elastic energy.",
+      "required": true,
+      "default_value": "0.1",
+      "prefix": "-epg_mu",
+      "num_values": "1..1"
+    },
+    {
+      "name": "epg.final.energy",
+      "type": "TEXT",
+      "description": "Indicate the final elastic energy associated with the configuration.",
+      "required": true,
+      "default_value": "Penalized",
+      "prefix": "-epg_finalenergy",
+      "num_values": "1..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/stream_elasticprincipalgraph\\:0.2",
+  "categories": "Single-Cell",
+  "task_type": "Single-cell",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "command_line": "python /stream/epg_command_line.py -m <data.file> -of <output.filename> <figure.width> <figure.height> <figure.legend.num.columns> <component.x> <component.y> <num.components> <epg.num.nodes>  <incremental.number.of.nodes> <epg.trimming.radius> <epg.alpha> -epg_n_processes <job.cpuCount>  <epg.lambda> <epg.mu> <epg.final.energy> <epg.beta>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

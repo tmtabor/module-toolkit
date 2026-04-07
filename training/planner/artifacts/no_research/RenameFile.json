@@ -1,0 +1,149 @@
+{
+  "module_name": "RenameFile",
+  "description": "Creates a result file with the contents of the input but with a new name.  Where possible, this is done without copying the file but instead by simply making a link.  While it is possible to run this with a submitted file, the common use will be to change the name of a result file or a previously uploaded file.  Note that the original file will still be present in its original location.",
+  "author": "David Eby",
+  "input_file_formats": [
+    "atr",
+    "bai",
+    "bam",
+    "bed",
+    "cdf",
+    "cdt",
+    "chip",
+    "clm",
+    "csv",
+    "dict",
+    "fai",
+    "fasta",
+    "fastq",
+    "fq",
+    "fq1",
+    "gct",
+    "gff",
+    "gtf",
+    "gtr",
+    "maf",
+    "odf",
+    "res",
+    "sai",
+    "sam",
+    "seg",
+    "snp",
+    "txt",
+    "wig",
+    "zip"
+  ],
+  "language": "Perl",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:14851:1",
+  "plan": "## RenameFile GenePattern Module — Implementation Plan\n\n### 1. Overview\nRenameFile is a GenePattern module that Creates a result file with the contents of the input but with a new name.  Where possible, this is done without copying the file but instead by simply making a link.  While it is possible to run this with a submitted file, the common use will be to change the name of a result file or a previously uploaded file.  Note that the original file will still be present in its original location.\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: input.file, output.filename, screen.filename, force.copy\n- Optional: none\n\n### 3. Command Line\n```\n<perl> <libdir>rename_file_for_GP.pl --inputFile <input.file> --outputFilename <output.filename> --screenFilename <screen.filename> --forceCopy <force.copy>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "rename_file_for_GP.pl",
+  "command_line": "<perl> <libdir>rename_file_for_GP.pl --inputFile <input.file> --outputFilename <output.filename> --screenFilename <screen.filename> --forceCopy <force.copy>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "Input file to be renamed",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "bam",
+        "sam",
+        "gtf",
+        "gff",
+        "gct",
+        "res",
+        "clm",
+        "zip",
+        "bed",
+        "fasta",
+        "fastq",
+        "fq",
+        "atr",
+        "cdt",
+        "gtr",
+        "bai",
+        "sai",
+        "fai",
+        "txt",
+        "csv",
+        "wig",
+        "cdf",
+        "chip",
+        "dict",
+        "maf",
+        "seg",
+        "snp",
+        "fq1",
+        "odf"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "The name to give the output file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>.cp.<input.file_extension>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "screen.filename",
+      "description": "Automatically screen out problematic characters in the filename",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--screen.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "force.copy",
+      "description": "Force a copy to be made rather than a link.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--force.copy",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

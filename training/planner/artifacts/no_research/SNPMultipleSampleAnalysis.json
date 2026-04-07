@@ -1,0 +1,164 @@
+{
+  "module_name": "SNPMultipleSampleAnalysis",
+  "description": "Determine Regions of Concordant Copy Number Aberrations",
+  "author": "Mitchell Guttman and Gregory R. Grant, University of Pennsylvania Center for Bioinformatics",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "any",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:62163:1",
+  "plan": "## SNPMultipleSampleAnalysis GenePattern Module — Implementation Plan\n\n### 1. Overview\nSNPMultipleSampleAnalysis is a GenePattern module that Determine Regions of Concordant Copy Number Aberrations\n\n### 2. Parameters\nThe module exposes 10 parameters:\n- Required: input.filename, permutations, num.tests, num.positions.bin, resolution, chromosomes, analyze.by, significance.level, output.prefix\n- Optional: cytoband.filename\n\n### 3. Command Line\n```\n<java> <java_flags> -Djava.awt.headless\\=true -cp <libdir>MSACommandLine041007.jar<path.separator><libdir>gp_wrapper.jar org.genepattern.SNP_MSA_Wrapper -libdir <libdir> -file <input.filename> -cytoband <cytoband.filename> -saveDir ./ -chromosomes <chromosomes> -permutations <permutations> -useArms <analyze.by> -numberTests <num.tests> -binParam <num.positions.bin> -resolution <resolution> -significanceLevel <significance.level> -saveImages ./ -runName <output.prefix>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "MSACommandLine041007.jar<path.separator><libdir>gp_wrapper.jar",
+  "command_line": "<java> <java_flags> -Djava.awt.headless=true -cp <libdir>MSACommandLine041007.jar<path.separator><libdir>gp_wrapper.jar org.genepattern.SNP_MSA_Wrapper -libdir <libdir> -file <input.filename> -cytoband <cytoband.filename> -saveDir ./ -chromosomes <chromosomes> -permutations <permutations> -useArms <analyze.by> -numberTests <num.tests> -binParam <num.positions.bin> -resolution <resolution> -significanceLevel <significance.level> -saveImages ./ -runName <output.prefix>",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "description": "The input file to analyze - .cn, .xcn, .snp, .txt",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cytoband.filename",
+      "description": "Cytoband file to use",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": "<libdir>CytoBands.txt",
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cytoband.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "permutations",
+      "description": "Number of permutations to use",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "500",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--permutations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.tests",
+      "description": "Number of MSA tests to use",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "9",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.tests",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.positions.bin",
+      "description": "Number of positions per bin",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "6",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.positions.bin",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "resolution",
+      "description": "The size of the plotted chromosome diagram",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "250000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--resolution",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "chromosomes",
+      "description": "Comma delimited list of chromosomes to analyze",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "chr22",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--chromosomes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "analyze.by",
+      "description": "",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "arms",
+          "value": "true"
+        },
+        {
+          "display": "chromosomes",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--analyze.by",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "significance.level",
+      "description": "The value at which a region is called significant",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": ".05",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--significance.level",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "The prefix for output files",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.filename_basename>_",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

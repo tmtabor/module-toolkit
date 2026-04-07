@@ -1,0 +1,466 @@
+Create a comprehensive structured plan for the GenePattern module for 'AmpliconSuiteAggregator'.
+            
+            Tool Information:
+            - Name: AmpliconSuiteAggregator
+            - Version: added license acceptance & new ecdna tag
+            - Language: any
+            - Description: Aggregates individual AmpliconSuite runs. Takes in zip files (or .tar.gz) and aggregates the results. Results can directly be used to load onto AmpliconRepository.
+            
+            Research Results:
+            Now I have all the information needed. Let me compile the final comprehensive research report with full details:
+
+---
+
+# 🔬 Comprehensive Research Report: AmpliconSuiteAggregator
+
+## Executive Summary
+
+**AmpliconSuiteAggregator** is a post-processing bioinformatics utility that occupies a critical bridging role in the **AmpliconSuite ecosystem** — aggregating multi-sample outputs from individual AmpliconSuite-pipeline runs (which detect extrachromosomal DNA and other focal amplifications in cancer genomes) into a single, repository-ready archive. It is the final standardization step before data deposition to **AmpliconRepository.org**, the dedicated public database for focal amplification data. The tool is available as a GenePattern module (LSID: `urn:lsid:genepattern.org:module.analysis:00429:4.1`), a PyPI package, and a Docker image.
+
+---
+
+## 1. 🎯 Tool Purpose and Scientific Applications
+
+### 1.1 Biological Context
+AmpliconSuiteAggregator operates within the oncogenomics field of **focal DNA amplification analysis**, particularly the study of:
+
+| Amplification Type | Biological Significance |
+|---|---|
+| **ecDNA (extrachromosomal DNA)** | Circular DNA elements outside chromosomes; associated with oncogene amplification, drug resistance, and poor prognosis |
+| **BFB (Breakage-Fusion-Bridge) cycles** | Chromosomal rearrangement mechanism producing large inverted duplications |
+| **Linear amplifications** | Tandem duplications or other localized amplifications within chromosomes |
+| **Complex amplicons** | Mixed/non-cyclic focal amplifications with multiple genomic contributors |
+
+The underlying science relies on **Whole Genome Sequencing (WGS)** data processed through the **AmpliconArchitect (AA)** and **AmpliconClassifier (AC)** tools. ecDNA in particular has emerged as a major driver of oncogene amplification in >14% of human cancers and is associated with intratumoral heterogeneity and treatment resistance (Kim *et al.*, Nat. Genet. 2020).
+
+### 1.2 Direct Scientific Role of AmpliconSuiteAggregator
+The tool itself does not perform primary analysis — rather, it solves a **data management and interoperability problem** that emerges in large-scale cancer genomics studies:
+
+1. **Multi-sample aggregation**: Individual AmpliconSuite-pipeline runs produce per-sample output archives. When analyzing cohorts of 10s–1000s of tumor samples, these outputs must be merged into a single structured project archive.
+2. **Format normalization**: It restructures the internal directory layout of the input archives to match the strict schema required by AmpliconRepository's web interface.
+3. **Optional re-classification**: The tool can invoke AmpliconClassifier on the aggregated dataset to refresh classification predictions across all samples.
+4. **Direct upload API**: It integrates with the AmpliconRepository REST API to enable one-command upload of aggregated results.
+5. **License compliance enforcement**: The latest version includes an `--accepted_license` parameter, reflecting the commercial licensing requirement of the underlying AmpliconArchitect software (Stanford University / Grail Inc. license).
+
+### 1.3 Scale of Deployment
+The broader AmpliconSuite ecosystem has been deployed in **30+ large-scale studies**, processing **>45,000 tumor samples** and **>3 petabytes** of sequencing data (AACR 2024). AmpliconSuiteAggregator is the gateway through which these cohort-level results are shared in the public domain.
+
+---
+
+## 2. 📂 Input/Output Formats and Requirements
+
+### 2.1 Input Formats
+
+| Format | Description | Notes |
+|---|---|---|
+| `.zip` | Compressed archive of AmpliconSuite-pipeline output for one or more samples | Most common from GenePattern module |
+| `.tar.gz` | Gzip-compressed tarball of AmpliconSuite-pipeline output | Most common from command-line |
+| `Directory path` | Uncompressed directory of AmpliconSuite outputs | Local execution only |
+| Text filelist (`--filelist`) | Plain text file, one archive path per line | For batch processing of many samples |
+| Pre-aggregated `.tar.gz` | Already-aggregated archive for direct upload | Used with `--upload_only Yes` |
+
+#### ⚠️ Critical Input Requirements:
+- **MUST include** both **AmpliconArchitect (AA)** AND **AmpliconClassifier (AC)** output files
+- **MUST NOT include** original BAM or FASTQ sequencing data files (to keep archives manageable)
+- **MUST be structured** with the standard AmpliconSuite-pipeline output directory hierarchy
+
+#### Expected Contents of Each Input Archive:
+```
+sample_output/
+├── sample_name_amplicon1_cycles.txt          # AA cycles file (0-based closed coords)
+├── sample_name_amplicon1_graph.txt           # AA breakpoint graph
+├── sample_name_amplicon1.png                 # AA visualization
+├── sample_name_amplicon2_cycles.txt
+├── sample_name_amplicon2_graph.txt
+├── sample_name_amplicon2.png
+├── classification/
+│   ├── sample_name_result_data.json          # AC structured results
+│   ├── sample_name_result_data.tsv           # AC tabular results
+│   ├── sample_name_classification_bed.bed    # AC genomic intervals
+│   └── sample_name_amplicon_classification_*.txt
+└── AUX_DIR/                                  # (optional) auxiliary files
+    └── [any additional project files]
+```
+
+> 💡 **AUX_DIR Feature**: Any directory containing a file named `AUX_DIR` will have its contents included in the upload alongside the standard results, enabling inclusion of custom metadata or supplementary files.
+
+### 2.2 Output Format
+
+| Output | Description |
+|---|---|
+| `{output_prefix}.tar.gz` | **Primary output** — single aggregated, restructured archive containing all input samples, formatted for direct AmpliconRepository ingestion |
+
+The output archive contains an internal directory structure reorganized by AmpliconSuiteAggregator to match the schema expected by the AmpliconRepository web platform. All per-sample data is preserved but re-keyed to the project namespace.
+
+---
+
+## 3. ⚙️ Parameter Analysis and Usage Patterns
+
+### 3.1 Complete Parameter Catalog
+
+#### 🔴 Required Parameters
+
+| Parameter | Type | Description | Example |
+|---|---|---|---|
+| `--files` | File list (space-separated) | One or more `.tar.gz`, `.zip`, or directory paths of AmpliconSuite-pipeline outputs. Accepts multiple inputs. | `--files sample1.zip sample2.tar.gz sample3.zip` |
+| `-o` / `--output` | String | Output file prefix. Produces `{prefix}.tar.gz` | `-o MyProject_cohort` |
+
+#### 🟡 Optional — Classification & Reference
+
+| Parameter | Type | Default | Choices | Description |
+|---|---|---|---|---|
+| `--rerun_classifier` | Boolean string | `No` | `Yes`, `No` | Re-run AmpliconClassifier on aggregated results prior to output/upload. Useful when classifier has been updated. |
+| `--ref` | Enum string | — | `hg19`, `GRCh37`, `GRCh38`, `hg38`, `mm10`, `GRCm38` | Reference genome used in the original AA analysis. Required when `--rerun_classifier Yes`. |
+
+#### 🟡 Optional — Upload to AmpliconRepository
+
+| Parameter | Type | Default | Choices | Description |
+|---|---|---|---|---|
+| `-u` / `--username` | String (email) | — | — | AmpliconRepository.org registered email. When provided, automatically triggers upload via REST API. |
+| `--upload_only` | Boolean string | `No` | `Yes`, `No` | Skip aggregation/re-classification; treat input as a pre-aggregated file and upload directly to AmpliconRepository as-is. |
+| `-s` / `--server` | Enum string | `prod` | `dev`, `prod`, `local-debug` | Target AmpliconRepository server environment. Use `prod` for real uploads; `dev` for testing. |
+
+#### 🟡 Optional — Input Alternatives
+
+| Parameter | Type | Description |
+|---|---|---|
+| `-flist` / `--filelist` | File path | Text file with one input archive path per line — alternative to `--files` for large batches. |
+
+#### 🟢 New in Latest Version
+
+| Parameter | Type | Description |
+|---|---|---|
+| `--accepted_license` | Boolean/Flag | Signals user acceptance of the AmpliconArchitect academic/commercial license terms. Required for compliance workflows. |
+
+### 3.2 Parameter Groups for GenePattern UI
+
+```
+GROUP 1: Input Files
+  ├── files          [required, multi-file input]
+  └── filelist       [optional, alternative batch input]
+
+GROUP 2: Output Configuration
+  └── output         [required, string]
+
+GROUP 3: Classification Options
+  ├── rerun_classifier   [optional, dropdown: Yes/No]
+  └── ref                [optional, dropdown of reference genomes]
+
+GROUP 4: AmpliconRepository Upload
+  ├── username           [optional, string/email]
+  ├── upload_only        [optional, dropdown: Yes/No]
+  └── server             [optional, dropdown: prod/dev]
+
+GROUP 5: Legal & Compliance
+  └── accepted_license   [optional, checkbox/boolean]
+```
+
+### 3.3 Key Usage Patterns
+
+**Pattern 1: Local aggregation only (no upload)**
+```bash
+python3 AmpliconSuiteAggregator.py \
+  --files sample1.zip sample2.tar.gz sample3.zip \
+  -o MyProject_2024
+# Output: MyProject_2024.tar.gz
+```
+
+**Pattern 2: Aggregate + upload to AmpliconRepository**
+```bash
+python3 AmpliconSuiteAggregator.py \
+  --files sample1.zip sample2.zip \
+  -o MyProject_2024 \
+  -u researcher@university.edu \
+  -s prod
+```
+
+**Pattern 3: Aggregate with re-classification**
+```bash
+python3 AmpliconSuiteAggregator.py \
+  --files sample1.zip sample2.zip \
+  -o MyProject_2024 \
+  --rerun_classifier Yes \
+  --ref GRCh38
+```
+
+**Pattern 4: Direct upload of pre-aggregated file**
+```bash
+python3 AmpliconSuiteAggregator.py \
+  --files /path/to/aggregated/file.tar.gz \
+  -o projname \
+  -u user@gmail.com \
+  --upload_only Yes \
+  -s prod
+```
+
+**Pattern 5: Docker execution**
+```bash
+docker run --rm -it \
+  -v /PATH/TO/INPUTS/:/inputs/ \
+  genepattern/amplicon-suite-aggregator \
+  python3 /opt/genepatt/AmpliconSuiteAggregator.py \
+  --files /inputs/sample1.zip /inputs/sample2.tar.gz \
+  -o MyProject
+```
+
+**Pattern 6: Batch mode with filelist**
+```
+# Create input_list.txt:
+/path/to/sample1.tar.gz
+/path/to/sample2.zip
+/path/to/sample3.tar.gz
+```
+```bash
+python3 AmpliconSuiteAggregator.py \
+  -flist input_list.txt \
+  -o BatchProject_2024
+```
+
+---
+
+## 4. 🔧 Installation and Dependency Requirements
+
+### 4.1 Installation Options
+
+#### Option A: Direct Python Install (Recommended for local use)
+```bash
+git clone https://github.com/genepattern/AmpliconSuiteAggregator.git
+# OR
+pip install AmpliconSuiteAggregator
+```
+
+#### Option B: Docker (Recommended for reproducibility/GenePattern)
+```bash
+docker pull genepattern/amplicon-suite-aggregator
+```
+
+#### Option C: GenePattern Web Interface
+- Available at: https://genepattern.ucsd.edu
+- LSID: `urn:lsid:genepattern.org:module.analysis:00429:4.1`
+- No installation required — web browser only
+
+### 4.2 Python Package Dependencies
+
+| Package | Role |
+|---|---|
+| `intervaltree` | Genomic interval overlap operations |
+| `matplotlib` | Figure/plot generation for aggregated results |
+| `numpy` | Numerical array processing |
+| `pandas` | Tabular data manipulation (TSV/CSV handling) |
+| `Pillow` | Image processing (AA PNG visualizations) |
+| `requests` | HTTP client for AmpliconRepository API upload |
+| `scipy` | Statistical computations for classification |
+| `urllib3` | HTTP connection pooling (underlying requests) |
+
+### 4.3 Runtime Requirements
+- **Language**: Python 3 (≥3.6 recommended)
+- **OS**: Linux (primary), macOS (compatible), Windows (via Docker)
+- **CPU**: Low — this is primarily a file I/O and data reorganization task, not compute-intensive
+- **Memory**: Low-to-moderate — depends on number and size of input archives
+- **Disk**: Sufficient space for inputs + output `.tar.gz`
+- **Network**: Required only if using `--username` for AmpliconRepository upload
+
+### 4.4 External Dependencies (for `--rerun_classifier`)
+When `--rerun_classifier Yes` is specified, **AmpliconClassifier** must be available in the execution environment. The Docker image `genepattern/amplicon-suite-aggregator` includes AmpliconClassifier internally.
+
+---
+
+## 5. 🔄 Common Workflows and Use Cases
+
+### 5.1 Standard End-to-End AmpliconSuite Workflow
+
+```
+Raw WGS Data (FASTQ / BAM)
+         │
+         ▼
+┌─────────────────────┐
+│  AmpliconSuite-     │  ← GenePattern module OR Nextflow/Bioconda
+│  pipeline (per      │    (AmpliconArchitect + AmpliconClassifier)
+│  sample)            │
+└─────────────────────┘
+         │  Output: per-sample .zip or .tar.gz
+         │  (cycles, graph, PNG, classification JSON/TSV)
+         ▼
+┌─────────────────────┐
+│ AmpliconSuite-      │  ← THIS TOOL (GenePattern module)
+│ Aggregator          │    Merges all sample archives
+└─────────────────────┘
+         │  Output: project_cohort.tar.gz
+         ▼
+┌─────────────────────┐
+│ AmpliconRepository  │  ← Public data sharing at ampliconrepository.org
+│ Upload & Browse     │    Searchable by gene, sample, project
+└─────────────────────┘
+```
+
+### 5.2 Key Use Cases
+
+| Use Case | Configuration |
+|---|---|
+| **Cohort aggregation for publication** | Multi-file `--files`, `-o project_name`, no upload |
+| **Lab data sharing portal** | `--files` + `-u email` + `-s prod` |
+| **Refreshing outdated classifications** | `--rerun_classifier Yes` + `--ref GRCh38` |
+| **Uploading pre-processed cohort** | Single file `--files` + `--upload_only Yes` + `-u email` |
+| **Testing/development upload** | `-s dev` instead of `prod` |
+| **Large batch processing** | `--filelist batch_input.txt` |
+| **Compliance-required deployments** | `--accepted_license` flag included |
+
+### 5.3 Integration with GenePattern AmpliconSuite Module
+When samples are processed via the upstream **GenePattern AmpliconSuite module**, the output `.zip` files are already in a compatible format for direct input to AmpliconSuiteAggregator — eliminating the manual packaging step documented for command-line users. This creates a clean two-module GenePattern workflow:
+
+```
+GenePattern: AmpliconSuite (per sample)
+           ↓
+GenePattern: AmpliconSuiteAggregator (whole project)
+           ↓
+AmpliconRepository.org (public or private project)
+```
+
+---
+
+## 6. 🖥️ GenePattern Integration Considerations
+
+### 6.1 Module Architecture Recommendations
+
+| Aspect | Recommendation |
+|---|---|
+| **Execution Environment** | Docker: `genepattern/amplicon-suite-aggregator` |
+| **Language** | Python 3 wrapper script |
+| **Input File Types** | Accept `.zip` and `.tar.gz` file types; support multi-file input |
+| **Output File Types** | `.tar.gz` archive |
+| **CPU Requirements** | 1–2 cores sufficient |
+| **Memory Requirements** | 4–8 GB RAM (scales with number of samples) |
+| **Disk I/O** | Moderate; bulk archive decompression/recompression |
+
+### 6.2 GenePattern Parameter Mapping
+
+```xml
+<!-- Suggested GenePattern module parameter definitions -->
+<parameter name="files" optional="false" type="FILE" fileFormat=".zip;.tar.gz"
+           description="One or more AmpliconSuite-pipeline output archives (.zip or .tar.gz).
+                        Each file should contain results from a single AmpliconSuite run." />
+
+<parameter name="output.prefix" optional="false" type="TEXT" default="AmpliconProject"
+           description="Output file prefix. Results will be named {prefix}.tar.gz" />
+
+<parameter name="rerun.classifier" optional="true" type="TEXT"
+           choiceDir="Yes,No" default="No"
+           description="Re-run AmpliconClassifier on the aggregated results" />
+
+<parameter name="reference.genome" optional="true" type="TEXT"
+           choiceDir="hg19,GRCh37,GRCh38,hg38,mm10,GRCm38"
+           description="Reference genome (required if rerun_classifier=Yes)" />
+
+<parameter name="upload.username" optional="true" type="TEXT"
+           description="AmpliconRepository.org email for automatic upload" />
+
+<parameter name="upload.only" optional="true" type="TEXT"
+           choiceDir="Yes,No" default="No"
+           description="Skip aggregation and directly upload a pre-aggregated file" />
+
+<parameter name="server" optional="true" type="TEXT"
+           choiceDir="prod,dev" default="prod"
+           description="Target AmpliconRepository server" />
+
+<parameter name="accepted.license" optional="true" type="TEXT"
+           choiceDir="Yes,No" default="No"
+           description="Confirm acceptance of AmpliconArchitect license terms" />
+```
+
+### 6.3 Known Integration Considerations & Caveats
+
+| Consideration | Detail |
+|---|---|
+| **License Requirement** | AmpliconArchitect (underlying tool) requires academic/commercial license from Stanford/Grail Inc. The `--accepted_license` parameter enforces acknowledgment. |
+| **Multi-file input** | GenePattern must support multiple file uploads for the `--files` parameter, or use the `--filelist` alternative with a server-side generated text file. |
+| **Network access** | Upload functionality (`--username`) requires outbound HTTPS to `ampliconrepository.org`; GenePattern servers must allow this. |
+| **Protected Health Information** | The GenePattern team notes PHI data should not be processed on public cloud GenePattern instances — relevant when uploading clinical samples. |
+| **Pre-aggregated input bypass** | `--upload_only Yes` enables an "upload-only" mode that bypasses aggregation, useful for datasets already processed locally. |
+| **Output re-usability** | The output `.tar.gz` produced by this module is the direct input format for AmpliconRepository and can also serve as a project archive for sharing. |
+| **Server target** | Default should be `prod` for real users; module should expose `dev` as an option for testing without polluting production data. |
+| **Classifier version synchronization** | If the module includes a newer AmpliconClassifier than was originally used to classify the inputs, `--rerun_classifier Yes` ensures consistent classifications. |
+
+### 6.4 Relationship to Upstream GenePattern Module
+
+| Module | LSID | Role |
+|---|---|---|
+| **AmpliconSuite** | `genepattern/AmpliconSuite` | Upstream: runs AA + AC on individual samples; outputs `.zip` |
+| **AmpliconSuiteAggregator** | `urn:lsid:genepattern.org:module.analysis:00429:4.1` | Downstream: aggregates multiple `.zip` outputs into project-level `.tar.gz` |
+
+---
+
+## 7. 🧬 Ecosystem Context and Comparative Positioning
+
+### 7.1 AmpliconSuite Tool Ecosystem
+
+| Tool | Purpose | Relationship to AmpliconSuiteAggregator |
+|---|---|---|
+| **AmpliconArchitect (AA)** | Structural analysis of focal amplifications from WGS | Produces primary input data |
+| **AmpliconClassifier (AC)** | ecDNA/BFB/linear classification of AA outputs | Produces classification files consumed by Aggregator; can be re-run by Aggregator |
+| **AmpliconSuite-pipeline** | End-to-end wrapper (AA + AC + preprocessing) | Produces `.zip`/`.tar.gz` inputs to Aggregator |
+| **AmpliconSuiteAggregator** | **Multi-run aggregation + repository preparation** | **THIS TOOL** |
+| **AmpliconRepository** | Public web database of AA/AC outputs | Consumes Aggregator output |
+| **CycleViz** | Circos visualization of amplicon structures | Parallel visualization tool |
+| **CoRAL** | Long-read SV+CNV joint reconstruction | Alternative analysis for long reads |
+| **ecSimulator** | ecDNA genome structure simulation | Upstream data generation for benchmarking |
+| **nf-core/circdna** | Nextflow workflow incorporating AmpliconSuite-pipeline | Alternative execution environment |
+
+### 7.2 Unique Role of AmpliconSuiteAggregator
+Unlike all other tools in the ecosystem, AmpliconSuiteAggregator is the **only tool focused on multi-sample project assembly and repository-ready data packaging**. It uniquely addresses:
+- **N-to-1 aggregation**: Combines N per-sample archives into 1 project archive
+- **Format compliance**: Guarantees the output meets AmpliconRepository ingestion requirements
+- **API integration**: Direct programmatic upload capability
+- **License governance**: Embedded compliance checking
+
+---
+
+## 8. 📚 Literature and Citation Context
+
+| Reference | Relevance |
+|---|---|
+| Luebeck J. et al. "AmpliconSuite: an end-to-end workflow for analyzing focal amplifications in cancer genomes." *Methods in Molecular Biology* (2024). DOI: 10.1016/j.mrmeth.2024... | **Primary citation for AmpliconSuite ecosystem including Aggregator** |
+| Deshpande V. et al. "Exploring the landscape of focal amplifications in cancer using AmpliconArchitect." *Nat. Commun.* 10, 392 (2019). PMID: 30674876 | Foundational AA methodology |
+| Kim H. et al. "Extrachromosomal DNA is associated with oncogene amplification and poor outcome across multiple cancers." *Nat. Genet.* 52, 891–897 (2020) | ecDNA classification and clinical significance |
+| Zhu Y. et al. "AmpliconReconstructor integrates NGS and optical mapping..." *Nat. Commun.* 11, 4374 (2020) | Related reconstruction methodology |
+
+---
+
+## 9. Summary Recommendations for GenePattern Module Development
+
+| Priority | Action Item |
+|---|---|
+| 🔴 **Critical** | Implement multi-file input support for `--files` parameter (or `--filelist` alternative with server-side text file generation) |
+| 🔴 **Critical** | Include `--accepted_license` parameter with prominent legal disclaimer text in the UI |
+| 🟠 **High** | Use Docker image `genepattern/amplicon-suite-aggregator` for reproducibility and to include bundled AmpliconClassifier |
+| 🟠 **High** | Set `--server prod` as default; expose `dev` option for advanced users |
+| 🟡 **Medium** | Expose `--rerun_classifier` with conditional visibility of `--ref` when it is set to `Yes` |
+| 🟡 **Medium** | Clearly document that BAM/FASTQ files must not be included in input archives |
+| 🟢 **Low** | Optionally expose `--upload_only` for advanced users with pre-aggregated results |
+| 🟢 **Low** | Link output `.tar.gz` documentation to AmpliconRepository getting-started guide |
+
+---
+
+## References and Sources
+
+1. **GitHub (GenePattern)**: https://github.com/genepattern/AmpliconSuiteAggregator
+2. **GitHub (Upstream)**: https://github.com/AmpliconSuite/AmpliconSuiteAggregator
+3. **PyPI Package**: https://pypi.org/project/AmpliconSuiteAggregator/
+4. **Docker Hub**: https://hub.docker.com/r/genepattern/amplicon-suite-aggregator
+5. **AmpliconRepository Documentation**: https://docs.ampliconrepository.org/en/latest/getting-started/
+6. **AmpliconSuite Organization**: https://github.com/AmpliconSuite
+7. **AmpliconSuite Paper (bioRxiv)**: https://www.biorxiv.org/content/10.1101/2024.05.06.592768v1.full
+8. **AACR 2024 Abstract**: https://aacrjournals.org/cancerres/article/85/8_Supplement_1/3755/
+9. **AmpliconArchitect**: https://github.com/AmpliconSuite/AmpliconArchitect
+10. **AmpliconClassifier**: https://github.com/AmpliconSuite/AmpliconClassifier
+11. **GenePattern AmpliconSuite Module**: https://github.com/genepattern/AmpliconSuite
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

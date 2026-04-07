@@ -1,0 +1,569 @@
+Create a comprehensive structured plan for the GenePattern module for 'TCGA.SampleSelection'.
+            
+            Tool Information:
+            - Name: TCGA.SampleSelection
+            - Version: Update for non-float MSigDB version numbers
+            - Language: any
+            - Description: Retrieve TCGA data from Broad FireBrowse and perform sample selection on the basis of expression levels for specific genes of interest for analysis using GSEA tools.
+            
+            Research Results:
+            Now I have all the information needed to compile the definitive, comprehensive research report. Here it is:
+
+---
+
+# 🧬 Comprehensive Research Report: TCGA.SampleSelection (v0.14)
+
+---
+
+## 1. Executive Summary
+
+**TCGA.SampleSelection** is a GenePattern wrapper module developed by the Broad Institute that automates the complete data pipeline from TCGA data retrieval to GSEA-ready output generation. It queries the Broad FireBrowse (Firehose) REST API to retrieve RNA-seq expression data for any TCGA cancer cohort, stratifies samples by expression level of user-specified genes of interest, and produces GCT + CLS file pairs suitable for immediate use with GSEA, ssGSEA, and GSEAPreranked GenePattern modules. Version v0.14's principal change was updating the module to correctly handle non-float MSigDB version identifiers (e.g., `2022.1.Hs`, `2023.1.Hs`) that replaced the legacy floating-point versioning scheme.
+
+---
+
+## 2. Tool Purpose & Scientific Applications
+
+### 2.1 Core Scientific Purpose
+
+The module solves a critical and recurring bottleneck in cancer genomics research: **connecting large public TCGA datasets to gene pathway enrichment analysis**. The manual workflow — downloading raw TCGA data, parsing it, filtering by expression, building phenotype label files, and formatting for GSEA — is time-consuming, error-prone, and requires programming expertise. TCGA.SampleSelection eliminates all of these steps in a single GenePattern job.
+
+### 2.2 Primary Research Questions It Addresses
+
+| Research Question | How the Module Helps |
+|---|---|
+| What pathways are activated in tumors with high expression of oncogene X? | Stratifies TCGA samples by oncogene expression → GSEA reveals enriched pathways |
+| Does suppressor gene Y loss associate with immune evasion signatures? | Selects low-expression samples → GSEA tests immune gene sets |
+| What gene sets distinguish EGFR-high from EGFR-low lung adenocarcinomas? | Queries LUAD cohort, stratifies by EGFR, outputs GSEA-ready files |
+| Is PIK3CA expression associated with hallmark gene set enrichment in breast cancer? | BRCA cohort + PIK3CA stratification → GSEA Hallmarks analysis |
+
+### 2.3 Scientific Applications
+
+- **Oncogene/tumor suppressor pathway analysis**: Understand downstream pathway consequences of high/low expression of cancer driver genes
+- **Immune landscape characterization**: Correlate immune gene set enrichment with expression of checkpoint or immune-modulator genes
+- **Cancer subtype analysis**: Identify molecular pathway differences between expression-defined subtypes within a cohort
+- **Biomarker hypothesis generation**: Generate pathway enrichment evidence for novel candidate biomarkers across any of the 33 TCGA cohorts
+- **Cross-cohort studies**: Replicate findings by running the same gene selection strategy across different cancer types
+
+---
+
+## 3. Data Source: FireBrowse (Broad GDAC Firehose)
+
+### 3.1 FireBrowse API Overview
+
+FireBrowse (`http://firebrowse.org`) exposes Broad GDAC (Genome Data Analysis Center) processed TCGA Level 3 data through a RESTful API. The critical endpoint for this module is:
+
+```
+GET http://firebrowse.org/api/v1/Samples/mRNASeq
+```
+
+**Key query parameters:**
+| Parameter | Description | Example |
+|---|---|---|
+| `gene` | Hugo gene symbol(s) (**required**) | `EGFR`, `BRCA1,TP53` |
+| `cohort` | TCGA cancer type code | `BRCA`, `LUAD`, `GBM` |
+| `tcga_participant_barcode` | Specific patient barcode filter | `TCGA-XX-XXXX` |
+| `sample_type` | Tumor/normal sample type | `TP` (Primary Tumor) |
+| `protocol` | Normalization method | `RSEM` |
+| `page` | Results page index | `1`, `2`, ... |
+| `page_size` | Records per page (max 2000) | `250` (default) |
+| `sort_by` | Sort column | `cohort`, `gene` |
+
+**Response JSON fields per record:**
+```json
+{
+  "cohort": "BRCA",
+  "expression_log2": 7.062,
+  "gene": "EGFR",
+  "geneID": 1956,
+  "protocol": "RSEM",
+  "sample_type": "TP",
+  "tcga_participant_barcode": "TCGA-AC-A7VB",
+  "z-score": -0.599
+}
+```
+
+### 3.2 Data Normalization
+
+- **RSEM** (RNA-Seq by Expectation Maximization) is the primary quantification method
+- Expression values are **log2-transformed**
+- Upper quartile normalization sets the 75th percentile count to **1,000 (gene level)** or **300 (isoform level)**
+- Z-scores are computed within-cohort, per gene, across all samples
+- Data represents TCGA **Level 3** (processed, analysis-ready) mRNASeq data from the Broad Firehose pipeline
+
+### 3.3 Important Caveat — FireBrowse Data Currency
+
+> ⚠️ **FireBrowse hosts legacy TCGA data aligned to GRCh37 (hg19).** As of 2016, the Broad GDAC Firehose pipeline was frozen. Current harmonized GRCh38 TCGA data is served by the **NCI Genomic Data Commons (GDC)**. FireBrowse data remains scientifically valid and widely cited, but is not actively updated. For the most current TCGA data, the companion module **TCGAImporter** accesses the live GDC portal.
+
+---
+
+## 4. Input/Output Formats
+
+### 4.1 Module Inputs (Parameters Only — No File Uploads Required)
+
+The module takes no input files; all data is retrieved programmatically via the FireBrowse API. Users specify the following through the GenePattern UI:
+
+| Input Parameter | Type | Description |
+|---|---|---|
+| `cancer_type` / `cohort` | String (CHOICE) | TCGA cohort code (e.g., `BRCA`, `LUAD`, `GBM`) |
+| `gene_of_interest` | String (TEXT) | Hugo gene symbol(s) for stratification (e.g., `EGFR`) |
+| `sample_type` | String (CHOICE) | `TP` (Primary Tumor), `NT` (Normal Tissue), etc. |
+| `top_percentile` | Integer/Float | Expression cutoff for "High" group (e.g., 25 = top 25%) |
+| `bottom_percentile` | Integer/Float | Expression cutoff for "Low" group (e.g., 25 = bottom 25%) |
+| `msigdb_version` | String | MSigDB version for downstream GSEA compatibility |
+| `high_label` | String | Label for high-expression phenotype (default: "High") |
+| `low_label` | String | Label for low-expression phenotype (default: "Low") |
+| `protocol` | String (CHOICE) | `RSEM` (default and primary supported option) |
+
+### 4.2 Outputs
+
+The module generates two primary output files designed as **direct inputs to GSEA/ssGSEA**:
+
+#### Output 1: Gene Expression Matrix (GCT format)
+```
+#1.2
+{nGenes}\t{nSamples}
+Name\tDescription\tTCGA-XX-XXXX-01\tTCGA-YY-YYYY-01\t...
+BRCA1\tBRCA1\t7.23\t4.11\t...
+TP53\tTP53\t5.88\t6.44\t...
+...
+```
+- Rows = all genes with expression data; Columns = selected samples
+- Expression values are log2 RSEM values from FireBrowse
+- Samples include BOTH High and Low expression groups
+- Column order typically: all "High" samples first, then all "Low" samples
+
+#### Output 2: Phenotype Label File (CLS format)
+```
+{nSamples}\t2\t1
+# High\tLow
+High\tHigh\tHigh\t...\tLow\tLow\tLow\t...
+```
+- Line 1: total samples, number of classes, `1`
+- Line 2: `#` followed by class names (High, Low)
+- Line 3: class label for each sample in same order as GCT columns
+
+#### Possible Additional Outputs
+- **Log/report file**: Summary of samples selected, expression thresholds applied
+- **Sample manifest**: List of selected TCGA barcodes with expression values and group assignments
+
+---
+
+## 5. TCGA Cohort Coverage
+
+The module supports all **33 TCGA disease cohorts** available through FireBrowse:
+
+| Code | Cancer Type | Code | Cancer Type |
+|---|---|---|---|
+| ACC | Adrenocortical Carcinoma | MESO | Mesothelioma |
+| BLCA | Bladder Urothelial Carcinoma | OV | Ovarian Serous Cystadenocarcinoma |
+| BRCA | Breast Invasive Carcinoma | PAAD | Pancreatic Adenocarcinoma |
+| CESC | Cervical & Endocervical Cancers | PCPG | Pheochromocytoma & Paraganglioma |
+| CHOL | Cholangiocarcinoma | PRAD | Prostate Adenocarcinoma |
+| COAD | Colon Adenocarcinoma | READ | Rectum Adenocarcinoma |
+| DLBC | Diffuse Large B-cell Lymphoma | SARC | Sarcoma |
+| ESCA | Esophageal Carcinoma | SKCM | Skin Cutaneous Melanoma |
+| GBM | Glioblastoma Multiforme | STAD | Stomach Adenocarcinoma |
+| HNSC | Head & Neck Squamous Cell Carcinoma | TGCT | Testicular Germ Cell Tumors |
+| KICH | Kidney Chromophobe | THCA | Thyroid Carcinoma |
+| KIRC | Kidney Renal Clear Cell Carcinoma | THYM | Thymoma |
+| KIRP | Kidney Renal Papillary Cell Carcinoma | UCEC | Uterine Corpus Endometrial Carcinoma |
+| LAML | Acute Myeloid Leukemia | UCS | Uterine Carcinosarcoma |
+| LGG | Brain Lower Grade Glioma | UVM | Uveal Melanoma |
+| LIHC | Liver Hepatocellular Carcinoma | — | — |
+| LUAD | Lung Adenocarcinoma | — | — |
+| LUSC | Lung Squamous Cell Carcinoma | — | — |
+
+---
+
+## 6. TCGA Sample Type Reference
+
+The FireBrowse API uses short letter codes for sample types, directly matching TCGA barcode position 4:
+
+| Code | Sample Type | Short Code |
+|---|---|---|
+| 01 | Primary Solid Tumor | **TP** |
+| 02 | Recurrent Solid Tumor | TR |
+| 03 | Primary Blood Derived Cancer (Peripheral Blood) | TB |
+| 06 | Metastatic | TM |
+| 10 | Blood Derived Normal | NB |
+| 11 | Solid Tissue Normal | **NT** |
+| 12 | Buccal Cell Normal | NBC |
+
+> 🔬 **Most analyses use `TP` (Primary Solid Tumor)** to ensure all samples represent primary tumor biology. `NT` (normal tissue) can be incorporated for tumor-vs-normal comparisons.
+
+---
+
+## 7. Version-Specific Change: Non-Float MSigDB Version Numbers
+
+### 7.1 The Problem (Pre-v0.14)
+
+MSigDB historically used **floating-point version numbers**: `6.0`, `6.1`, `6.2`, `7.0`, `7.1`, `7.2`, `7.3`, `7.4`, `7.5`. Module code that parsed or compared version numbers treating them as floats (e.g., `float("7.5") >= 7.0`) worked correctly.
+
+### 7.2 The Breaking Change
+
+Beginning with the 2022 release, MSigDB adopted a **date-based naming convention** with species suffixes:
+
+| Version String | Release Date | Species |
+|---|---|---|
+| `2022.1.Hs` | 2022 | Human |
+| `2023.1.Hs` | March 2023 | Human |
+| `2023.2.Hs` | October 2023 | Human |
+| `2024.1.Hs` | August 2024 | Human |
+| `2023.1.Mm` | 2023 | Mouse |
+| `2023.2.Mm` | 2023 | Mouse |
+
+Attempting `float("2022.1.Hs")` raises a `ValueError` in Python. Similarly, string comparisons treating "2022.1.Hs" as a number fail.
+
+### 7.3 The Fix in v0.14
+
+The v0.14 update modified all version-handling logic to:
+1. Treat MSigDB version as a **string** rather than numeric type
+2. Handle the dropdown/choice list of available MSigDB versions properly in the module's manifest or wrapper code
+3. Ensure URLs, file path construction, and API calls using the version string work correctly with the new naming format
+
+### 7.4 MSigDB Collections Available (Current: 2024.1.Hs)
+
+| Collection | # Gene Sets | Description |
+|---|---|---|
+| H (Hallmarks) | 50 | Oncogenic processes |
+| C1 | ~300 | Positional (chromosomal bands) |
+| C2 (curated) | ~6,000 | Canonical pathways (KEGG, Reactome, WikiPathways) |
+| C3 (motif) | ~3,000 | Regulatory target gene sets |
+| C4 (computational) | ~858 | Cancer-related gene signatures |
+| C5 (ontology) | ~15,000 | GO terms (BP, MF, CC) |
+| C6 (oncogenic) | ~189 | Oncogenic signatures |
+| C7 (immunologic) | ~4,872 | Immune-related gene sets |
+| C8 (cell type) | ~1,060 | Cell type signature gene sets |
+| **Total** | **~35,361** | Combined human MSigDB |
+
+---
+
+## 8. Parameter Analysis & Groupings
+
+### Group 1: Data Retrieval Parameters
+| Parameter | Type | Required | Default | Notes |
+|---|---|---|---|---|
+| `cancer_type` (cohort) | CHOICE | ✅ Yes | — | 33 TCGA cohort codes |
+| `gene_of_interest` | TEXT | ✅ Yes | — | Hugo symbol(s); drives stratification |
+| `sample_type` | CHOICE | No | `TP` | `TP`, `NT`, `TM`, `NB`, etc. |
+| `protocol` | CHOICE | No | `RSEM` | Currently only RSEM supported |
+
+### Group 2: Sample Selection / Stratification Parameters
+| Parameter | Type | Required | Default | Notes |
+|---|---|---|---|---|
+| `top_percentile` | INTEGER/FLOAT | No | `25` | % of highest-expressing samples → "High" group |
+| `bottom_percentile` | INTEGER/FLOAT | No | `25` | % of lowest-expressing samples → "Low" group |
+| `high_expression_label` | TEXT | No | `High` | CLS class 1 label |
+| `low_expression_label` | TEXT | No | `Low` | CLS class 2 label |
+| `min_samples` | INTEGER | No | (varies) | Minimum group size for valid GSEA |
+
+### Group 3: MSigDB / Downstream Compatibility Parameters
+| Parameter | Type | Required | Default | Notes |
+|---|---|---|---|---|
+| `msigdb_version` | STRING/CHOICE | No | (latest) | Key change in v0.14: must handle non-float strings |
+| `gene_set_database` | CHOICE | No | (optional) | Which MSigDB collection to reference |
+
+### Group 4: Output Configuration
+| Parameter | Type | Required | Default | Notes |
+|---|---|---|---|---|
+| `output_prefix` | TEXT | No | (auto) | Prefix for output GCT/CLS filenames |
+| `output_format` | CHOICE | No | `GCT+CLS` | Output format type |
+
+---
+
+## 9. Complete Workflow & Use Cases
+
+### 9.1 Standard GSEA Workflow Using TCGA.SampleSelection
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    TCGA.SampleSelection                             │
+│                                                                     │
+│  Inputs:                                                            │
+│  ├── Cancer type: BRCA                                              │
+│  ├── Gene of interest: EGFR                                         │
+│  ├── Top percentile: 25 (High group)                                │
+│  ├── Bottom percentile: 25 (Low group)                              │
+│  └── Sample type: TP                                                │
+│                                                                     │
+│  Processing:                                                        │
+│  1. Query FireBrowse API → EGFR expression for all BRCA TP samples  │
+│  2. Rank samples by EGFR log2 expression                            │
+│  3. Top 25% → "EGFR_High" group; Bottom 25% → "EGFR_Low" group     │
+│  4. Retrieve full genome expression for selected samples            │
+│  5. Format as GCT (expression) + CLS (phenotype labels)            │
+│                                                                     │
+│  Outputs:                                                           │
+│  ├── dataset.gct (gene expression matrix)                           │
+│  └── phenotype.cls (High/Low labels)                                │
+└────────────────────────┬────────────────────────────────────────────┘
+                         │
+             ┌───────────┴───────────┐
+             ▼                       ▼
+    ┌──────────────────┐   ┌──────────────────────┐
+    │   GSEA module    │   │   ssGSEA module       │
+    │  GenePattern     │   │   GenePattern         │
+    │                  │   │                       │
+    │ .gct + .cls +    │   │ .gct + gene set DB    │
+    │ gene set DB      │   │                       │
+    └──────────────────┘   └──────────────────────┘
+             │                       │
+             ▼                       ▼
+    ┌──────────────────────────────────────────────┐
+    │          Biological Interpretation:          │
+    │   Enriched pathways in EGFR-High vs Low      │
+    │   BRCA tumors (e.g., EGFR/ERBB2 signaling,  │
+    │   PI3K pathway, cell proliferation, etc.)   │
+    └──────────────────────────────────────────────┘
+```
+
+### 9.2 Representative Use Cases
+
+**Use Case 1 — Oncogene Pathway Analysis**
+> *"What pathways are enriched in BRCA tumors with high EGFR expression?"*
+- `cohort=BRCA`, `gene=EGFR`, `top_percentile=25`, `bottom_percentile=25`, `sample_type=TP`
+- → GSEA using Hallmarks/C2 gene sets
+
+**Use Case 2 — Tumor Suppressor Loss Characterization**
+> *"What gene sets associate with PTEN loss in GBM?"*
+- `cohort=GBM`, `gene=PTEN`, `top_percentile=25` (PTEN-high = WT), `bottom_percentile=25` (PTEN-low = loss)
+- → GSEA using C6 oncogenic signatures
+
+**Use Case 3 — Immune Evasion Profiling**
+> *"Does PD-L1 (CD274) expression correlate with immunosuppressive gene sets in SKCM?"*
+- `cohort=SKCM`, `gene=CD274`, `top_percentile=25`, `bottom_percentile=25`
+- → GSEA using C7 immunologic gene sets
+
+**Use Case 4 — Cross-Cohort Replication**
+> *"Does PIK3CA-high expression enrich PI3K pathway gene sets across multiple cancers?"*
+- Run independently for `cohort=BRCA`, `cohort=UCEC`, `cohort=HNSC` with `gene=PIK3CA`
+- → Compare GSEA enrichment results across cancer types
+
+**Use Case 5 — Tertile-Based Deep Stratification**
+> *"Exclude the middle group to maximize signal in KRAS-high vs KRAS-low LUAD analysis"*
+- `cohort=LUAD`, `gene=KRAS`, `top_percentile=33`, `bottom_percentile=33`
+- → Strong contrast between extreme expression groups for GSEA
+
+---
+
+## 10. Installation & Dependency Requirements
+
+### 10.1 GenePattern Server Requirements
+- **GenePattern Server**: Version 3.9+ (for Docker support)
+- **Docker**: Required if module is containerized (most current GenePattern modules are)
+- **Network access**: Outbound HTTP(S) access to `http://firebrowse.org/api/v1/` is required at runtime
+
+### 10.2 Likely Internal Dependencies (Inferred from module context)
+
+| Dependency | Purpose | Likely Version |
+|---|---|---|
+| Python 3.x | Core scripting language | 3.6+ |
+| `requests` | FireBrowse REST API calls | 2.x |
+| `pandas` | Data manipulation, expression matrix construction | 1.x+ |
+| `numpy` | Numerical operations, percentile calculation | 1.x+ |
+| Standard library (`json`, `os`, `sys`) | JSON parsing, file I/O | Built-in |
+
+> **Note**: The module is described as language `any`, suggesting it may use a shell wrapper or could be implemented in either Python or R. The FireBrowse API can be accessed equally well through Python's `requests` library or R's `httr`/`FirebrowseR` package.
+
+### 10.3 External Service Dependencies
+
+| Service | URL | Purpose | Status |
+|---|---|---|---|
+| FireBrowse API | `http://firebrowse.org/api/v1/` | TCGA expression data retrieval | ⚠️ Legacy (frozen ~2016) |
+| MSigDB (optional) | `https://www.gsea-msigdb.org/` | Gene set reference | ✅ Active |
+
+> ⚠️ **Critical Note**: FireBrowse is a legacy system. Module developers should implement robust timeout handling and clear error messages if the API is unavailable or slow, as the service is no longer actively maintained by the Broad Institute.
+
+---
+
+## 11. Comparative Analysis
+
+| Feature | TCGA.SampleSelection | TCGAImporter (GP) | TCGAbiolinks (R) | GEPIA2 (Web) | cBioPortal |
+|---|---|---|---|---|---|
+| **Data Source** | FireBrowse (Firehose) | GDC (current) | GDC (current) | TCGA/GTEx | GDC/Multiple |
+| **Genome Build** | GRCh37 (legacy) | GRCh38 | GRCh38 | GRCh38 | GRCh38 |
+| **Interface** | GenePattern GUI | GenePattern GUI | R/Bioconductor | Web browser | Web browser |
+| **Programming** | None required | None required | R required | None required | None required |
+| **Output: GCT** | ✅ Automatic | ✅ Supported | Manual | ❌ | ❌ |
+| **Output: CLS** | ✅ Automatic | ❌ | Manual | ❌ | ❌ |
+| **GSEA-ready** | ✅ Direct | Partial | Manual | ❌ | ❌ |
+| **Sample Stratification** | ✅ Built-in | ❌ | Manual | Partial | Manual |
+| **Data Currency** | Legacy (2016) | Current | Current | Current | Current |
+| **All 33 Cohorts** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Docker Support** | ✅ | ✅ | N/A | N/A | N/A |
+
+### 11.1 Unique Value Proposition
+
+TCGA.SampleSelection is the **only tool in the GenePattern ecosystem** that:
+1. Automatically retrieves TCGA expression data
+2. Performs gene-expression-based sample stratification
+3. Produces both GCT and CLS output files
+4. Requires **zero programming or manual file preparation**
+5. Is designed explicitly for **direct pipeline connection** to GSEA modules within GenePattern
+
+---
+
+## 12. GenePattern Module Integration Considerations
+
+### 12.1 Manifest File Key Elements
+
+```properties
+# Core module identity
+name=TCGA.SampleSelection
+version=0.14
+description=Retrieve TCGA data from Broad FireBrowse and perform sample selection...
+author=GenePattern Team, Broad Institute
+language=any
+
+# LSID (to be assigned by GP server registry)
+LSID=urn:lsid:8080.gpbroad.broadinstitute.org:genepatternmodules:XXXX:0.14
+
+# Docker container (recommended for reproducibility)
+job.docker.image=genepattern/tcga-sample-selection:0.14
+
+# Command line template
+commandLine=/usr/bin/env python /module/run_module.py \
+    --cancer_type <cancer.type> \
+    --gene <gene.of.interest> \
+    --top_pct <top.percentile> \
+    --bottom_pct <bottom.percentile> \
+    --sample_type <sample.type> \
+    --msigdb_version <msigdb.version> \
+    --output_prefix <output.file.prefix>
+```
+
+### 12.2 Parameter Type Mapping for GenePattern Manifest
+
+| Parameter | GP Type | Validation | Suggested Default |
+|---|---|---|---|
+| `cancer.type` | `TEXT` with CHOICE | 33 valid TCGA codes | `BRCA` |
+| `gene.of.interest` | `TEXT` | Non-empty Hugo symbol | _(required)_ |
+| `top.percentile` | `FLOAT` | Range: 1–49 | `25` |
+| `bottom.percentile` | `FLOAT` | Range: 1–49 | `25` |
+| `sample.type` | `TEXT` with CHOICE | TP/NT/TM/NB/TR | `TP` |
+| `protocol` | `TEXT` with CHOICE | `RSEM` | `RSEM` |
+| `msigdb.version` | `TEXT` with CHOICE | **String, not float** | `2024.1.Hs` |
+| `high.label` | `TEXT` | Non-empty string | `High` |
+| `low.label` | `TEXT` | Non-empty string | `Low` |
+| `output.file.prefix` | `TEXT` | Optional | (auto-generated) |
+
+### 12.3 Output File Registration
+
+```properties
+# Output files for GenePattern result tracking
+p4_mode=OUTPUT
+p4_TYPE=java.io.File
+fileFormat=gct
+p5_mode=OUTPUT
+p5_TYPE=java.io.File
+fileFormat=cls
+```
+
+### 12.4 Error Handling Recommendations
+
+| Scenario | Recommended Behavior |
+|---|---|
+| FireBrowse API timeout | Clear error message with retry suggestion; log URL attempted |
+| Invalid TCGA cohort code | Validate against known list before API call |
+| Gene not found in cohort | Informative error: list valid gene query formats |
+| Too few samples after stratification | Warning with minimum sample size recommendation (≥10 per group for GSEA) |
+| Non-float MSigDB version (v0.14 fix) | Parse as string; do not attempt `float()` conversion |
+| Network unavailable | Graceful failure with actionable error message |
+
+### 12.5 Pipeline Integration Pattern
+
+```
+[TCGA.SampleSelection]
+        │
+        ├──→ [output.gct] ──────────────────────┐
+        │                                        │
+        └──→ [phenotype.cls] ──────────────────┐ │
+                                               ▼ ▼
+                                         [GSEA module]
+                                         [ssGSEA module]
+                                         [GSEAPreranked]
+```
+GenePattern pipelines allow the GCT and CLS outputs to be **automatically chained** as inputs to subsequent GSEA modules, enabling a fully automated analysis pipeline.
+
+---
+
+## 13. Known Limitations & Caveats
+
+| Limitation | Impact | Mitigation |
+|---|---|---|
+| **FireBrowse data is frozen (2016)** | Uses GRCh37-aligned Firehose data, not latest GDC harmonized data | Acknowledge in docs; use TCGAImporter for GRCh38 |
+| **Single-gene stratification** | Stratification by a single gene may not capture biological complexity | Users can apply external multi-gene scores before running |
+| **Extreme percentile exclusion** | Middle-expression samples are discarded, reducing cohort size | Documented as intentional to maximize signal contrast |
+| **FireBrowse API rate limits** | Large cohort queries may be slow or throttled | Implement retry logic and pagination |
+| **RSEM-only normalization** | TPM or raw count alternatives not available via this module | Document clearly; use TCGAbiolinks for TPM data |
+| **FFPE samples excluded** | Firehose excludes FFPE samples from standard analyses | Consistent with standard practice; note in documentation |
+| **No clinical covariate adjustment** | No correction for age, stage, or other confounders | Users must consider this in biological interpretation |
+| **Legacy species support** | Human TCGA only (no mouse) | By design; scope limited to human TCGA |
+
+---
+
+## 14. Literature Context & Scientific Validation
+
+### 14.1 Methodological Foundation
+- The expression-based stratification strategy (high vs. low expression → GSEA) is a **validated and widely published approach** with thousands of citations using TCGA data
+- GSEA methodology (Subramanian et al., 2005, *PNAS*) is one of the most cited bioinformatics papers (~35,000 citations)
+- The 25th/75th percentile stratification strategy is the **community-standard approach** for maximizing contrast in TCGA high-vs-low GSEA studies (Biostars community consensus)
+
+### 14.2 Community Adoption
+- The GenePattern platform has been used in hundreds of published studies including TCGA-related analyses
+- Breast cancer TCGA GSEA workflows using GenePattern were documented in peer-reviewed literature (e.g., *Cell Genomics*, 2021)
+- The specific FireBrowse API query approach is used by tools including `fbget` (Broad), `FirebrowseR` (R package), and multiple published bioinformatics pipelines
+
+### 14.3 Data Quality
+- FireBrowse/Firehose TCGA data has been extensively validated and is the gold-standard legacy processed TCGA dataset
+- RSEM + upper quartile normalization is appropriate for cross-sample gene expression comparisons
+- Log2 transformation is standard for downstream GSEA analysis
+
+---
+
+## 15. Summary Recommendations for GenePattern Module Creation
+
+| Priority | Recommendation |
+|---|---|
+| 🔴 **Critical** | Implement MSigDB version as `STRING` type throughout — never `float()` — per v0.14 fix |
+| 🔴 **Critical** | Add robust FireBrowse API error handling (timeouts, 503 errors, empty responses) |
+| 🔴 **Critical** | Validate TCGA cohort codes before API calls; provide complete dropdown list of 33 codes |
+| 🟠 **High** | Enforce minimum sample size check (≥10 per group) before generating output files |
+| 🟠 **High** | Document GRCh37/Firehose legacy data status prominently in module documentation |
+| 🟡 **Medium** | Support percentile ranges 1–49% with validation preventing overlap between High and Low groups |
+| 🟡 **Medium** | Add pipeline output wiring to chain GCT/CLS directly to GSEA GenePattern module |
+| 🟡 **Medium** | Generate a summary report file listing selected samples, expression thresholds, and group sizes |
+| 🟢 **Low** | Consider adding support for multi-gene composite score stratification in future versions |
+| 🟢 **Low** | Add optional retention of intermediate expression data file for QC/audit purposes |
+
+---
+
+## 16. References & Sources
+
+1. **GitHub Repository**: `genepattern/TCGA.SampleSelection` v0.14 — https://github.com/genepattern/TCGA.SampleSelection/tree/v0.14
+2. **FireBrowse REST API**: http://firebrowse.org/api/v1/ — Broad GDAC Firehose TCGA data
+3. **fbget documentation**: https://confluence.broadinstitute.org/display/GDAC/fbget — Broad TCGA GDAC CLI toolset
+4. **FirebrowseR** (mariodeng/FirebrowseR): `Samples.mRNASeq` function documentation — https://rdrr.io/github/mariodeng/FirebrowseR/man/Samples.mRNASeq.html
+5. **MSigDB Release Notes**: https://docs.gsea-msigdb.org/MSigDB/Release_Notes/ — Version history including 2022.1.Hs through 2024.1.Hs
+6. **GSEA GenePattern Module (v20)**: https://gsea-msigdb.github.io/gsea-gpmodule/v20/ — GCT/CLS format specifications
+7. **GenePattern File Formats Guide**: https://www.genepattern.org/file-formats-guide/ — GCT/CLS/RES format specifications
+8. **TCGAutils Bioconductor**: TCGA barcode and sample type code reference — https://bioconductor.org/packages/devel/bioc/vignettes/TCGAutils/
+9. **Subramanian et al. (2005)**: Gene set enrichment analysis: A knowledge-based approach. *PNAS* 102(43):15545–15550
+10. **Biostars community** (p/190886, p/485566, p/9538455): TCGA GSEA sample stratification methodology discussions
+11. **Understanding TCGA mRNA Level3 FireBrowse files**: http://zyxue.github.io/2017/06/02/ — Data normalization details
+12. **GenePattern Module Architecture**: https://github.com/genepattern/genepattern-server/wiki/GenePattern-Docker-Architecture
+
+---
+
+*Report prepared by the GenePattern Module Research System | Tool: TCGA.SampleSelection v0.14 | Research depth: PhD-level bioinformatics analysis*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

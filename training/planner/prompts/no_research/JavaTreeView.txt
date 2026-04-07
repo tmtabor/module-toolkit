@@ -1,0 +1,56 @@
+Create a comprehensive structured plan for the GenePattern module for 'JavaTreeView'.
+            
+            Tool Information:
+            - Name: JavaTreeView
+            - Version: latest
+            - Language: Java
+            - Description: Hierarchical clustering viewer that reads in Eisen's cdt, atr, and gtr files. A detailed description of these formats is available from http\://microarray.ccgb.umn.edu/smd/html/MicroArray/help/formats.shtml
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "JavaTreeView",
+  "parameters": [
+    {
+      "name": "cdt.filename",
+      "type": "FILE",
+      "description": "Clustered data table, contains the original data, but reordered",
+      "required": true,
+      "default_value": "",
+      "file_format": "cdt"
+    },
+    {
+      "name": "gtr.filename",
+      "type": "FILE",
+      "description": "Gene Tree file, records the order in which genes (rows) were joined (at least one of gtr filename and atr filename is required)",
+      "required": false,
+      "default_value": "",
+      "file_format": "gtr"
+    },
+    {
+      "name": "atr.filename",
+      "type": "FILE",
+      "description": "Array Tree file, records the order in which samples (columns) were joined (at least one of gtr filename and atr filename is required)",
+      "required": false,
+      "default_value": "",
+      "file_format": "atr"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Visualizer",
+  "author": "Joshua Gould, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>TreeView.jar<path.separator><libdir>GIFEncoder.jar<path.separator><libdir>nanoxml-2.2.2.jar TreeView -f <cdt.filename> <gtr.filename> <atr.filename>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

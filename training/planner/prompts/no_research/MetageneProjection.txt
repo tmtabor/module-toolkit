@@ -1,0 +1,224 @@
+Create a comprehensive structured plan for the GenePattern module for 'MetageneProjection'.
+            
+            Tool Information:
+            - Name: MetageneProjection
+            - Version: latest
+            - Language: R
+            - Description: Projects one or more data sets onto the metagene representation of another data set
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "MetageneProjection",
+  "parameters": [
+    {
+      "name": "model.gct.file",
+      "type": "FILE",
+      "description": "The model .gct data file",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct"
+    },
+    {
+      "name": "model.cls.file",
+      "type": "FILE",
+      "description": "The model .cls data file",
+      "required": true,
+      "default_value": "",
+      "file_format": "cls"
+    },
+    {
+      "name": "model.preprocessing.file",
+      "type": "FILE",
+      "description": "The pre-processing parameters for the model dataset",
+      "required": true,
+      "default_value": "",
+      "file_format": "txt;"
+    },
+    {
+      "name": "test.gct.file",
+      "type": "FILE",
+      "description": "The test .gct or zip of .gct data files",
+      "required": false,
+      "default_value": "",
+      "file_format": "gct;",
+      "prefix": "-z"
+    },
+    {
+      "name": "test.cls.file",
+      "type": "FILE",
+      "description": "The test .cls or zip of .cls data files",
+      "required": false,
+      "default_value": "",
+      "file_format": "cls",
+      "prefix": "-x"
+    },
+    {
+      "name": "test.preprocessing.file",
+      "type": "FILE",
+      "description": "The pre-processing parameters for the test dataset",
+      "required": false,
+      "default_value": "",
+      "file_format": "txt;",
+      "prefix": "-t"
+    },
+    {
+      "name": "num.characters",
+      "type": "java.lang.Integer",
+      "description": "Number of characters to use to identify classes from the .cls files",
+      "required": true,
+      "default_value": "9"
+    },
+    {
+      "name": "identifier",
+      "type": "java.lang.String",
+      "description": "Prefix to name output files",
+      "required": false,
+      "default_value": "<model.gct.file_basename>.output"
+    },
+    {
+      "name": "k.projection",
+      "type": "java.lang.Integer",
+      "description": "Number of metagenes in projection",
+      "required": false,
+      "default_value": "3"
+    },
+    {
+      "name": "algorithm",
+      "type": "java.lang.String",
+      "description": "Algorithm for Metagene Projection",
+      "required": false,
+      "default_value": "NMF.div",
+      "choices": "NMF.div\\=NMF w/ divergence;NMF\\=NMF;NSNMF.div\\=NSNMF w/ divergence;SNMF\\=SNMF;PCA\\=PCA"
+    },
+    {
+      "name": "number.of.iterations",
+      "type": "java.lang.Integer",
+      "description": "Number of algorithm iterations",
+      "required": false,
+      "default_value": "2000"
+    },
+    {
+      "name": "seed",
+      "type": "java.lang.Integer",
+      "description": "Random seed to initialize metagene matrices (Note\\: results may only be reproducible on the same platform)",
+      "required": false,
+      "default_value": "1234"
+    },
+    {
+      "name": "post.projection.normalization",
+      "type": "java.lang.String",
+      "description": "apply post-projection normalization",
+      "required": false,
+      "default_value": "yes",
+      "choices": "T\\=yes;F\\=no"
+    },
+    {
+      "name": "heatmap.row.norm",
+      "type": "java.lang.String",
+      "description": "row-normalize (standardize) the rows in the heat map",
+      "required": false,
+      "default_value": "no",
+      "choices": "T\\=yes;F\\=no"
+    },
+    {
+      "name": "heatmap.color.scheme",
+      "type": "java.lang.Integer",
+      "description": "",
+      "required": false,
+      "default_value": "reddish color map",
+      "choices": "1\\=vintage pinkogram;2\\=scale of grays;4\\=high resolution pinkogram;6\\=reddish color map"
+    },
+    {
+      "name": "confidence.threshold",
+      "type": "java.lang.Float",
+      "description": "Confidence threshold (Brier score) to separate call from no-calls",
+      "required": false,
+      "default_value": "0.3"
+    },
+    {
+      "name": "phenotype.plotting.colors",
+      "type": "FILE",
+      "description": "Plotting colors for phenotypes",
+      "required": false,
+      "default_value": "",
+      "file_format": "txt;"
+    },
+    {
+      "name": "phenotype.plotting.symbols",
+      "type": "FILE",
+      "description": "Plotting symbols for phenotypes",
+      "required": false,
+      "default_value": "",
+      "file_format": "txt;"
+    },
+    {
+      "name": "symbol.scaling",
+      "type": "java.lang.Integer",
+      "description": "Graphical scaling for symbols in plots and plot legends",
+      "required": false,
+      "default_value": "1"
+    },
+    {
+      "name": "kernel",
+      "type": "java.lang.String",
+      "description": "Kernel function for SVM",
+      "required": false,
+      "default_value": "radial",
+      "choices": "radial\\=radial;linear\\=linear"
+    },
+    {
+      "name": "cost",
+      "type": "java.lang.Integer",
+      "description": "cost function for SVM",
+      "required": false,
+      "default_value": "1"
+    },
+    {
+      "name": "gamma",
+      "type": "java.lang.Integer",
+      "description": "Gamma coefficient for radial base function kernel",
+      "required": false,
+      "default_value": "0.05"
+    },
+    {
+      "name": "theta",
+      "type": "java.lang.Integer",
+      "description": "Smoothing parameter only used for the NSNMF.div algorithm",
+      "required": false,
+      "default_value": "0"
+    },
+    {
+      "name": "lambda",
+      "type": "java.lang.Integer",
+      "description": "Sparse parameter used only for the SNMF algorithm",
+      "required": false,
+      "default_value": "0"
+    },
+    {
+      "name": "model.set.refinement",
+      "type": "java.lang.String",
+      "description": "perform model set refinement",
+      "required": false,
+      "default_value": "yes",
+      "choices": "T\\=yes;F\\=no"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Projection",
+  "author": "Pablo Tamayo, Marc-Danie Nazaire",
+  "command_line": "<R2.5> <libdir>MetageneProjection.R metagene.projection.cmdline -l<libdir> -m<model.gct.file> -d<model.cls.file> -p<model.preprocessing.file> <test.gct.file> <test.cls.file> <test.preprocessing.file> -u<num.characters> -i<identifier> -k<k.projection> -o<algorithm> -n<number.of.iterations> -s<seed> -j<post.projection.normalization> -w<heatmap.row.norm> -h<heatmap.color.scheme> -f<confidence.threshold> -v<phenotype.plotting.colors> -q<phenotype.plotting.symbols> -y<symbol.scaling> -e<kernel> -c<cost> -g<gamma> -a<theta> -b<lambda> -r<model.set.refinement>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

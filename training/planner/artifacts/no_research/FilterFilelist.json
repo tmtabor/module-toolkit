@@ -1,0 +1,108 @@
+{
+  "module_name": "FilterFilelist",
+  "description": "a helper module which generates a filtered filelist from the input filelist and some filter parameters.",
+  "author": "Peter Carr, Broad Institute",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:90070:1",
+  "plan": "## FilterFilelist GenePattern Module — Implementation Plan\n\n### 1. Overview\nFilterFilelist is a GenePattern module that a helper module which generates a filtered filelist from the input filelist and some filter parameters.\n\n### 2. Parameters\nThe module exposes 5 parameters:\n- Required: input.filelist\n- Optional: includePattern, type, errorOnEmptySet, output.filename\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>FilterFilelist.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar<path.separator><libdir>jakarta-oro-2.0.8.jar org.genepattern.module.filterfilelist.FilterFilelist <input.filelist> <includePattern> <type> <errorOnEmptySet> <output.filename>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "FilterFilelist.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar<path.separator><libdir>jakarta-oro-2.0.8.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>FilterFilelist.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar<path.separator><libdir>jakarta-oro-2.0.8.jar org.genepattern.module.filterfilelist.FilterFilelist <input.filelist> <includePattern> <type> <errorOnEmptySet> <output.filename>",
+  "parameters": [
+    {
+      "name": "input.filelist",
+      "description": "the initial input filelist, a file containing a list of filepaths",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filelist\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "includePattern",
+      "description": "an optional list of filename patterns to match, e.g. *.cls,*.gct",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--includePattern\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "type",
+      "description": "Include files, directories, or both files and directories in the output filelist",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "f",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "all",
+          "value": ""
+        },
+        {
+          "display": "file",
+          "value": "f"
+        },
+        {
+          "display": "dir",
+          "value": "d"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--type\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "errorOnEmptySet",
+      "description": "Whether the module should output stderr if the output result is empty",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": ""
+        },
+        {
+          "display": "yes",
+          "value": "yes"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--errorOnEmptySet\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "the name of the output file, if none specified, write to stdout",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.filelist_basename>.filtered.<input.filelist_extension>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename\\=",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

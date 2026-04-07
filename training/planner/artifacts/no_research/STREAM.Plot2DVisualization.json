@@ -1,0 +1,180 @@
+{
+  "module_name": "STREAM.Plot2DVisualization",
+  "description": "STREAM.Plot2DVisualization is used to check if there is clear meaningful trajectory pattern via TSNE or UMAP 2-D plots. If so, we can continue the STREAM analysis; If not, go back to previous steps (preprocessing, feature selection and dimension reduction) to modify the parameters.",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "input_file_formats": [
+    "pkl"
+  ],
+  "language": "Python",
+  "categories": [
+    "Single-Cell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:33576:1",
+  "plan": "## STREAM.Plot2DVisualization GenePattern Module — Implementation Plan\n\n### 1. Overview\nSTREAM.Plot2DVisualization is a GenePattern module that STREAM.Plot2DVisualization is used to check if there is clear meaningful trajectory pattern via TSNE or UMAP 2-D plots. If so, we can continue the STREAM analysis; If not, go back to previous steps (preprocessing, feature selection and dimension reduction) to modify the parameters.\n\n### 2. Parameters\nThe module exposes 10 parameters:\n- Required: data.file, perplexity, method, figure.legend.num.columns, output.filename\n- Optional: percent.neighbor.cells, color.by, use.precomputed, figure.width, figure.height\n\n### 3. Command Line\n```\npython /stream/viz2d_command_line.py -m <data.file> -of <output.filename> <percent.neighbor.cells> <perplexity> <color.by>  <method> <use.precomputed> <figure.width> <figure.height> <figure.legend.num.columns>\n```\n\n### 4. Docker Image\nDocker image: genepattern/stream_plot2dvisualization\\:0.12\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "viz2d_command_line.py",
+  "command_line": "python /stream/viz2d_command_line.py -m <data.file> -of <output.filename> <percent.neighbor.cells> <perplexity> <color.by>  <method> <use.precomputed> <figure.width> <figure.height> <figure.legend.num.columns>",
+  "parameters": [
+    {
+      "name": "data.file",
+      "description": "A STREAM pkl file containing gene expression data.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "pkl"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "percent.neighbor.cells",
+      "description": "The percentage of neighbor cells (only valid when 'umap' is specified).",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "0.1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-nb_pct",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "perplexity",
+      "description": "The perplexity used (only valid when tSNE is specified).",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "30",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-perplexity",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "color.by",
+      "description": "Specify how to color cells. 'label'\\: the cell labels, 'branch'\\: the branch id identifed by STREAM.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "label",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "label",
+          "value": "label"
+        },
+        {
+          "display": "branch",
+          "value": "branch"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-color_by",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "method",
+      "description": "Method used for visualization.  Choose from; 'umap'\\: Uniform Manifold Approximation and Projection; 'tsne'\\: t-Distributed Stochastic Neighbor Embedding.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "umap",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Uniform Manifold Approximation and Projection (UMAP)",
+          "value": "umap"
+        },
+        {
+          "display": "TSNE",
+          "value": "tsne"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "use.precomputed",
+      "description": "If True, the visualization coordinates from previous computation stored in the input pkl file will be used.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": ""
+        },
+        {
+          "display": "TRUE",
+          "value": "--flag_useprecomputed"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--use.precomputed",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "figure.width",
+      "description": "figure width.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_width",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "figure.legend.num.columns",
+      "description": "The number of columns that the legend has.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_legend_ncol",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "figure.height",
+      "description": "figure height.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_height",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.filename",
+      "description": "output file name prefix.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/stream_plot2dvisualization:0.12"
+}

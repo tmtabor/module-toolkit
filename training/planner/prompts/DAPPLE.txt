@@ -1,0 +1,462 @@
+Create a comprehensive structured plan for the GenePattern module for 'DAPPLE'.
+            
+            Tool Information:
+            - Name: DAPPLE
+            - Version: Official GParc release
+            - Language: any
+            - Description: DAPPLE (Disease Association Protein-Protein Link Evaluator) looks for significant physical connectivity among proteins encoded for by genes in loci associated to disease according to protein-protein interactions reported in the literature.
+            
+            Research Results:
+            Now I have all the information needed to compile the complete, definitive research report. Here is the full comprehensive analysis:
+
+---
+
+# 🧬 DAPPLE — Comprehensive GenePattern Module Research Report
+
+## Executive Summary
+
+**DAPPLE** (Disease Association Protein-Protein Link Evaluator) is a network-biology algorithm developed at the **Broad Institute of MIT and Harvard** that evaluates whether proteins encoded by genes in disease-associated genomic loci (typically from GWAS studies) are more physically connected to each other—through protein-protein interactions (PPIs)—than would be expected by chance. The tool bridges GWAS discovery and functional biology by leveraging the InWeb3 high-confidence interactome. The GenePattern module (v0.19) provides containerized access to this Broad-hosted algorithm.
+
+---
+
+## Section 1: Tool Purpose & Scientific Background
+
+### 1.1 Core Scientific Hypothesis
+
+DAPPLE is built on a fundamental hypothesis in complex disease genetics:
+
+> *"Causal genetic variation affecting complex diseases acts on a limited set of underlying biological mechanisms, and these mechanisms are detectable through patterns of physical protein-protein interaction."*
+
+This hypothesis implies that if a GWAS identifies 30 independent genomic loci for a disease, the proteins encoded in those loci should interact with each other more than randomly selected proteins would — because they are wired into the same disease-relevant pathways.
+
+### 1.2 The Biological Problem DAPPLE Solves
+
+Post-GWAS analysis faces several key challenges that DAPPLE addresses:
+
+| Challenge | DAPPLE's Solution |
+|-----------|-------------------|
+| Multiple genes per locus | Tests inter-locus (not intra-locus) connectivity to identify which gene is most likely causal |
+| No functional annotation | Uses experimental PPI data as an unbiased molecular phenotype |
+| Statistical inflation from hub proteins | Within-degree node-label permutation controls for highly-connected "hub" proteins |
+| Interpreting genome-wide significant hits | Provides p-values for overall network connectivity AND per-gene candidate scores |
+
+### 1.3 Primary Citation
+
+> **Rossin EJ, Lage K, Raychaudhuri S, Xavier RJ, Tartar D, IIBDGC, Cotsapas C, Daly MJ.** (2011). "Proteins Encoded in Genomic Regions Associated with Immune-Mediated Disease Physically Interact and Suggest Underlying Biology." *PLoS Genetics* **7(1)**: e1001273. DOI: [10.1371/journal.pgen.1001273](https://doi.org/10.1371/journal.pgen.1001273)
+
+> **Secondary Citation:** Lundby A & Rossin EJ et al. (2014). "Annotation of loci from genome-wide association studies using tissue-specific quantitative interaction proteomics." *Nature Methods* **11**: 868–874.
+
+---
+
+## Section 2: Algorithm & Methodology
+
+### 2.1 Computational Workflow
+
+```
+INPUT: SNPs / Gene list / Genomic regions
+         │
+         ▼
+[1. Seed Gene Definition]
+  - SNP mode: Identify all genes within 'wingspan' kb of each SNP using HapMap/1KG LD data
+  - Gene mode: Use provided genes with locus assignments
+  - Region mode: Extract genes from genomic coordinates
+         │
+         ▼
+[2. Network Construction using InWeb3 PPI Database]
+  ┌──────────────────────────────────────┐
+  │  Direct Network:                     │
+  │  Seed Protein A ──────── Seed Protein B │
+  │                                      │
+  │  Indirect Network:                   │
+  │  Seed Protein A ─[CI]─ Seed Protein B │
+  │  (CI = Common Interactor)            │
+  └──────────────────────────────────────┘
+         │
+         ▼
+[3. Statistical Testing: Within-Degree Node-Label Permutation]
+  - Shuffle protein labels while preserving each protein's degree (# of interactions)
+  - Repeat N times (default: 1,000; literature studies use up to 10,000)
+  - Build null distributions for each network statistic
+         │
+         ▼
+[4. OUTPUT: p-values + Candidate Gene Rankings]
+```
+
+### 2.2 Network Statistics Computed
+
+DAPPLE computes **four key network connectivity statistics** and their permutation-based p-values:
+
+| Statistic | Description | Biological Interpretation |
+|-----------|-------------|--------------------------|
+| **Direct binding degree** | Total number of direct connections between seed proteins | How many seed protein pairs directly interact |
+| **Avg. seed direct binding degree** | Mean connectivity of seed proteins in direct network | Average "hub-ness" of seed proteins toward each other |
+| **Common interactor (CI) binding degree** | Number of seed proteins that common interactors connect | Depth of indirect connectivity |
+| **Avg. CI binding degree** | Avg. number of seed proteins each CI connects to | Significance of bridging proteins |
+
+### 2.3 The InWeb3 Interactome Database
+
+| Property | Value |
+|----------|-------|
+| **Database** | InWeb3 (Lage et al., 2007) |
+| **Total interactions** | 428,430 |
+| **High-confidence, non-self interactions** | 169,810 |
+| **Proteins covered** | 12,793 |
+| **Organism** | Homo sapiens only |
+| **Confidence filtering** | Bayesian integration of multiple PPI sources |
+
+### 2.4 Permutation Strategy — Technical Detail
+
+The **within-degree node-label permutation** is a critical methodological innovation:
+- **Why it matters**: Highly connected hub proteins (e.g., TP53, BRCA1) would dominate networks by chance alone
+- **How it works**: When shuffling protein labels, each protein is only swapped with another protein of the **same or similar interaction degree**
+- **Alternative strategies tested** (original paper): SNP-matched permutation and edge permutation — both yielded consistent results, validating the primary approach
+- **Caveat**: SNP permutation may not be robust in regions of extreme gene density
+
+---
+
+## Section 3: Input/Output Formats & Requirements
+
+### 3.1 Input Modes — Three Supported Types
+
+#### Mode 1: SNP List (Primary/Recommended Mode)
+```
+rs7903146
+rs12255372
+rs10811661
+rs4506565
+rs7901695
+```
+- **Format**: Plain text, one rsID per line
+- **Requirement**: SNPs **must** exist in HapMap or 1000 Genomes Project databases
+- **Why**: LD structure from these databases defines the "wingspan" gene inclusion region
+- **Best practice**: Use the most significant SNP from each independent locus (tag SNPs)
+
+#### Mode 2: Gene List (with Locus Assignment)
+```
+PTPN22 1
+CTLA4 2
+IL2RA 3
+STAT4 4
+CD247 5
+TNFAIP3 6
+```
+- **Format**: Two-column, space or tab-delimited: `GENE_SYMBOL  LOCUS_ID`
+- **Gene symbols**: HGNC/Hugo format
+- **Locus ID**: Integer identifier grouping genes from the **same genomic region**
+- ⚠️ **Critical**: DAPPLE tests connectivity **between** loci — genes from the same locus must share the same ID or results will be inflated
+
+#### Mode 3: Genomic Regions
+```
+chr1:206,767,589-207,267,589
+chr2:204,732,803-205,232,803
+chr6:31,322,766-31,822,766
+```
+- **Format**: Chromosome:Start-End notation
+- DAPPLE extracts all genes within each defined region
+
+### 3.2 Output Files — Complete Specification
+
+| File | Content | Use Case |
+|------|---------|----------|
+| `*_summary.txt` | Raw values for 4 network statistics (observed) | Quick inspection of network connectivity |
+| `*_NetStats.txt` | **Permutation p-values** for all 4 network statistics | Primary result — is the overall network significant? |
+| `*_SeedScores.txt` | Per-seed-protein p-values (individual connectivity scores) | **Candidate gene prioritization within loci** |
+| `*_CIscores.txt` | P-values for common interactor proteins | Identify novel bridging proteins not in original GWAS |
+| `*_directConnections.txt` | Edge list of direct seed-protein interactions | Network visualization / downstream analysis |
+| `*_plot.pdf` | Network visualization (3-page PDF) | Publication figures / visual exploration |
+
+**Plot Layout**:
+- Page 1: Direct interaction network (seed–seed connections)
+- Pages 2–3: Indirect interaction network (seed–CI–seed connections)
+
+### 3.3 Output Interpretation Guide
+
+```
+Network is significantly connected if:
+  NetStats p-value < 0.05 → Proteins share more interactions than expected by chance
+
+To prioritize causal genes:
+  SeedScores p-value < 0.05 → This gene's protein is significantly connected
+  → Prefer the lowest p-value gene when multiple genes exist in a locus
+
+Novel gene candidates:
+  CIscores p-value < 0.05 → This interactor bridges multiple seed proteins
+  → Common interactors not in GWAS hits may be novel disease genes
+```
+
+---
+
+## Section 4: Parameters — Complete Catalog
+
+### 4.1 Parameter Reference Table
+
+| Parameter | Type | Default | Required | Description |
+|-----------|------|---------|----------|-------------|
+| `input.type` | Enum | — | ✅ Yes | `snp`, `gene`, or `region` — specifies input format |
+| `snp.list` | File | — | Conditional | File of SNP rsIDs (required if input.type=snp) |
+| `gene.list` | File | — | Conditional | File of gene + locus IDs (required if input.type=gene) |
+| `region.list` | File | — | Conditional | File of genomic regions (required if input.type=region) |
+| `wingspan` | Integer (kb) | 0 | ❌ No | Genomic window around SNPs for gene inclusion (0, 100, 500 kb typical) |
+| `num.permutations` | Integer | 1000 | ❌ No | Permutation count for null distribution (1000–10000 recommended) |
+| `use.high.confidence.only` | Boolean | true | ❌ No | Use only high-confidence InWeb3 interactions (169,810 vs 428,430) |
+| `plot` | Boolean | false | ❌ No | Generate PDF network visualization |
+| `output.prefix` | String | `dapple_output` | ❌ No | Prefix string for all output files |
+
+### 4.2 Parameter Grouping for GenePattern Module
+
+**Group 1 — Input Specification** *(High Priority)*
+- `input.type` (required, first parameter)
+- `snp.list` / `gene.list` / `region.list` (mutually exclusive)
+- `wingspan` (SNP mode only, conditionally visible)
+
+**Group 2 — Analysis Settings** *(Medium Priority)*
+- `num.permutations`
+- `use.high.confidence.only`
+
+**Group 3 — Output Settings** *(Low Priority)*
+- `output.prefix`
+- `plot`
+
+### 4.3 Wingspan Parameter Guidance
+
+| Wingspan | Genes Included | Recommended Use Case |
+|----------|---------------|---------------------|
+| `0 kb` | Only the gene the SNP maps to | High gene density regions, well-annotated loci |
+| `100 kb` | All genes within 100kb window | Standard GWAS analysis |
+| `500 kb` | Broad LD window for large haplotype blocks | MHC region; regions with long-range LD |
+
+---
+
+## Section 5: Scientific Applications & Validated Use Cases
+
+### 5.1 Original Validation Studies (Rossin et al., 2011)
+
+- **Rheumatoid Arthritis (RA)**: GWAS SNPs showed significant direct connectivity (p < 0.05) among encoded proteins vs. permuted null
+- **Crohn's Disease (CD)**: Similarly significant PPI enrichment; cross-disease analysis revealed shared connectivity patterns between RA and CD proteins, suggesting overlapping immune pathways
+
+### 5.2 Published Applications by Disease Area
+
+| Disease Area | Key Finding | Citation |
+|-------------|-------------|----------|
+| **Multiple Sclerosis** | 67 GWAS SNPs → 75 proteins, 104 direct interactions (expected=61, p<0.0002) | *PLoS One* 2012 |
+| **Schizophrenia** | Used alongside DEPICT, NetWAS, Prix Fixe for multi-method gene prioritization | *Translational Psychiatry* 2018 |
+| **Juvenile Idiopathic Arthritis** | 348 JIA genes → highly connected interactome; 10,000 permutations | *Arthritis Res Therapy* 2014 |
+| **Idiopathic Inflammatory Myopathies** | Systematic PPI + pathway analysis of disease-associated loci | *Arthritis Res Therapy* 2016 |
+| **Schizophrenia (network analysis)** | Module gene connectivity evaluation in PPI context | *PLoS One* 2015 |
+| **Psychiatric–Autoimmune comorbidity** | Cross-disorder PPI subnetwork construction | *Multiple journals* |
+| **Blood pressure / Hypertension** | PPI network integration of GWAS findings | *Human Genomics* 2023 |
+
+### 5.3 Typical Research Workflow
+
+```
+Stage 1: GWAS Analysis
+  → Generate list of genome-wide significant SNPs (p < 5×10⁻⁸)
+  → Perform LD-based clumping to identify independent loci
+  
+Stage 2: DAPPLE Analysis
+  → Input: Independent tag SNPs (20+ loci recommended)
+  → Configure wingspan based on LD structure of disease
+  → Run 1,000–10,000 permutations
+  
+Stage 3: Results Interpretation
+  → Assess overall network significance (NetStats p-values)
+  → Rank seed proteins by SeedScores for candidate prioritization
+  → Review CIscores for novel interacting candidates
+  
+Stage 4: Follow-up
+  → Functional validation of top candidate genes
+  → Overlap with eQTL, chromatin accessibility data
+  → Cross-disease connectivity comparison
+```
+
+---
+
+## Section 6: Comparative Analysis
+
+### 6.1 Tool Comparison Matrix
+
+| Feature | DAPPLE | DEPICT | HotNet2 | dmGWAS | NetWAS |
+|---------|--------|--------|---------|--------|--------|
+| **Input type** | SNPs/genes/regions | SNPs | Genes+scores | Gene p-values | SNPs |
+| **Network source** | InWeb3 PPI | Reconstituted gene sets | Custom networks | GeneMania/STRING | Functional networks |
+| **Statistical method** | Within-degree permutation | Reconstitution | Heat diffusion | Greedy search | Network reweighting |
+| **Integrates expression** | ❌ No | ✅ Yes | ❌ No | ❌ No | ✅ Yes |
+| **Tissue-specific** | ❌ No | ✅ Yes | ❌ No | ❌ No | ✅ Yes |
+| **Per-gene p-values** | ✅ Yes | ✅ Yes | Partial | ❌ No | ❌ No |
+| **Network visualization** | ✅ PDF | ❌ No | ✅ Yes | ✅ Yes | ❌ No |
+| **Human only** | ✅ Yes | ✅ Yes | ❌ Multi | ✅ Yes | ✅ Yes |
+| **GenePattern module** | ✅ v0.19 | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Best for** | GWAS PPI connectivity | Multi-omics GWAS | Cancer somatic | Subnetwork detection | eQTL/functional reweighting |
+
+### 6.2 DAPPLE's Unique Strengths
+
+1. **Purpose-built for GWAS loci**: Unlike general network tools, DAPPLE's statistical framework is specifically designed for the "multiple loci → one disease" topology
+2. **Within-degree permutation**: Methodologically rigorous control for hub protein bias — more conservative and biologically sound than simple random permutation
+3. **Two-level network analysis**: Both direct and indirect (common interactor) networks capture different biological signals
+4. **Per-gene candidate scoring**: Directly actionable output for follow-up experiments
+5. **GenePattern integration**: Accessible to non-computational biologists through a GUI interface
+
+### 6.3 Key Limitations to Document
+
+| Limitation | Impact | Mitigation |
+|-----------|--------|------------|
+| InWeb3 database (2007 vintage) | Missing ~15 years of new PPI discoveries | Acknowledge in results; consider supplementing with STRING |
+| Human genome only | Cannot be used for model organism studies | Clearly document scope in module description |
+| Binary input only | Cannot weight seed genes by GWAS p-value | Combine with p-value-based methods (e.g., DEPICT) for richer analysis |
+| HapMap/1KG SNP requirement | Some newer or non-common variants not supported | Recommend using tag SNPs from standard GWAS catalogs |
+| Minimum locus requirement | Underpowered with <10–15 loci | Warn users when input size is low |
+| Broad server dependency | Module requires active Broad API; subject to downtime | Monitor API health; document fallback |
+
+---
+
+## Section 7: Installation & Dependency Requirements
+
+### 7.1 GenePattern Module Architecture
+
+```
+User Interface (GenePattern Web App)
+           │
+           ▼
+Docker Container: genepattern/dapple:v0.19-pre.1
+  SHA: sha256-d9cd2c77a234ad515853cce7c76e7ac3b9edb1f4e36e90642ff25b1e847a00c1
+           │
+           ▼ (API call with user inputs)
+Broad Institute DAPPLE Service
+  URL: www.broadinstitute.org/mpg/dapple/
+  Contact: dapple@broadinstitute.org
+           │
+           ▼ (returns results)
+Docker Container: Parse + format outputs
+           │
+           ▼
+GenePattern Output Files
+```
+
+### 7.2 Technical Dependencies
+
+| Component | Technology | Notes |
+|-----------|-----------|-------|
+| **Container** | Docker (genepattern/dapple:v0.19-pre.1) | Official GenePattern container |
+| **Backend execution** | Broad Institute cloud service | Server-side R, Perl, Java |
+| **PPI database** | InWeb3 (bundled with Broad service) | Not user-replaceable |
+| **Network visualization** | R (ggplot2 or igraph) | Server-side generation |
+| **Output parsing** | Python/Perl | Client-side in container |
+| **Network connectivity** | Internet → broadinstitute.org | Required; firewall rules may apply |
+
+### 7.3 System Requirements for GenePattern Deployment
+
+| Requirement | Specification |
+|-------------|---------------|
+| **Docker** | Docker Engine 20.10+ |
+| **RAM** | ~512MB local (computation is server-side) |
+| **Storage** | ~200MB for Docker image + output files |
+| **Network** | Outbound HTTPS to broadinstitute.org |
+| **GenePattern version** | Compatible with GP 3.9+ (Docker module support) |
+
+---
+
+## Section 8: GenePattern Module Integration Recommendations
+
+### 8.1 Module Manifest Configuration
+
+```yaml
+Module: DAPPLE
+Version: 0.19
+Category: Network Analysis; Variant Analysis; GWAS
+Language: any
+Docker: genepattern/dapple:v0.19-pre.1
+
+Parameter Groups:
+  - name: "Input Data"
+    parameters: [input.type, snp.list, gene.list, region.list]
+  - name: "Analysis Options"  
+    parameters: [wingspan, num.permutations, use.high.confidence.only]
+  - name: "Output Options"
+    parameters: [output.prefix, plot]
+```
+
+### 8.2 Input Validation Rules
+
+```
+RULE 1: Exactly one of snp.list/gene.list/region.list must be provided
+RULE 2: If input.type=snp → wingspan is enabled (default 0)
+RULE 3: If input.type=gene/region → wingspan should be disabled/hidden
+RULE 4: num.permutations must be integer ≥ 100 (warn if < 1000)
+RULE 5: gene.list entries must follow "SYMBOL INTEGER" format
+RULE 6: SNP rsIDs must match pattern "rs[0-9]+"
+RULE 7: Warn if fewer than 10 loci provided (underpowered analysis)
+```
+
+### 8.3 Documentation Recommendations for Module Page
+
+**Essential sections to include**:
+1. **When to use DAPPLE**: Post-GWAS with ≥15 independent significant loci
+2. **Input format examples**: Concrete examples for all three input modes
+3. **Locus ID assignment guide**: Explain why this field is critical
+4. **Output interpretation guide**: Walk through each output file
+5. **Wingspan selection guide**: When to use 0/100/500kb
+6. **Citation requirements**: Both Rossin 2011 and Lundby 2014
+
+### 8.4 Test Dataset Recommendations
+
+| Test Case | Description | Expected Result |
+|-----------|-------------|-----------------|
+| RA GWAS SNPs | ~50 rheumatoid arthritis tag SNPs | Significant network connectivity |
+| CD GWAS SNPs | ~70 Crohn's disease tag SNPs | Significant connectivity |
+| Random SNPs (negative control) | ~50 randomly selected SNPs | Non-significant (p > 0.05) |
+| Small input (<5 loci) | Test underpowered warning | Warning message generated |
+| Malformed gene list | Missing locus ID | Informative error message |
+
+---
+
+## Section 9: References & Sources
+
+| # | Reference | Type |
+|---|-----------|------|
+| 1 | Rossin EJ et al. PLoS Genetics 7(1):e1001273 (2011) | Primary publication |
+| 2 | Lundby A, Rossin EJ et al. Nature Methods 11:868 (2014) | Secondary publication |
+| 3 | github.com/genepattern/DAPPLE (v0.19) | Official repository |
+| 4 | hub.docker.com/r/genepattern/dapple | Docker registry |
+| 5 | Lage K et al. (2007) InWeb3 database | PPI database source |
+| 6 | PMC4165798 — PPI and genetic diseases review | Review article |
+| 7 | PLoS One doi:10.1371/journal.pone.0046730 (MS study) | Application study |
+| 8 | PMC4062926 — JIA network analysis | Application study |
+| 9 | Nature Translational Psychiatry (2018) | Schizophrenia application |
+| 10 | broadinstitute.org/blog/connecting-genetic-dots-disease | Broad Institute blog |
+| 11 | BioStars.org post #18156 | Community documentation |
+| 12 | GenePattern Help Groups — dapple output thread | User support record |
+
+---
+
+## Summary & Key Takeaways for GenePattern Module Development
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║                    DAPPLE — Key Facts                           ║
+╠══════════════════════════════════════════════════════════════════╣
+║ Purpose:    Post-GWAS PPI network connectivity analysis         ║
+║ Input:      SNPs / Gene list (with locus IDs) / Genomic regions ║
+║ Database:   InWeb3 (169,810 high-confidence human PPIs)         ║
+║ Statistics: Within-degree permutation (default 1,000 perms)     ║
+║ Output:     NetStats, SeedScores, CIscores, DirectConns, Plot   ║
+║ Species:    Human (Homo sapiens) ONLY                           ║
+║ Docker:     genepattern/dapple:v0.19-pre.1                      ║
+║ Backend:    Broad Institute cloud service (internet required)    ║
+║ Citation:   Rossin et al. PLoS Genetics 2011; Lundby 2014       ║
+║ Strength:   Purpose-built GWAS PPI testing + candidate scoring  ║
+║ Limitation: InWeb3 (2007); human only; binary seed genes        ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+> **For GenePattern module developers**: The most critical implementation detail is ensuring that the **gene list locus ID assignment** is clearly documented with examples, as this is the most common user error (confirmed by GenePattern Help forum thread). The module should validate that when SNP mode is used, the wingspan parameter is exposed, and when gene mode is used, the locus assignment format is enforced. Network connectivity to Broad Institute servers is a hard runtime requirement that should be documented prominently.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,358 @@
+Create a comprehensive structured plan for the GenePattern module for 'PredictionResultsViewer'.
+            
+            Tool Information:
+            - Name: PredictionResultsViewer
+            - Version: Bug fix for S3 files
+            - Language: Javascript
+            - Description: Visualizes prediction results in JavaScript
+            
+            Research Results:
+            Now I have all the data needed to compile the final expert-level report. Here is the complete, comprehensive research report:
+
+---
+
+# 🔬 Comprehensive Research Report: PredictionResultsViewer
+
+## GenePattern Module Development Reference
+
+---
+
+## 1. Executive Summary
+
+**PredictionResultsViewer** is a browser-based JavaScript visualization module within the GenePattern bioinformatics platform, purpose-built to display and interactively explore the results of genomic sample classification workflows. It is the **canonical downstream visualizer** for all GenePattern classification/prediction module outputs, accepting `*.pred.odf` files and rendering them as interactive scatter plots and confusion matrices. The current iteration (v5 BETA) incorporates a critical bug fix for reading prediction result files stored in Amazon S3, reflecting the platform's modernization toward cloud-native, AWS Batch-based execution. The tool was authored by **Thorin Tabor** (Principal Software Engineer, UC San Diego; Collaborating Scientist, Broad Institute of MIT and Harvard) and is listed under LSID `urn:lsid:broad.mit.edu:cancer.software.genepattern.module.visualizer:00019`.
+
+---
+
+## 2. Scientific Purpose & Biological Applications
+
+### 2.1 Core Scientific Function
+
+PredictionResultsViewer is designed to address a fundamental task in precision medicine and functional genomics: **evaluating and interpreting the performance of supervised machine learning classifiers** applied to gene expression and genomic data. It enables researchers to visually assess whether a trained classifier correctly predicts the biological class of test samples.
+
+### 2.2 Supported Classification Paradigms
+
+The viewer is compatible with two distinct prediction paradigms:
+
+| Paradigm | Description | Upstream Modules |
+|---|---|---|
+| **Separate Test Set** | Classifier trained on one dataset and tested on a held-out set | `KNN`, `WeightedVoting`, `SVM`, `CART`, `PNN` |
+| **Cross-Validation** | Leave-one-out (LOOCV) or k-fold validation on a single dataset | `KNNXValidation`, `WeightedVotingXValidation`, `PNNXValidationOptimization` |
+
+### 2.3 Supported Classification Algorithms (Upstream Producers)
+
+GenePattern provides a comprehensive suite of classification algorithms whose outputs feed into PredictionResultsViewer:
+
+| Algorithm | Full Name | Use Case |
+|---|---|---|
+| **KNN** | K-Nearest Neighbors | Distance-based instance classification |
+| **WeightedVoting** | Weighted Voting | Vote-based gene signature classifiers |
+| **SVM** | Support Vector Machines | Margin-maximizing binary/multiclass classification |
+| **CART** | Classification & Regression Trees | Decision-tree classification |
+| **PNN** | Probabilistic Neural Network | Probabilistic Bayesian classification |
+| **NTP** | Nearest Template Prediction | Single-sample class prediction with FDR confidence |
+
+### 2.4 Biological Application Domains
+
+- **Cancer subtype classification**: Distinguishing tumor subtypes (e.g., AML vs. ALL leukemia — the canonical Golub et al. dataset)
+- **Normal vs. disease tissue classification**: Identifying pathological gene expression signatures
+- **Drug response prediction**: Stratifying samples by pharmacogenomic profiles
+- **Clinical biomarker validation**: Assessing how well a gene signature generalizes to test cohorts
+- **Patient stratification**: Supporting clinical trial design and enrollment criteria
+
+> **Landmark Use Case**: The ALL/AML leukemia dataset (`all_aml_test.cart.pred.odf`) from Golub et al. (1999) is the primary reference example in GenePattern tutorials. The KNN classifier correctly predicts the class of 32 of 35 test samples — a result directly visualizable in PredictionResultsViewer.
+
+---
+
+## 3. Input/Output Format Specifications
+
+### 3.1 Input: ODF Prediction Results File (`.pred.odf`)
+
+The sole required input is a **Prediction Results ODF file** (`*.pred.odf`), produced by any GenePattern classification module.
+
+**Format:** ODF — *Output Description Format* — a GenePattern-native tab-delimited text format with a structured metadata header, conceptually similar to RES/GCT gene expression formats but adapted for classification metadata.
+
+**Canonical ODF Structure:**
+
+```
+ODF 1.0                          # Version identifier
+HeaderLines=N                    # Number of header key-value lines
+Model=PredictionModel            # Type: PredictionModel (CV) or TestResults (holdout)
+DataLines=M                      # Number of sample data rows
+Column Names:
+  Sample Name    [STRING]        # Sample identifier
+  True Class     [STRING]        # Actual biological class label
+  Predicted Class[STRING]        # Classifier-assigned class label
+  Confidence     [FLOAT 0-1]     # Prediction confidence score
+  Second Class   [STRING]        # Runner-up class (where applicable)
+  Second Confidence[FLOAT 0-1]  # Runner-up confidence score
+```
+
+**Example Sample Data URL (Public Reference):**
+```
+https://software.broadinstitute.org/cancer/software/genepattern/data/protocols/all_aml_test.cart.pred.odf
+```
+
+### 3.2 Output
+
+PredictionResultsViewer is a **pure visualization module** — it produces **no output files**. All output is rendered interactively in the browser:
+
+| Output Component | Type | Description |
+|---|---|---|
+| **Confidence Scatter Plot** | Interactive SVG/Canvas | Per-sample prediction confidence, color-coded by predicted class |
+| **Confusion Matrix** | HTML Table | Predicted vs. true class cross-tabulation |
+| **Sample Table** | HTML Table | Per-sample breakdown with class assignments |
+| **No Call Summary** | Dynamic UI | Samples failing the confidence threshold |
+
+---
+
+## 4. Parameter Analysis & Configuration
+
+### 4.1 Module Input Parameters
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `prediction.results.file` | File (`.pred.odf`) | ✅ Yes | — | The prediction results ODF file from any GenePattern classifier module |
+
+> **Note:** As a JavaScript-rendered visualizer, PredictionResultsViewer exposes minimal server-side parameters. The majority of its configuration is handled interactively in the browser UI at runtime.
+
+### 4.2 Interactive Runtime Controls
+
+These are UI-level controls available once the viewer renders in the browser:
+
+| UI Control | Type | Behavior |
+|---|---|---|
+| **No Call Threshold** | Numeric input (0.0–1.0) | Samples with prediction confidence below this value are classified as "No Call" rather than assigned to a class. Adjustable; takes effect on pressing **Update**. |
+| **Update Button** | Button | Re-renders the scatter plot and confusion matrix with the new No Call Threshold applied |
+| **Zoom (Click-Drag)** | Mouse gesture | Zooms into a rectangular region of the confidence scatter plot |
+| **Reset Zoom (Double-Click)** | Mouse gesture | Resets scatter plot to original full-view scale |
+| **Mouse Hover** | Tooltip | Displays sample name, confidence value, and predicted class color for any point in the scatter plot |
+
+### 4.3 Parameter Patterns & Recommendations for GenePattern Module Manifest
+
+```properties
+# GenePattern Module Manifest Parameters
+p1_name=prediction.results.file
+p1_MODE=IN
+p1_TYPE=FILE
+p1_fileFormat=pred.odf;odf
+p1_optional=
+p1_prefix_when_specified=
+p1_description=The prediction results file (*.pred.odf) generated by a GenePattern 
+               classification module (e.g., KNN, SVM, CART, WeightedVoting, PNN)
+```
+
+---
+
+## 5. Installation & Dependency Requirements
+
+### 5.1 Runtime Environment
+
+| Requirement | Specification |
+|---|---|
+| **Language/Runtime** | JavaScript (browser-native; no server-side language runtime needed) |
+| **Server Dependency** | GenePattern Server ≥ 3.9 (for JavaScript visualizer framework support) |
+| **Browser Support** | Any modern browser with JavaScript enabled (Chrome, Firefox, Safari, Edge) |
+| **Full-Window Expansion** | Requires GenePattern ≥ 3.9.8 |
+| **GenomeSpace File Support** | Requires GenePattern ≥ 3.9.10 |
+
+### 5.2 GenePattern Module Technical Stack
+
+```
+Architecture: Client-side JavaScript Visualizer
+  ├── GenePattern Server ──────────── Serves HTML/JS files, proxies ODF data
+  │     ├── AWS Batch mode ─────────── Jobs execute in Docker containers
+  │     │     └── Results stored ───── Amazon S3 buckets
+  │     └── Traditional mode ────────── Results stored on local filesystem
+  └── Browser (Client) ──────────── Renders visualization
+        ├── Fetches pred.odf ──────── Via GP server proxy or S3 signed URL
+        └── Renders UI ────────────── Interactive scatter + confusion matrix
+```
+
+### 5.3 The S3 Bug Fix (Current Version Context)
+
+The version described as *"Bug fix for S3 files"* addresses a critical cloud-deployment issue:
+
+- **Context**: Modern GenePattern deployments use **AWS Batch** for scalable job execution, where all module outputs are written to **Amazon S3** rather than local disk.
+- **The Bug**: The JavaScript visualizer was failing to correctly retrieve `*.pred.odf` files when they resided at S3 URLs, likely due to pre-signed URL handling, CORS configurations, or the GenePattern server's S3 proxy endpoint.
+- **Impact**: Without this fix, any prediction results generated via AWS Batch cloud execution could not be visualized — a critical failure point in modern deployments.
+- **Resolution**: The fix ensures that the module correctly resolves S3 file references through the GenePattern server's file proxy mechanism, enabling seamless visualization regardless of whether files are stored locally or in S3.
+
+### 5.4 Docker/Container Considerations
+
+Because this is a **JavaScript visualizer** (not a compute module), it does not require a Docker container for execution — it runs entirely within the GenePattern web framework. The GenePattern server itself handles the serving of the HTML/JS assets.
+
+---
+
+## 6. Common Workflows & Use Cases
+
+### 6.1 Standard Two-Dataset Prediction Workflow
+
+```
+Step 1: Feature Selection
+  PreprocessDataset → [processed.gct]
+         ↓
+Step 2: Parameter Optimization (Cross-Validation)
+  KNNXValidation(train.gct, train.cls) → [*.pred.odf (CV results)]
+         ↓
+Step 3: Visualize CV Results
+  PredictionResultsViewer(*.pred.odf) → [Confusion Matrix + Confidence Plot]
+         ↓
+Step 4: Apply Best Parameters to Test Set
+  KNN(train.gct, train.cls, test.gct, test.cls, best_params) → [*.pred.odf]
+         ↓
+Step 5: Visualize Final Test Results
+  PredictionResultsViewer(*.pred.odf) → [Final Classification Assessment]
+```
+
+### 6.2 Multi-Classifier Comparison Workflow
+
+```
+Gene Expression Data (GCT + CLS)
+  ├── KNN ──────────────────→ knn.pred.odf
+  ├── WeightedVoting ────────→ wv.pred.odf       → PredictionResultsViewer
+  ├── SVM ──────────────────→ svm.pred.odf       (each separately)
+  ├── CART ─────────────────→ cart.pred.odf
+  └── PNN ──────────────────→ pnn.pred.odf
+```
+
+### 6.3 Unknown Sample Classification Workflow
+
+```
+Known Training Data + Unknown Samples
+  1. Build classifier: SVM(train.gct, train.cls) → *.model
+  2. Classify unknowns: SVM(test.gct, unknown.cls, *.model) → *.pred.odf
+  3. Visualize: PredictionResultsViewer(*.pred.odf) → class assignments + confidence
+```
+
+> **Note**: For unknown samples, a placeholder class file (all labeled "unknown") is required by upstream modules. PredictionResultsViewer will then show predicted classes with confidence, with "True Class" shown as "unknown."
+
+### 6.4 Protocol Integration (GenePattern Pipeline Chaining)
+
+GenePattern's UI supports **automatic output chaining** — after running a KNN or SVM module, the user can directly select PredictionResultsViewer from the result file's context menu, and GenePattern auto-populates the input file parameter. This is a key UX feature of the GenePattern visualizer ecosystem.
+
+---
+
+## 7. Comparative Analysis
+
+### 7.1 GenePattern Viewer Ecosystem Context
+
+| Viewer Module | Input Format | Output Type | Counterpart Analysis Modules |
+|---|---|---|---|
+| **PredictionResultsViewer** | `*.pred.odf` | Classification scatter + confusion matrix | KNN, SVM, CART, PNN, WeightedVoting |
+| `ComparativeMarkerSelectionViewer` | `*.comp.marker.odf` | Gene ranking table + volcano plot | ComparativeMarkerSelection |
+| `HeatMapViewer` | `*.gct` / `*.res` | Color-coded expression heatmap | Any expression analysis module |
+| `IGV` (GenePattern-hosted) | Multi-format genomic | Genome browser tracks | Variant callers, alignment modules |
+| `PCAViewer` | `*.odf` (PCA output) | 2D/3D scatter plot | PCA |
+
+### 7.2 Comparison with External Classification Visualization Tools
+
+| Feature | PredictionResultsViewer | scikit-learn ConfusionMatrixDisplay | WEKA Explorer | Caret (R) |
+|---|---|---|---|---|
+| **Integration with GenePattern** | ✅ Native | ❌ External | ❌ External | ❌ External |
+| **Zero-code interaction** | ✅ GUI-only | ❌ Code required | ✅ GUI | ❌ Code required |
+| **ODF format support** | ✅ Native | ❌ | ❌ | ❌ |
+| **Interactive zoom/hover** | ✅ | ❌ Static | ✅ | ❌ Static |
+| **Adjustable confidence threshold** | ✅ "No Call" | ❌ | ⚠️ Limited | ⚠️ Limited |
+| **Browser-based (no install)** | ✅ | ❌ | ❌ Java app | ❌ |
+| **Image export** | ❌ | ✅ (PNG/PDF) | ✅ | ✅ |
+| **Multi-algorithm support** | ✅ (via ODF standard) | ⚠️ Manual | ✅ | ✅ |
+| **S3/Cloud file support** | ✅ (bug fix version) | N/A | N/A | N/A |
+
+**Key Differentiator**: PredictionResultsViewer is uniquely positioned as the **zero-configuration, browser-native visualizer** for GenePattern's ODF-formatted prediction results, enabling biologists without programming expertise to immediately interpret classifier output within the same platform where the analysis was performed.
+
+---
+
+## 8. GenePattern Module Integration Specifications
+
+### 8.1 Module Manifest Key Fields
+
+```properties
+name=PredictionResultsViewer
+description=Visualizes prediction results in JavaScript
+version=Bug fix for S3 files
+author=Thorin Tabor (UC San Diego, Broad Institute)
+language=JavaScript
+LSID=urn:lsid:broad.mit.edu:cancer.software.genepattern.module.visualizer:00019
+module.type=visualizer
+os=any
+cpu=any
+commandLine=PredictionResultsViewer.html ?<prediction.results.file>
+fileFormat=pred.odf
+privacy=public
+quality=beta
+```
+
+### 8.2 Input Parameter Specification
+
+```xml
+<parameter name="prediction.results.file">
+  <type>FILE</type>
+  <mode>IN</mode>
+  <fileFormat>pred.odf;odf</fileFormat>
+  <optional>false</optional>
+  <description>
+    Prediction results file (*.pred.odf) generated by a GenePattern 
+    classification module. Supported upstream modules: KNN, 
+    KNNXValidation, WeightedVoting, WeightedVotingXValidation, 
+    SVM, CART, PNN, NearestTemplatePrediction.
+  </description>
+</parameter>
+```
+
+### 8.3 Known Limitations & Caveats for Module Developers
+
+| Limitation | Impact | Mitigation |
+|---|---|---|
+| **Browser memory bound** | Large datasets with thousands of samples may cause slow rendering | Consider server-side data pagination |
+| **No file output** | Cannot export confusion matrix or plot image natively | Users must use browser screenshot tools |
+| **ODF-only input** | External ML tools (scikit-learn, R) cannot feed directly | A conversion pre-processing step (CSV→ODF) would be needed |
+| **S3 URL handling** | Previous versions failed on S3-hosted files (now fixed) | Ensure deploying the S3-patched version |
+| **BETA status** | v5 marked as BETA; potential for UI/API changes | Monitor GenePattern release notes |
+| **Cross-validation vs test set display** | UI may differ slightly between `PredictionModel` and `TestResults` ODF types | Validate with both ODF model types during testing |
+
+---
+
+## 9. Literature & Citation Context
+
+| Source | Relevance |
+|---|---|
+| **Golub et al. (1999)** *Science* 286:531-537 | Original AML/ALL classification paper; provides the canonical `all_aml_test.cart.pred.odf` reference dataset |
+| **Reich et al. (2006)** *Nature Genetics* 38:500-501 | Original GenePattern platform paper (PredictionResultsViewer is a core module) |
+| **Chae et al. (2010)** *PMC2990751* | Nearest Template Prediction paper benchmarks against CART, WeightedVoting, SVM, KNN — all visualized via PredictionResultsViewer |
+| **Gentleman et al. / PMC3893799** | "Using GenePattern for Gene Expression Analysis" — explicitly demonstrates PredictionResultsViewer in KNN workflow (Fig. 7.12.11) |
+| **Reich et al. (2017)** *PMC, The GenePattern Notebook Environment* | Documents Thorin Tabor's role and JavaScript visualizer modernization |
+
+---
+
+## 10. Summary & GenePattern Module Development Recommendations
+
+### ✅ Priority Actions for Module Completion
+
+1. **Verify S3 file resolution logic** in the JavaScript source — confirm the bug fix correctly handles both `https://s3.amazonaws.com/...` and GenePattern server-proxied S3 URLs.
+
+2. **Test with all upstream ODF producers**: Validate that `*.pred.odf` files from KNN, SVM, CART, PNN, WeightedVoting, and NearestTemplatePrediction all render correctly — the ODF header `Model=` field differs between cross-validation and holdout-test formats.
+
+3. **Manifest file format field**: Set `fileFormat=pred.odf;odf` to allow both strict and broad file extension matching for maximum compatibility.
+
+4. **LSID assignment**: Use `urn:lsid:broad.mit.edu:cancer.software.genepattern.module.visualizer:00019` to maintain registry continuity.
+
+5. **Documentation page**: Create a module documentation page covering the No Call Threshold concept, confusion matrix interpretation, and zoom controls — as these are non-obvious to new users.
+
+6. **S3 end-to-end test**: Run a complete AWS Batch job (KNN → `*.pred.odf` written to S3) and confirm PredictionResultsViewer correctly loads and renders the S3-hosted result file.
+
+7. **Version label clarity**: Consider renaming the version from `"Bug fix for S3 files"` to a semantic version (e.g., `v5.1`) with the bug fix noted in the changelog for professional release management.
+
+---
+
+*Report compiled from: GenePattern Official Documentation (v5 BETA), GenePattern User Guide & Protocol Pages, PubMed/PMC literature (PMC3893799, PMC2990751, PMC28822753), GenePattern GitHub organization (genepattern/common_module_code, genepattern/PredictionResultsViewer, genepattern/genepattern-server wiki), GenePattern Gene Expression Analysis module suite documentation.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,55 @@
+Create a comprehensive structured plan for the GenePattern module for 'CARTXValidation'.
+            
+            Tool Information:
+            - Name: CARTXValidation
+            - Version: Added html doc and outputs classification results for each iteration
+            - Language: R
+            - Description: Classification and Regression Tree Cross-Validation
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "CARTXValidation",
+  "parameters": [
+    {
+      "name": "data.filename",
+      "type": "FILE",
+      "description": "The data file - .gct, .res",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct;res"
+    },
+    {
+      "name": "cls.filename",
+      "type": "FILE",
+      "description": "The class file - .cls",
+      "required": true,
+      "default_value": "",
+      "file_format": "cls"
+    },
+    {
+      "name": "prediction.results.file",
+      "type": "java.lang.String",
+      "description": "The name of the output file for prediction results",
+      "required": true,
+      "default_value": "<data.filename_basename>.pred.odf"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Prediction",
+  "author": "Joshua Gould, D. R. Mani",
+  "command_line": "<R2.5> <libdir>cart.R runCartCV <data.filename> <cls.filename> <prediction.results.file> <libdir>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

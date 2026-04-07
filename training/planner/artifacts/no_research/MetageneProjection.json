@@ -1,0 +1,438 @@
+{
+  "module_name": "MetageneProjection",
+  "description": "Projects one or more data sets onto the metagene representation of another data set",
+  "author": "Pablo Tamayo, Marc-Danie Nazaire",
+  "input_file_formats": [
+    "cls",
+    "gct",
+    "txt"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:52899:1",
+  "plan": "## MetageneProjection GenePattern Module — Implementation Plan\n\n### 1. Overview\nMetageneProjection is a GenePattern module that Projects one or more data sets onto the metagene representation of another data set\n\n### 2. Parameters\nThe module exposes 25 parameters:\n- Required: model.gct.file, model.cls.file, model.preprocessing.file, num.characters\n- Optional: test.gct.file, test.cls.file, test.preprocessing.file, identifier, k.projection, algorithm, number.of.iterations, seed, post.projection.normalization, heatmap.row.norm, heatmap.color.scheme, confidence.threshold, phenotype.plotting.colors, phenotype.plotting.symbols, symbol.scaling, kernel, cost, gamma, theta, lambda, model.set.refinement\n\n### 3. Command Line\n```\n<R2.5> <libdir>MetageneProjection.R metagene.projection.cmdline -l<libdir> -m<model.gct.file> -d<model.cls.file> -p<model.preprocessing.file> <test.gct.file> <test.cls.file> <test.preprocessing.file> -u<num.characters> -i<identifier> -k<k.projection> -o<algorithm> -n<number.of.iterations> -s<seed> -j<post.projection.normalization> -w<heatmap.row.norm> -h<heatmap.color.scheme> -f<confidence.threshold> -v<phenotype.plotting.colors> -q<phenotype.plotting.symbols> -y<symbol.scaling> -e<kernel> -c<cost> -g<gamma> -a<theta> -b<lambda> -r<model.set.refinement>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "MetageneProjection.R",
+  "command_line": "<R2.5> <libdir>MetageneProjection.R metagene.projection.cmdline -l<libdir> -m<model.gct.file> -d<model.cls.file> -p<model.preprocessing.file> <test.gct.file> <test.cls.file> <test.preprocessing.file> -u<num.characters> -i<identifier> -k<k.projection> -o<algorithm> -n<number.of.iterations> -s<seed> -j<post.projection.normalization> -w<heatmap.row.norm> -h<heatmap.color.scheme> -f<confidence.threshold> -v<phenotype.plotting.colors> -q<phenotype.plotting.symbols> -y<symbol.scaling> -e<kernel> -c<cost> -g<gamma> -a<theta> -b<lambda> -r<model.set.refinement>",
+  "parameters": [
+    {
+      "name": "model.gct.file",
+      "description": "The model .gct data file",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--model.gct.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "model.cls.file",
+      "description": "The model .cls data file",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--model.cls.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "model.preprocessing.file",
+      "description": "The pre-processing parameters for the model dataset",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--model.preprocessing.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "test.gct.file",
+      "description": "The test .gct or zip of .gct data files",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-z",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "test.cls.file",
+      "description": "The test .cls or zip of .cls data files",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-x",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "test.preprocessing.file",
+      "description": "The pre-processing parameters for the test dataset",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-t",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.characters",
+      "description": "Number of characters to use to identify classes from the .cls files",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "9",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.characters",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "identifier",
+      "description": "Prefix to name output files",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<model.gct.file_basename>.output",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--identifier",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "k.projection",
+      "description": "Number of metagenes in projection",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--k.projection",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "algorithm",
+      "description": "Algorithm for Metagene Projection",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "NMF.div",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "NMF w/ divergence",
+          "value": "NMF.div"
+        },
+        {
+          "display": "NMF",
+          "value": "NMF"
+        },
+        {
+          "display": "NSNMF w/ divergence",
+          "value": "NSNMF.div"
+        },
+        {
+          "display": "SNMF",
+          "value": "SNMF"
+        },
+        {
+          "display": "PCA",
+          "value": "PCA"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--algorithm",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "number.of.iterations",
+      "description": "Number of algorithm iterations",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "2000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--number.of.iterations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "seed",
+      "description": "Random seed to initialize metagene matrices (Note\\: results may only be reproducible on the same platform)",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1234",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--seed",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "post.projection.normalization",
+      "description": "apply post-projection normalization",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "T"
+        },
+        {
+          "display": "no",
+          "value": "F"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--post.projection.normalization",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "heatmap.row.norm",
+      "description": "row-normalize (standardize) the rows in the heat map",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "T"
+        },
+        {
+          "display": "no",
+          "value": "F"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--heatmap.row.norm",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "heatmap.color.scheme",
+      "description": "",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "reddish color map",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "vintage pinkogram",
+          "value": "1"
+        },
+        {
+          "display": "scale of grays",
+          "value": "2"
+        },
+        {
+          "display": "high resolution pinkogram",
+          "value": "4"
+        },
+        {
+          "display": "reddish color map",
+          "value": "6"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--heatmap.color.scheme",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "confidence.threshold",
+      "description": "Confidence threshold (Brier score) to separate call from no-calls",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--confidence.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "phenotype.plotting.colors",
+      "description": "Plotting colors for phenotypes",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--phenotype.plotting.colors",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "phenotype.plotting.symbols",
+      "description": "Plotting symbols for phenotypes",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--phenotype.plotting.symbols",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "symbol.scaling",
+      "description": "Graphical scaling for symbols in plots and plot legends",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--symbol.scaling",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "kernel",
+      "description": "Kernel function for SVM",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "radial",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "radial",
+          "value": "radial"
+        },
+        {
+          "display": "linear",
+          "value": "linear"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--kernel",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cost",
+      "description": "cost function for SVM",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cost",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gamma",
+      "description": "Gamma coefficient for radial base function kernel",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0.05",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gamma",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "theta",
+      "description": "Smoothing parameter only used for the NSNMF.div algorithm",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--theta",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "lambda",
+      "description": "Sparse parameter used only for the SNMF algorithm",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--lambda",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "model.set.refinement",
+      "description": "perform model set refinement",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "T"
+        },
+        {
+          "display": "no",
+          "value": "F"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--model.set.refinement",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

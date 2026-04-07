@@ -1,0 +1,78 @@
+{
+  "module_name": "VoomNormalize",
+  "description": "Preprocess RNA-Seq count data in a GCT file so that it is suitable for use in GenePattern analyses. Formerly called \"PreprocessReadCounts\"",
+  "author": "Arthur Liberzon, David Eby, Broad Institute; Edwin Juarez, UC San Diego.",
+  "input_file_formats": [
+    "cls",
+    "gct"
+  ],
+  "language": "R",
+  "categories": [
+    "RNA-seq"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:92633:1",
+  "plan": "## VoomNormalize GenePattern Module — Implementation Plan\n\n### 1. Overview\nVoomNormalize is a GenePattern module that Preprocess RNA-Seq count data in a GCT file so that it is suitable for use in GenePattern analyses. Formerly called \"PreprocessReadCounts\"\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: input.file, cls.file, output.file, expression.value.filter.threshold\n- Optional: none\n\n### 3. Command Line\n```\nRscript --no-save --quiet --slave --no-restore <libdir>run_gp_preprocess_read_counts.R <libdir> --input.file\\=<input.file> --cls.file\\=<cls.file> --output.file\\=<output.file> --expression.value.filter.threshold\\=<expression.value.filter.threshold>\n```\n\n### 4. Docker Image\nDocker image: genepattern/voomnormalize\\:1.0\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_gp_preprocess_read_counts.R",
+  "command_line": "Rscript --no-save --quiet --slave --no-restore <libdir>run_gp_preprocess_read_counts.R <libdir> --input.file=<input.file> --cls.file=<cls.file> --output.file=<output.file> --expression.value.filter.threshold=<expression.value.filter.threshold>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "A GCT file containing raw RNA-Seq counts, such as is produced by MergeHTSeqCounts",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cls.file",
+      "description": "A categorical CLS file specifying the phenotype classes for the samples in the GCT file.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cls.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "Output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>.preprocessed.gct",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "expression.value.filter.threshold",
+      "description": "Threshold to use when filtering CPM expression values; rows are kept only if the values (in CPM) for all columns are greater than this threshold",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--expression.value.filter.threshold",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/voomnormalize:1.0"
+}

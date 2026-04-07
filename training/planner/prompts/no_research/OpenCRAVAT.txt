@@ -1,0 +1,226 @@
+Create a comprehensive structured plan for the GenePattern module for 'OpenCRAVAT'.
+            
+            Tool Information:
+            - Name: OpenCRAVAT
+            - Version: inital release
+            - Language: any
+            - Description: <img src\="https\://opencravat.org/images/OpenCRAVAT_Logo-0-sm.png" width\=50px alt\="img"/>OpenCRAVAT performs genomic variant interpretation including variant impact, annotation, and scoring.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "OpenCRAVAT",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "Input file in one of the supported OpenCRAVAT input file formats like VCF, tab delimited, as well as formats provided by 23andMe, Ancestry, and dbSNP.",
+      "required": true,
+      "default_value": "",
+      "file_format": "tsv;VCF;vcf;tab;txt",
+      "num_values": "1..1"
+    },
+    {
+      "name": "cravat.username",
+      "type": "TEXT",
+      "description": "OpenCravat username (<a href\\=\"http\\://run.opencravat.org/server/nocache/login.html\" target\\=\"_blank\">Register</a> at <a href\\=\"https\\://run.opencravat.org\">opencravat.org</a> if you do not have one).",
+      "required": true,
+      "default_value": "",
+      "num_values": "1..1"
+    },
+    {
+      "name": "cravat.password",
+      "type": "password",
+      "description": "OpenCravat account password",
+      "required": true,
+      "default_value": "",
+      "num_values": "1..1"
+    },
+    {
+      "name": "variants",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "thousandgenomes\\=1000 Genomes;abraom\\=ABRaOM;chasmplus\\=CHASMPlus;civic\\=CIViC;clinvar\\=ClinVar;cosmic\\=COSMIC;dbsnp\\=dbSNP;denovo\\=Denovo-DB;esp6500\\=ESP6500;fathmm\\=FATHMM;gnomad\\=gnomAD;grasp\\=GRASP;gtex\\=GTEx eQTLs;hgdp\\=HGDP;hgvs\\=HGVS  Format;mupit\\=MuPIT;mutation_assessor\\=Mutation Assessor;mutpred1\\=MutPred;ndex\\=NDEx;pharmgkb\\=PharmGKB;phdsnpg\\=PhD-SNPg;javierre_promoters\\=Promoter IR;revel\\=REVEL;segway\\=Segway;sift\\=SIFT;siphy\\=SiPhy;vest\\=VEST4;vista_enhancer\\=VISTA Enhancer Browser",
+      "prefix": "-ann1",
+      "num_values": "0+"
+    },
+    {
+      "name": "cancer",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "brca1_func_assay\\=BRCA1 Multiplex Assay;cgc\\=Cancer Gene Census;cgl\\=Cancer Gene Landscape;chasmplus\\=CHASMPlus;civic\\=CIViC;civic_gene\\=CIViC Gene;clinvar\\=ClinVar;cosmic\\=COSMIC;cosmic_gene\\=COSMIC Gene;mupit\\=MuPIT ;mutation_assessor\\=Mutation Assessor;ndex\\=NDEx;target\\=TARGET",
+      "prefix": "-ann2",
+      "num_values": "0+"
+    },
+    {
+      "name": "clinical.relevance",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "civic\\=CIViC;civic_gene\\=CIViC gene;clinvar\\=ClinVar;denovo\\=Denovo-DB;grasp\\=GRASP;pharmgkb\\=PharmGKB;target\\=TARGET",
+      "prefix": "-ann3",
+      "num_values": "0+"
+    },
+    {
+      "name": "dbnsfp",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "biogrid\\=BioGRID;ess_gene\\=Essential Genes;fathmm\\=FATHMM;gerp\\=GERP++;ghis\\=GHIS;gtex\\=GTEx eQTLs;intact\\=IntAct;interpro\\=InterPro;loftool\\=LoFtool;mutation_assessor\\=Mutation Assessor;mutpred1\\=MutPred;phi\\=p(HI);prec\\=P(rec);phastcons\\=Phast Cons;phdsnpg\\=PhD-SNPg;phylop\\=PhyloP;siphy\\=SiPhy;uk10k_cohort\\=UK10k Cohorts;uniprot\\=UniProt",
+      "prefix": "-ann4",
+      "num_values": "0+"
+    },
+    {
+      "name": "denovo",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "denovo\\=Denovo-DB;mupit\\=MuPIT",
+      "prefix": "-ann5",
+      "num_values": "0+"
+    },
+    {
+      "name": "evolution",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "gerp\\=GERP++;linsight\\=LINSIGHT;phastcons\\=Phast Cons;phylop\\=PhyloP;rvis\\=RVIS;siphy\\=SiPhy",
+      "prefix": "-ann6",
+      "num_values": "0+"
+    },
+    {
+      "name": "genes",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "biogrid\\=BioGRID;cgc\\=Cancer Gene Census;cgl\\=Cancer Gene Landscape;civic_gene\\=CIViC Gene;cosmic_gene\\=COSMIC Gene;ess_gene\\=Essential Genes;exac_gene\\=ExAC Gene and CNV;go\\=Gene Ontology;ghis\\=GHIS;gnomad_gene\\=gnomAD Gene;intact\\=IntAct;interpro\\=InterPro;loftool\\=LoFtool;mupit\\=MuPIT;NCBI Gene;ndex\\=NDEx;phi\\=p(HI);prec\\=P(rec);pubmed\\=PubMed;rvis\\=RVIS;target\\=TARGET;uniprot\\=UniProt;vest\\=VEST4",
+      "prefix": "-ann7",
+      "num_values": "0+"
+    },
+    {
+      "name": "genomic.features",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "linsight\\=LINSIGHT;ncrna\\=ncRNA;javierre_promoters\\=Promoter IR;pseudogene\\=Pseudogene;repeat\\=Repeat Sequences;vista_enhancer\\=VISTA Enhancer Browser",
+      "prefix": "-ann8",
+      "num_values": "0+"
+    },
+    {
+      "name": "germline",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "thousandgenomes\\=1000 Genomes;clinvar\\=ClinVar;dbsnp\\=dbSNP;denovo\\=Denovo-DB;esp6500\\=ESP6500;exac_gene\\=ExAC Gene and CNV;gnomad\\=gnomAD;grasp\\=GRASP;gtex\\=GTEx eQTLs;mutation_assessor\\=Mutation Assessor;mutpred1\\=MutPred;phdsnpg\\=PhD-SNPg;polyphen2\\=PolyPhen-2;revel\\=REVEL",
+      "prefix": "-ann9",
+      "num_values": "0+"
+    },
+    {
+      "name": "interactions",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "biogrid\\=BioGRID;intact\\=IntAct;ndex\\=NDEx",
+      "prefix": "-ann10",
+      "num_values": "0+"
+    },
+    {
+      "name": "literature",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "civic\\=CIViC;civic_gene\\=CIViC Gene;clinvar\\=ClinVar;dbsnp\\=dbSNP;grasp\\=GRASP;pubmed\\=PubMed",
+      "prefix": "-ann11",
+      "num_values": "0+"
+    },
+    {
+      "name": "multiplex.assays",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "brca1_func_assay\\=BRCA1 Multiplex Assay",
+      "prefix": "-ann12",
+      "num_values": "0+"
+    },
+    {
+      "name": "noncoding",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "thousandgenomes\\=1000 Genomes;dbsnp\\=dbSNP;denovo\\=Denovo-DB;gnomad\\=gnomAD;grasp\\=GRASP;gtex\\=GTEx eQTLs;linsight\\=LINSIGHT;ncrna\\=ncRNA;phdsnpg\\=PhD-SNPg;javierre_promoters\\=Promoter IR;segway\\=Segway;vista_enhancer\\=VISTA Enhancer Browser",
+      "prefix": "-ann13",
+      "num_values": "0+"
+    },
+    {
+      "name": "populations",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "thousandgenomes\\=1000 Genomes;abraom\\=ABRaOM;dbsnp\\=dbSNP;esp6500\\=ESP6500;exac_gene\\=ExAC Gene and CNV;gnomad\\=gnomAD;gnomad_gene\\=gnomAD Gene;hgdp\\=HGDP;uk10k_cohort\\=UK10k Cohorts",
+      "prefix": "-ann14",
+      "num_values": "0+"
+    },
+    {
+      "name": "protein.visualization",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "mupit\\=MuPIT",
+      "prefix": "-ann15",
+      "num_values": "0+"
+    },
+    {
+      "name": "variant.effect.prediction",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "chasmplus\\=CHASMPlus;fathmm\\=FATHMM;linsight\\=LINSIGHT;mupit\\=MuPIT ;mutation_assessor\\=Mutation Assessor;mutpred1\\=MutPred;phdsnpg\\=PhD-SNPg;polyphen2\\=PolyPhen-2;revel\\=REVEL;sift\\=SIFT;vest\\=VEST4",
+      "prefix": "-ann16",
+      "num_values": "0+"
+    },
+    {
+      "name": "assembly",
+      "type": "java.lang.String",
+      "description": "Genome assembly to use",
+      "required": true,
+      "default_value": "hg38",
+      "choices": "hg38\\=GRCh38/hg38;hg19\\=GRCh37/hg19",
+      "num_values": "1"
+    }
+  ],
+  "docker_image_tag": "genepattern/opencravat\\:0.4",
+  "categories": "variant annotation",
+  "task_type": "variant annotation",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "command_line": "python /opencravat/opencravat_command_line.py -i <input.file> -user <cravat.username> -pass <cravat.password> -assembly <assembly> <variants> <cancer> <clinical.relevance> <dbnsfp> <denovo> <evolution> <genes> <genomic.features> <germline> <interactions> <literature> <multiplex.assays> <noncoding> <populations> <protein.visualization>  <variant.effect.prediction>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

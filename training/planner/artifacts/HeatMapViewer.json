@@ -1,0 +1,42 @@
+{
+  "module_name": "HeatMapViewer",
+  "description": "A configurable heat map viewer that provides users with several options for manipulating and visualizing array-based data",
+  "author": "GenePattern",
+  "input_file_formats": [
+    "Dataset",
+    "gct",
+    "odf",
+    "res"
+  ],
+  "language": "HTML,JQuery",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:99640:1",
+  "plan": "## HeatMapViewer GenePattern Module — Implementation Plan\n\n### 1. Overview\nHeatMapViewer is a GenePattern module that A configurable heat map viewer that provides users with several options for manipulating and visualizing array-based data\n\n### 2. Parameters\nThe module exposes 1 parameters:\n- Required: dataset\n- Optional: none\n\n### 3. Command Line\n```\nheatmap.html ? <dataset>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.py",
+  "command_line": "heatmap.html ? <dataset>",
+  "parameters": [
+    {
+      "name": "dataset",
+      "description": "The dataset to display - .gct",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "res",
+        "gct",
+        "odf",
+        "Dataset"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dataset",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

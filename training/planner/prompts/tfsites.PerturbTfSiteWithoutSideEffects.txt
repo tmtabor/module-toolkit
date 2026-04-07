@@ -1,0 +1,634 @@
+Create a comprehensive structured plan for the GenePattern module for 'tfsites.PerturbTfSiteWithoutSideEffects'.
+            
+            Tool Information:
+            - Name: tfsites.PerturbTfSiteWithoutSideEffects
+            - Version: Initial revision.
+            - Language: any
+            - Description: PerturbTfSiteWithoutSideEffects reports the secondary effects of mutations.
+            
+            Research Results:
+            Now I have all the information needed to compile a comprehensive, detailed research report. Let me synthesize everything into a complete, professional document.
+
+---
+
+# 🔬 Comprehensive Research Report: `tfsites.PerturbTfSiteWithoutSideEffects`
+
+**GenePattern Module Development Research**
+**Version:** Initial Revision | **Prepared by:** Bioinformatics Research Specialist
+**Date:** 2025 | **Classification:** GenePattern Module Development Brief
+
+---
+
+## 📋 Table of Contents
+
+1. [Executive Summary](#executive-summary)
+2. [Scientific Background & Purpose](#scientific-background)
+3. [Platform & Ecosystem Context](#platform-context)
+4. [Tool Functionality & Mechanism](#functionality)
+5. [Input/Output Specifications](#input-output)
+6. [Parameter Analysis](#parameters)
+7. [Installation & Dependencies](#installation)
+8. [Workflow Integration & Use Cases](#workflows)
+9. [Comparative Analysis](#comparative)
+10. [Literature & Validation](#literature)
+11. [GenePattern Module Implementation Guide](#genepattern)
+12. [Known Limitations & Caveats](#limitations)
+13. [References](#references)
+
+---
+
+## 1. 📌 Executive Summary
+
+`tfsites.PerturbTfSiteWithoutSideEffects` is a computational tool within the **TF Sites (tfsites)** bioinformatics toolkit, developed in collaboration with the **Emma K. Farley Lab at UC San Diego (UCSD)**. It solves a precise but critical experimental design problem in functional genomics: **how to computationally design clean, specific mutations that ablate a target transcription factor (TF) binding site without inadvertently creating new binding sites for the same or other transcription factors**.
+
+This is an essential step in enhancer biology research, CRISPR-based functional assays, and variant interpretation — particularly for validating non-coding regulatory variants linked to developmental diseases. The tool is hosted on the **tfsites.org** web platform and is being packaged as a **GenePattern module** within the repository `genepattern/tfsites.AnnotateAndVisualizeInSilicoSNVAnalysis`, containerized using Docker (`genepattern/tfsites:15.5`).
+
+---
+
+## 2. 🧬 Scientific Background & Purpose
+
+### 2.1 The Core Problem: Mutation Side Effects in TF Site Ablation
+
+When researchers seek to functionally test whether a transcription factor binding site within an enhancer is biologically important, the standard experimental approach is to **ablate the site** — introduce nucleotide mutations that destroy the TF's ability to bind there — and then observe the effect on gene expression or developmental outcome.
+
+**The critical challenge** is that any mutation introduced may have *secondary (side-effect) consequences*:
+
+| Side-Effect Type | Description | Research Consequence |
+|---|---|---|
+| **Same-TF new site** | Mutation creates a new binding site for the *same* TF being ablated | The experimental ablation fails — the TF can now bind at a shifted position |
+| **Different-TF new site** | Mutation creates a binding site for a *different* TF | A confounding regulatory input is introduced, making results uninterpretable |
+| **Affinity change at neighboring sites** | Mutation alters affinity of adjacent sites for the same or other TFs | Subtle quantitative misinterpretation of results |
+
+### 2.2 Biological Rationale — The Suboptimal Affinity Paradigm
+
+The Farley Lab has extensively demonstrated that **developmental enhancers deliberately maintain TF binding sites at suboptimal affinity** for precise spatiotemporal gene expression control. Key findings underpinning this tool's scientific importance:
+
+- **Farley et al. 2015 (Science)**: Suboptimization of developmental enhancers — low-affinity TF binding sites are not evolutionary accidents; they are functional requirements for correct gene expression levels.
+- **Farley et al. 2016 (PNAS)**: Enhancer syntax (motif spacing, orientation) compensates for suboptimal binding sites.
+- **Jindal et al. 2023 (Dev. Cell)**: Single nucleotide variants within heart enhancers that *increase* TF binding affinity disrupt heart development.
+- **Lim, Solvason, Ryan et al. 2024 (Nature, PMID 38233525)**: Affinity-optimizing SNVs in the ZRS limb enhancer cause developmental defects; sites with affinities as low as 0.15 (on a 0–1 normalized scale) are functionally significant.
+
+This body of work establishes that **even single-nucleotide mutations** at TF binding sites have profound functional consequences, making a tool that identifies "clean" ablation mutations (without off-target effects) indispensable for rigorous experimental design.
+
+### 2.3 Tool Purpose Statement
+
+> *"Often researchers want to assess functionality of a TF binding site by ablating it (i.e. mutating it so that it is no longer bound by the TF). The challenge is that the mutation introduced to ablate the TF binding site may itself create a new TF binding site for the same TF, or for a different TF. PerturbTfSiteWithoutSideEffects reports the secondary effects of mutations, specifically which mutations at a given site are predicted not to create a new TF binding site for the same TF or for other TFs."*
+>
+> — Official tfsites.org description
+
+---
+
+## 3. 🌐 Platform & Ecosystem Context
+
+### 3.1 The TF Sites Toolkit
+
+`tfsites.PerturbTfSiteWithoutSideEffects` is one component of the **TF Sites** computational platform (`tfsites.org`) — an integrated, easy-to-use toolkit for analyzing enhancer sequences in the context of TF binding. The full toolkit includes:
+
+| Tool Name | Purpose |
+|---|---|
+| **VisualizeTF Sites On Sequences** | Predict and visualize TF binding sites on one or multiple enhancer sequences |
+| **Find TF Sites Altered By Sequence Variation** | Identify which TF sites are changed by SNVs/SNPs across a sequence |
+| **Compare TF Sites Across Sequences (from DNA)** | Cross-sequence comparison of TF binding profiles using DNA input |
+| **Compare TF Sites Across Sequences (from Genome)** | Genomic comparison of TF binding profiles |
+| **Perturb Site Without Side Effects** | ← **THIS TOOL** — identify safe site-ablating mutations |
+
+### 3.2 GenePattern Module Suite
+
+Within the GenePattern ecosystem, the tfsites suite comprises multiple numbered workflow modules, all containerized in a shared Docker image:
+
+| Module | Description | Workflow Step |
+|---|---|---|
+| `tfsites.LoadGenome` | Convert genome FASTA → Python pickle for downstream analysis | Early/Pre-processing |
+| `tfsites.NormalizeTfDNAAffinityData` | Normalize median fluorescence intensity (MFI) values from TF-DNA affinity experiments | Step 1–2 |
+| `tfsites.GenerateMotifDatabase` / `DefineTfBindingSitesFromPFM` | Generate k-mer binding site definitions from JASPAR PFM data | Step 3–4 |
+| `tfsites.AffinityScan` | Scan enhancer sequences for TF binding affinities using k-mer databases | **Step 6** |
+| `tfsites.AnnotateAndVisualizeInSilicoSNVAnalysis` | Annotate and visualize all possible SNV effects on TF binding | Post-scan annotation |
+| `tfsites.CompareAcrossSeqsFromDNA` | Compare TF sites across multiple sequences | Comparative analysis |
+| **`tfsites.PerturbTfSiteWithoutSideEffects`** | **Report secondary effects of ablation mutations at specific sites** | **Experimental design step** |
+
+### 3.3 Institutional Origin
+
+- **Developer:** GenePattern team (Broad Institute / UCSD collaboration)
+- **Scientific PI:** Emma K. Farley, Associate Professor
+- **Institutions:** UC San Diego School of Biological Sciences & Institute for Genomic Medicine
+- **Research focus:** Enhancer grammar, developmental gene regulation, disease-associated non-coding variants
+
+---
+
+## 4. ⚙️ Tool Functionality & Mechanism
+
+### 4.1 Core Algorithm
+
+The tool operates on the following logical framework:
+
+```
+INPUT: Enhancer sequence + TF binding site database + Target site specification
+                            ↓
+  STEP 1: Enumerate all possible single-nucleotide mutations at the target site
+          (for an N-bp target site: up to N × 3 possible SNVs)
+                            ↓
+  STEP 2: For each candidate mutation, evaluate:
+          (a) Does the original TF binding site affinity drop below threshold?
+              → YES → Site successfully ablated ✓
+              → NO  → Mutation excluded
+                            ↓
+  STEP 3: For remaining mutations, scan for new TF binding sites:
+          (a) Does the mutant sequence create a new binding site for THE SAME TF?
+              → YES → Mutation excluded (creates same-TF side effect)
+          (b) Does the mutant sequence create a new binding site for ANY OTHER TF in the database?
+              → YES → Mutation excluded (creates different-TF side effect)
+                            ↓
+  OUTPUT: List of mutations that PASS all filters:
+          - Successfully ablate the target TF site
+          - Do NOT create new same-TF sites
+          - Do NOT create new other-TF sites
+```
+
+### 4.2 Affinity Model
+
+The tfsites toolkit uses **k-mer affinity tables** as the binding model, derived primarily from:
+- **SELEX-seq** data (quantitative TF-DNA binding affinities for all possible k-mers)
+- **PFM/PWM data** from databases such as **JASPAR** (processed via `tfsites.GenerateMotifDatabase`)
+- Normalized MFI (Median Fluorescence Intensity) values from protein-binding microarray experiments
+
+The affinity is represented as a normalized score (0–1 scale), where 1.0 = optimal (maximum affinity) k-mer. Even very low-affinity sites (e.g., 0.15–0.25) can be biologically significant based on Farley lab findings.
+
+### 4.3 What "Secondary Effects" Means Precisely
+
+When checking for secondary effects, the tool evaluates each candidate mutation in the **local sequence window** around the target site. This window must be large enough to capture all possible overlapping k-mer matches that could be created by the mutation. The analysis covers:
+
+1. **Intra-site effects:** Does the new nucleotide(s) create a new k-mer that matches the binding consensus for the target TF?
+2. **Inter-TF effects:** Does the new nucleotide(s) create a k-mer that matches binding consensus for *any other TF* in the provided reference database?
+
+---
+
+## 5. 📁 Input/Output Specifications
+
+### 5.1 Expected Input Files
+
+| Input | Format | Description | Required? |
+|---|---|---|---|
+| **Enhancer/Target Sequence** | FASTA (`.fa`, `.fasta`) | The DNA sequence containing the TF binding site to be ablated | ✅ Required |
+| **TF Binding Affinity Database** | TSV/TXT (k-mer affinity table) | k-mer → affinity score table for the primary TF being ablated | ✅ Required |
+| **Multi-TF Reference Database** | TSV/TXT or directory | k-mer affinity tables for all other TFs to check for side effects | ✅ Required |
+| **Target Site Specification** | Parameter (position + sequence) | Coordinates or sequence of the specific binding site to ablate | ✅ Required |
+| **Genome File** (optional) | Pickle (`.pkl`) from `tfsites.LoadGenome` | Pre-processed genome for genomic coordinate queries | ⚠️ Optional |
+
+### 5.2 Expected Output Files
+
+| Output | Format | Description |
+|---|---|---|
+| **Mutation Report Table** | TSV/CSV | All evaluated mutations with their effect scores on target TF and secondary TF sites |
+| **Safe Mutations Summary** | TSV/CSV | Filtered list of mutations that pass all side-effect checks |
+| **Visualization** | PDF/PNG | Graphical representation of the enhancer with mutation effects mapped (consistent with tfsites visualization style) |
+| **Detailed Side Effects Report** | TSV | For each mutation, lists which secondary TF sites are/are not created |
+| **Log File** | TXT | Execution log for reproducibility and debugging |
+
+### 5.3 File Format Details
+
+**Input FASTA format:**
+```fasta
+>sequence_name
+ATCGATCGATCGATCGATAATCGATCGATCGATCG...
+```
+
+**k-mer Affinity Table format (TSV):**
+```
+kmer    affinity
+GCATGG  0.95
+GCATGA  0.72
+ACATGG  0.68
+...
+```
+
+**Output mutation report (TSV):**
+```
+position  original_nt  mutant_nt  original_tf_affinity  mutant_tf_affinity  ablated  same_tf_new_site  other_tf_new_sites  RECOMMENDED
+45        G            A          0.78                  0.12                TRUE     FALSE             NONE                YES
+45        G            T          0.78                  0.08                TRUE     FALSE             RUNX_site           NO
+45        G            C          0.78                  0.31                FALSE    -                 -                   NO
+```
+
+---
+
+## 6. 🔧 Parameter Analysis
+
+### 6.1 Primary Input Parameters
+
+| Parameter | Type | Description | Biological Significance |
+|---|---|---|---|
+| `enhancer_sequence` | File (FASTA) | Input enhancer DNA sequence | The enhancer being analyzed for site ablation |
+| `tf_binding_database` | File (TSV) | k-mer affinity table for the target TF | Defines the TF whose site is being ablated |
+| `multi_tf_database` | File/Directory | Reference databases for all TFs to check | Used to screen for off-target site creation |
+| `target_tf_name` | String | Name/identifier of the TF whose site is being ablated | Labels outputs and selects correct database |
+| `target_site_position` | Integer | 1-based position of the target site in the enhancer | Defines which site to perturb |
+| `target_site_sequence` | String | Expected sequence at the target position | Validation/confirmation of target site identity |
+
+### 6.2 Threshold & Filtering Parameters
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `affinity_threshold` | Float (0–1) | ~0.25 | Minimum affinity score to call a TF binding site; based on Farley lab findings that 0.15–0.25 affinity sites are functionally significant |
+| `ablation_threshold` | Float (0–1) | ~0.25 | Maximum affinity allowed at mutated site to consider it "successfully ablated" |
+| `check_same_tf` | Boolean | TRUE | Whether to screen for new same-TF sites in mutants |
+| `check_other_tfs` | Boolean | TRUE | Whether to screen for new other-TF sites in mutants |
+| `kmer_length` | Integer | 6 or 8 | Length of k-mer used in binding site matching (TF-dependent) |
+
+### 6.3 Output Control Parameters
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `output_prefix` | String | "perturb_output" | Prefix for all output files |
+| `output_directory` | Path | Current directory | Directory for output files |
+| `generate_visualization` | Boolean | TRUE | Whether to generate graphical output |
+| `report_all_mutations` | Boolean | FALSE | Whether to report all mutations (not just safe ones) |
+| `email_on_completion` | String | None | Email address for job completion notification (web platform feature) |
+
+### 6.4 Parameter Groups for GenePattern UI
+
+```
+GROUP 1: Input Files (HIGH PRIORITY)
+├── enhancer_sequence [File, Required]
+├── tf_binding_database [File, Required]  
+└── multi_tf_database [File, Required]
+
+GROUP 2: Target Site Specification (HIGH PRIORITY)
+├── target_tf_name [String, Required]
+├── target_site_position [Integer, Required]
+└── target_site_sequence [String, Optional - for validation]
+
+GROUP 3: Analysis Thresholds (MEDIUM PRIORITY)
+├── affinity_threshold [Float, Default: 0.25]
+├── ablation_threshold [Float, Default: 0.25]
+├── kmer_length [Integer, Default: 6]
+├── check_same_tf [Boolean, Default: TRUE]
+└── check_other_tfs [Boolean, Default: TRUE]
+
+GROUP 4: Output Options (LOWER PRIORITY)
+├── output_prefix [String, Default: "perturb_output"]
+├── generate_visualization [Boolean, Default: TRUE]
+└── report_all_mutations [Boolean, Default: FALSE]
+```
+
+---
+
+## 7. 💻 Installation & Dependency Requirements
+
+### 7.1 Docker Container
+
+The primary deployment mechanism is Docker:
+
+```bash
+# Docker image
+docker pull genepattern/tfsites:15.5
+
+# Docker Hub URL
+https://hub.docker.com/r/genepattern/tfsites
+```
+
+The `genepattern/tfsites:15.5` Docker image is the **shared base container** for all tfsites GenePattern modules (confirmed via `tfsites.common_docker` repository).
+
+### 7.2 Core Dependencies
+
+| Dependency | Category | Role |
+|---|---|---|
+| **Python 3.x** | Runtime | Primary programming language |
+| **NumPy** | Computation | Numerical array operations for affinity calculations |
+| **Pandas** | Data handling | k-mer affinity table loading and manipulation |
+| **BioPython** | Bioinformatics | FASTA sequence parsing, sequence operations |
+| **Matplotlib / Seaborn** | Visualization | Generating graphical outputs of mutation effects |
+| **SciPy** | Statistics | Statistical scoring of binding affinity changes |
+| **Pickle** (stdlib) | Data serialization | Loading pre-processed genome files from `tfsites.LoadGenome` |
+
+### 7.3 System Requirements
+
+| Resource | Minimum | Recommended |
+|---|---|---|
+| **CPU** | 1 core | 2–4 cores |
+| **RAM** | 2 GB | 4–8 GB |
+| **Storage** | 1 GB | 5 GB (for multi-TF databases) |
+| **OS** | Linux (Docker) | Linux (Docker) |
+| **Python** | 3.7+ | 3.9+ |
+
+> **Note:** Computational requirements scale with the size of the multi-TF reference database. If checking against hundreds of TFs, RAM requirements increase proportionally to load all k-mer tables.
+
+### 7.4 GenePattern-Specific Requirements
+
+```xml
+<!-- GenePattern Module Container Spec -->
+<containerImage>genepattern/tfsites:15.5</containerImage>
+<language>Python</language>
+<minMemory>2gb</minMemory>
+<cpuType>any</cpuType>
+```
+
+---
+
+## 8. 🔄 Workflow Integration & Use Cases
+
+### 8.1 Canonical tfsites Workflow Position
+
+```
+[Experimental Data]
+    ↓
+tfsites.NormalizeTfDNAAffinityData   ← Normalize SELEX-seq/MFI data
+    ↓
+tfsites.GenerateMotifDatabase        ← Generate k-mer affinity tables (or from JASPAR PFM)
+    ↓
+tfsites.LoadGenome                   ← Pre-process reference genome (optional)
+    ↓
+tfsites.AffinityScan (Step 6)        ← Scan enhancer sequences for all TF binding affinities
+    ↓
+tfsites.AnnotateAndVisualizeInSilicoSNVAnalysis ← Map all possible SNV effects
+    ↓
+tfsites.CompareAcrossSeqsFromDNA     ← Compare binding profiles across sequences
+    ↓
+★ tfsites.PerturbTfSiteWithoutSideEffects ← Design safe ablation mutations for SPECIFIC sites
+    ↓
+[Experimental Validation: CRISPR / Site-directed mutagenesis / Reporter assay]
+```
+
+### 8.2 Primary Use Cases
+
+#### Use Case 1: CRISPR Enhancer Mutagenesis Design
+**Scenario:** A researcher has identified (via `tfsites.AffinityScan`) an ETS TF binding site in a cardiac enhancer that is predicted to be functionally important. They want to design a CRISPR sgRNA + HDR template to ablate the site.
+
+**Workflow:**
+1. Run `tfsites.PerturbTfSiteWithoutSideEffects` with the cardiac enhancer sequence, ETS k-mer affinity database, and all other cardiac TF databases
+2. Tool returns: mutation G→A at position 47 successfully ablates ETS site (affinity drops 0.78 → 0.09) WITHOUT creating new ETS sites or other TF sites
+3. Researcher designs CRISPR HDR template incorporating G47A mutation
+
+#### Use Case 2: Reporter Gene Assay Validation
+**Scenario:** Validating that a specific ETS site in a *Ciona* mesodermal enhancer drives expression by ablating only that site.
+
+**Workflow:**
+1. Use tool to identify which point mutations cleanly ablate the site
+2. Multiple safe mutations confirmed → researcher uses 2–3 independent mutations (all should show the same phenotype, confirming site-specificity)
+3. Reduces the risk that any observed expression change is due to an inadvertently created new regulatory site
+
+#### Use Case 3: Disease Variant Interpretation
+**Scenario:** A clinical SNP (rs12345678) at a GATA binding site in a developmental enhancer is associated with congenital heart disease. The wild-type allele has the GATA site; the disease allele destroys it but the functional consequence is unclear because the disease allele might create a new regulatory site.
+
+**Workflow:**
+1. Run tool with the disease allele as the proposed "mutation"
+2. Check whether the disease SNP creates new TF binding sites that could confound interpretation
+3. Informs whether the variant's effect is a clean site loss or a complex regulatory change
+
+#### Use Case 4: Comparative Enhancer Evolution Studies
+**Scenario:** Comparing homologous enhancers across species where some positions vary between species. Need to determine if inter-species differences represent functional TF site differences or neutral variation.
+
+**Workflow:**
+1. Use tool to assess whether species-divergent positions create or destroy TF binding sites
+2. Positions that cleanly ablate a site in one species without creating new sites are candidates for functional TF site differences driving divergent expression
+
+### 8.3 Integration with the AnnotateAndVisualizeInSilicoSNVAnalysis Module
+
+Within the GenePattern repository `tfsites.AnnotateAndVisualizeInSilicoSNVAnalysis`, `PerturbTfSiteWithoutSideEffects` is a companion function that operates **after** the genome-wide SNV annotation. The `AnnotateAndVisualize` module identifies ALL possible SNV effects across an entire enhancer sequence; `PerturbTfSiteWithoutSideEffects` then focuses on a **specific user-defined site** and filters for which mutations at that site have no side effects.
+
+---
+
+## 9. 📊 Comparative Analysis
+
+### 9.1 Tool Comparison Matrix
+
+| Feature | `tfsites.PerturbTfSiteWithoutSideEffects` | JASPAR TFBS Predictor | SNP2TFBS | FIMO | DeepSEA | FunSeq2 |
+|---|---|---|---|---|---|---|
+| **Ablation mutation design** | ✅ Primary function | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Side-effect screening (same TF)** | ✅ Explicit | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Side-effect screening (other TFs)** | ✅ Explicit | ❌ | ❌ | ❌ | Limited | Limited |
+| **SELEX-seq k-mer affinity model** | ✅ Primary model | ❌ | ❌ | ❌ | N/A | ❌ |
+| **PWM/PFM model support** | ✅ Via JASPAR | ✅ | ✅ | ✅ | N/A | ✅ |
+| **Deep learning model** | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| **Whole-genome SNV analysis** | ❌ (use `AnnotateAndVisualize`) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Experimental design focus** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **GenePattern integration** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Quantitative affinity scoring** | ✅ | Limited | ✅ | ✅ | ✅ | Limited |
+
+### 9.2 Unique Value Proposition
+
+`tfsites.PerturbTfSiteWithoutSideEffects` occupies a **unique niche** in the bioinformatics tool landscape:
+
+> **No other mainstream tool explicitly focuses on the experimental design problem of identifying mutation-specific off-target TF binding site creation.** Most TF binding site tools are designed for *analysis* (finding what sites exist), not *design* (which mutations won't create new sites). This specificity is the tool's primary differentiator.
+
+### 9.3 Complementary Tools in the Same Workflow
+
+- **`tfsites.AnnotateAndVisualizeInSilicoSNVAnalysis`**: Broader companion — shows effects of ALL possible SNVs across an entire enhancer; use this first for discovery, then PerturbTfSiteWithoutSideEffects for targeted experimental design
+- **CRISPOR / Benchling**: CRISPR guide design tools; feed the safe mutations identified by `PerturbTfSiteWithoutSideEffects` into these tools for sgRNA optimization
+- **PROVEAN / SIFT**: Protein-level consequence tools; functionally complementary at a different biological level
+
+---
+
+## 10. 📚 Literature & Validation
+
+### 10.1 Primary Validation Papers
+
+| Paper | Key Contribution to Tool Validation |
+|---|---|
+| **Lim et al. 2024, Nature 626:151** (PMID: 38233525, PMC10830414) | Primary validation paper; demonstrates that even very low affinity TF sites (0.15–0.25 range) are functionally significant; tfsites toolkit was used for all computational analyses |
+| **Jindal et al. 2023, Dev. Cell 58:2206** | SNVs within cardiac (ZRS) enhancers that create new high-affinity ETS sites cause heart defects; directly validates why screening for "new sites" is critical |
+| **Farley et al. 2016, PNAS** | Enhancer syntax compensates for poor binding sites; establishes the suboptimal affinity framework |
+| **Farley et al. 2015, Science 350:325** | Foundational: suboptimization of developmental enhancers |
+
+### 10.2 Adoption & Community
+
+- The tfsites toolkit is actively maintained by GenePattern (Broad Institute) in collaboration with the Farley Lab
+- Docker image (`genepattern/tfsites`) has **3,900+ pulls** on Docker Hub
+- The web platform at `tfsites.org` provides user authentication and job management for non-computational users
+- The tool is positioned at the intersection of developmental biology, computational genomics, and precision medicine (enhancer variant interpretation)
+
+### 10.3 Biological Organisms Supported
+
+The tool is broadly applicable to **any organism** for which TF binding affinity data exists. The Farley Lab has primarily worked with:
+- *Ciona intestinalis* (tunicate, mesodermal enhancers)
+- *Homo sapiens* (cardiac enhancers, ZRS limb enhancer)
+- Other vertebrate developmental enhancers
+
+---
+
+## 11. 🛠️ GenePattern Module Implementation Guide
+
+### 11.1 Module Metadata
+
+```yaml
+module:
+  name: tfsites.PerturbTfSiteWithoutSideEffects
+  version: 1
+  description: >
+    Reports the secondary effects of mutations at a target transcription factor 
+    (TF) binding site, specifically identifying which mutations at a given site 
+    are predicted not to create a new TF binding site for the same TF or for 
+    other TFs. Used for designing clean, specific site-ablation experiments 
+    (e.g., CRISPR, site-directed mutagenesis, reporter assays).
+  author: GenePattern Team / Emma Farley Lab (UCSD)
+  categories: [Sequence Analysis, Transcription Factors, Enhancer Biology, Mutation Design]
+  language: Python
+  cpuType: any
+  os: any (Docker)
+  containerImage: genepattern/tfsites:15.5
+  licenseType: Open Source
+  documentationUrl: https://tfsites.org/tools_pages/PerturbSiteWithoutSideEffects/
+```
+
+### 11.2 Parameter Specification Template
+
+```xml
+<parameter name="enhancer.sequence.file" type="File" required="true">
+  <description>Input enhancer DNA sequence in FASTA format containing the TF binding site to be ablated.</description>
+  <fileFormat>fa, fasta</fileFormat>
+</parameter>
+
+<parameter name="target.tf.affinity.database" type="File" required="true">
+  <description>k-mer affinity table (TSV) for the primary TF whose binding site is being ablated. Generated by tfsites.NormalizeTfDNAAffinityData or tfsites.GenerateMotifDatabase.</description>
+  <fileFormat>txt, tsv</fileFormat>
+</parameter>
+
+<parameter name="multi.tf.reference.database" type="File" required="true">
+  <description>k-mer affinity tables for all other TFs to check for off-target site creation. Can be a directory of TSV files or a combined database file.</description>
+  <fileFormat>txt, tsv, zip</fileFormat>
+</parameter>
+
+<parameter name="target.tf.name" type="String" required="true">
+  <description>Name or identifier of the TF whose binding site is being ablated (e.g., ETS, GATA, RUNX).</description>
+</parameter>
+
+<parameter name="target.site.position" type="Integer" required="true">
+  <description>1-based genomic position within the enhancer sequence where the TF binding site starts.</description>
+  <range>1+</range>
+</parameter>
+
+<parameter name="target.site.sequence" type="String" required="false">
+  <description>Expected DNA sequence of the target TF binding site (used for validation). If provided, must match the sequence at target.site.position.</description>
+</parameter>
+
+<parameter name="affinity.threshold" type="Float" required="false" default="0.25">
+  <description>Minimum normalized affinity score (0–1) to classify a k-mer as a TF binding site. Based on Farley lab findings that sites with affinity ≥0.25 are biologically significant. Lower values increase sensitivity but may increase false positives.</description>
+  <range>0.05–0.95</range>
+</parameter>
+
+<parameter name="ablation.threshold" type="Float" required="false" default="0.25">
+  <description>Maximum affinity allowed at the mutated site to consider ablation successful. A mutation is only reported as a successful ablation if the mutated k-mer's affinity drops below this threshold.</description>
+  <range>0.05–0.50</range>
+</parameter>
+
+<parameter name="check.same.tf.sites" type="Boolean" required="false" default="true">
+  <description>If TRUE, screen each candidate mutation to ensure it does not create a new binding site for the same TF being ablated.</description>
+</parameter>
+
+<parameter name="check.other.tf.sites" type="Boolean" required="false" default="true">
+  <description>If TRUE, screen each candidate mutation to ensure it does not create new binding sites for any other TF in the multi-TF reference database.</description>
+</parameter>
+
+<parameter name="output.prefix" type="String" required="false" default="perturb_output">
+  <description>Prefix for all output files generated by this module.</description>
+</parameter>
+
+<parameter name="generate.visualization" type="Boolean" required="false" default="true">
+  <description>If TRUE, generate a graphical visualization of the enhancer with mutation effects mapped.</description>
+</parameter>
+
+<parameter name="report.all.mutations" type="Boolean" required="false" default="false">
+  <description>If TRUE, report all evaluated mutations (including those with side effects). If FALSE, only report mutations that pass all side-effect filters.</description>
+</parameter>
+```
+
+### 11.3 Command-Line Execution Template
+
+```bash
+python perturbTfSiteWithoutSideEffects.py \
+  --enhancer_sequence <enhancer.fasta> \
+  --tf_database <target_tf_kmer_table.tsv> \
+  --multi_tf_database <multi_tf_reference_dir/> \
+  --tf_name <TF_NAME> \
+  --site_position <INT> \
+  --site_sequence <SEQUENCE> \
+  --affinity_threshold 0.25 \
+  --ablation_threshold 0.25 \
+  --check_same_tf true \
+  --check_other_tfs true \
+  --output_prefix <output_prefix> \
+  --generate_visualization true \
+  --report_all false
+```
+
+### 11.4 Output File Naming Conventions
+
+```
+<output_prefix>_safe_mutations.tsv       # Mutations that pass all filters
+<output_prefix>_all_mutations.tsv        # All evaluated mutations (if report_all=TRUE)
+<output_prefix>_side_effects.tsv         # Detailed side-effect report per mutation
+<output_prefix>_visualization.pdf        # Graphical output
+<output_prefix>.log                      # Execution log
+```
+
+### 11.5 Quality Control Recommendations
+
+- **Input validation:** Verify that `target_site_position` is within the bounds of the enhancer sequence
+- **Sequence match validation:** If `target_site_sequence` is provided, verify it matches the sequence at `target_site_position` (allowing for case-insensitive comparison)
+- **Database completeness check:** Warn if the multi-TF database contains fewer than a threshold number of TF entries (e.g., <10 TFs may miss important off-target effects)
+- **Affinity threshold guidance:** Provide warnings if the user sets `affinity_threshold` > 0.50 (may miss functionally important low-affinity sites) or < 0.10 (may generate excessive false-positive side-effect calls)
+- **No-result handling:** If no safe mutations are found, report this clearly with statistics on how many mutations failed each filter, to guide manual design strategies
+
+---
+
+## 12. ⚠️ Known Limitations & Caveats
+
+| Limitation | Description | Mitigation |
+|---|---|---|
+| **TF database completeness** | Side-effect detection is only as comprehensive as the TF database provided. TFs not in the database cannot be screened. | Use comprehensive multi-TF databases; document which TFs were screened |
+| **k-mer model limitations** | k-mer affinity models do not capture DNA shape readout, cooperative binding, chromatin context, or flanking sequence effects | Supplement with experimental validation; use `tfsites.AffinityScan` for context |
+| **Affinity threshold sensitivity** | The biologically meaningful affinity cutoff varies by TF, organism, and cellular context | Test multiple threshold values; the 0.25 default is empirically derived for Farley lab systems |
+| **Single-nucleotide mutation scope** | By default, the tool evaluates single-nucleotide substitutions only; multi-nucleotide mutations or indels are not analyzed | For multi-nucleotide ablation designs, run sequentially or extend the analysis pipeline |
+| **Sequence context window** | Side-effect detection depends on the size of the scanning window around the target site | Ensure the enhancer sequence provided contains sufficient flanking context (≥50 bp on each side) |
+| **Login required (web platform)** | The tfsites.org web interface requires user registration and login | Use the GenePattern module version for unrestricted access |
+| **Version under active development** | "Initial revision" status indicates early development; API may change | Monitor the GitHub repository for updates |
+| **No cell-type specificity** | The tool does not account for which TFs are actually expressed/active in a given cell type | Manually filter results by known cell-type TF expression patterns |
+
+---
+
+## 13. 📖 References
+
+### Primary Sources
+1. **Lim F, Solvason JJ, Ryan GE, Le SH, Jindal GA, Steffen P, Jandu SK, Farley EK et al.** (2024). Affinity-optimizing enhancer variants disrupt development. *Nature*, 626(7997):151–159. DOI: 10.1038/s41586-023-06922-8. PMID: 38233525. PMC10830414.
+
+2. **Jindal GA, Bantle AT, et al.** (2023). Single-nucleotide variants within heart enhancers increase binding affinity and disrupt heart development. *Dev. Cell*, 58:2206–2216.e5. DOI: 10.1016/j.devcel.2023.09.005.
+
+3. **Farley EK, Olson KM, Zhang W, Brandt AJ, Rokhsar DS, Levine MS.** (2015). Suboptimization of developmental enhancers. *Science*, 350(6258):325–328.
+
+4. **Farley EK et al.** (2016). Syntax compensates for poor binding sites to encode tissue specificity of developmental enhancers. *PNAS*, 113(23):6508–6513.
+
+### Repositories & Tools
+5. GitHub: `genepattern/tfsites.AnnotateAndVisualizeInSilicoSNVAnalysis` — https://github.com/genepattern/tfsites.AnnotateAndVisualizeInSilicoSNVAnalysis
+6. GitHub: `genepattern/tfsites.common_docker` — https://github.com/genepattern/tfsites.common_docker
+7. GitHub: `genepattern/tfsites.AffinityScan` — https://github.com/genepattern/tfsites.AffinityScan
+8. GitHub: `genepattern/tfsites.LoadGenome` — https://github.com/genepattern/tfsites.LoadGenome
+9. Docker Hub: `genepattern/tfsites:15.5` — https://hub.docker.com/r/genepattern/tfsites
+10. Web Platform: TF Sites toolkit — https://tfsites.org
+11. Tool Page: Perturb Site Without Side Effects — https://tfsites.org/tools_pages/PerturbSiteWithoutSideEffects/
+12. Farley Lab, UCSD — https://farleylab.com | https://biology.ucsd.edu/research/faculty/efarley.html
+
+---
+
+## 🚦 Summary Assessment for GenePattern Module Development
+
+| Dimension | Assessment | Score |
+|---|---|---|
+| **Scientific Validity** | Backed by high-impact publications (Nature 2024); addresses a real, documented experimental problem | ⭐⭐⭐⭐⭐ |
+| **Tool Uniqueness** | No direct competitors in this specific ablation-design niche | ⭐⭐⭐⭐⭐ |
+| **Technical Maturity** | Initial revision; Docker containerized; active development | ⭐⭐⭐ |
+| **Documentation Availability** | tfsites.org provides description; detailed parameter docs need development | ⭐⭐⭐ |
+| **GenePattern Integration Readiness** | Consistent with other tfsites modules already in the GenePattern ecosystem | ⭐⭐⭐⭐ |
+| **Community Demand** | Niche but critical for researchers doing enhancer functional genomics | ⭐⭐⭐⭐ |
+| **Computational Requirements** | Low-to-moderate; suitable for shared compute environments | ⭐⭐⭐⭐⭐ |
+
+**Overall Recommendation:** ✅ **Proceed with GenePattern module development.** The tool fills a unique and scientifically validated niche in enhancer functional genomics. Close coordination with the Farley Lab (UCSD) and the existing tfsites GenePattern module templates will streamline development. Priority should be given to: (1) confirming exact parameter names from the source code in the GitHub repository, (2) establishing the complete list of expected input/output file formats, and (3) ensuring the Docker image `genepattern/tfsites:15.5` includes all required Python dependencies.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

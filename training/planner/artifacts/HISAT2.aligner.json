@@ -1,0 +1,786 @@
+{
+  "module_name": "HISAT2.aligner",
+  "description": "HISAT2 is a fast and sensitive alignment program for mapping next-generation sequencing reads (both DNA and RNA) to a population of human genomes (as well as to a single reference genome).",
+  "author": "Ted Liefeld;UCSD",
+  "input_file_formats": [
+    "fa",
+    "fa.bz2",
+    "fa.gz",
+    "fasta",
+    "fasta.bz2",
+    "fasta.gz",
+    "fastq",
+    "fastq.bz2",
+    "fastq.gz",
+    "fq",
+    "fq.bz2",
+    "fq.gz"
+  ],
+  "language": "Python",
+  "categories": [
+    "rna-seq"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:66199:1",
+  "plan": "## HISAT2.aligner GenePattern Module — Implementation Plan\n\n### 1. Overview\nHISAT2.aligner is a GenePattern module that HISAT2 is a fast and sensitive alignment program for mapping next-generation sequencing reads (both DNA and RNA) to a population of human genomes (as well as to a single reference genome).\n\n### 2. Parameters\nThe module exposes 46 parameters:\n- Required: index, reads.pair.1, output.prefix, max.primary.alignments, min.n.ceil, min.mismatch.penalty, ambiguous.read.penalty, minimum.intron.length, input.format, quality.value.scale, mate.orientations, ignore.read.qualities, align, max.mismatch.penalty, soft.clipping, min.softclip.penalty, max.softclip.penalty, max.n.ceil, read.gap.extend.penalty, reference.gap.extend.pen, spliced.alignments, min.score.align, max.score.align, minimum.fragment.length.for.paired.alignment, secondary.alignments, dry.run, min.penalty.long.introns.with.noncanonical.splice.sites, max.penalty.long.introns.with.noncanonical.splice.sites\n- Optional: reads.pair.2, max.seeds.extended, max.reads.to.align, read.gap.open.penalty, reference.gap.open.penalty, penalty.for.canonical.splice.sites, penalty.for.non-canonical.splice.sites, min.penalty.long.introns.with.canonical.splice.sites, max.penalty.long.introns.with.canonical.splice.sites, maximum.intron.length, maximum.fragment.length.for.paired.alignment, unpaired.alignments.for.paired.reads, discordant.alignments.for.paired.reads, integer.quality.value, novel.splicesites.infile, novel.splicesites, mapped.reads, unmapped.reads\n\n### 3. Command Line\n```\npython <libdir>/hisat_wrapper.py  -index <index> -U <reads.pair.1> <reads.pair.2>   -S <output.prefix>   \\n -k <max.primary.alignments>  --max-seeds <max.seeds.extended>  -min_n_ceil <min.n.ceil>        -min.mismatch.penalty <min.mismatch.penalty>  --np <ambiguous.read.penalty> -read.gap.open.pen <read.gap.open.penalty> -ref.gap.open.pen <reference.gap.open.penalty> --pen-cansplice <penalty.for.canonical.splice.sites> --pen-noncansplice <penalty.for.non-canonical.splice.sites> -min_pen-canintronlen <min.penalty.long.introns.with.canonical.splice.sites> -max_pen-canintronlen <max.penalty.long.introns.with.canonical.splice.sites> --min-intronlen  <minimum.intron.length> --max-intronlen <maximum.intron.length>   -X <maximum.fragment.length.for.paired.alignment> <unpaired.alignments.for.paired.reads> <discordant.alignments.for.paired.reads>   <input.format> <quality.value.scale> <integer.quality.value> <mate.orientations> <novel.splicesites.infile> <ignore.read.qualities> <align> -max.mismatch.penalty <max.mismatch.penalty> <soft.clipping> -min_softclip_penalty <min.softclip.penalty> -max_softclip_penalty <max.softclip.penalty> -max_n_ceil <max.n.ceil> -read.gap.extend.pen <read.gap.extend.penalty> -ref.gap.extend.pen  <reference.gap.extend.pen> <spliced.alignments>  -I <minimum.fragment.length.for.paired.alignment> <secondary.alignments> <max.reads.to.align>   -min.score.align <min.score.align> -max.score.align <max.score.align>   <novel.splicesites> <mapped.reads> <unmapped.reads> -dryRun <dry.run> -min_pen-noncanintronlen <min.penalty.long.introns.with.noncanonical.splice.sites> -max_pen-noncanintronlen <max.penalty.long.introns.with.noncanonical.splice.sites> -p <job.cpuCount>\n```\n\n### 4. Docker Image\nDocker image: genepattern/docker-hisat2\\:v0.12\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "/hisat_wrapper.py",
+  "command_line": "python <libdir>/hisat_wrapper.py  -index <index> -U <reads.pair.1> <reads.pair.2>   -S <output.prefix>   \\n -k <max.primary.alignments>  --max-seeds <max.seeds.extended>  -min_n_ceil <min.n.ceil>        -min.mismatch.penalty <min.mismatch.penalty>  --np <ambiguous.read.penalty> -read.gap.open.pen <read.gap.open.penalty> -ref.gap.open.pen <reference.gap.open.penalty> --pen-cansplice <penalty.for.canonical.splice.sites> --pen-noncansplice <penalty.for.non-canonical.splice.sites> -min_pen-canintronlen <min.penalty.long.introns.with.canonical.splice.sites> -max_pen-canintronlen <max.penalty.long.introns.with.canonical.splice.sites> --min-intronlen  <minimum.intron.length> --max-intronlen <maximum.intron.length>   -X <maximum.fragment.length.for.paired.alignment> <unpaired.alignments.for.paired.reads> <discordant.alignments.for.paired.reads>   <input.format> <quality.value.scale> <integer.quality.value> <mate.orientations> <novel.splicesites.infile> <ignore.read.qualities> <align> -max.mismatch.penalty <max.mismatch.penalty> <soft.clipping> -min_softclip_penalty <min.softclip.penalty> -max_softclip_penalty <max.softclip.penalty> -max_n_ceil <max.n.ceil> -read.gap.extend.pen <read.gap.extend.penalty> -ref.gap.extend.pen  <reference.gap.extend.pen> <spliced.alignments>  -I <minimum.fragment.length.for.paired.alignment> <secondary.alignments> <max.reads.to.align>   -min.score.align <min.score.align> -max.score.align <max.score.align>   <novel.splicesites> <mapped.reads> <unmapped.reads> -dryRun <dry.run> -min_pen-noncanintronlen <min.penalty.long.introns.with.noncanonical.splice.sites> -max_pen-noncanintronlen <max.penalty.long.introns.with.noncanonical.splice.sites> -p <job.cpuCount>",
+  "parameters": [
+    {
+      "name": "index",
+      "description": "Directory or zip file containing a Hisat2 genome index to be aligned to.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "DIRECTORY"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--index",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reads.pair.1",
+      "description": "Unpaired reads file or first mate for paired reads. One or more files containing reads in FASTA or FASTQ format (bz2 and gz compressed files are supported).",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": [
+        "fq",
+        "fastq",
+        "fq.gz",
+        "fastq.gz",
+        "fq.bz2",
+        "fastq.bz2",
+        "fa",
+        "fasta",
+        "fa.gz",
+        "fasta.gz",
+        "fa.bz2",
+        "fasta.bz2"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reads.pair.1",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "The prefix to use for the output file name.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "mapped",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reads.pair.2",
+      "description": "Second mate for paired reads. Zero or more files in FASTA or FASTQ format (bz2 and gz compressed files are supported).",
+      "required": false,
+      "type": "file",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": [
+        "fq",
+        "fastq",
+        "fq.gz",
+        "fastq.gz",
+        "fq.bz2",
+        "fastq.bz2",
+        "fa",
+        "fasta",
+        "fa.gz",
+        "fasta.gz",
+        "fa.bz2",
+        "fasta.bz2"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-2",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.primary.alignments",
+      "description": "HISAT2 searches for up to N distinct, primary alignments for each read, where N equals the integer specified with this parameter. Primary alignments mean alignments whose alignment score is equal or higher than any other alignments. It is possible that multiple distinct alignments have the same score. That is, if `2` is specified, HISAT2 will search for at most 2 distinct alignments. The alignment score for a paired-end alignment equals the sum of the alignment scores of the individual mates. Each reported read or pair alignment beyond the first has the SAM 'secondary' bit (which equals 256) set in its FLAGS field.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.primary.alignments",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.seeds.extended",
+      "description": "HISAT2, like other aligners, uses seed-and-extend approaches. HISAT2 tries to extend seeds to full-length alignments. In HISAT2, --max-seeds is used to control the maximum number of seeds that will be extended. HISAT2 extends up to these many seeds and skips the rest of the seeds. Large values for <max seeds extended>` may improve alignment sensitivity, but HISAT2 is not designed with large values for<max seeds extended> in mind, and when aligning reads to long, repetitive genomes large <max seeds extended> can be very, very slow.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.seeds.extended",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min.n.ceil",
+      "description": "Sets the minimum value in a linear function governing the maximum number of ambiguous characters (usually `N`s and/or `.`s) allowed in a read as a function of read length. specifying `-L,0,0.15` sets the N-ceiling function `f` to `f(x) \\= 0 + 0.15 * x`,\\nwhere x is the read length.  See also\\: [setting function options].  Reads\\nexceeding this ceiling are [filtered out].  Default\\: `L,0,0.15`.\\n`N`s and/or `.`s) allowed in a read as a function of read length.   In these cases the user specifies three parameters\\: (a) a function\\ntype `F`, (b) a constant term `B`, and (c) a coefficient `A`. For instance,\\nspecifying `-L,0,0.15` sets the N-ceiling function `f` to `f(x) \\= 0 + 0.15 * x`,\\nwhere x is the read length",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.n.ceil",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.reads.to.align",
+      "description": "Align the first \\# reads or read pairs from the input (after the `-s`/`--skip` reads or pairs have been skipped), then stop. Mainly useful for testing.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-u",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min.mismatch.penalty",
+      "description": "Sets the  minimum (`MN`) mismatch penalty. A number less than or equal to <max mismatch penalty> (`MX`) and greater than or equal to `MN` is subtracted from the alignment score for each position where a read character aligns to a reference character, the characters do not match, and neither is an `N`. If <ignore read qualities> is specified, the number subtracted quals `MX`. Otherwise, the number subtracted is `MN + floor( (MX-MN)(MIN(Q, 40.0)/40.0) )` where Q is the Phred quality value. Default\\: `MX` \\= 6, `MN` \\= 2.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.mismatch.penalty",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "ambiguous.read.penalty",
+      "description": "Sets penalty for positions where the read, reference, or both, contain an ambiguous character such as `N`.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--ambiguous.read.penalty",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "read.gap.open.penalty",
+      "description": "Sets the read gap open penalty. A read gap of length N gets a penalty of `` + N * ``.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--read.gap.open.penalty",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reference.gap.open.penalty",
+      "description": "Sets the reference gap open penalty. A read gap of length N gets a penalty of `` + N * ``.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reference.gap.open.penalty",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "penalty.for.canonical.splice.sites",
+      "description": "Sets the penalty for each pair of canonical splice sites (e.g. GT/AG). \\n",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--penalty.for.canonical.splice.sites",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "penalty.for.non-canonical.splice.sites",
+      "description": "Sets the penalty for each pair of non-canonical splice sites (e.g. non-GT/AG).",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "12",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--penalty.for.non-canonical.splice.sites",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min.penalty.long.introns.with.canonical.splice.sites",
+      "description": "Sets the minimum in a natural log penalty function for long introns with canonical splice sites so that alignments with shorter introns are preferred to those with longer ones.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "-8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.penalty.long.introns.with.canonical.splice.sites",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.penalty.long.introns.with.canonical.splice.sites",
+      "description": "Sets the maximim in a natural log penalty function for long introns with canonical splice sites so that alignments with shorter introns are preferred to those with longer ones.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.penalty.long.introns.with.canonical.splice.sites",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "minimum.intron.length",
+      "description": "Sets minimum intron length.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "20",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--minimum.intron.length",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "maximum.intron.length",
+      "description": "Sets maximum intron length.\\n",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "500000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--maximum.intron.length",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "maximum.fragment.length.for.paired.alignment",
+      "description": "The maximum fragment length for valid paired-end alignments.This option is valid only with no spliced alignment. E.g. if 100 is specified and a paired-end alignment consists of two 20-bp alignments in the appropriate orientation with a 60-bp gap between them, that alignment is considered valid (as long as the minimum fragment length is also satisfied). A 61-bp gap would not be valid in that case. If trimming options -3 or -5 are also used, the  constraint is applied with respect to the untrimmed mates.\\n\\nThe larger the difference between minimum and maximum fragment lengths, the slower HISAT2 will run. This is because larger differences scan a larger window to determine if a concordant alignment exists. For typical fragment length ranges (200 to 400 nucleotides), HISAT2 is very efficient.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "500",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--maximum.fragment.length.for.paired.alignment",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "unpaired.alignments.for.paired.reads",
+      "description": "By default, when `hisat2` cannot find a concordant or discordant alignment for a pair, it then tries to find alignments for the individual mates.  This option disables that behavior.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "--WRAPPER_IGNORE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": "--WRAPPER_IGNORE"
+        },
+        {
+          "display": "Disabled",
+          "value": "--no-mixed"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--unpaired.alignments.for.paired.reads",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "discordant.alignments.for.paired.reads",
+      "description": "By default, `hisat2` looks for discordant alignments if it cannot find any concordant alignments.  A discordant alignment is an alignment where both mates align uniquely, but that does not satisfy the paired-end constraints (`--fr`/`--rf`/`--ff`, `-I`, `-X`).  This option disables that behavior.\\n",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "--WRAPPER_IGNORE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "No",
+          "value": "--WRAPPER_IGNORE"
+        },
+        {
+          "display": "Disabled",
+          "value": "--no-discordant"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--discordant.alignments.for.paired.reads",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "input.format",
+      "description": "The format of the input reads files.  May be fastQ, fastA, raw (one sequence per line) or Illumina qseq format.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "-q",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "fastQ",
+          "value": "-q"
+        },
+        {
+          "display": "fastA",
+          "value": "-f"
+        },
+        {
+          "display": "raw (one sequence per line)",
+          "value": "-r"
+        },
+        {
+          "display": "Illumina qseq format",
+          "value": "-qseq"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--input.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "quality.value.scale",
+      "description": "Whether to use the Solexa, Phred 33, Phred 64 quality value scale",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "--phred33",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "phred33-Quals",
+          "value": "--phred33"
+        },
+        {
+          "display": "phred64-quals",
+          "value": "--phred64"
+        },
+        {
+          "display": "solexa-quals",
+          "value": "--solexa-quals"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--quality.value.scale",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "integer.quality.value",
+      "description": "Quality values are represented in the read input file as space-separated ASCII integers, e.g., 40 40 30 40..., rather than ASCII characters, e.g., II?I.... Integers are treated as being on the Phred quality scale unless \"Solexa\" is also specified for the <quality value scale>.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "--WRAPPER_IGNORE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "--int-quals"
+        },
+        {
+          "display": "no",
+          "value": "--WRAPPER_IGNORE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--integer.quality.value",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "mate.orientations",
+      "description": "The upstream/downstream mate orientations for a valid paired-end alignment against the forward reference strand.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "--fr",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "first mate forward, second mate reverse (--fr)",
+          "value": "--fr"
+        },
+        {
+          "display": "first mate reverse, second mate forward (--rf)",
+          "value": "--rf"
+        },
+        {
+          "display": "both mates forward (--ff)",
+          "value": "--ff"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--mate.orientations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "novel.splicesites.infile",
+      "description": "An optional list of known splice sites, which HISAT2 makes use of to align reads with small anchors. (this is the output of Novel Splice Sites - see Supplementary Output)",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--novel-splicesite-infile",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "ignore.read.qualities",
+      "description": "When calculating a mismatch penalty, always consider the quality value at the mismatched position to be the highest possible, regardless of the actual value. I.e. input is treated as though all quality values are high. This is also the default behavior when the input doesn't specify quality values",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "--WRAPPER_IGNORE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": "--WRAPPER_IGNORE"
+        },
+        {
+          "display": "yes",
+          "value": "--ignore-quals"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--ignore.read.qualities",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "align",
+      "description": "Align unpaired reads against the forward reference strand only, the reverse-complement (Crick) reference strand only, or both.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "--WRAPPER_IGNORE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "only against forward strand",
+          "value": "--norc"
+        },
+        {
+          "display": "only reverse",
+          "value": "--nofw"
+        },
+        {
+          "display": "both",
+          "value": "--WRAPPER_IGNORE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--align",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.mismatch.penalty",
+      "description": "Sets the maximum (`MX`)  mismatch penalty. A number less than or equal to `MX` and greater than or equal to <min mismatch penalty> (`MN`) is subtracted from the alignment score for each position where a read character aligns to a reference character, the characters do not match, and neither is an `N`. If <ignore read qualities> is specified, the number subtracted quals `MX`. Otherwise, the number subtracted is `MN + floor( (MX-MN)(MIN(Q, 40.0)/40.0) )` where Q is the Phred quality value. Default\\: `MX` \\= 6, `MN` \\= 2.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "6",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.mismatch.penalty",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "soft.clipping",
+      "description": "Allow or disallow soft clipping.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "-WRAPPER_IGNORE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "-WRAPPER_IGNORE"
+        },
+        {
+          "display": "no",
+          "value": "--no-softclip"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--soft.clipping",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.softclip.penalty",
+      "description": "Sets the  minimum (MN) penalty for soft-clipping per base. A number less than or equal to the max softclip penalty (MX) and greater than or equal to MN is subtracted from the alignment score for each position. The number subtracted is MN + floor( (MX-MN)(MIN(Q, 40.0)/40.0) ) where Q is the Phred quality value. Default\\: MX \\= 2, MN \\= 1.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.softclip.penalty",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.softclip.penalty",
+      "description": "Sets the maximum (MX) penalty for soft-clipping per base. A number less than or equal to MX and greater than or equal to the min softclip penalty (MN) is subtracted from the alignment score for each position. The number subtracted is MN + floor( (MX-MN)(MIN(Q, 40.0)/40.0) ) where Q is the Phred quality value. Default\\: MX \\= 2, MN \\= 1.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.softclip.penalty",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.n.ceil",
+      "description": "Sets a maximum in a linear function governing the maximum number of ambiguous characters (usually `N`s and/or `.`s) allowed in a read as a function of read length.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": ".15",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.n.ceil",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "read.gap.extend.penalty",
+      "description": "Sets the read gap extend penalty. A read gap of length N gets a penalty of `` + N * ``.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--read.gap.extend.penalty",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reference.gap.extend.pen",
+      "description": "Sets the reference gap extend penalty. A read gap of length N gets a penalty of `` + N * ``.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reference.gap.extend.pen",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "spliced.alignments",
+      "description": "Disables spliced alignments if set to 'no'.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "--WRAPPER_IGNORE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "--WRAPPER_IGNORE"
+        },
+        {
+          "display": "no",
+          "value": "--no-spliced-alignments"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--spliced.alignments",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.score.align",
+      "description": "Sets minimum on the function governing the minimum alignment score needed for an alignment to be considered \"valid\" (i.e. good enough to report). This is a function of read length. For instance, specifying 0 sets the minimum-score function f to f(x) \\= 0 + -0.6 * x, where x is the read length and -0.6 is the max score align value.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.score.align",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.score.align",
+      "description": "Sets maximum on the function governing the minimum alignment score needed for an alignment to be considered \"valid\" (i.e. good enough to report). This is a function of read length. For instance, specifying -0.6 sets the minimum-score function f to f(x) \\= 0.1 + -0.6 * x, where x is the read length and 0.1 is the min score align value.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "-.2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.score.align",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "minimum.fragment.length.for.paired.alignment",
+      "description": "The minimum fragment length for valid paired-end alignments.This option is valid only with no spliced alignment. E.g. if 60 is specified and a paired-end alignment consists of two 20-bp alignments in the appropriate orientation with a 20-bp gap between them, that alignment is considered valid (as long as the maximum fragment length is also satisfied). A 19-bp gap would not be valid in that case. If trimming options -3 or -5 are also used, the  constraint is applied with respect to the untrimmed mates.\\n\\nThe larger the difference between minimum and maximum fragment lengths, the slower HISAT2 will run. This is because larger differences scan a larger window to determine if a concordant alignment exists. For typical fragment length ranges (200 to 400 nucleotides), HISAT2 is very efficient.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--minimum.fragment.length.for.paired.alignment",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "secondary.alignments",
+      "description": "Report secondary alignments.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "--WRAPPER_IGNORE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": "--WRAPPER_IGNORE"
+        },
+        {
+          "display": "yes",
+          "value": "--secondary"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--secondary.alignments",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "novel.splicesites",
+      "description": "Optional output file for novel splice sites found.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--novel-splicesite-outfile",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "mapped.reads",
+      "description": "Optional\\: write unpaired reads that align at least once to a file.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-mapped.reads",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "unmapped.reads",
+      "description": "Write paired-end reads that align concordantly at least once to file(s).",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-unmapped.reads",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "dry.run",
+      "description": "When true, the module only prints the hisat command-line that would be used to the program's standard output file (stdout.txt) but does not execute the alignment.  Useful for testing or generating a command line to run HISAT2 outside of GenePattern.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "False",
+          "value": "False"
+        },
+        {
+          "display": "True",
+          "value": "True"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--dry.run",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.penalty.long.introns.with.noncanonical.splice.sites",
+      "description": "Sets the minimum in a natural log penalty function for long introns with noncanonical splice sites so that alignments with shorter introns are preferred to those with longer ones.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "-8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.penalty.long.introns.with.noncanonical.splice.sites",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.penalty.long.introns.with.noncanonical.splice.sites",
+      "description": "Sets the maximim in a natural log penalty function for long introns with noncanonical splice sites so that alignments with shorter introns are preferred to those with longer ones.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.penalty.long.introns.with.noncanonical.splice.sites",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/docker-hisat2:v0.12"
+}

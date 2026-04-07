@@ -1,0 +1,159 @@
+{
+  "module_name": "Seurat.QC",
+  "description": "Seurat quality control (First step in the Seurat Suite), using Seurat version 4.0.3.",
+  "author": "Edwin F. Juarez & Jonathan Zamora;UCSD - Mesirov Lab",
+  "input_file_formats": [
+    "gz",
+    "loom",
+    "tar",
+    "tar.gz",
+    "zip"
+  ],
+  "language": "R",
+  "categories": [
+    "preprocess & utilities",
+    "single-cell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:12580:1",
+  "plan": "## Seurat.QC GenePattern Module — Implementation Plan\n\n### 1. Overview\nSeurat.QC is a GenePattern module that Seurat quality control (First step in the Seurat Suite), using Seurat version 4.0.3.\n\n### 2. Parameters\nThe module exposes 9 parameters:\n- Required: file_name, first_feature, second_feature, export_txt\n- Optional: input_file, hca_url, column_name, pattern, third_feature\n\n### 3. Command Line\n```\nRscript --no-save --quiet --no-restore <libdir>seurat_qc.R <input_file><hca_url> --column_name <column_name> --pattern <pattern> --first_feature <first_feature> --second_feature <second_feature> --third_feature <third_feature> --file_name <file_name> --export_txt <export_txt>\n```\n\n### 4. Docker Image\nDocker image: genepattern/seurat-qc\\:3.3\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "seurat_qc.R",
+  "command_line": "Rscript --no-save --quiet --no-restore <libdir>seurat_qc.R <input_file><hca_url> --column_name <column_name> --pattern <pattern> --first_feature <first_feature> --second_feature <second_feature> --third_feature <third_feature> --file_name <file_name> --export_txt <export_txt>",
+  "parameters": [
+    {
+      "name": "input_file",
+      "description": "10x zip file to load or Loom file from HCA.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tar.gz",
+        "gz",
+        "loom",
+        "tar",
+        "tar.gz",
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input_file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "hca_url",
+      "description": "URL to the Project Loom file from the Human Cell Atlas, obtained by the HCA api.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--hca_url",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "column_name",
+      "description": "Column name of percent mitochondrial genes. \\nNote\\: not all datasets have this column, those who do often times name it percent.mt.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "percent.mt",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--column_name",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "pattern",
+      "description": "What pattern to use to label mitochondrial genes [often times this is annotated as MT-].",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "MT-",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--pattern",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "file_name",
+      "description": "Basename of the file to be saved.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "seurat_qcd_dataset",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--file_name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "first_feature",
+      "description": "First feature to plot as a violin plot [recommended to be the number of genes per cell, nFeature_RNA].",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "nFeature_RNA",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--first_feature",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "second_feature",
+      "description": "Second feature to plot as a violin plot [recommended to be the number of reads per cell, nCount_RNA].",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "nCount_RNA",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--second_feature",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "third_feature",
+      "description": "Third feature to plot as a violin plot [typically percent.mt]. Leave blank if you don't want this to be plotted.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "percent.mt",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--third_feature",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "export_txt",
+      "description": "Wether or not to create a TXT file compatible with some other modules (this requires a large amount of memory and for large datasets it causes unpredicted errors).",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "False",
+          "value": "False"
+        },
+        {
+          "display": "True",
+          "value": "True"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--export_txt",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/seurat-qc:3.3"
+}

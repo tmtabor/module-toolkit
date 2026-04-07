@@ -1,0 +1,88 @@
+{
+  "module_name": "CsvToFcs",
+  "description": "Converts a Comma separated values (CSV) file to a Flow Cytometry Standard (FCS) file.",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "input_file_formats": [
+    "csv"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:98527:1",
+  "plan": "## CsvToFcs GenePattern Module — Implementation Plan\n\n### 1. Overview\nCsvToFcs is a GenePattern module that Converts a Comma separated values (CSV) file to a Flow Cytometry Standard (FCS) file.\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: Input.CSV.data.file, Range\n- Optional: Output.FCS.file.name, Data.type\n\n### 3. Command Line\n```\n<java> <java_flags> -jar <libdir>csv2fcs.jar <Input.CSV.data.file> <Output.FCS.file.name> <Range> <Data.type>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "csv2fcs.jar",
+  "command_line": "<java> <java_flags> -jar <libdir>csv2fcs.jar <Input.CSV.data.file> <Output.FCS.file.name> <Range> <Data.type>",
+  "parameters": [
+    {
+      "name": "Input.CSV.data.file",
+      "description": "A CSV file to be converted to FCS.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "csv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-InputFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.FCS.file.name",
+      "description": "The name of the output FCS file.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<Input.CSV.data.file_basename>.fcs",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-OutputFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Range",
+      "description": "Value of the $PnR keyword for all parameters. By default, this tool will try to set the best settings based on the data in the file; use \"auto\", \"auto-exact\", \"BD\", or an integer value.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "auto",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-Range\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Data.type",
+      "description": "Value of the $DATATYPE keyword. By default, this tool will try to set the best settings based on the data in the input CSV file.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "auto",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "auto, default",
+          "value": "auto"
+        },
+        {
+          "display": "integer",
+          "value": "int"
+        },
+        {
+          "display": "floating point",
+          "value": "float"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-DataType\\:",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

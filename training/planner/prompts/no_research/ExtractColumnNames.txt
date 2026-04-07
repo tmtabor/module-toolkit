@@ -1,0 +1,47 @@
+Create a comprehensive structured plan for the GenePattern module for 'ExtractColumnNames'.
+            
+            Tool Information:
+            - Name: ExtractColumnNames
+            - Version: Annotated for GP 1.4
+            - Language: Perl
+            - Description: Lists the sample descriptors from a .res file.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ExtractColumnNames",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "Input filename - .res",
+      "required": true,
+      "default_value": "",
+      "file_format": "res"
+    },
+    {
+      "name": "output",
+      "type": "java.lang.String",
+      "description": "Name of the output file (a .txt extension will be appended)",
+      "required": true,
+      "default_value": "<input.filename_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Justin Lamb, Broad Institute",
+  "command_line": "<perl> <libdir>samples.pl <input.filename> <output>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

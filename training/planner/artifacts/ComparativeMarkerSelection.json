@@ -1,0 +1,307 @@
+{
+  "module_name": "ComparativeMarkerSelection",
+  "description": "Identify differentially expressed genes that can discriminate between distinct classes of samples.",
+  "author": "Joshua Gould, Gad Getz, Stefano Monti",
+  "input_file_formats": [
+    "cls",
+    "gct",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "gene list selection"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:60204:1",
+  "plan": "## ComparativeMarkerSelection GenePattern Module — Implementation Plan\n\n### 1. Overview\nComparativeMarkerSelection is a GenePattern module that Identify differentially expressed genes that can discriminate between distinct classes of samples.\n\n### 2. Parameters\nThe module exposes 14 parameters:\n- Required: input.file, cls.file, test.direction, test.statistic, number.of.permutations, log.transformed.data, complete, balanced, random.seed, smooth.p.values, output.filename\n- Optional: confounding.variable.cls.file, min.std, phenotype.test\n\n### 3. Command Line\n```\njava <java_flags> -Dlibdir\\=<libdir> -cp /opt/genepattern/modules/ComparativeMarkerSelection/colt.jar\\:/opt/genepattern/modules/ComparativeMarkerSelection/commons-math-1.2.jar\\:/opt/genepattern/modules/ComparativeMarkerSelection/gp-modules.jar\\:/opt/genepattern/modules/ComparativeMarkerSelection/Jama-1.0.2.jar\\:/opt/genepattern/modules/ComparativeMarkerSelection/jsci-core.jar\\:/opt/genepattern/modules/ComparativeMarkerSelection/trove.jar org.broadinstitute.marker.MarkerSelection <input.file> <cls.file> <number.of.permutations> <test.direction> <output.filename> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -l<log.transformed.data> -m<min.std> -c<confounding.variable.cls.file> -p<phenotype.test>\n```\n\n### 4. Docker Image\nDocker image: genepattern/comparativemarkerselection\\:v11\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.sh",
+  "command_line": "java <java_flags> -Dlibdir=<libdir> -cp /opt/genepattern/modules/ComparativeMarkerSelection/colt.jar:/opt/genepattern/modules/ComparativeMarkerSelection/commons-math-1.2.jar:/opt/genepattern/modules/ComparativeMarkerSelection/gp-modules.jar:/opt/genepattern/modules/ComparativeMarkerSelection/Jama-1.0.2.jar:/opt/genepattern/modules/ComparativeMarkerSelection/jsci-core.jar:/opt/genepattern/modules/ComparativeMarkerSelection/trove.jar org.broadinstitute.marker.MarkerSelection <input.file> <cls.file> <number.of.permutations> <test.direction> <output.filename> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -l<log.transformed.data> -m<min.std> -c<confounding.variable.cls.file> -p<phenotype.test>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "The input file - .res, .gct. Note that if your data is log transformed, you will need to set the \"log transformed data\" parameter below to \"yes\".",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "res"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cls.file",
+      "description": "The class file - .cls",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cls.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "confounding.variable.cls.file",
+      "description": "The class file containing the confounding variable.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--confounding.variable.cls.file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "test.direction",
+      "description": "The test to perform",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Class 0",
+          "value": "0"
+        },
+        {
+          "display": "Class 1",
+          "value": "1"
+        },
+        {
+          "display": "2 Sided",
+          "value": "2"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--test.direction",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "test.statistic",
+      "description": "The statistic to use",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "SNR",
+          "value": "1"
+        },
+        {
+          "display": "T-Test",
+          "value": "0"
+        },
+        {
+          "display": "SNR (median)",
+          "value": "3"
+        },
+        {
+          "display": "T-Test (median)",
+          "value": "2"
+        },
+        {
+          "display": "T-Test (min std)",
+          "value": "4"
+        },
+        {
+          "display": "SNR (min std)",
+          "value": "5"
+        },
+        {
+          "display": "SNR (median, min std)",
+          "value": "6"
+        },
+        {
+          "display": "T-Test (median, min std)",
+          "value": "7"
+        },
+        {
+          "display": "Paired T-Test",
+          "value": "8"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--test.statistic",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.std",
+      "description": "The minimum standard deviation if test statistic includes min std option",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.std",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "number.of.permutations",
+      "description": "The number of permutations to perform (use 0 to calculate asymptotic p-values using the standard independent two-sample t-test)",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "10000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--number.of.permutations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "log.transformed.data",
+      "description": "Whether the input data has been log transformed",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "true"
+        },
+        {
+          "display": "no",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--log.transformed.data",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "complete",
+      "description": "Whether to perform all possible permutations",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "true"
+        },
+        {
+          "display": "no",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--complete",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "balanced",
+      "description": "Whether to perform balanced permutations",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "true"
+        },
+        {
+          "display": "no",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--balanced",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "random.seed",
+      "description": "The seed of the random number generator used to produce permutations",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "779948241",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--random.seed",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "smooth.p.values",
+      "description": "Whether to smooth p-values",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "true",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "true"
+        },
+        {
+          "display": "no",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--smooth.p.values",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "phenotype.test",
+      "description": "Tests to perform when cls file has more than two classes (Note\\: not fully corrected for multiple hypothesis testing)",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "one versus all",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "one versus all",
+          "value": "one versus all"
+        },
+        {
+          "display": "all pairs",
+          "value": "all pairs"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--phenotype.test",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.filename",
+      "description": "The name of the output file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>.comp.marker.odf",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/comparativemarkerselection:v11"
+}

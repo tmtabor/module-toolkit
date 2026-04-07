@@ -1,0 +1,139 @@
+{
+  "module_name": "ComBat",
+  "description": "Batch Correction - Not intended for use with single-cell RNA-seq data.",
+  "author": "Marc-Danie Nazaire, Broad Institute",
+  "input_file_formats": [
+    "gct",
+    "odf",
+    "res",
+    "txt"
+  ],
+  "language": "any",
+  "categories": [
+    "batch correction"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:19261:1",
+  "plan": "## ComBat GenePattern Module — Implementation Plan\n\n### 1. Overview\nComBat is a GenePattern module that Batch Correction - Not intended for use with single-cell RNA-seq data.\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: input.file, sample.info.file, covariate.columns, output.file\n- Optional: absent.calls.filter, create.prior.plots, prior.method\n\n### 3. Command Line\n```\n<R2.7> <libdir>gp.combat.R parseCmdLine -i<input.file> -s<sample.info.file> -c<covariate.columns> <absent.calls.filter> -p<create.prior.plots> -m<prior.method> -o<output.file> -l<libdir>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "gp.combat.R",
+  "command_line": "<R2.7> <libdir>gp.combat.R parseCmdLine -i<input.file> -s<sample.info.file> -c<covariate.columns> <absent.calls.filter> -p<create.prior.plots> -m<prior.method> -o<output.file> -l<libdir>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "input file - .res, .gct (Note that this module is not intended for use with single-cell RNA-seq data)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "odf",
+        "res"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.info.file",
+      "description": "A file containing information about the samples. The sample info file must contain the three columns\\: Array, Sample, and Batch. Any additional columns are used as covariates in the analysis.(.txt file)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sample.info.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "covariate.columns",
+      "description": "The covariate columns to use in analysis. This is either set to all, none, or a list specifying one or more covariate columns from sample info file to use in the analysis (i.e, 4, 5, 7, ...). If this is set to 'all' then all the covariate columns are used. If this is set to 'none' then none of the covariate columns are used.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "all",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--covariate.columns",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "absent.calls.filter",
+      "description": "The filter to apply to genes with absent calls (a value between 0 and 1). Filters genes with absent calls in 1-(absent calls filter) of the samples. Ignored if input file is not a .res file.\\t",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-f",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "create.prior.plots",
+      "description": "[Temporary deactivated\\! currently the only accepted value accepted by this parameter is \"no\"]Whether to generate prior probability distribution plots. Ignored if non-parametric method is used.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "F",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": "F"
+        },
+        {
+          "display": "no",
+          "value": "F"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--create.prior.plots",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "prior.method",
+      "description": "Empirical Bayes priors distribution estimation method to use. Either a parametric or non-parametric method can be applied. If unsure of which method to use try the parametric method first since it is faster.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "T",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "parametric",
+          "value": "T"
+        },
+        {
+          "display": "non-parametric",
+          "value": "F"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--prior.method",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.file",
+      "description": "Name of batch adjusted output file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>.combat.<input.file_extension>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

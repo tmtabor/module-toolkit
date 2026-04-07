@@ -1,0 +1,48 @@
+Create a comprehensive structured plan for the GenePattern module for 'CytoscapeViewer'.
+            
+            Tool Information:
+            - Name: CytoscapeViewer
+            - Version: Updated to Cytoscape 2.5.2
+            - Language: Java
+            - Description: Visualizes a gene network
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "CytoscapeViewer",
+  "parameters": [
+    {
+      "name": "dataset.file",
+      "type": "FILE",
+      "description": "Dataset file - .res, .gct",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct;res;Dataset"
+    },
+    {
+      "name": "adjacency.matrix.file",
+      "type": "FILE",
+      "description": "Adjacency matrix - .adj",
+      "required": true,
+      "default_value": "",
+      "file_format": "adj"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Visualizer",
+  "author": "Marc-Danie Nazaire, gp-help@broad.mit.edu, Broad Institute",
+  "command_line": "<java> <java_flags> -jar <libdir>cytoscapeViewer.jar <dataset.file> <adjacency.matrix.file> <libdir>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

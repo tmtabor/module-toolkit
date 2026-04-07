@@ -1,0 +1,86 @@
+Create a comprehensive structured plan for the GenePattern module for 'SVM'.
+            
+            Tool Information:
+            - Name: SVM
+            - Version: Added check that the user provided saved model is an SVM model
+            - Language: R
+            - Description: Classify samples using SVM
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "SVM",
+  "parameters": [
+    {
+      "name": "train.data.filename",
+      "type": "FILE",
+      "description": "The training data file - .gct, .res",
+      "required": false,
+      "default_value": "",
+      "file_format": "res;gct"
+    },
+    {
+      "name": "train.cls.filename",
+      "type": "FILE",
+      "description": "The training class file - .cls",
+      "required": false,
+      "default_value": "",
+      "file_format": "cls"
+    },
+    {
+      "name": "saved.model.filename",
+      "type": "FILE",
+      "description": "A saved model from a previous run of SVM",
+      "required": false,
+      "default_value": "",
+      "file_format": "model"
+    },
+    {
+      "name": "test.data.filename",
+      "type": "FILE",
+      "description": "The test data file - .gct, .res",
+      "required": false,
+      "default_value": "",
+      "file_format": "res;gct"
+    },
+    {
+      "name": "test.cls.filename",
+      "type": "FILE",
+      "description": "The test class file - .cls",
+      "required": false,
+      "default_value": "",
+      "file_format": "cls"
+    },
+    {
+      "name": "pred.results.output.file",
+      "type": "java.lang.String",
+      "description": "The name of the output file for prediction results",
+      "required": false,
+      "default_value": "<test.data.filename_basename>.pred.odf"
+    },
+    {
+      "name": "model.output.file",
+      "type": "java.lang.String",
+      "description": "The name of the file containing the saved model",
+      "required": false,
+      "default_value": "<train.data.filename_basename>.model"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Prediction",
+  "author": "Joshua Gould, Broad Institute",
+  "command_line": "<R2.5> <libdir>svm.R mysvm -rf<train.data.filename> -rc<train.cls.filename> -ef<test.data.filename> -ec<test.cls.filename> -pr<pred.results.output.file> -mf<model.output.file> -li<libdir> -sm<saved.model.filename>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

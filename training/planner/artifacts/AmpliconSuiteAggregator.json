@@ -1,0 +1,185 @@
+{
+  "module_name": "AmpliconSuiteAggregator",
+  "description": "Aggregates individual AmpliconSuite runs. Takes in zip files (or .tar.gz) and aggregates the results. Results can directly be used to load onto AmpliconRepository.",
+  "author": "Edwin Huang;Mesirov Lab",
+  "input_file_formats": [
+    "tar.gz",
+    "zip"
+  ],
+  "language": "Python",
+  "categories": [
+    "ecdna"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:24607:1",
+  "plan": "## AmpliconSuiteAggregator GenePattern Module — Implementation Plan\n\n### 1. Overview\nAmpliconSuiteAggregator is a GenePattern module that Aggregates individual AmpliconSuite runs. Takes in zip files (or .tar.gz) and aggregates the results. Results can directly be used to load onto AmpliconRepository.\n\n### 2. Parameters\nThe module exposes 8 parameters:\n- Required: Amplicon.Architect.Results, project_name, accept.license\n- Optional: Amplicon.Repository.Email, run.amplicon.classifier, reference.genome, upload.only, name.map\n\n### 3. Command Line\n```\npython3 /opt/genepatt/AmpliconSuiteAggregator.py -s prod --filelist <Amplicon.Architect.Results> --output_name <project_name> <Amplicon.Repository.Email> --upload_only <upload.only>  <run.amplicon.classifier> --accept_license <accept.license>  <reference.genome> <name.map>\n```\n\n### 4. Docker Image\nDocker image: genepattern/amplicon-suite-aggregator\\:v2.8\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "AmpliconSuiteAggregator.py",
+  "command_line": "python3 /opt/genepatt/AmpliconSuiteAggregator.py -s prod --filelist <Amplicon.Architect.Results> --output_name <project_name> <Amplicon.Repository.Email> --upload_only <upload.only>  <run.amplicon.classifier> --accept_license <accept.license>  <reference.genome> <name.map>",
+  "parameters": [
+    {
+      "name": "Amplicon.Architect.Results",
+      "description": "Compressed (.tar.gz, .zip) files of the results from individual or grouped Amplicon Architect runs.",
+      "required": true,
+      "type": "file",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": [
+        "tar.gz",
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Amplicon.Architect.Results",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "project_name",
+      "description": "Prefix for output name for resulting '.tar.gz'. Result will be named\\: *output_prefix*.tar.gz.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "output",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--project_name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Amplicon.Repository.Email",
+      "description": "If wanting to directly transfer results to AmpliconRepository.org, please enter your email.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--username",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "accept.license",
+      "description": "If uploading to Amplicon Repository, you must agree to our <a href \\= \"https\\://raw.githubusercontent.com/AmpliconSuite/AmpliconRepository/main/licenses/CCv4-BY.txt\">Creative Commons v4 license </a>",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes",
+          "value": "Yes"
+        },
+        {
+          "display": "No",
+          "value": "No"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--accept.license",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "run.amplicon.classifier",
+      "description": "Whether or not to re-run Amplicon Classifier",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "No",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes",
+          "value": "Yes"
+        },
+        {
+          "display": "No",
+          "value": "No"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-c",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "reference.genome",
+      "description": "Reference genome used for Amplicon Architect results in the input.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "GRCh38",
+          "value": "GRCh38"
+        },
+        {
+          "display": "hg38",
+          "value": "hg38"
+        },
+        {
+          "display": "GRCh37",
+          "value": "GRCh37"
+        },
+        {
+          "display": "hg19",
+          "value": "hg19"
+        },
+        {
+          "display": "mm10",
+          "value": "mm10"
+        },
+        {
+          "display": "GRCm38",
+          "value": "GRCm38"
+        },
+        {
+          "display": "GRCh38_viral",
+          "value": "GRCh38_viral"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--ref",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "upload.only",
+      "description": "Upload only mode. Will skip aggregator and upload to server as is.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "No",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "No",
+          "value": "No"
+        },
+        {
+          "display": "Yes",
+          "value": "Yes"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--upload.only",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "name.map",
+      "description": "A two column file providing current identifier for each sample (col 1), and a replacement name (col 2).",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--name_map",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/amplicon-suite-aggregator:v2.8"
+}

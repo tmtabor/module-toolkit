@@ -1,0 +1,477 @@
+{
+  "module_name": "STAR.aligner",
+  "description": "STAR (Spliced Transcripts Alignment to a Reference) 2.7.10b is a fast RNA-seq reads to genome mapper. It differs from other mappers as TopHat in that it gains speed at the expense of consuming more RAM and that it incorporates transcriptome annotation at the indexing build stage rather than at the analysis stage. It can optionally detect non-canonical splices and chimeric transcripts.",
+  "author": "Guy Bottu;V.I.B.-B.I.T.S.",
+  "input_file_formats": [
+    "fa",
+    "fasta",
+    "fastq",
+    "fq",
+    "zip"
+  ],
+  "language": "Perl",
+  "categories": [
+    "RNA-seq"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:12246:1",
+  "plan": "## STAR.aligner GenePattern Module — Implementation Plan\n\n### 1. Overview\nSTAR.aligner is a GenePattern module that STAR (Spliced Transcripts Alignment to a Reference) 2.7.10b is a fast RNA-seq reads to genome mapper. It differs from other mappers as TopHat in that it gains speed at the expense of consuming more RAM and that it incorporates transcriptome annotation at the indexing build stage rather than at the analysis stage. It can optionally detect non-canonical splices and chimeric transcripts.\n\n### 2. Parameters\nThe module exposes 26 parameters:\n- Required: star.index, reads.pair.1, align.read.end.to.end, max.number.mismatches, max.fraction.mistaches, min.overhang.annotated.read, min.overhang.not.annotated.read, min.intron.length, max.intron.length, mates.max.gap, secondary.mapping.mismatches.range, max.multimapping, min.report.canonical.junction.overhang, min.report.noncanonical.junction.overhang, map.only.reported.juntions, two.pass, detect.chimeric.transcripts, output.unmapped.reads, quantify.genes, output.wiggle.file, wiggle.signal, output.format, HI.flag\n- Optional: reads.pair.2, max.reads.to.align, output.prefix\n\n### 3. Command Line\n```\nperl /usr/local/bin/star_aligner_wrapper.pl --index <star.index> --reads1 <reads.pair.1> <reads.pair.2> <max.reads.to.align> --alignendtoend <align.read.end.to.end> --maxNmismatch <max.number.mismatches> --maxFmismatch <max.fraction.mistaches> --minoverhangannot <min.overhang.annotated.read> --minoverhangnotannot <min.overhang.not.annotated.read> --minintronlength <min.intron.length> --maxintronlength <max.intron.length> --matesmaxgap <mates.max.gap> --multimapmismatchrange <secondary.mapping.mismatches.range> --maxmultimap <max.multimapping> --canonicaloverhang <min.report.canonical.junction.overhang> --noncanonicaloverhang <min.report.noncanonical.junction.overhang> --maponlyreportedjunctions <map.only.reported.juntions> --twopass <two.pass> --detectchimeric <detect.chimeric.transcripts> --outputunmapped <output.unmapped.reads> --quantify <quantify.genes> --wiggle <output.wiggle.file> --wigglesignal <wiggle.signal>  --format <output.format> --HIflag <HI.flag> <output.prefix>\n```\n\n### 4. Docker Image\nDocker image: genepattern/star.aligner\\:v0.50\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "star_aligner_wrapper.pl",
+  "command_line": "perl /usr/local/bin/star_aligner_wrapper.pl --index <star.index> --reads1 <reads.pair.1> <reads.pair.2> <max.reads.to.align> --alignendtoend <align.read.end.to.end> --maxNmismatch <max.number.mismatches> --maxFmismatch <max.fraction.mistaches> --minoverhangannot <min.overhang.annotated.read> --minoverhangnotannot <min.overhang.not.annotated.read> --minintronlength <min.intron.length> --maxintronlength <max.intron.length> --matesmaxgap <mates.max.gap> --multimapmismatchrange <secondary.mapping.mismatches.range> --maxmultimap <max.multimapping> --canonicaloverhang <min.report.canonical.junction.overhang> --noncanonicaloverhang <min.report.noncanonical.junction.overhang> --maponlyreportedjunctions <map.only.reported.juntions> --twopass <two.pass> --detectchimeric <detect.chimeric.transcripts> --outputunmapped <output.unmapped.reads> --quantify <quantify.genes> --wiggle <output.wiggle.file> --wigglesignal <wiggle.signal>  --format <output.format> --HIflag <HI.flag> <output.prefix>",
+  "parameters": [
+    {
+      "name": "star.index",
+      "description": "A STAR index. Select a prebuilt index from https\\://datasets.genepattern.org/?prefix\\=data/module_support_files/STAR/ or upload your own as a ZIP file (you can make one using STAR.indexer).",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--star.index",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reads.pair.1",
+      "description": "Unpaired reads or first mate for paired reads, as files in fastA or fastQ format. You can provide several files.",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": [
+        "fa",
+        "fasta",
+        "fastq",
+        "fq"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reads.pair.1",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reads.pair.2",
+      "description": "Second mate for paired reads.<p><b><i>The files and the sequences inside the files must be in the same order as for the first mates.</i></b>",
+      "required": false,
+      "type": "file",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": [
+        "fa",
+        "fasta",
+        "fastq",
+        "fq"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reads2",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.reads.to.align",
+      "description": "Set this if you want to map only a selected set of reads at the top of the input (mainly useful for testing).",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--mapN",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "align.read.end.to.end",
+      "description": "Align reads end to end and count all mistmatches. The default is to use instead \"soft clipping\" at both 5'- and 3'-end, that means to make a local alignment and ignore the contribution of the ends of the read to the final score if this improves the score. <b><i>This can be useful for ChIP-seq and other DNA sequencing applications with reads that have already been quality-trimmed.</i></b>",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--align.read.end.to.end",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.number.mismatches",
+      "description": "Maximum number of mismatches per read. Note that a mate pair is counted as one read.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.number.mismatches",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.fraction.mistaches",
+      "description": "Maximum number of mismatches per read, expressed as the proportion between the number of mismatches and the <b><i>mapped</i></b> length of the read.  Note that a mate pair is counted as one read.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.fraction.mistaches",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.overhang.annotated.read",
+      "description": "Minimum length that read must map at both sides of splice junction in order to accept mapping to a splice junction that is annotated in GTF of tab file.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.overhang.annotated.read",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.overhang.not.annotated.read",
+      "description": "Minimum length that read must map at both sides of splice junction in order to accept de novo discovery of splice junction.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.overhang.not.annotated.read",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.intron.length",
+      "description": "Minimum size of intron. A gap in the alignment between a read and the genome that is smaller is considered a deletion, not an intron.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "21",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.intron.length",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.intron.length",
+      "description": "Maximum size of intron. If a read aligns to the genome with a gap larger than this it is considered a chimeric read. <b><i>The default value of 500,000 is fine-tuned to mammalian genomes, for plant and yeast genomes you will have to decrease it.</i></b>",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "500000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.intron.length",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "mates.max.gap",
+      "description": "Maximum distance between mate pair reads. If reads map to the genome farther apart the fragment is considered to be chimeric. <b><i>The default value of 500,000 is fine-tuned to mammalian genomes, for plant and yeast genomes you will have to decrease it.</i></b>",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "500000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--mates.max.gap",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "secondary.mapping.mismatches.range",
+      "description": "By default STAR only reports reads that map to multiple locations on the genome when they map with the highest possible score. You can ask STAR to report also secondary mappings with up to this much more mismatches than the primary mappings.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--secondary.mapping.mismatches.range",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.multimapping",
+      "description": "Do not report reads that map to more than that many different locations on the genome.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.multimapping",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.report.canonical.junction.overhang",
+      "description": "Criterium for reporting de novo predicted splice junctions in the SJ.tab.out file \\: for canonical splice sites at least one read with at least this overhang is needed.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "12",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.report.canonical.junction.overhang",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.report.noncanonical.junction.overhang",
+      "description": "Criterium for reporting de novo predicted splice junctions in the SJ.tab.out file \\: for noncanonical splice sites at least 3 reads with at least this overhang are needed.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "30",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.report.noncanonical.junction.overhang",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "map.only.reported.juntions",
+      "description": "By default all mapped reads are output in the SAM/BAM file. Set this to yes if you want to bring the SAM/BAM file in agreement with the SJ.tab.out file, by outputting only reads that are not spliced or map to splice junctions that are annotated or have been de novo predicted.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--map.only.reported.juntions",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "two.pass",
+      "description": "Run STAR in 2-pass mode, that is, run STAR a first time, merge the found splice junctions with the splice junction annotation in the index, and run STAR a second time. Consult the documentation for more explanation.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--two.pass",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "detect.chimeric.transcripts",
+      "description": "",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--detect.chimeric.transcripts",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.unmapped.reads",
+      "description": "",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.unmapped.reads",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "quantify.genes",
+      "description": "Write a table with number of reads mapped per gene and a supplementary BAM file with mappings to transcriptome instead of to genome coordinates.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--quantify.genes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.wiggle.file",
+      "description": "Output a \"wiggle\" file for viewing in viewers like IGV or UCSC genome browser.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "None",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "none",
+          "value": "None"
+        },
+        {
+          "display": "file in BedGraph format",
+          "value": "bedGraph"
+        },
+        {
+          "display": "file in WIG format",
+          "value": "wiggle"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.wiggle.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "wiggle.signal",
+      "description": "From which bases to generate the signal for the \"wiggle\" file. By default they are all used, but you can choose to use only the bases at the 5'-end of the 1<sup>st</sup> read (useful for CAGE/RAMPAGE) or only from the 2<sup>nd</sup> mate from read pairs.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "all",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "all",
+          "value": "all"
+        },
+        {
+          "display": "only 5' from read 1",
+          "value": "read1_5p"
+        },
+        {
+          "display": "only from read 2",
+          "value": "read2"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--wiggle.signal",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.format",
+      "description": "",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "SAM",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "SAM unsorted",
+          "value": "SAM"
+        },
+        {
+          "display": "BAM unsorted",
+          "value": "BAM Unsorted"
+        },
+        {
+          "display": "BAM sorted by coordinate",
+          "value": "BAM SortedByCoordinate"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "HI.flag",
+      "description": "Number of \"hits\" with higest score to label as \"primary\" in the SAM/BAM file. If you choose \"only one\" the others are labeled as \"secondary\" (all reads that map with lower than the highest score are labeled \"secondary\").",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "OneBestScore",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "only one",
+          "value": "OneBestScore"
+        },
+        {
+          "display": "all",
+          "value": "AllBestScore"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--HI.flag",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "The prefix to use for the output file names.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "STAR",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--outputprefix",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/star.aligner:v0.50"
+}

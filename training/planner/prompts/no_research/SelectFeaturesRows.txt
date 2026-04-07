@@ -1,0 +1,54 @@
+Create a comprehensive structured plan for the GenePattern module for 'SelectFeaturesRows'.
+            
+            Tool Information:
+            - Name: SelectFeaturesRows
+            - Version: Added support for .snp, .cn, and .loh files
+            - Language: Java
+            - Description: Generate a .res, .gct, .snp, .cn, .loh, or .odf file containing only specified features (i.e. rows).
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "SelectFeaturesRows",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "input file - .res, .gct, .snp, .cn, .loh, or .odf file from which the slice is extracted",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct;res;Dataset;snp;cn;loh"
+    },
+    {
+      "name": "list.filename",
+      "type": "FILE",
+      "description": "text file containing one identifier per line that specifies the rows to select.",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "output",
+      "type": "java.lang.String",
+      "description": "output filename - .res, .gct, .snp, .cn, .loh, .odf",
+      "required": true,
+      "default_value": "<list.filename_basename>.slice"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Gene List Selection",
+  "author": "Joshua Gould, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>SelectFeaturesRows.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.selectfeaturesrows.SelectFeaturesRows <input.filename> <list.filename> <output>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

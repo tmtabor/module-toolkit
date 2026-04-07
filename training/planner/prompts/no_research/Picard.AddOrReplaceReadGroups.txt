@@ -1,0 +1,96 @@
+Create a comprehensive structured plan for the GenePattern module for 'Picard.AddOrReplaceReadGroups'.
+            
+            Tool Information:
+            - Name: Picard.AddOrReplaceReadGroups
+            - Version: Read Group ID is now a required Parameter.
+            - Language: Java
+            - Description: Replaces all read groups in the input file with a new read group and assigns all reads to this read group in the output
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "Picard.AddOrReplaceReadGroups",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "Input file (BAM or SAM).",
+      "required": true,
+      "default_value": "",
+      "file_format": "sam;bam"
+    },
+    {
+      "name": "read.group.id",
+      "type": "java.lang.String",
+      "description": "Read Group ID",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "read.group.library",
+      "type": "java.lang.String",
+      "description": "DNA preparation library. Note that this field is required by the module Picard.MarkDuplicates. It is used to determine which read groups may contain molecular duplicates, in the case where the same DNA library was sequenced on multiple lanes.",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "read.group.platform",
+      "type": "java.lang.String",
+      "description": "Read Group platform (e.g., Illumina, SOLID).",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "read.group.platform.unit",
+      "type": "java.lang.String",
+      "description": "Read Group platform unit (e.g., run barcode).",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "read.group.sample.name",
+      "type": "java.lang.String",
+      "description": "Read Group sample name.",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "read.group.sequencing.center.name",
+      "type": "java.lang.String",
+      "description": "Read Group sequencing center name.",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "read.group.description",
+      "type": "java.lang.String",
+      "description": "Read Group description.",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.lang.String",
+      "description": "A label used to name the output file",
+      "required": true,
+      "default_value": "<input.file_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Picard Tools",
+  "command_line": "<java> <java_flags> -cp <libdir>AddOrReplaceReadGroups.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>gp-AddOrReplaceReadGroups.jar org.genepattern.sam.AddOrReplaceReadGroupsWrapper -inputFileName <input.file> -groupId <read.group.id> -lib <read.group.library> -platform <read.group.platform> -pUnit <read.group.platform.unit> -sample <read.group.sample.name> -center <read.group.sequencing.center.name> -desc <read.group.description> -outputFileName <output.prefix>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

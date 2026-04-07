@@ -1,0 +1,413 @@
+{
+  "module_name": "RNASeQC",
+  "description": "[**Beta Release** Contact gp-help with any issues. Check stdout.txt and stderr.txt for errors] Calculates metrics on aligned RNA-seq data.",
+  "author": "David Deluca, Broad Institute",
+  "input_file_formats": [
+    "bam",
+    "dict",
+    "fa",
+    "fai",
+    "fasta",
+    "gct",
+    "gtf",
+    "list",
+    "txt",
+    "zip"
+  ],
+  "language": "Perl",
+  "categories": [
+    "RNA-seq"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:66467:1",
+  "plan": "## RNASeQC GenePattern Module — Implementation Plan\n\n### 1. Overview\nRNASeQC is a GenePattern module that [**Beta Release** Contact gp-help with any issues. Check stdout.txt and stderr.txt for errors] Calculates metrics on aligned RNA-seq data.\n\n### 2. Parameters\nThe module exposes 23 parameters:\n- Required: bam.files, num.genes, transcript.end.length, output.prefix\n- Optional: sample.info.file, single.end, annotation.gtf, annotation.gtf.file, reference.sequence, reference.sequence.file, reference.sequence.index, reference.sequence.dictionary, transcript.type.field, rRNA.interval.file, rRNA.reference.file.index, num.rRNA.downsampling.reads, transcript.level.metrics, gc.content.file, gc.margin, num.downsampling.reads, correlation.comparison.file, gap.length, GATK.flags\n\n### 3. Command Line\n```\n<perl> <libdir>qcmetrics_wrapper.pl -libdir <libdir> -cache <libdir>../shared/RNASeQC_refSequence_cache/ -jCmd <java> -jarFile RNA-SeQC.jar -b <bam.files> -s <sample.info.file> -g <annotation.gtf> -a <annotation.gtf.file> <rRNA.interval.file> -r <reference.sequence> -rf <reference.sequence.file> -i <reference.sequence.index> -d <reference.sequence.dictionary>  -c <gc.content.file> -f <output.prefix> <rRNA.reference.file.index> -- <transcript.type.field> <correlation.comparison.file> <single.end> <num.downsampling.reads> -e <transcript.end.length> -n <num.genes> <transcript.level.metrics> <gc.margin> <num.rRNA.downsampling.reads> <GATK.flags> -o ./ -jFlags <java_flags>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "qcmetrics_wrapper.pl",
+  "command_line": "<perl> <libdir>qcmetrics_wrapper.pl -libdir <libdir> -cache <libdir>../shared/RNASeQC_refSequence_cache/ -jCmd <java> -jarFile RNA-SeQC.jar -b <bam.files> -s <sample.info.file> -g <annotation.gtf> -a <annotation.gtf.file> <rRNA.interval.file> -r <reference.sequence> -rf <reference.sequence.file> -i <reference.sequence.index> -d <reference.sequence.dictionary>  -c <gc.content.file> -f <output.prefix> <rRNA.reference.file.index> -- <transcript.type.field> <correlation.comparison.file> <single.end> <num.downsampling.reads> -e <transcript.end.length> -n <num.genes> <transcript.level.metrics> <gc.margin> <num.rRNA.downsampling.reads> <GATK.flags> -o ./ -jFlags <java_flags>",
+  "parameters": [
+    {
+      "name": "bam.files",
+      "description": "An indexed BAM file or zipped set of indexed BAM files to be analyzed. If you are supplying a single BAM file, it should be located in the same folder as its associated index file (BAI). (If SortSam is used to index the BAM file, then the BAM and BAI files are located in the same folder.)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip",
+        "bam"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--bam.files",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.info.file",
+      "description": "A TXT format sample info file containing a sample ID, sample file name, and notes column in tab-delimited format. - .txt",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sample.info.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "single.end",
+      "description": "Whether the bam file contains single end reads. Select no for paired-end reads.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "-singleEnd"
+        },
+        {
+          "display": "no",
+          "value": ""
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--single.end",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "annotation.gtf",
+      "description": "A file containing annotations in GTF format. Either an annotation gtf or annotation gtf file must be provided.Note that the provided hg19 reference sequence requires contigs using in the '1' format.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Hg 18, GenCode,'chr1' format contigs",
+          "value": "<libdir>gencode.v3c.annotation.NCBI36.gtf"
+        },
+        {
+          "display": "Hg 19, GenCode,'chr1' format contigs",
+          "value": "<libdir>gencode.v7.annotation.NCBI37.gtf"
+        },
+        {
+          "display": "Hg19, Gencode, '1' format contigs",
+          "value": "<libdir>gencode.v7.annotation_goodContig.gtf"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--annotation.gtf",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "annotation.gtf.file",
+      "description": "A file containing annotations in GTF format. Either an annotation gtf file or annotation gtf must be provided.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gtf"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--annotation.gtf.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reference.sequence",
+      "description": "A FASTA file containing a reference sequence. The reference sequence provided here has an index (.fai) and a sequence dictionary (.dict). Either a reference sequence or reference sequence file (with index and dictionary) must be provided, but not both. Note that the provided hg19 reference sequence requires contigs using in the '1' format.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "",
+          "value": ""
+        },
+        {
+          "display": "Home_sapiens_assembly19",
+          "value": "Homo_sapiens_assembly19"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--reference.sequence",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reference.sequence.file",
+      "description": "A FASTA file containing a reference sequence. The reference sequence must have an index (.fai) and a sequence dictionary (.dict) either in the same location or specified in the reference sequence index and reference sequence dictionary parameters. Reference sequence human_assembly19 is available in the documentation. Click on the \"documentation\" link in the upper right hand corner of this page.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fasta",
+        "fa"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reference.sequence.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reference.sequence.index",
+      "description": "A file containing the index for the reference sequence - .fai",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fai"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reference.sequence.index",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reference.sequence.dictionary",
+      "description": "A file containing the dictionary for the reference sequence. - .dict",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "dict"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reference.sequence.dictionary",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.genes",
+      "description": "The number of top-expressed genes for which to calculate metrics.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "1000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.genes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "transcript.type.field",
+      "description": "Specifies the column of the GTF file in which the transcript type is specified. By default, the module looks for an attribute called transcript_type in the annotation gtf.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-ttype",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "rRNA.interval.file",
+      "description": "A file containing the genomic coordinates of rRNA. - .list",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "list"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-n",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "rRNA.reference.file.index",
+      "description": "zip of index files created by BWA for the supplied rRNA reference file. Required if rRNA reference file is supplied. -.zip",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-BWArRNAIndex",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.rRNA.downsampling.reads",
+      "description": "Downsamples to calculate rRNA rate more efficiently. Default is 1 million. Set to 0 to disable.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "1000000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-rRNAdSampleTarget",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "transcript.end.length",
+      "description": "The length of the 3' or 5' end of a transcript.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "200",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "50",
+          "value": "50"
+        },
+        {
+          "display": "100",
+          "value": "100"
+        },
+        {
+          "display": "200",
+          "value": "200"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--transcript.end.length",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "transcript.level.metrics",
+      "description": "Whether to calculate transcript-level metrics in addition to sample-level metrics.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "-transcriptDetails"
+        },
+        {
+          "display": "no",
+          "value": ""
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--transcript.level.metrics",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gc.content.file",
+      "description": "A file containing GC content for each of the transcripts. The file must be tab-delimited with 2 columns containing transcript name and GC content. The transcript name must appear in the GTF file.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gc.content.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gc.margin",
+      "description": "Used in conjunction with the gc content file to specify the percent gc content to use as boundaries. E.g. 0.25 would set a lower cutoff of 25% and an upper cutoff of 75% (default is 0.375).",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.375",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-gcMargin",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.downsampling.reads",
+      "description": "Perform downsampling on the given number of reads. It randomly samples the specified number of reads in all experimental samples when calculating metrics.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-d",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "correlation.comparison.file",
+      "description": "A GCT file to use to calculate correlation between expression values (only uses first sample if gct file contains more than one sample. Note also that expression values must be log normalized, and the identifiers must match those of the annotation GTF file)",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-corr",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gap.length",
+      "description": "Whether to plot the distribution of gap lengths",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "-gld"
+        },
+        {
+          "display": "no",
+          "value": ""
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--gap.length",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "GATK.flags",
+      "description": "Pass a string of flags directly to the GATK (e.g. \"-DBQ 0\" to set missing base qualities to zero).",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-gatkFlags",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "The prefix to use for the output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<bam.files_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

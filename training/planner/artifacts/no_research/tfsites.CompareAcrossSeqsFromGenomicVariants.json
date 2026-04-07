@@ -1,0 +1,277 @@
+{
+  "module_name": "tfsites.CompareAcrossSeqsFromGenomicVariants",
+  "description": "Take in the genomic coordinates of variants to map how ref/alt sequence changes impact the function of TF binding sites. In biomedical applications, comparisons can be made between reference and alternate alleles that are associated with diseases or changes in gene expression.",
+  "author": "GenePattern Team",
+  "input_file_formats": [
+    "JASPAR",
+    "pickle",
+    "pkl",
+    "tsv",
+    "txt"
+  ],
+  "language": "Python",
+  "categories": [
+    "Variant Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:57538:1",
+  "plan": "## tfsites.CompareAcrossSeqsFromGenomicVariants GenePattern Module — Implementation Plan\n\n### 1. Overview\ntfsites.CompareAcrossSeqsFromGenomicVariants is a GenePattern module that Take in the genomic coordinates of variants to map how ref/alt sequence changes impact the function of TF binding sites. In biomedical applications, comparisons can be made between reference and alternate alleles that are associated with diseases or changes in gene expression.\n\n### 2. Parameters\nThe module exposes 16 parameters:\n- Required: genome.file, variant.file, pos.index.type, window.size, analysis.name, minimum.binding.change\n- Optional: tf.affinity.information, tf.affinity.files, minimum.pwm.score, pwm.input, motif.input.file, motif.input.format, motif.filter.keywords, motif.use.pseudocounts, motif.background.frequencies, motif.output.name\n\n### 3. Command Line\n```\npython /build/tfsites-webportal/06-compareTfSitesAcrossSequencesFromGenomicVariants/06-combined-generateMotifDatabase-and-compareTfSitesAcrossSequencesFromGenomicVariants.py -g <genome.file> -v <variant.file> -w <window.size>  <tf.affinity.information> <tf.affinity.files>  <pwm.input> -m <minimum.binding.change> -s <minimum.pwm.score> -t <pos.index.type> -n <analysis.name> <motif.input.file> <motif.input.format> <motif.filter.keywords> <motif.use.pseudocounts> <motif.background.frequencies>  <motif.output.name> -d .\n```\n\n### 4. Docker Image\nDocker image: genepattern/tfsites\\:17.0.16\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "06-combined-generateMotifDatabase-and-compareTfSitesAcrossSequencesFromGenomicVariants.py",
+  "command_line": "python /build/tfsites-webportal/06-compareTfSitesAcrossSequencesFromGenomicVariants/06-combined-generateMotifDatabase-and-compareTfSitesAcrossSequencesFromGenomicVariants.py -g <genome.file> -v <variant.file> -w <window.size>  <tf.affinity.information> <tf.affinity.files>  <pwm.input> -m <minimum.binding.change> -s <minimum.pwm.score> -t <pos.index.type> -n <analysis.name> <motif.input.file> <motif.input.format> <motif.filter.keywords> <motif.use.pseudocounts> <motif.background.frequencies>  <motif.output.name> -d .",
+  "parameters": [
+    {
+      "name": "genome.file",
+      "description": "Pickled genome file that corresponds to the genomic coordinates provided. This is used to extract the sequences to be compared. Some genomes are available on the <a href\\=\"https\\://datasets-tfsites-org.s3.us-east-2.amazonaws.com/index.html?prefix\\=hosted_data/genomes/binary/\">TFSites hosted data S3 bucket.</a>",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": "https\\://datasets-tfsites-org.s3.us-east-2.amazonaws.com/hosted_data/genomes/binary/hg19.fa.chr2seq.pydict.pickle",
+      "file_formats": [
+        "pickle",
+        "pkl"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--genome.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "variant.file",
+      "description": "Tab-separated file containing the list of genomic coordinates to analyze. There should be at least 5 columns in this file, including the chromosome, position, reference allele, alternate + allele, and hypothesis (values can include gof/lof/both/na).",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--variant.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "pos.index.type",
+      "description": "Specify whether position is zero or one indexed.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "0",
+          "value": "0"
+        },
+        {
+          "display": "1",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--pos.index.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "window.size",
+      "description": "Length of the binding sites that are being analyzed. This will be used to determine the number of nucleotides to include on each side of a variant when extracting the surrounding sequence.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--window.size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "tf.affinity.information",
+      "description": "File containing all the information for the transcription factors being analyzed, including its name, binding site definition, desired color on the plot, any PBM relative affinity data, and any PFM relative score data.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-a",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "tf.affinity.files",
+      "description": "TF affinity files referenced in the tf affinity information",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-f",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "analysis.name",
+      "description": "Name of the analysis. Used as the prefix of all output filenames.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "output",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--analysis.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "minimum.pwm.score",
+      "description": "The minimum PWM binding score to predict a site",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--minimum.pwm.score",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "pwm.input",
+      "description": "JASPAR formatted file with multiple PWMs. You can generate a PWM with the tfsites.GenerateMotifDatabase module.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "JASPAR",
+        "tsv",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-p",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "minimum.binding.change",
+      "description": "The minimum change of affinity or PWM binding score classify as \"increase\" or \"decrease\" in score or affinity.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--minimum.binding.change",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "motif.input.file",
+      "description": "File containing matrix data for motif database generation (JASPAR format). If provided, motif database will be generated first.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_input_file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.input.format",
+      "description": "Specify whether input file contains PFMs or PWMs. Required if motif input file is provided.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "pfm",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "PFM",
+          "value": "pfm"
+        },
+        {
+          "display": "PWM",
+          "value": "pwm"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--motif_input_format",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.filter.keywords",
+      "description": "File containing keywords to filter motifs during database generation.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_filter_keywords",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.use.pseudocounts",
+      "description": "Whether to use pseudocounts when generating motif database.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--motif_use_pseudocounts",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.background.frequencies",
+      "description": "Background frequency for each nucleotide (comma-separated string in order of ATCG).",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.25,0.25,0.25,0.25",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_background_frequencies",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.output.name",
+      "description": "Name of motif database output file. If not specified, temporary file will be created.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "generated_motif_database.txt",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_output_name",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/tfsites:17.0.16"
+}

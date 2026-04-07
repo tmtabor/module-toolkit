@@ -1,0 +1,110 @@
+Create a comprehensive structured plan for the GenePattern module for 'CoxRegression'.
+            
+            Tool Information:
+            - Name: CoxRegression
+            - Version: Modified the input.cls.filename parameter to be optional
+            - Language: R
+            - Description: Cox regression using clinical data and .cls file
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "CoxRegression",
+  "parameters": [
+    {
+      "name": "input.surv.data.filename",
+      "type": "FILE",
+      "description": "input clinical data. Case ID in 1st column (.txt file)",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "input.cls.filename",
+      "type": "FILE",
+      "description": "input class information (.cls file)",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "",
+      "required": true,
+      "default_value": "CoxRegression_result"
+    },
+    {
+      "name": "time",
+      "type": "java.lang.String",
+      "description": "Column name for survival time",
+      "required": true,
+      "default_value": "time"
+    },
+    {
+      "name": "status",
+      "type": "java.lang.String",
+      "description": "Column name for censor (0\\: censored/alive, 1\\: event/death)",
+      "required": true,
+      "default_value": "status"
+    },
+    {
+      "name": "variable.continuous",
+      "type": "java.lang.String",
+      "description": "(e.g. age,labdata1,...)",
+      "required": true,
+      "default_value": "NA"
+    },
+    {
+      "name": "variable.category",
+      "type": "java.lang.String",
+      "description": "(e.g. sex,cls,grade,...)",
+      "required": true,
+      "default_value": "NA"
+    },
+    {
+      "name": "variable.interaction.terms",
+      "type": "java.lang.String",
+      "description": "(e.g. sex\\:cls,sex\\:grade,...)",
+      "required": true,
+      "default_value": "NA"
+    },
+    {
+      "name": "strata",
+      "type": "java.lang.String",
+      "description": "Fit is done for each strata",
+      "required": true,
+      "default_value": "NA"
+    },
+    {
+      "name": "input.subgroup",
+      "type": "java.lang.String",
+      "description": "(e.g. cls\\:2) *only one subgroup can be specified",
+      "required": true,
+      "default_value": "NA"
+    },
+    {
+      "name": "variable.selection",
+      "type": "java.lang.String",
+      "description": "",
+      "required": true,
+      "default_value": "none",
+      "choices": "none\\=no;both\\=Stepwise selection;forward\\=Forward selection;backward\\=Backward selection"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "Survival Analysis",
+  "task_type": "Survival Analysis",
+  "author": "Yujin Hoshida (Broad Institute)",
+  "command_line": "<R> <libdir>CoxRegression.GP.ez.R parseCmdLine -inp<input.surv.data.filename> -cls<input.cls.filename> -out<output.file> -tim<time> -sta<status> -con<variable.continuous> -cat<variable.category> -int<variable.interaction.terms> -str<strata> -sub<input.subgroup> -sel<variable.selection>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,56 @@
+Create a comprehensive structured plan for the GenePattern module for 'VennDiagram'.
+            
+            Tool Information:
+            - Name: VennDiagram
+            - Version: latest
+            - Language: Java
+            - Description: Displays a Venn diagram
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "VennDiagram",
+  "parameters": [
+    {
+      "name": "feature.list.one",
+      "type": "FILE",
+      "description": "Feature list one - .grp, .txt",
+      "required": true,
+      "default_value": "",
+      "file_format": "grp;txt"
+    },
+    {
+      "name": "feature.list.two",
+      "type": "FILE",
+      "description": "Feature list two - .grp, .txt",
+      "required": true,
+      "default_value": "",
+      "file_format": "grp;txt"
+    },
+    {
+      "name": "feature.list.three",
+      "type": "FILE",
+      "description": "Feature list three - .grp, .txt",
+      "required": false,
+      "default_value": "",
+      "file_format": "grp;txt"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Visualizer",
+  "author": "GenePattern",
+  "command_line": "<java> <java_flags> -cp <libdir>gp-modules.jar org.genepattern.gui.venn.VennDiagram <feature.list.one> <feature.list.two> <feature.list.three>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

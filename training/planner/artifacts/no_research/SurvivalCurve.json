@@ -1,0 +1,369 @@
+{
+  "module_name": "SurvivalCurve",
+  "description": "Draws a survival curve based on a cls file",
+  "author": "Yujin Hoshida (Broad Institute)",
+  "input_file_formats": [
+    "cls",
+    "txt"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:96986:1",
+  "plan": "## SurvivalCurve GenePattern Module — Implementation Plan\n\n### 1. Overview\nSurvivalCurve is a GenePattern module that Draws a survival curve based on a cls file\n\n### 2. Parameters\nThe module exposes 19 parameters:\n- Required: input.surv.data.file, time.field, print.fit.results, line.type.color.assign, line.width, time.conversion, surv.function.lower, surv.function.higher, curve.type, show.conf.interval, add.legend, legend.position, output.filename\n- Optional: input.cls.file, censor.field, cls.field, manual.line.type, manual.line.color, max.time\n\n### 3. Command Line\n```\n<R2.7> <libdir>SurvivalCurve.R SurvivalCurve <input.surv.data.file> -c<input.cls.file> <output.filename> <time.field> <censor.field> -f<cls.field> <print.fit.results> <line.type.color.assign> -lt<manual.line.type> -lc<manual.line.color> <line.width> <time.conversion> -m<max.time> <surv.function.lower> <surv.function.higher> <curve.type> <show.conf.interval> <add.legend> <legend.position>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "SurvivalCurve.R",
+  "command_line": "<R2.7> <libdir>SurvivalCurve.R SurvivalCurve <input.surv.data.file> -c<input.cls.file> <output.filename> <time.field> <censor.field> -f<cls.field> <print.fit.results> <line.type.color.assign> -lt<manual.line.type> -lc<manual.line.color> <line.width> <time.conversion> -m<max.time> <surv.function.lower> <surv.function.higher> <curve.type> <show.conf.interval> <add.legend> <legend.position>",
+  "parameters": [
+    {
+      "name": "input.surv.data.file",
+      "description": "input clinical data including survival time & censor status -.txt",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.surv.data.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "input.cls.file",
+      "description": "Class information file -.cls",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.cls.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "time.field",
+      "description": "Name of survival time field",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "time",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--time.field",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "censor.field",
+      "description": "Name of survival time field (value should be \"event\\:1, censor\\:0\")",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "status",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--censor.field",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cls.field",
+      "description": "Name of class field in survival data file (optional)",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cls.field",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "print.fit.results",
+      "description": "Output file name for survival fit results",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "F",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "T"
+        },
+        {
+          "display": "no",
+          "value": "F"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--print.fit.results",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "line.type.color.assign",
+      "description": "Assign line type/color automatically/manually?",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "automatic",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "automatic",
+          "value": "automatic"
+        },
+        {
+          "display": "manual",
+          "value": "manual"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--line.type.color.assign",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "manual.line.type",
+      "description": "e.g. 1,2,3,... (1\\: solid, 2\\: dashed, 3\\: dotted, 4\\: dot-dashed)",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--manual.line.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "manual.line.color",
+      "description": "e.g. black, blue, red, ...",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--manual.line.color",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "line.width",
+      "description": "Line width",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "thin",
+          "value": "1"
+        },
+        {
+          "display": "thick",
+          "value": "2"
+        },
+        {
+          "display": "thickest",
+          "value": "3"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--line.width",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "time.conversion",
+      "description": "Survival time conversion",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "none",
+          "value": "1"
+        },
+        {
+          "display": "days to years",
+          "value": "365.25"
+        },
+        {
+          "display": "months to years",
+          "value": "12"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--time.conversion",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.time",
+      "description": "Maximum survival time (in original scale)",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.time",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "surv.function.lower",
+      "description": "Lower limit of y axis range",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--surv.function.lower",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "surv.function.higher",
+      "description": "Upper limit of y axis range",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--surv.function.higher",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "curve.type",
+      "description": "Type of survival curve",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "log",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "survival",
+          "value": "log"
+        },
+        {
+          "display": "event",
+          "value": "event"
+        },
+        {
+          "display": "cumulative hazard",
+          "value": "cumhaz"
+        },
+        {
+          "display": "complimentary log-log survival",
+          "value": "cloglog"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--curve.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "show.conf.interval",
+      "description": "Show confidence inteval?",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": "0"
+        },
+        {
+          "display": "yes",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--show.conf.interval",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "add.legend",
+      "description": "Show legend?",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "T",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "T"
+        },
+        {
+          "display": "no",
+          "value": "F"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--add.legend",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "legend.position",
+      "description": "Position of legend",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "left-bottom",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "left-bottom",
+          "value": "left-bottom"
+        },
+        {
+          "display": "left-top",
+          "value": "left-top"
+        },
+        {
+          "display": "right-bottom",
+          "value": "right-bottom"
+        },
+        {
+          "display": "right-top",
+          "value": "right-top"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--legend.position",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "Name for output files",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.surv.data.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

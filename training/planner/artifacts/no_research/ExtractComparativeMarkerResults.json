@@ -1,0 +1,166 @@
+{
+  "module_name": "ExtractComparativeMarkerResults",
+  "description": "Creates a derived dataset and feature list file from the results of ComparativeMarkerSelection",
+  "author": "Joshua Gould",
+  "input_file_formats": [
+    "Comparative Marker Selection",
+    "Dataset",
+    "gct",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:77137:1",
+  "plan": "## ExtractComparativeMarkerResults GenePattern Module — Implementation Plan\n\n### 1. Overview\nExtractComparativeMarkerResults is a GenePattern module that Creates a derived dataset and feature list file from the results of ComparativeMarkerSelection\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: comparative.marker.selection.filename, dataset.filename, base.output.name\n- Optional: statistic, min, max, number.of.neighbors\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>ExtractComparativeMarkerResults.jar edu.mit.broad.modules.marker.CreateMarkersFileModule <comparative.marker.selection.filename> <dataset.filename> -f<statistic> -n<min> -x<max> -s<number.of.neighbors> -o<base.output.name>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "gp-modules.jar<path.separator><libdir>ExtractComparativeMarkerResults.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>ExtractComparativeMarkerResults.jar edu.mit.broad.modules.marker.CreateMarkersFileModule <comparative.marker.selection.filename> <dataset.filename> -f<statistic> -n<min> -x<max> -s<number.of.neighbors> -o<base.output.name>",
+  "parameters": [
+    {
+      "name": "comparative.marker.selection.filename",
+      "description": "The results from ComparativeMarkerSelection - .odf",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "Comparative Marker Selection"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--comparative.marker.selection.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "dataset.filename",
+      "description": "The dataset file used to select markers - .gct, .res, Dataset",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "res",
+        "Dataset"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dataset.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "statistic",
+      "description": "The statistic to filter features on",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Bonferroni",
+          "value": "Bonferroni"
+        },
+        {
+          "display": "FDR(BH)",
+          "value": "FDR(BH)"
+        },
+        {
+          "display": "Feature P",
+          "value": "Feature P"
+        },
+        {
+          "display": "Feature P High",
+          "value": "Feature P High"
+        },
+        {
+          "display": "Feature P Low",
+          "value": "Feature P Low"
+        },
+        {
+          "display": "Fold Change",
+          "value": "Fold Change"
+        },
+        {
+          "display": "FWER",
+          "value": "FWER"
+        },
+        {
+          "display": "maxT",
+          "value": "maxT"
+        },
+        {
+          "display": "Q Value",
+          "value": "Q Value"
+        },
+        {
+          "display": "Rank",
+          "value": "Rank"
+        },
+        {
+          "display": "Score",
+          "value": "Score"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--statistic",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min",
+      "description": "Select features with statistic >\\= min",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max",
+      "description": "Select features with statistic <\\= max",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "number.of.neighbors",
+      "description": "Number of neighbors to select by score in each direction",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--number.of.neighbors",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "base.output.name",
+      "description": "The base name for the output files",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<comparative.marker.selection.filename_basename>.filt",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--base.output.name",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

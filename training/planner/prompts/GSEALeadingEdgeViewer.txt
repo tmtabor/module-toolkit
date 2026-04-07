@@ -1,0 +1,461 @@
+Create a comprehensive structured plan for the GenePattern module for 'GSEALeadingEdgeViewer'.
+            
+            Tool Information:
+            - Name: GSEALeadingEdgeViewer
+            - Version: Updated to the GSEA 4.2.3 code base, removing Log4J entirely from the code base.
+            - Language: Java
+            - Description: Leading Edge Viewer for GSEA results
+            
+            Research Results:
+            Now I have all the data needed to deliver the comprehensive research report. Here is the complete, structured analysis:
+
+---
+
+# 🧬 Comprehensive Research Report: GSEALeadingEdgeViewer
+
+**Module Version:** v5.1 | **Algorithm Base:** GSEA 4.2.3 | **Language:** Java | **Author:** Broad Institute
+
+---
+
+## 1. 🎯 Tool Purpose & Scientific Applications
+
+### What is GSEALeadingEdgeViewer?
+
+GSEALeadingEdgeViewer is a **post-analysis visualization module** for Gene Set Enrichment Analysis (GSEA) that focuses specifically on **leading-edge subset analysis**. It serves as the downstream visual interpretation layer for GSEA results, transforming the statistical output of GSEA into four richly informative biological visualizations.
+
+### Biological Foundation of Leading-Edge Analysis
+
+The concept of the leading-edge subset is formally defined in the landmark GSEA paper:
+
+> **Subramanian A, Tamayo P, et al. (2005).** *Gene set enrichment analysis: a knowledge-based approach for interpreting genome-wide expression profiles.* **PNAS 102(43):15545–50.** PMID: [16199517](https://pubmed.ncbi.nlm.nih.gov/16199517/)
+
+**Definition:** The leading-edge subset consists of all genes in a gene set **S** that appear in the ranked gene list **before the point at which the running enrichment score (ES) achieves its maximum deviation from zero**. Mathematically, for a positively enriched gene set, this is the "head" of the ranked list up to the ES peak; for a negatively enriched gene set, it is the "tail."
+
+```
+Ranked Gene List (most correlated → least correlated)
+|━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|
+ Gene1  Gene2  Gene3 [█ Set Gene] ...  [█ Set Gene] ...
+        ↑ Running ES builds here
+                              ↑ ES PEAK = leading edge boundary
+|← — — — LEADING EDGE SUBSET — — — →|
+(Core genes driving the enrichment signal)
+```
+
+### Scientific Applications
+
+| Application Domain | How GSEALeadingEdgeViewer Is Used |
+|---|---|
+| **Pathway Biology** | Identify which specific genes within an enriched pathway are most active |
+| **Mechanism Discovery** | Find shared gene members driving enrichment across multiple pathways |
+| **Cross-Pathway Analysis** | Visualize overlap between signaling pathways, identify hub genes |
+| **Transcriptomics QC** | Validate that enrichment is driven by biologically coherent core genes |
+| **Comparative Genomics** | Compare leading edge subsets across conditions or experiments |
+| **Cancer Biology** | Identify driver genes within enriched oncogenic/tumor suppressor pathways |
+| **Immunology** | Dissect immune pathway responses to treatments or infections |
+| **Drug Target Discovery** | Pinpoint high-priority target genes appearing across multiple enriched gene sets |
+
+A published application is found in:
+> *Leading edge analysis of transcriptomic changes during pseudorabies virus infection.* **PMC5066188** — demonstrates applied use of all four GSEALeadingEdgeViewer graph types in peer-reviewed virology/immunology research.
+
+The addition of the leading edge analysis component to GSEA is documented in:
+> *GSEA-P: a desktop application for Gene Set Enrichment Analysis.* **Bioinformatics 23(23):3251 (2007).** PMID: [17644558](https://pubmed.ncbi.nlm.nih.gov/17644558/)
+
+---
+
+## 2. 📁 Input/Output Formats & Requirements
+
+### Input Requirements
+
+#### Primary Input: GSEA Result ZIP Archive (`gsea.result.zip`)
+
+This is the **only required input** — the complete `.zip` file produced by either the GSEA or GSEAPreranked GenePattern modules.
+
+**ZIP Archive Internal Structure:**
+```
+my_analysis.GseaPreranked.XXXXXXXXXX.zip
+│
+├── edb/                          ← CRITICAL: EDB folder
+│   ├── results.edb               ← XML enrichment database (primary data source)
+│   └── gene_sets.gmt             ← GMT file filtered to expressed genes
+│
+├── index.html                    ← Main GSEA HTML report
+├── gsea_report_for_na_pos.html   ← Positively enriched sets report
+├── gsea_report_for_na_neg.html   ← Negatively enriched sets report
+├── gsea_report_for_na_pos.tsv    ← TSV summary table (pos enriched)
+├── gsea_report_for_na_neg.tsv    ← TSV summary table (neg enriched)
+├── GENESET_NAME.html             ← Per-gene-set detail pages
+├── GENESET_NAME.png              ← Enrichment score plots
+└── *.gct                         ← Expression subset files for heatmaps
+```
+
+#### EDB File Format Deep Dive
+
+The `results.edb` file is an **XML-based Enrichment DataBase** — the machine-readable backbone of GSEA results:
+
+```xml
+<EDB name="analysis_name" db="gene_sets.gmt">
+  <DTG
+    RANKED_LIST="my_ranked_list"
+    GENESET="gene_sets.gmt#HALLMARK_OXIDATIVE_PHOSPHORYLATION"
+    ES="0.742"
+    NES="1.998"
+    NP="0.0"
+    FDR="0.0"
+    FWER="0.0"
+    HIT_INDICES="3 7 12 19 ..."       ← Positions of set members in ranked list
+    RANK_SCORE="..."
+    CORE_ENRICHMENT="Gene1|Gene2|..."  ← Leading edge genes
+  />
+  ...
+</EDB>
+```
+
+Key fields extracted for leading edge analysis:
+| XML Field | Description |
+|---|---|
+| `GENESET` | Gene set identifier linking to GMT |
+| `ES` | Enrichment Score (raw) |
+| `NES` | Normalized Enrichment Score |
+| `NP` | Nominal p-value |
+| `FDR` | False Discovery Rate q-value |
+| `FWER` | Family-wise error rate p-value |
+| `HIT_INDICES` | Ranked list positions of all set member genes |
+| `CORE_ENRICHMENT` | Pipe-separated leading edge gene identifiers |
+
+### Output Files
+
+| Output | Format | Description |
+|---|---|---|
+| **HTML Leading Edge Report** | `.html` | Primary output — interactive report with all four visualization graphs |
+| **Heat Map Image** | `.png` / embedded | Gene set × gene membership matrix visualization |
+| **Set-to-Set Overlap Image** | `.png` / embedded | Pairwise overlap matrix between leading edge subsets |
+| **Gene-to-Set Image** | `.png` / embedded | Gene membership across multiple gene sets |
+| **Statistics Summary** | `.png` / embedded | Bar chart of leading edge subset metrics |
+| **Data Tables** | Embedded HTML tables | Numerical overlap and membership data |
+
+---
+
+## 3. 🔬 The Four Visualization Graphs (Core Scientific Output)
+
+This is the heart of GSEALeadingEdgeViewer. When "Run leading edge analysis" is executed, four graphs are generated:
+
+### Graph 1: Heat Map 🗺️
+```
+             Gene1  Gene2  Gene3  Gene4  Gene5  Gene6
+HALLMARK_A    [1]    [1]    [0]    [1]    [1]    [0]
+HALLMARK_B    [1]    [0]    [1]    [1]    [0]    [1]
+HALLMARK_C    [0]    [1]    [1]    [0]    [1]    [1]
+              (1 = gene IS in leading edge subset for that gene set)
+```
+- **Rows:** Gene sets
+- **Columns:** Genes in leading edge subsets
+- **Cell value:** Binary (1/0) — gene IS or IS NOT in the leading edge subset
+- **Color coding:** Ranges from lowest expression/rank to highest
+- **Clustering:** Gene sets are clustered by similarity of their leading edge subsets
+- **Biological insight:** Dark vertical "stripes" reveal genes shared across many gene sets — these are the highest-priority biological drivers
+
+### Graph 2: Set-to-Set Overlap 🔄
+- Displays an **N × N pairwise overlap matrix** between all selected gene sets
+- Cell value represents the count (or fraction) of genes shared between the leading edge subsets of two gene sets
+- **Biological insight:** Reveals which pathways share mechanistic gene cores; dense overlap suggests co-regulation or convergent biology
+
+### Graph 3: Gene-to-Set Membership 📊
+- Displays **how many gene sets each leading-edge gene belongs to**
+- Essentially a histogram/bar chart of gene membership frequency
+- **Biological insight:** Genes appearing in many leading edge subsets simultaneously are potential **master regulators** or **hub genes** of biological interest — high-value targets for follow-up experiments
+
+### Graph 4: Set Statistics Summary 📈
+- Summarizes enrichment statistics (ES, NES, gene set size, leading edge size) for each selected gene set
+- Bar chart format for quick comparison
+- **Biological insight:** Enables rapid comparative ranking of gene set contributions
+
+---
+
+## 4. ⚙️ Parameter Analysis & Configuration
+
+### Complete Parameter Catalog
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `gsea.result.zip` | File | ✅ YES | — | ZIP output from GSEA or GSEAPreranked module |
+| `selected.gene.sets` | Text | ❌ No | *(all sets)* | Comma-separated gene set names to analyze |
+| `gene.set.name.delimiter` | Text | ❌ No | `,` (comma) | Alternate delimiter for gene set name list |
+| `output.file.name` | Text | ❌ No | Auto-generated | Base name for output HTML report |
+
+### Parameter Usage Patterns
+
+**Pattern 1 — Full Analysis (Analyze All Gene Sets):**
+```
+gsea.result.zip = my_gsea_results.zip
+selected.gene.sets = [leave blank]
+```
+
+**Pattern 2 — Focused Subset Analysis (Specific Gene Sets):**
+```
+gsea.result.zip = my_gsea_results.zip
+selected.gene.sets = HALLMARK_OXIDATIVE_PHOSPHORYLATION,HALLMARK_MYC_TARGETS_V1,HALLMARK_P53_PATHWAY
+```
+
+**Pattern 3 — Gene Sets with Commas in Names (Use Alternate Delimiter):**
+```
+gsea.result.zip = my_gsea_results.zip
+selected.gene.sets = REACTOME_SIGNALING_BY_RAS;KEGG_MAPK_SIGNALING_PATHWAY
+gene.set.name.delimiter = ;
+```
+
+### Parameter Validation Rules
+
+| Validation Rule | Details |
+|---|---|
+| **Gene set names are case-sensitive** | Must match exactly as they appear in the GSEA results |
+| **ZIP must contain EDB folder** | Without `edb/results.edb`, the module will fail |
+| **Gene set names must exist in results** | Non-existent names will be silently skipped or cause errors |
+| **Delimiter cannot appear in gene set names** | Choose delimiter carefully based on naming conventions |
+
+---
+
+## 5. 🛠️ Installation & Dependency Requirements
+
+### Runtime Dependencies
+
+| Dependency | Version | Notes |
+|---|---|---|
+| **Java JVM** | Java 11+ | Required for execution; module ships with bundled JVM in GenePattern |
+| **GSEA Codebase** | 4.2.3 | Full GSEA library bundled within module |
+| **Log4J** | ❌ REMOVED | Eliminated entirely in v5 (GSEA 4.2.3 security release) |
+| **GenePattern Server** | 3.9.11+ | For server-based execution |
+
+### Security: The Log4J Removal Story
+
+The v5 update is critically significant from a security perspective:
+
+```
+⚠️ CVE-2021-44228 ("Log4Shell") — Critical CVSS 10.0 vulnerability
+   ├── Affected: Log4J 2.x versions < 2.17.0
+   ├── Impact: Remote code execution via JNDI injection
+   ├── GSEA 4.2.1: Updated to Log4J 2.17.0
+   ├── GSEA 4.2.2: Updated to Log4J 2.17.1
+   └── GSEA 4.2.3 (THIS VERSION): Log4J ENTIRELY REMOVED ✅
+```
+
+This makes GSEALeadingEdgeViewer v5 the **recommended secure version** for all institutional deployments.
+
+**Additional Bug Fix in GSEA 4.2.3:**
+The `weighted_p1.5` scoring mode contained a computation bug now corrected. Users who previously used this scoring mode in upstream GSEA analyses should re-run those analyses and then re-run leading edge analysis.
+
+### Docker/Container Considerations
+
+For GenePattern module packaging:
+- Base image: Java 11 (OpenJDK 11-slim recommended)
+- No external network calls required at runtime
+- All GSEA library JARs bundled within module ZIP
+- Memory requirements: ~2-4 GB heap depending on dataset size (gene set count × gene count)
+- CPU: Single-threaded primary execution; no GPU requirement
+
+---
+
+## 6. 🔄 Common Workflows & Use Cases
+
+### Standard GenePattern Pipeline
+
+```
+Step 1: Data Preparation
+════════════════════════
+ExpressionFileCreator / PreprocessDataset
+    ↓ [.gct expression file + .cls phenotype file]
+
+Step 2: Primary GSEA Analysis (choose one)
+══════════════════════════════════════════
+GSEA (v14+)                    GSEAPreranked
+[expression + phenotype]       [pre-ranked .rnk file]
+    ↓                               ↓
+    └────────────┬──────────────────┘
+                 ↓
+        [GSEA results .zip]
+
+Step 3: Leading Edge Analysis
+═════════════════════════════
+GSEALeadingEdgeViewer (v5)
+    Input:  GSEA results .zip
+    Output: HTML report with 4 graphs
+                 ↓
+
+Step 4: Interpretation & Reporting
+═══════════════════════════════════
+• Export HTML report
+• Identify core driver genes (Graph 3 hub genes)
+• Compare pathway overlaps (Graph 2)
+• Generate publication figures (Graph 1 heatmap)
+```
+
+### Specific Use Case Scenarios
+
+**Use Case A: Pathway Crosstalk Discovery**
+1. Run GSEA against Hallmark gene sets
+2. Filter to top 10 positively enriched sets in GSEALeadingEdgeViewer
+3. Use Set-to-Set Overlap graph to quantify pathway crosstalk
+4. Identify mechanistically convergent pathways
+
+**Use Case B: Drug Target Prioritization**
+1. Run GSEA against C2 (curated gene sets) or C6 (oncogenic signatures)
+2. Load all significant sets into GSEALeadingEdgeViewer
+3. Use Gene-to-Set Membership graph to find genes in ≥3 leading edge subsets
+4. These multi-pathway hub genes are prioritized drug target candidates
+
+**Use Case C: Infection/Disease Transcriptomics** *(as in PMC5066188)*
+1. Run GSEA on time-course or condition-contrast expression data
+2. Select gene sets related to immune response pathways
+3. Use Heat Map to visualize temporal/condition-specific core gene changes
+4. Identify genes consistently in leading edge across multiple time points
+
+**Use Case D: Comparative Analysis Across Experiments**
+1. Run GSEALeadingEdgeViewer separately on two GSEA results (e.g., two cell lines)
+2. Manually compare leading edge gene sets across outputs
+3. Identify conserved vs. divergent biological mechanisms
+
+---
+
+## 7. 🏆 Comparative Tool Analysis
+
+| Feature | **GSEALeadingEdgeViewer** | GSEA Desktop App | gsea-leadingedgereport-gpmodule | EnrichmentMap (Cytoscape) | clusterProfiler (R) |
+|---|---|---|---|---|---|
+| **GenePattern Integration** | ✅ Native | ❌ Separate install | ✅ Native | ❌ Requires Cytoscape | ❌ Requires R |
+| **Interactive Visualization** | ✅ HTML viewer | ✅ GUI | ❌ Batch HTML only | ✅ Interactive network | ✅ R plots |
+| **Leading Edge Focus** | ✅ Primary purpose | ✅ Included feature | ✅ Report-focused | ⚠️ Partial support | ⚠️ Manual extraction |
+| **Input: GSEA ZIP** | ✅ Direct | ✅ Native | ✅ Direct | ✅ Supported | ❌ Requires parsing |
+| **4-Graph Visualization Suite** | ✅ | ✅ (same engine) | ❌ | ❌ (different graphs) | ❌ |
+| **Server-Side/Batch Capable** | ✅ | ❌ Desktop only | ✅ | ❌ Desktop only | ✅ |
+| **Log4Shell Safe** | ✅ v5 | ✅ ≥4.2.3 | ✅ | N/A | N/A |
+| **Network Visualization** | ❌ | ❌ | ❌ | ✅ | ⚠️ Limited |
+| **Pipeline Automation** | ✅ | ❌ | ✅ | ❌ | ✅ |
+
+**Key Positioning:** GSEALeadingEdgeViewer occupies a **unique niche** as the only GenePattern-native, server-side, pipeline-compatible leading edge visualizer that produces the canonical Broad Institute four-graph analysis suite — making it the natural, frictionless choice within any GenePattern-based GSEA workflow.
+
+---
+
+## 8. 🔌 GenePattern Module Integration Considerations
+
+### Module Classification
+- **Category:** Visualizer / Gene Expression / Post-Analysis
+- **Type:** Interactive HTML Visualizer (outputs HTML report)
+- **Execution Mode:** Server-side Java execution + HTML output delivery
+- **Pipeline Role:** Terminal step in GSEA workflows (no downstream module consumes its output)
+
+### manifest.yaml Key Specifications
+
+```yaml
+name: GSEALeadingEdgeViewer
+version: 5.1
+language: Java
+language.level: 11
+os: any
+cpu: any
+memory: 4gb  # Recommended for large gene set analyses
+taskType: Visualizer
+categories: Gene Expression; GSEA
+```
+
+### Input Parameter GenePattern Metadata
+
+```yaml
+parameters:
+  - name: gsea.result.zip
+    label: GSEA Result ZIP
+    description: The ZIP file produced by the GSEA or GSEAPreranked module
+    type: FILE
+    required: true
+    fileFormat: zip
+    
+  - name: selected.gene.sets
+    label: Selected Gene Sets
+    description: >
+      Comma-separated list of gene set names for leading edge analysis.
+      Leave blank to analyze all gene sets. Names are case-sensitive and
+      must match exactly as they appear in the GSEA results.
+    type: TEXT
+    required: false
+    default: ""
+    
+  - name: gene.set.name.delimiter
+    label: Gene Set Name Delimiter
+    description: >
+      Alternate delimiter for gene set names list (used when gene set names
+      contain commas). Semicolon is recommended.
+    type: TEXT
+    required: false
+    default: ","
+    
+  - name: output.file.name
+    label: Output File Name
+    description: Base name for the output HTML report file
+    type: TEXT
+    required: false
+    default: "leading_edge_report"
+```
+
+### Known Integration Considerations
+
+| Consideration | Detail | Recommendation |
+|---|---|---|
+| **ZIP Validation** | Input ZIP must contain `edb/results.edb` | Add pre-flight validation with clear error messaging |
+| **Gene Set Name Case** | Names are case-sensitive | Document prominently; consider adding case-insensitive matching option |
+| **weighted_p1.5 Bug** | Upstream GSEA analyses using this mode need re-running | Add version-check warning in documentation |
+| **Large Dataset Memory** | Many gene sets × many genes can demand significant heap | Set JVM -Xmx parameter appropriately (4-8 GB) |
+| **HTML Output** | Report is interactive HTML — needs to be served correctly in GP | Ensure GenePattern's visualizer framework handles HTML output path |
+| **Delimiter Edge Cases** | Some MSigDB gene set names contain commas | Default to semicolon delimiter in new module versions |
+
+---
+
+## 9. 📚 Complete Reference Citations
+
+1. **Primary GSEA Method:**
+   Subramanian A, Tamayo P, Mootha VK, et al. (2005). Gene set enrichment analysis: a knowledge-based approach for interpreting genome-wide expression profiles. *Proc Natl Acad Sci USA* **102**(43):15545–50. DOI: [10.1073/pnas.0506580102](https://doi.org/10.1073/pnas.0506580102) | PMID: 16199517
+
+2. **GSEA-P Software (Leading Edge Analysis Component):**
+   Subramanian A, Kuehn H, Gould J, Tamayo P, Mesirov JP. (2007). GSEA-P: a desktop application for Gene Set Enrichment Analysis. *Bioinformatics* **23**(23):3251–3. DOI: [10.1093/bioinformatics/btm369](https://doi.org/10.1093/bioinformatics/btm369) | PMID: 17644558
+
+3. **Original GSEA Concept:**
+   Mootha VK, et al. (2003). PGC-1α-responsive genes involved in oxidative phosphorylation are coordinately downregulated in human diabetes. *Nat Genet* **34**(3):267–73.
+
+4. **Applied Leading Edge Analysis:**
+   *Leading edge analysis of transcriptomic changes during pseudorabies virus infection.* PMC5066188. ScienceDirect: [doi.org/10.1016/j.crfs.2016.09.001](https://www.sciencedirect.com/science/article/pii/S2213596016301295)
+
+5. **Official Module Documentation:**
+   GenePattern GSEALeadingEdgeViewer v5: https://www.genepattern.org/modules/docs/GSEALeadingEdgeViewer/5/
+
+6. **GSEA 4.2.3 Release Notes (Security):**
+   https://docs.gsea-msigdb.org/GSEA/Release_Notes/GSEA_4.2.x/
+
+7. **GSEA User Guide (Leading Edge Analysis):**
+   https://docs.gsea-msigdb.org/GSEA/GSEA_User_Guide/
+
+8. **Repository:**
+   https://github.com/genepattern/GSEALeadingEdgeViewer/tree/v5.1
+
+---
+
+## 10. ⚡ Summary Recommendations for GenePattern Module Development
+
+| Priority | Recommendation |
+|---|---|
+| 🔴 **Critical** | Validate `edb/results.edb` presence in ZIP before execution; provide actionable error messages |
+| 🔴 **Critical** | Document Log4J removal explicitly — security-conscious institutions need confirmation |
+| 🟠 **High** | Add pre-flight check for `weighted_p1.5` upstream analyses and warn users to re-run |
+| 🟠 **High** | Set JVM heap to minimum 4 GB (`-Xmx4g`); document memory scaling for large analyses |
+| 🟡 **Medium** | Default `gene.set.name.delimiter` to semicolon to avoid comma-in-name conflicts |
+| 🟡 **Medium** | Include in GenePattern pipeline templates alongside GSEA and GSEAPreranked modules |
+| 🟢 **Low** | Consider adding gene count statistics to output to help users understand leading edge size |
+| 🟢 **Low** | Link documentation to GSEA User Guide section on "Interpreting leading edge analysis results" |
+
+> **Bottom Line:** GSEALeadingEdgeViewer v5 is a **scientifically critical, security-hardened** post-analysis visualizer that completes the GenePattern GSEA suite. Its minimal parameter surface (one required input), direct ZIP-to-HTML pipeline architecture, and canonical four-graph biological visualization make it an ideal, low-friction GenePattern module. The Log4J removal in v5 is a mandatory security upgrade over all prior versions.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

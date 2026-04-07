@@ -1,0 +1,370 @@
+Create a comprehensive structured plan for the GenePattern module for 'FeatureSummaryViewer'.
+            
+            Tool Information:
+            - Name: FeatureSummaryViewer
+            - Version: Bug fix for S3 files
+            - Language: Javascript
+            - Description: Visualizes feature summary results in JavaScript
+            
+            Research Results:
+            I now have all the comprehensive information needed. Let me compile the full, detailed research report:
+
+---
+
+# 🔬 Comprehensive Research Report: FeatureSummaryViewer
+
+**GenePattern Module | JavaScript Visualizer | KNN Classification Visualization**
+
+---
+
+## 1. 🎯 Tool Purpose and Scientific Applications
+
+### Overview
+`FeatureSummaryViewer` is a browser-based JavaScript visualization module within the GenePattern bioinformatics platform (Broad Institute) that renders the **feature summary results** (`*.feat.odf`) produced by the **KNNXValidation** module. It is the canonical downstream viewer for summarizing which genomic features (genes/probes) were selected by K-Nearest Neighbor (KNN) classifiers during cross-validation analyses of gene expression data.
+
+### Scientific Applications
+| Application | Description |
+|---|---|
+| **KNN Classifier Feature Inspection** | Displays every gene/probe that was used by at least one KNN classifier during cross-validation, along with the frequency of selection |
+| **Biomarker Prioritization** | Identifies the most informative genes — those selected by *all or most* classifiers are scientifically the most robust |
+| **Gene Expression Classification** | Part of the supervised machine learning pipeline for sample class prediction using microarray or expression data |
+| **Exploratory Feature Selection** | Helps researchers understand which genomic features drive classifier decisions |
+
+### Biological Context
+The tool operates in the context of supervised gene expression class prediction — a core problem in cancer genomics (e.g., distinguishing AML vs. ALL subtypes, as in the canonical Golub et al. 1999 dataset). KNN cross-validation generates many classifiers; the FeatureSummaryViewer aggregates this information to reveal **which genes are consistently predictive** across iterations.
+
+> 📖 **Key Citation:** Rifkin & Kim et al. *"Using GenePattern for Gene Expression Analysis"* PMC3893799 — explicitly describes FeatureSummaryViewer (v3) as part of the KNNXValidation → FeatureSummaryViewer → PredictionResultsViewer pipeline.
+
+---
+
+## 2. 📁 Input/Output Formats and Requirements
+
+### Primary Input: `.feat.odf` (Feature Summary ODF File)
+
+The sole input is the **GenePattern ODF (Output Description Format)** file, specifically the feature results file output from `KNNXValidation`.
+
+> ⚠️ **Note:** GenePattern's ODF is a proprietary format — it is **NOT** the OASIS Open Document Format for Office Applications.
+
+#### ODF File Format Specification
+
+```
+ODF 1.0                                          ← Line 1: Required format version declaration
+HeaderLines=N                                    ← Line 2: Count of header lines that follow
+Model=FeatureSummary                             ← Line 3: Model/type identifier
+DataLines=N                                      ← Line 4: Number of data rows (genes/features)
+COLUMN_TYPES:  String  int  [additional types]   ← Line 5: Data types per column (String/float/int/*)
+COLUMN_NAMES:  Feature  NumClassifiers  [...]    ← Line 6: Tab-separated column headers
+[Data rows: tab-delimited gene entries]          ← Lines N+1...: One row per gene/feature
+```
+
+#### Typical `*.feat.odf` Content Schema
+
+| Column | Type | Description |
+|---|---|---|
+| `Feature` | String | Gene name / probe ID |
+| `Count` (or `NumClassifiers`) | int | Number of KNN classifiers that selected this feature |
+| Additional metadata columns | String/float | May include rank, score, or description fields |
+
+**File naming convention:** `<input_prefix>.feat.odf`
+**Example:** `all_aml_train.preprocessed.feat.odf`
+
+### Input File Sources
+- **Direct KNNXValidation output** — the `*.feat.odf` result file
+- **GenePattern job results page** — accessible via the file icon context menu
+- **AWS S3 URLs** — cloud.genepattern.org stores files on S3; the JavaScript viewer must fetch from presigned S3 URLs (this was the subject of the current bug fix release)
+
+### Output
+As a **pure visualizer module**, FeatureSummaryViewer produces **no persistent output files**. Its output is an interactive in-browser HTML rendering of the data table displayed within the GenePattern UI.
+
+---
+
+## 3. ⚙️ Parameter Analysis and Usage Patterns
+
+### Module Parameter Structure
+
+Being a GenePattern **JavaScript visualizer**, FeatureSummaryViewer has a minimal parameter footprint:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `feature.summary.filename` | File | ✅ Yes | The `*.feat.odf` feature results file from KNNXValidation |
+
+### Invocation Pattern
+Unlike analysis modules that require explicit parameter configuration, FeatureSummaryViewer is typically **launched contextually** from the GenePattern job results interface:
+
+```
+KNNXValidation job completes
+  └── Recent Jobs panel shows *.feat.odf output file
+        └── Click file icon → Context menu → "FeatureSummaryViewer"
+              └── Module auto-populates the file parameter and launches
+```
+
+### Viewer Behavior Characteristics
+
+| Feature | Current Status |
+|---|---|
+| **Sortable columns** | ✅ Likely (standard ODF viewer behavior) |
+| **Gene count display** | ✅ Core feature — classifier usage frequency |
+| **GeneCruiser gene annotation lookup** | ❌ **Deprecated March 2016** |
+| **Interactive table filtering** | ✅ Expected (standard JS viewer) |
+| **S3 file fetching** | ✅ Fixed in current version |
+
+### Key Analytical Insight
+> *"In the FeatureSummaryViewer, the most interesting genes are generally those used by all (or most) of the classifiers."*
+> — Official GenePattern Protocol Documentation
+
+This directs users to sort by the classifier-usage count column to identify the most robust predictive biomarkers.
+
+---
+
+## 4. 🛠️ Installation and Dependency Requirements
+
+### Architecture
+FeatureSummaryViewer is a **client-side JavaScript module** — it has no server-side runtime dependencies (no Python, R, or Java execution environment required).
+
+### Module Composition (Typical GenePattern JS Visualizer)
+
+```
+FeatureSummaryViewer/
+├── manifest                 ← GenePattern module descriptor (metadata, parameters, LSID)
+├── viewer.html              ← Main entry point HTML page
+├── *.js                     ← JavaScript parsing and rendering logic
+├── *.css                    ← Styling
+└── [documentation files]   ← Help/docs for the GenePattern module repository
+```
+
+### Runtime Environment
+
+| Component | Requirement |
+|---|---|
+| **Execution environment** | Modern web browser (Chrome, Firefox, Safari, Edge) |
+| **Server requirement** | GenePattern server (local or cloud.genepattern.org) |
+| **Java** | ❌ NOT required (replaced Java applet) |
+| **Node.js** | ❌ NOT required (browser-side only) |
+| **S3 Access** | AWS S3 presigned URL support (handled by JavaScript `fetch()`) |
+
+### GenePattern Server Compatibility
+
+| Deployment Mode | Compatibility |
+|---|---|
+| **cloud.genepattern.org** (AWS, S3 backend) | ✅ Current version fixes S3 support |
+| **Local GenePattern server** | ✅ Standard local file serving |
+| **Docker-based GenePattern** | ✅ Files served from S3/local mounts |
+
+### S3 Architecture Context (from GenePattern Docker Architecture Wiki)
+The cloud GenePattern server syncs files to/from AWS S3:
+1. Input files and task libraries sync **from S3** → container paths
+2. Module executes
+3. Output files sync **back to S3**
+4. JavaScript viewers must **fetch from S3 presigned URLs** — this was the source of the fixed bug
+
+---
+
+## 5. 🔄 Common Workflows and Use Cases
+
+### Primary Workflow: KNN Cross-Validation Classification
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    KNN CLASS PREDICTION PIPELINE                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  INPUTS                                                                  │
+│  ├── Expression data file (*.gct or *.res)                               │
+│  └── Class labels file (*.cls)                                           │
+│                 │                                                        │
+│                 ▼                                                        │
+│  [STEP 1]  PreprocessDataset (optional normalization/filtering)          │
+│                 │                                                        │
+│                 ▼                                                        │
+│  [STEP 2]  KNNXValidation (cross-validation classifier training)         │
+│            Outputs:                                                      │
+│            ├── *.feat.odf  ◄──── Feature summary (genes × classifiers)  │
+│            └── *.pred.odf  ◄──── Prediction accuracy & error rates       │
+│                 │                                                        │
+│        ┌────────┴────────┐                                               │
+│        ▼                 ▼                                               │
+│  [STEP 3a]          [STEP 3b]                                            │
+│  FeatureSummary     PredictionResults                                    │
+│  Viewer ★           Viewer                                               │
+│  (*.feat.odf)       (*.pred.odf)                                         │
+│        │                                                                 │
+│        ▼                                                                 │
+│  [STEP 4]  KNN (optional - build final classifier with best params)      │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+  ★ = FeatureSummaryViewer
+```
+
+### Use Case 1: One-Dataset KNN Classification
+- **Goal:** Build and validate KNN classifier using cross-validation on a single labeled dataset
+- **Source:** `cloud.genepattern.org/gp/pages/protocols/Prediction_knn_one.html`
+- **Viewer Role:** Shows which genes contributed to classifiers across leave-one-out CV folds
+
+### Use Case 2: Two-Dataset KNN Classification (Train/Test Split)
+- **Goal:** Train KNN on one dataset, test on independent dataset
+- **Source:** `cloud.genepattern.org/gp/pages/protocols/Prediction_knn_two.html`
+- **Viewer Role:** Displays feature selection from the training phase KNNXValidation run
+
+### Use Case 3: Exploratory Biomarker Discovery
+- Open the viewer after classification
+- Sort by the classifier count column (descending)
+- Genes at the top are the most consistently selected biomarkers → highest research priority
+
+### Example Benchmark Dataset
+The canonical test case uses the **Golub et al. AML/ALL leukemia dataset:**
+- Input: `all_aml_train.preprocessed.gct` + `all_aml_train.cls`
+- Output viewed: `all_aml_train.preprocessed.feat.odf`
+
+---
+
+## 6. 🔌 Integration Considerations for GenePattern
+
+### Module Manifest Key Fields
+
+```properties
+# GenePattern Module Manifest
+name=FeatureSummaryViewer
+description=Visualizes feature summary results from KNN classification analysis
+version=[current S3 fix version]
+language=JavaScript
+language.level=1.5
+os=any
+cpu.type=any
+task.type=Visualizer
+categories=Visualization;Prediction
+privacy=public
+quality=production
+
+# Parameter definition
+p1_name=feature.summary.filename
+p1_description=Feature summary file (*.feat.odf) from KNNXValidation
+p1_type=java.io.File
+p1_fileFormat=odf
+p1_optional=
+```
+
+### GenePattern Integration Architecture
+
+```
+Browser (Client)
+├── GenePattern UI loads FeatureSummaryViewer
+│     └── viewer.html served from module task directory
+│           ├── Receives file URL parameter (GP server URL or S3 presigned URL)
+│           ├── JavaScript fetch() retrieves *.feat.odf file content
+│           ├── ODF parser: reads header (ODF 1.0, HeaderLines, Model, DataLines, COLUMN_TYPES, COLUMN_NAMES)
+│           ├── Data parser: reads tab-delimited data rows
+│           └── Renderer: builds interactive HTML table
+│
+└── S3 Fix Context:
+      Old behavior: Direct S3 URL failed due to CORS/auth issues
+      Fixed behavior: Proper presigned URL handling / GP proxy endpoint usage
+```
+
+### Module Category Classification
+| Attribute | Value |
+|---|---|
+| **Category** | Visualization; Prediction |
+| **Module Type** | Visualizer (client-side, no server execution) |
+| **File Format Support** | `.odf` (GenePattern ODF format) |
+| **Pipeline Position** | Terminal visualization step |
+| **Related Upstream Module** | KNNXValidation (required), WeightedVotingXValidation (compatible) |
+| **Related Companion Viewer** | PredictionResultsViewer |
+
+### Version Evolution & Compatibility
+
+| Era | Version | Technology | Key Features |
+|---|---|---|---|
+| Pre-2016 | v1–v3 | Java Applet | Full GeneCruiser integration, gene annotation lookups |
+| March 2016 | — | Java Applet | GeneCruiser deprecated; annotation lookup broken |
+| March 2017 | — | Java Applet | **All Java applet visualizers blocked in all browsers** |
+| Post-2017 | v4+ | **JavaScript** | Browser-compatible, no Java required |
+| Current | Latest | **JavaScript** | **S3 presigned URL bug fixed** for cloud.genepattern.org |
+
+### Known Limitations and Caveats
+
+| Issue | Status | Notes |
+|---|---|---|
+| **GeneCruiser gene annotations** | ❌ Permanently deprecated | No longer available; external annotation needed |
+| **S3 file loading** | ✅ Fixed | Fixed in current version ("Bug fix for S3 files") |
+| **Java applet version** | ❌ Obsolete | All browsers block Java applets since 2017 |
+| **Output files** | None | Pure visualizer — no downloadable results |
+| **Non-ODF file formats** | Not supported | Only reads `.odf` format files |
+| **Standalone execution** | Not applicable | Requires GenePattern server environment |
+
+---
+
+## 7. 📊 Comparative Analysis
+
+### GenePattern ODF Viewer Ecosystem
+
+| Module | Input Format | Scientific Domain | Annotation Support |
+|---|---|---|---|
+| **FeatureSummaryViewer** ★ | `*.feat.odf` | KNN classifier features | ~~GeneCruiser~~ (deprecated) |
+| **ComparativeMarkerSelectionViewer** | `*.comp.marker.odf` | Differential expression | ~~GeneCruiser~~ (deprecated) |
+| **PredictionResultsViewer** | `*.pred.odf` | KNN prediction accuracy | None |
+| **GeneListSignificanceViewer** | `*.odf` | Gene list statistics | ~~GeneCruiser~~ (deprecated) |
+
+> 📌 **Key Pattern:** FeatureSummaryViewer belongs to a family of GenePattern ODF viewer modules. All share similar architecture (JavaScript fetch + ODF parser + table renderer) but each is specialized for the specific ODF `Model=` type it reads. The S3 fix applied here is architecturally similar to fixes needed/applied in sibling viewers (e.g., `ClsFileCreator v4.1` release notes explicitly mention "S3 file fix").
+
+---
+
+## 8. 📚 References and Sources
+
+| # | Source | Type | URL/Citation |
+|---|---|---|---|
+| 1 | GitHub Repository | Code | `https://github.com/genepattern/FeatureSummaryViewer.git` |
+| 2 | PMC3893799 | Peer-reviewed | Rifkin et al., *"Using GenePattern for Gene Expression Analysis"*, Current Protocols in Bioinformatics, PMCID: PMC3893799 |
+| 3 | GenePattern KNN Protocol (1 dataset) | Official Docs | `cloud.genepattern.org/gp/pages/protocols/Prediction_knn_one.html` |
+| 4 | GenePattern KNN Protocol (2 datasets) | Official Docs | `cloud.genepattern.org/gp/pages/protocols/Prediction_knn_two.html` |
+| 5 | GenePattern File Formats Guide | Official Docs | `genepattern.org/file-formats-guide/` |
+| 6 | GeneCruiser Deprecation Announcement | Official Blog | `genepattern.org/blog/2016/03/15/genecruiser-is-now-deprecated/` |
+| 7 | Java Applet Deprecation | Official Blog | `genepattern.org/blog/2014/06/17/visualizers-fixed-for-java-7/` |
+| 8 | GenePattern Docker Architecture | Technical Wiki | `github.com/genepattern/genepattern-server/wiki/GenePattern-Docker-Architecture` |
+| 9 | GenePattern 3.9.10 Release Notes | Official Blog | `genepattern.org/blog/2017/05/30/genepattern-3-9-10-is-released/` |
+| 10 | ClsFileCreator S3 Fix (analogous) | GitHub Releases | `github.com/genepattern/ClsFileCreator/releases` |
+
+---
+
+## 9. 🏗️ GenePattern Module Development Recommendations
+
+### Immediate Priorities
+
+1. **Verify ODF Parser Robustness** — Ensure the JavaScript ODF parser handles edge cases: variable `HeaderLines` counts, optional columns, empty `DataLines`, malformed headers
+
+2. **S3 URL Handling** — The current release fixes S3 bugs; confirm the fix covers:
+   - AWS S3 presigned URL expiration handling
+   - CORS header requirements for cross-origin fetch
+   - GenePattern server proxy endpoints vs. direct S3 access
+
+3. **Parameter Definition in Manifest** — Ensure `p1_fileFormat=odf` is properly set so GenePattern offers the correct file picker and auto-population from upstream `KNNXValidation` jobs
+
+4. **Column Flexibility** — The ODF parser should dynamically read `COLUMN_NAMES` rather than hardcoding expected columns, as different KNN configurations may produce different feat.odf schemas
+
+5. **Documentation Update** — Since GeneCruiser is permanently deprecated, any documentation referencing it should be updated to reflect its removal and suggest alternatives (e.g., `CollapseDataset`, external Ensembl BioMart links)
+
+### Module Manifest Completeness Checklist
+
+- ✅ `name`, `description`, `version`
+- ✅ `task.type=Visualizer`
+- ✅ `categories=Visualization;Prediction`
+- ✅ `language=JavaScript`
+- ✅ `fileFormat=odf` on the file parameter
+- ✅ LSID (Locally Unique Scientific Identifier)
+- ✅ `privacy=public` for public GenePattern repository
+- ⚠️ Documentation HTML file updated to remove GeneCruiser references
+- ⚠️ Test data (`*.feat.odf` example file) included or linked
+
+---
+
+> **Summary:** FeatureSummaryViewer is a well-established, focused visualization module with a clear and narrow scientific purpose — displaying KNN classifier feature usage from `*.feat.odf` files in the GenePattern ecosystem. Its evolution from Java applet to JavaScript reflects the platform's modernization. The current version's primary change is a **bug fix for loading files from AWS S3**, which is essential for cloud-hosted GenePattern deployments. For GenePattern module creation, it requires minimal configuration (single file input parameter), no server-side execution, and follows the established ODF viewer module pattern shared by ComparativeMarkerSelectionViewer and PredictionResultsViewer.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

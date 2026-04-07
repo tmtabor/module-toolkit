@@ -1,0 +1,88 @@
+{
+  "module_name": "ImputeMissingValues.KNN",
+  "description": "Imputes missing values",
+  "author": "Joshua Gould",
+  "input_file_formats": [
+    "gct"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:15850:1",
+  "plan": "## ImputeMissingValues.KNN GenePattern Module — Implementation Plan\n\n### 1. Overview\nImputeMissingValues.KNN is a GenePattern module that Imputes missing values\n\n### 2. Parameters\nThe module exposes 5 parameters:\n- Required: data.filename, k, rowmax, colmax, output.file\n- Optional: none\n\n### 3. Command Line\n```\n<R2.5> <libdir>impute.R impute <data.filename> <k> <rowmax> <colmax> <output.file> <libdir>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "impute.R",
+  "command_line": "<R2.5> <libdir>impute.R impute <data.filename> <k> <rowmax> <colmax> <output.file> <libdir>",
+  "parameters": [
+    {
+      "name": "data.filename",
+      "description": "Data file (missing values are stored as NA) - .gct",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "k",
+      "description": "Number of neighbors to be used in the imputation",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--k",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "rowmax",
+      "description": "The maximum percent missing data allowed in any row",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--rowmax",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "colmax",
+      "description": "The maximum percent missing data allowed in any column",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--colmax",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "The name of the output file - .gct",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.filename_basename>.imputed.gct",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

@@ -1,0 +1,56 @@
+Create a comprehensive structured plan for the GenePattern module for 'ConcatenateFilelist'.
+            
+            Tool Information:
+            - Name: ConcatenateFilelist
+            - Version: latest
+            - Language: any
+            - Description: Concatenate all of the items in the input filelist into a single large file.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ConcatenateFilelist",
+  "parameters": [
+    {
+      "name": "filelist",
+      "type": "FILE",
+      "description": "a text file containing a list of file paths",
+      "required": true,
+      "default_value": "",
+      "prefix": "--filelist\\="
+    },
+    {
+      "name": "num.header.lines",
+      "type": "java.lang.String",
+      "description": "specify number of header lines so that they are output only once",
+      "required": false,
+      "default_value": "",
+      "prefix": "--num.header.lines\\="
+    },
+    {
+      "name": "output.filename",
+      "type": "java.lang.String",
+      "description": "The name of the output file",
+      "required": true,
+      "default_value": "",
+      "prefix": "--output.filename\\="
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Peter Carr, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>ConcatenateFilelist.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar org.genepattern.module.concatenatefilelist.ConcatenateFilelist <filelist> <num.header.lines> <output.filename>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

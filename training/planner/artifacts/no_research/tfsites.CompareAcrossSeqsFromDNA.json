@@ -1,0 +1,263 @@
+{
+  "module_name": "tfsites.CompareAcrossSeqsFromDNA",
+  "description": "Compares the two seqs and reports the binding site effect on diff seqs",
+  "author": "GenePattern Team",
+  "input_file_formats": [
+    "JASPAR",
+    "tsv"
+  ],
+  "language": "Python",
+  "categories": [
+    "transcription factor analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:31134:1",
+  "plan": "## tfsites.CompareAcrossSeqsFromDNA GenePattern Module — Implementation Plan\n\n### 1. Overview\ntfsites.CompareAcrossSeqsFromDNA is a GenePattern module that Compares the two seqs and reports the binding site effect on diff seqs\n\n### 2. Parameters\nThe module exposes 15 parameters:\n- Required: enhancer.dna.alignment.table, enhancer.functional.group.table, analysis.name, hypothesis, minimum.binding.change\n- Optional: tf.affinity.information, tf.affinity.files, pwm.input.file, minimum.pwm.score, motif.input.file, motif.input.format, motif.filter.keywords, motif.use.pseudocounts, motif.background.frequencies, motif.output.name\n\n### 3. Command Line\n```\npython /build/tfsites-webportal/05-compareTfSitesAcrossSequencesFromDna/05-combined-generateMotifDatabase-and-compareTfSitesAcrossSequencesFromDna.py -e <enhancer.dna.alignment.table> -g <enhancer.functional.group.table>  <tf.affinity.information>  <tf.affinity.files> <pwm.input.file> <motif.input.file> -s <minimum.pwm.score> -n <analysis.name> -y <hypothesis> -b <minimum.binding.change> -n <analysis.name>  <motif.filter.keywords> <motif.input.format> <motif.use.pseudocounts> <motif.background.frequencies> <motif.output.name>\n```\n\n### 4. Docker Image\nDocker image: genepattern/tfsites\\:17.1.5\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "05-combined-generateMotifDatabase-and-compareTfSitesAcrossSequencesFromDna.py",
+  "command_line": "python /build/tfsites-webportal/05-compareTfSitesAcrossSequencesFromDna/05-combined-generateMotifDatabase-and-compareTfSitesAcrossSequencesFromDna.py -e <enhancer.dna.alignment.table> -g <enhancer.functional.group.table>  <tf.affinity.information>  <tf.affinity.files> <pwm.input.file> <motif.input.file> -s <minimum.pwm.score> -n <analysis.name> -y <hypothesis> -b <minimum.binding.change> -n <analysis.name>  <motif.filter.keywords> <motif.input.format> <motif.use.pseudocounts> <motif.background.frequencies> <motif.output.name>",
+  "parameters": [
+    {
+      "name": "enhancer.dna.alignment.table",
+      "description": "Tab-separated file containing at least two DNA sequences to be analyzed. We suggest only inputting the alignment +/- 15 bp from where the genetic variation of interest occurs. if this is a SNV, you would simply input the 30bp window of the alignment containing the variant. If this is a deletion, you would add 15 bp upstream of the first - and 15bp downstream of the last -.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--enhancer.dna.alignment.table",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "enhancer.functional.group.table",
+      "description": "Tab-separated file which labels each functional group. Functional group can be either wild-type, control, test, or na. If na, all enhancers associated with that label will be removed from the analysis. Binding sites are searched for within the test group that are not present within the wild-type or control group. At a minimum both of these requirements must be met, (1) at least one control or wild-type must be provided; (2) at least one test must be provided.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--enhancer.functional.group.table",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "analysis.name",
+      "description": "Name of the analysis. Used as the prefix of all output filenames.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "CompareSeqsAnalysis",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--analysis.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "hypothesis",
+      "description": "In the genetic variant do you expect a gain of a site, loss of a site, or would you like to search for both? Default is both.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "both",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "LOF",
+          "value": "LOF"
+        },
+        {
+          "display": "GOF",
+          "value": "GOF"
+        },
+        {
+          "display": "both",
+          "value": "both"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--hypothesis",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "minimum.binding.change",
+      "description": "The minimum change of affinity or PWM binding score classify as increase or decrease in score or affinity. Default is 0.1.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--minimum.binding.change",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "tf.affinity.information",
+      "description": "File containing all the information for the transcription factors being analyzed, including its name, binding site definition, desired color on the plot, any PBM relative affinity data, and any PFM relative score data.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-a",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "tf.affinity.files",
+      "description": "TF affinity files referenced in the tf affinity information.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-f",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "pwm.input.file",
+      "description": "JASPAR formatted file with multiple PWMs. You can generate a PWM with the tfsites.GenerateMotifDatabase module.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "JASPAR",
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-p",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "minimum.pwm.score",
+      "description": "Enter the minimum PWM score required for analysis. Default is 0.8.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--minimum.pwm.score",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.input.file",
+      "description": "PFM or PWM motif input file for motif database generation (optional)",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_input_file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.input.format",
+      "description": "Motif input format for motif database generation (must be 'pwm' or 'pfm', lowercase, optional)",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "pfm",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "PFM",
+          "value": "pfm"
+        },
+        {
+          "display": "PWM",
+          "value": "pwm"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--motif_input_format",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.filter.keywords",
+      "description": "File containing a list of keywords used to filter PFMs (optional)",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_filter_keywords",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.use.pseudocounts",
+      "description": "Whether to use pseudocounts for motif database generation (optional, True/False)",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--motif_use_pseudocounts",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.background.frequencies",
+      "description": "Background frequency for each nucleotide (comma-separated string in order of ATGC, optional)",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.25,0.25,0.25,0.25",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_background_frequencies",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.output.name",
+      "description": "Name of motif database output file (optional, will be created in current working directory)",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "generated_motif_db.txt",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_output_name",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/tfsites:17.1.5"
+}

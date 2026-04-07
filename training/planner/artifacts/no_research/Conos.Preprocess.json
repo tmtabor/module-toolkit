@@ -1,0 +1,126 @@
+{
+  "module_name": "Conos.Preprocess",
+  "description": "GenePattern Module which implements the preprocessing and PCA steps of Conos",
+  "author": "Edwin F. Juarez & Anthony Castanza;UCSD -- Mesirov Lab",
+  "input_file_formats": [
+    "rds",
+    "txt"
+  ],
+  "language": "R",
+  "categories": [
+    "clustering",
+    "singlecell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:66413:1",
+  "plan": "## Conos.Preprocess GenePattern Module — Implementation Plan\n\n### 1. Overview\nConos.Preprocess is a GenePattern module that GenePattern Module which implements the preprocessing and PCA steps of Conos\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: file_list, knn, perplexity, pagoda_odgenes, projection_method, ncomps, conos_odgenes\n- Optional: none\n\n### 3. Command Line\n```\nRscript /module/run_conos_preprocess.R --file_list <file_list> --k <knn> --perplexity <perplexity> --pagoda_odgenes <pagoda_odgenes> --projection_method <projection_method> --ncomps <ncomps> --conos_odgenes <conos_odgenes>\n```\n\n### 4. Docker Image\nDocker image: genepattern/conos\\:v3\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_conos_preprocess.R",
+  "command_line": "Rscript /module/run_conos_preprocess.R --file_list <file_list> --k <knn> --perplexity <perplexity> --pagoda_odgenes <pagoda_odgenes> --projection_method <projection_method> --ncomps <ncomps> --conos_odgenes <conos_odgenes>",
+  "parameters": [
+    {
+      "name": "file_list",
+      "description": "List of files to load.",
+      "required": true,
+      "type": "file",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": [
+        "rds",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--file_list",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "knn",
+      "description": "Pagoda2\\: default number of neighbors to use in kNN graph",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "40",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--knn",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "perplexity",
+      "description": "Pagoda2\\: perplexity to use in generating tSNE and largeVis embeddings (default\\=50)",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "50",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--perplexity",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "pagoda_odgenes",
+      "description": "Pagoda2\\: number of top overdispersed genes to use (default\\=3e3)",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "3000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--pagoda_odgenes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "projection_method",
+      "description": "Whether to perform PCA or CPCA",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "PCA",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "PCA",
+          "value": "PCA"
+        },
+        {
+          "display": "CPCA",
+          "value": "CPCA"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--projection_method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "ncomps",
+      "description": "How many PCA components to use (?) (default\\=50)",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "50",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--ncomps",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "conos_odgenes",
+      "description": "Pagoda2\\: number of top overdispersed genes to use (default\\=1e3)",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "1000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--conos_odgenes",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/conos:v3"
+}

@@ -1,0 +1,141 @@
+Create a comprehensive structured plan for the GenePattern module for 'STREAM.DimensionReduction'.
+            
+            Tool Information:
+            - Name: STREAM.DimensionReduction
+            - Version: inital revision
+            - Language: any
+            - Description: Perform dimension reduction on the dataset to make it easier to reliably assess similarity or distances between cells. Starting from the genes selected in the STREAM.FeatureSelection module, we project cells to a lower dimensional space using a non-linear dimensionality reduction method.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "STREAM.DimensionReduction",
+  "parameters": [
+    {
+      "name": "data.file",
+      "type": "FILE",
+      "description": "A STREAM pkl file containing gene expression data",
+      "required": true,
+      "default_value": "",
+      "file_format": "pkl",
+      "num_values": "1..1"
+    },
+    {
+      "name": "output.filename",
+      "type": "TEXT",
+      "description": "output file name prefix",
+      "required": true,
+      "default_value": "",
+      "num_values": "1..1"
+    },
+    {
+      "name": "percent.neighbor.cells",
+      "type": "CHOICE",
+      "description": "The percentage neighbor cells (only valid when 'mlle', 'se', or 'umap' is specified).",
+      "required": false,
+      "default_value": "",
+      "prefix": "-nb_pct",
+      "num_values": "0..1"
+    },
+    {
+      "name": "num.components.to.keep",
+      "type": "CHOICE",
+      "description": "Number of components to keep",
+      "required": true,
+      "default_value": "3",
+      "prefix": "-n_comp_k",
+      "num_values": "1..1"
+    },
+    {
+      "name": "feature",
+      "type": "CHOICE",
+      "description": "Feature used for dimension reduction. Choose from ['var_genes','top_pcs','all']. 'var_genes'\\: most variable genes. 'top_pcs'\\: top principal components.  'all'\\: all genes",
+      "required": false,
+      "default_value": "var_genes",
+      "choices": "var_genes\\=most variable genes;top_pcs\\=top principal components;all\\=all",
+      "prefix": "-feat",
+      "num_values": "1..1"
+    },
+    {
+      "name": "method",
+      "type": "CHOICE",
+      "description": "Method used for dimension reduction.Choose from {{'mlle','umap','pca'}}",
+      "required": true,
+      "default_value": "mlle",
+      "choices": "mlle\\=Modified locally linear embedding algorithm (MLLE);umap\\=Uniform Manifold Approximation and Projection (UMAP);pca\\=Principal component analysis (PCA)",
+      "prefix": "-method",
+      "num_values": "1..1"
+    },
+    {
+      "name": "num.components.to.plot",
+      "type": "CHOICE",
+      "description": "Number of components to be plotted.",
+      "required": true,
+      "default_value": "3",
+      "prefix": "-nc_plot",
+      "num_values": "1..1"
+    },
+    {
+      "name": "component.x",
+      "type": "CHOICE",
+      "description": "Component used for x axis.",
+      "required": true,
+      "default_value": "0",
+      "prefix": "-comp1",
+      "num_values": "0..1"
+    },
+    {
+      "name": "component.y",
+      "type": "TEXT",
+      "description": "Component used for y axis.",
+      "required": false,
+      "default_value": "1",
+      "prefix": "-comp2",
+      "num_values": "0..1"
+    },
+    {
+      "name": "figure.width",
+      "type": "TEXT",
+      "description": "figure width",
+      "required": false,
+      "default_value": "8",
+      "prefix": "-fig_width",
+      "num_values": "0..1"
+    },
+    {
+      "name": "figure.legend.num.columns",
+      "type": "TEXT",
+      "description": "The number of columns that the legend has.",
+      "required": true,
+      "default_value": "3",
+      "prefix": "-fig_legend_ncol",
+      "num_values": "1..1"
+    },
+    {
+      "name": "figure.height",
+      "type": "TEXT",
+      "description": "figure height",
+      "required": false,
+      "default_value": "8",
+      "prefix": "-fig_height",
+      "num_values": "0..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/stream_dimensionreduction\\:0.3",
+  "categories": "Single-Cell",
+  "task_type": "Single-cell",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "command_line": "python /stream/dimred_command_line.py -m <data.file> -of <output.filename> <percent.neighbor.cells> <num.components.to.keep> <feature>  <method> <num.components.to.plot> <component.x> <component.y> <figure.width> <figure.height>  <figure.legend.num.columns>  -n_jobs <job.cpuCount>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

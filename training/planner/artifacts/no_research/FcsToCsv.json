@@ -1,0 +1,155 @@
+{
+  "module_name": "FcsToCsv",
+  "description": "Converts a Flow Cytometry Standard (FCS) file to a Comma Separated Values (CSV) file.",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "input_file_formats": [
+    "fcs"
+  ],
+  "language": "Java",
+  "categories": [
+    "Data Format Conversion",
+    "Flow Cytometry"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:44034:1",
+  "plan": "## FcsToCsv GenePattern Module — Implementation Plan\n\n### 1. Overview\nFcsToCsv is a GenePattern module that Converts a Flow Cytometry Standard (FCS) file to a Comma Separated Values (CSV) file.\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: Input.FCS.data.file, Output.CSV.file.name, Output.keywords.file.name\n- Optional: Use.full.names, Output.keywords.mode, Channel.to.scale.conversion, Precision\n\n### 3. Command Line\n```\n<java> <java_flags> -jar <libdir>fcs2csv.jar <Input.FCS.data.file> <Output.CSV.file.name> <Use.full.names> <Output.keywords.file.name> <Output.keywords.mode> <Channel.to.scale.conversion> <Precision>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "fcs2csv.jar",
+  "command_line": "<java> <java_flags> -jar <libdir>fcs2csv.jar <Input.FCS.data.file> <Output.CSV.file.name> <Use.full.names> <Output.keywords.file.name> <Output.keywords.mode> <Channel.to.scale.conversion> <Precision>",
+  "parameters": [
+    {
+      "name": "Input.FCS.data.file",
+      "description": "An FCS data file to be converted to CSV.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fcs"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-InputFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.CSV.file.name",
+      "description": "The name of the output CSV file.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<Input.FCS.data.file_basename>.csv",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-OutputFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Use.full.names",
+      "description": "Whether to try to extract full parameter names from the FCS file.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Use full names, default",
+          "value": "TRUE"
+        },
+        {
+          "display": "Use short names only",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-FullNames\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.keywords.file.name",
+      "description": "The file name to store keyword value pairs extracted from the FCS file.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<Input.FCS.data.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-KeywordsFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.keywords.mode",
+      "description": "How to store keywords.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "CSV",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Store as a CSV file, default",
+          "value": "CSV"
+        },
+        {
+          "display": "Store keywords in the FCS TEXT segment format",
+          "value": "FCS"
+        },
+        {
+          "display": "Do not extract the keyword/value pairs",
+          "value": "None"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-KeywordsMode\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Channel.to.scale.conversion",
+      "description": "Whether to convert log channel values to linear scale.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Convert channel to scale, default",
+          "value": "TRUE"
+        },
+        {
+          "display": "No conversion, store as in the FCS file",
+          "value": "NO"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ChannelToScale\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Precision",
+      "description": "Whether to use regular (32bit, recommended) or double precision.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Use regular precision, default",
+          "value": "FALSE"
+        },
+        {
+          "display": "Use double precision",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-DoublePrecision\\:",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

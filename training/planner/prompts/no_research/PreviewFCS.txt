@@ -1,0 +1,58 @@
+Create a comprehensive structured plan for the GenePattern module for 'PreviewFCS'.
+            
+            Tool Information:
+            - Name: PreviewFCS
+            - Version: Fix for parsing empty keyword values
+            - Language: Java
+            - Description: Allows viewing of structural metadata, parameters, and descriptive statistics from a Flow Cytometry Standard (FCS) data file
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "PreviewFCS",
+  "parameters": [
+    {
+      "name": "Input.FCS.data.file",
+      "type": "FILE",
+      "description": "An input FCS data file to be described.",
+      "required": true,
+      "default_value": "",
+      "file_format": "fcs",
+      "prefix": "-InputFile\\:"
+    },
+    {
+      "name": "Output.file.format",
+      "type": "java.lang.String",
+      "description": "Output file format, either HTML or XML, default HTML.",
+      "required": true,
+      "default_value": "HTML",
+      "choices": "HTML\\=HTML, default;XML\\=XML",
+      "prefix": "-OutputFormat\\:"
+    },
+    {
+      "name": "Output.file.name",
+      "type": "java.lang.String",
+      "description": "The output file name (optional).",
+      "required": true,
+      "default_value": "<Input.FCS.data.file_basename>",
+      "prefix": "-OutputFile\\:"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Flow Cytometry",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "command_line": "<java> <java_flags> -jar <libdir>previewfcs.jar <Input.FCS.data.file> <Output.file.name> <Output.file.format>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,93 @@
+{
+  "module_name": "shRNAscores",
+  "description": "Outputs fold change, signal to noise and modified score (which deweights highly variable hps from reference control) for RNAI HP scoring",
+  "author": "Barbara Weir, Broad Institute",
+  "input_file_formats": [
+    "gct",
+    "txt"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:36715:1",
+  "plan": "## shRNAscores GenePattern Module — Implementation Plan\n\n### 1. Overview\nshRNAscores is a GenePattern module that Outputs fold change, signal to noise and modified score (which deweights highly variable hps from reference control) for RNAI HP scoring\n\n### 2. Parameters\nThe module exposes 5 parameters:\n- Required: gct, array.info, reference, annotation, output.prefix\n- Optional: none\n\n### 3. Command Line\n```\n<R2.5> <libdir>HPscores.R HPscores -i<gct> -s<array.info> -r<reference> -a<annotation> -e<output.prefix> -l<libdir>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "HPscores.R",
+  "command_line": "<R2.5> <libdir>HPscores.R HPscores -i<gct> -s<array.info> -r<reference> -a<annotation> -e<output.prefix> -l<libdir>",
+  "parameters": [
+    {
+      "name": "gct",
+      "description": "",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gct",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "array.info",
+      "description": "Array annotation from 'makeArrayInfo' module",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--array.info",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reference",
+      "description": "Reference to compare each cell line to - name can partially or totally match 'Array_timepoint' column of array.info file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "DNA",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reference",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "annotation",
+      "description": "TRChuV2.chip file (hp annotation)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--annotation",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "prefix for output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "test",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

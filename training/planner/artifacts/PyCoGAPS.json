@@ -1,0 +1,648 @@
+{
+  "module_name": "PyCoGAPS",
+  "description": "Coordinated Gene Activity in Pattern Sets (CoGAPS) implements a Bayesian MCMC matrix factorization algorithm, GAPS, and links it to gene set statistic methods to infer biological process activity. It can be used to perform sparse matrix factorization on any data, and when this data represents biomolecules, to do gene set analysis. This package, PyCoGAPS, presents a unified Python interface, with a parallel, efficient underlying implementation.",
+  "author": "Ashley Tsang, Johns-Hopkins - Fertig Lab, Ted Liefeld ;UCSD - Mesirov Lab",
+  "input_file_formats": [
+    "csv",
+    "gct",
+    "h5ad",
+    "txt"
+  ],
+  "language": "Python",
+  "categories": [
+    "dimension reduction"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:72565:1",
+  "plan": "## PyCoGAPS GenePattern Module — Implementation Plan\n\n### 1. Overview\nPyCoGAPS is a GenePattern module that Coordinated Gene Activity in Pattern Sets (CoGAPS) implements a Bayesian MCMC matrix factorization algorithm, GAPS, and links it to gene set statistic methods to infer biological process activity. It can be used to perform sparse matrix factorization on any data, and when this data represents biomolecules, to do gene set analysis. This package, PyCoGAPS, presents a unified Python interface, with a parallel, efficient underlying implementation.\n\n### 2. Parameters\nThe module exposes 39 parameters:\n- Required: input.file, output.filename, num.patterns, num.iterations, seed, use.sparse.optimization, transpose.data, num.threads, messages, output.frequency, checkpoint.out.filename, worker.ID, asynchronous.updates, n.snapshots, snapshot.phase, alpha.A, alpha.P, max.Gibbs.Mass.A, max.Gibbs.Mass.P, num.sets, subset.dimension, take.pump.samples\n- Optional: uncertainty, checkpoint.in.file, distributed, cut, min.NS, max.NS, explicit.sets, sampling.annotation, sampling.weight, subset.indices, gene.names, sample.names, fixed.patterns, which.matrix.fixed, hdf.key, hdf.row.key, hdf.col.key\n\n### 3. Command Line\n```\npython3 /home/user/pycogaps-gpn/run_pycogaps.py  <input.file> <output.filename> <num.patterns> <num.iterations> <seed> <use.sparse.optimization> <num.threads> <messages> <output.frequency> <uncertainty> <checkpoint.out.filename> <checkpoint.in.file>  <worker.ID> <asynchronous.updates> <n.snapshots> <snapshot.phase> <alpha.A> <alpha.P> <max.Gibbs.Mass.A> <max.Gibbs.Mass.P> <distributed> <num.sets> <cut> <min.NS> <max.NS> <explicit.sets> <sampling.annotation> <sampling.weight> <subset.indices> <subset.dimension> <gene.names> <sample.names> <fixed.patterns> <which.matrix.fixed> <take.pump.samples> <hdf.key> <hdf.row.key> <hdf.col.key>  <transpose.data>\n```\n\n### 4. Docker Image\nDocker image: fertiglab/pycogaps-gpn\\:0.2.2\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_pycogaps.py",
+  "command_line": "python3 /home/user/pycogaps-gpn/run_pycogaps.py  <input.file> <output.filename> <num.patterns> <num.iterations> <seed> <use.sparse.optimization> <num.threads> <messages> <output.frequency> <uncertainty> <checkpoint.out.filename> <checkpoint.in.file>  <worker.ID> <asynchronous.updates> <n.snapshots> <snapshot.phase> <alpha.A> <alpha.P> <max.Gibbs.Mass.A> <max.Gibbs.Mass.P> <distributed> <num.sets> <cut> <min.NS> <max.NS> <explicit.sets> <sampling.annotation> <sampling.weight> <subset.indices> <subset.dimension> <gene.names> <sample.names> <fixed.patterns> <which.matrix.fixed> <take.pump.samples> <hdf.key> <hdf.row.key> <hdf.col.key>  <transpose.data>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "Input data file in h5ad, csv, gct or txt format.",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "csv",
+        "csv",
+        "csv",
+        "txt",
+        "gct",
+        "txt",
+        "txt",
+        "gct",
+        "h5ad"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--path",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "The result output file name (output is saved as a .h5ad file).\\t",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "<input.file_basename>_result.h5ad",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--resultFile",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.patterns",
+      "description": "The number of patterns PyCoGAPS will learn.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--nPatterns",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.iterations",
+      "description": "The number of iterations for each phase of the algorithm.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--nIterations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "seed",
+      "description": "Random number generator seed.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--seed",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "use.sparse.optimization",
+      "description": "When true, speeds up performance with sparse data (roughly >80% of data is zero), note this can only be used with the default uncertainty.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--useSparseOptimization",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "transpose.data",
+      "description": "Transpose the dataset before processing.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "False",
+          "value": "False"
+        },
+        {
+          "display": "True",
+          "value": "True"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--transposeData",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.threads",
+      "description": "The maximum number of threads to run on.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--nThreads",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "messages",
+      "description": "When True, display additional outputs to stdout.txt.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--messages",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.frequency",
+      "description": "The number of iterations between each output (set to 0 to disable status updates).",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "500",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--outputFrequency",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "uncertainty",
+      "description": "The uncertainty matrix - in csv format.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "csv",
+        "csv",
+        "csv",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--uncertainty",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "checkpoint.out.filename",
+      "description": "The name of the checkpoint file to create.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "gaps_checkpoint.out",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--checkpointOutFile",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "checkpoint.in.file",
+      "description": "If this is provided, CoGAPS runs from the checkpoint contained in this file.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--checkpointInFile",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "worker.ID",
+      "description": "If calling CoGAPS in parallel the worker ID can be specified.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--workerID",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "asynchronous.updates",
+      "description": "Enable asynchronous updating which allows for multi-threaded runs.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--asynchronousUpdates",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "n.snapshots",
+      "description": "Sets how many snapshots to take in each phase, setting this to 0 disables snapshots.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--nSnapshots",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "snapshot.phase",
+      "description": "During which phase to take snapshots in e.g. \\u201cequilibration\\u201d, \\u201csampling\\u201d, \\u201call\\u201d.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "sampling",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "sampling",
+          "value": "sampling"
+        },
+        {
+          "display": "equilibration",
+          "value": "equilibration"
+        },
+        {
+          "display": "all",
+          "value": "all"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--snapshotPhase",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "alpha.A",
+      "description": "The sparsity parameter for feature matrix.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": ".01",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--alphaA",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "alpha.P",
+      "description": "The sparsity parameter for sample matrix.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": ".01",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--alphaP",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.Gibbs.Mass.A",
+      "description": "The atomic mass restriction for feature matrix.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--maxGibbsMassA",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.Gibbs.Mass.P",
+      "description": "The atomic mass restriction for sample matrix.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--maxGibbsMassP",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "distributed",
+      "description": "Either null (None) or genome-wide.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "None",
+          "value": "\\"
+        },
+        {
+          "display": "Genome-wide",
+          "value": "Genome-wide"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--distributed",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "num.sets",
+      "description": "The number of sets to break data into.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "4",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--nSets",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cut",
+      "description": "The number of branches at which to cut dendrogram used in pattern matching.\\n default\\: nPatterns",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cut",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min.NS",
+      "description": "The minimum of individual set contributions a cluster must contain. default\\: Math.ceil(cut / 2)",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--minNS",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.NS",
+      "description": "The maximum of individual set contributions a cluster can contain.\\n default\\: minNS + nSets",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--maxNS",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "explicit.sets",
+      "description": "Whether to specify subsets by index or name.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "csv",
+        "csv",
+        "csv",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--explicitSets",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "sampling.annotation",
+      "description": "Specify categories along the rows (cols) to use for weighted sampling.\\t",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "csv",
+        "csv",
+        "csv",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--samplingAnnotation",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "sampling.weight",
+      "description": "The weights associated with sampling annotation.\\t",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--samplingWeight",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "subset.indices",
+      "description": "The set of indices to use from the data.\\t",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--subsetIndices",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "subset.dimension",
+      "description": "Which dimension (rows, columns) to subset.\\t",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Rows",
+          "value": "0"
+        },
+        {
+          "display": "Columns",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--subsetDim",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gene.names",
+      "description": "The vector of names of genes in the data.\\t",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--geneNames",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "sample.names",
+      "description": "The vector of names of samples in the data.\\t",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sampleNames",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "fixed.patterns",
+      "description": "The provided fixedPatterns matrix (either \\u2018A\\u2019 or \\u2018P\\u2019 matrix) allows for manual pattern matching. In distributed CoGAPS (distributed\\=\\u2019genome-wide\\u2019), the first phase is skipped and fixedPatterns is used for all sets. In standard CoGAPS, fixedPatterns allows for fixed runs.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "csv",
+        "csv",
+        "csv",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--fixedPatterns",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "which.matrix.fixed",
+      "description": "Either \\u2018A\\u2019 or \\u2018P\\u2019, indicating which matrix is fixed.\\t",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "A",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "A",
+          "value": "A"
+        },
+        {
+          "display": "P",
+          "value": "P"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--whichMatrixFixed",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "take.pump.samples",
+      "description": "Whether or not to take PUMP samples.\\t",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--takePumpSamples",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "hdf.key",
+      "description": "Hdf key for reading .h5 files.\\t",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--hdfKey",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "hdf.row.key",
+      "description": "Hdf row key for reading .h5 files.\\t",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--hdfRowKey",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "hdf.col.key",
+      "description": "Hdf column key for reading .h5 files.\\t",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--hdfColKey",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "fertiglab/pycogaps-gpn:0.2.2"
+}

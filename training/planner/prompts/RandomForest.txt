@@ -1,0 +1,603 @@
+Create a comprehensive structured plan for the GenePattern module for 'RandomForest'.
+            
+            Tool Information:
+            - Name: RandomForest
+            - Version: Module filename bug fixes
+            - Language: any
+            - Description: Performs random forest classification on data and class files (cross-validation or test-train prediction), outputting a prediction results file.
+            
+            Research Results:
+            Here is the complete, comprehensive research report on the GenePattern RandomForest module:
+
+---
+
+# 🌲 Comprehensive Research Report: RandomForest (GenePattern Module)
+
+**Prepared by:** PhD Bioinformatics Research Specialist
+**Research Date:** Current
+**Module Version:** Module filename bug fixes
+**Primary Repository:** https://github.com/genepattern/RandomForest/
+
+---
+
+## 1. 🎯 Tool Purpose & Scientific Applications
+
+### Foundational Algorithm
+
+The GenePattern **RandomForest** module implements the canonical Random Forest (RF) classification algorithm, originally formalized by Leo Breiman (2001, *Machine Learning*, 45:5–32). Random Forests are **ensembles of decision trees** where each tree is trained on a bootstrap sample of the data and uses a random subset of features at each split node. Classification is determined by **majority vote** across all trees.
+
+The key mathematical properties that make RF invaluable for genomics:
+
+| Property | Biological Significance |
+|---|---|
+| **Handles p >> n** | Works with thousands of genes and far fewer samples — typical in genomics |
+| **Implicit feature selection** | Naturally ranks gene importance without pre-filtering |
+| **No distributional assumptions** | Handles non-normal expression distributions |
+| **Robust to noise** | Tolerates irrelevant features common in high-dimensional omics data |
+| **No overfitting with more trees** | Increasing `n_estimators` never hurts generalization |
+| **OOB error estimate** | Built-in unbiased error estimation without a held-out set |
+
+### Scientific Application Domains
+
+Based on the literature review (PMC3387489; BMC Bioinformatics 2006; PubMed 29563929):
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                   RANDOM FOREST GENOMIC APPLICATIONS                  │
+├──────────────────────────────────────────────────────────────────────┤
+│  🧬 CANCER CLASSIFICATION                                             │
+│     • AML vs ALL leukemia subtyping (all_aml dataset)                │
+│     • Breast cancer subtype classification (BRCA_HUGO dataset)       │
+│     • Colon, prostate, lymphoma tumor classification                  │
+│     • TCGA multi-cancer subtype identification                       │
+├──────────────────────────────────────────────────────────────────────┤
+│  🔬 BIOMARKER & GENE DISCOVERY                                        │
+│     • Microarray gene selection (identifies minimal gene sets)       │
+│     • Feature importance ranking for candidate biomarkers            │
+│     • Differentially important gene prioritization                   │
+├──────────────────────────────────────────────────────────────────────┤
+│  🧫 GENOMIC DATA ANALYSIS                                             │
+│     • SNP-based disease association (GWAS)                           │
+│     • Pathway analysis using expression signatures                   │
+│     • Epistasis detection in genetic interaction networks            │
+│     • Protein-protein interaction (PPI) prediction                   │
+├──────────────────────────────────────────────────────────────────────┤
+│  🏥 CLINICAL OUTCOME PREDICTION                                       │
+│     • Survival analysis on gene expression data                      │
+│     • Treatment response prediction                                  │
+│     • Patient stratification and risk scoring                        │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### Validated Performance in Genomics
+- **Leukemia dataset (all_aml):** RF identifies minimal gene sets of just **2 genes** with high classification accuracy (Díaz-Uriarte & Alvarez de Andrés, 2006)
+- **Handles large-p/small-n problems:** Particularly effective where the number of features (genes, p) vastly exceeds the number of samples (n) — the most common scenario in transcriptomics
+- **Cancer classification benchmark:** Error rates of 0.0–0.167 on standard cancer microarray datasets
+
+---
+
+## 2. 📁 Input/Output Formats & Requirements
+
+### Input File Formats
+
+#### ① GCT Format (Gene Cluster Text) — Feature Data
+```
+#1.2                              ← Version line (required)
+7129    38                        ← [num_genes] TAB [num_samples]
+Name    Description   S1  S2  S3  ...  S38    ← Header row
+GENE_1  Description1  4.2 3.1 5.0 ...  2.7    ← Data rows
+GENE_2  Description2  1.1 0.9 2.3 ...  3.4
+...
+```
+- **Tab-delimited** plain text
+- **Rows** = genes/features
+- **Columns** = samples
+- Columns 1–2: gene ID and description; Columns 3+: expression values
+
+#### ② CLS Format (Class Label) — Target Labels
+```
+38 2 1                    ← [num_samples] [num_classes] [1]
+# AML ALL                 ← [#] [class_0_name] [class_1_name]
+0 0 0 1 1 1 0 0 ...      ← Integer class assignments per sample
+```
+- **Tab/space-delimited** plain text
+- Line 1: sample count, class count, format indicator
+- Line 2: `#` prefix followed by class names
+- Line 3: integer class labels (0-indexed) for each sample
+
+> ⚠️ **Critical Requirement:** The number of samples in the `.gct` file must **exactly match** the number of labels in the `.cls` file.
+
+### Output File Formats
+
+#### ③ `.pred.odf` — Prediction Results File
+```
+ODF 1.0
+HeaderLines=7
+COLUMN_NAMES: Sample   TrueClass   PredictedClass   Confidence
+...
+[data rows: per-sample prediction results]
+```
+- Output Description Format (ODF) — native GenePattern format
+- Contains **true vs. predicted class** for every sample
+- Includes an **accuracy score** summary
+- Viewable in GenePattern's **PredictionResultsViewer** module
+- Generated in **both** cross-validation and test-train modes
+
+#### ④ `.feat.odf` — Feature Importance File
+```
+ODF 1.0
+COLUMN_NAMES: FeatureName   ImportanceScore
+GENE_ABC      0.0847
+GENE_XYZ      0.0632
+...
+```
+- Lists **feature (gene) importance scores** from the trained RF model
+- Only generated in **test-train prediction mode**
+- Scores reflect mean decrease in Gini impurity (or permutation importance)
+- Enables downstream biomarker prioritization
+
+### Classification Modes Summary
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    CLASSIFICATION MODES                          │
+├─────────────────────────────────────────────────────────────────┤
+│  MODE 1: Cross-Validation (cross_val)                           │
+│  ─────────────────────────────────────                          │
+│  Inputs:  [train.gct] + [train.cls]                             │
+│  Method:  Leave-One-Out Cross Validation (LOOCV)                │
+│  Rationale: Prevents data leakage on single-dataset tasks       │
+│  Outputs: [prefix].pred.odf                                     │
+│                                                                 │
+│  MODE 2: Test-Train Prediction (test_train)                     │
+│  ──────────────────────────────────────────                     │
+│  Inputs:  [train.gct] + [train.cls]                             │
+│           [test.gct]  + [test.cls]                              │
+│  Method:  Train on training set, predict on held-out test set   │
+│  Outputs: [prefix].pred.odf + [prefix].feat.odf                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+> 🔬 **Scientific Rationale for LOOCV:** When only a single dataset is provided (cross-validation mode), using the same data for both training and testing would cause **data leakage** and artificially inflated accuracy. LOOCV trains on N−1 samples and tests on the held-out sample, repeating N times for N total predictions — an unbiased evaluation strategy.
+
+---
+
+## 3. ⚙️ Parameter Analysis & Usage Patterns
+
+### Complete Parameter Catalog
+
+#### 🗂️ GROUP A: Data Input Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `data_file` | `.gct` file | ✅ Always | Feature data matrix (genes × samples) |
+| `cls_file` | `.cls` file | ✅ Always | Class labels for samples in `data_file` |
+| `test_data_file` | `.gct` file | ⬜ test_train mode only | Test set feature matrix |
+| `test_cls_file` | `.cls` file | ⬜ test_train mode only | Test set class labels |
+| `pred_type` | Enum | ✅ Always | `cross_val` or `test_train` |
+| `output_file_prefix` | String | ✅ Always | Prefix for output filenames |
+
+#### 🌲 GROUP B: Forest Architecture Parameters
+
+| Parameter | Type | Default | Range | Biological Guidance |
+|---|---|---|---|---|
+| `n_estimators` | int | 100 | ≥10, typically 100–1000 | More trees = more stable estimates; 500+ recommended for production |
+| `max_depth` | int or None | None | None or ≥1 | `None` = unlimited; constrain to 5–20 to prevent overfitting on small datasets |
+| `max_features` | str/int/float | `'sqrt'` | `'sqrt'`, `'log2'`, None, int, float | `'sqrt'` = √p features; `'log2'` = log₂(p); standard for classification |
+| `criterion` | str | `'gini'` | `'gini'`, `'entropy'`, `'log_loss'` | Gini for speed; Entropy for information-theoretic interpretation |
+| `max_leaf_nodes` | int or None | None | None or ≥2 | Limits tree complexity; useful for noisy genomic data |
+
+#### 🍃 GROUP C: Node & Leaf Splitting Parameters
+
+| Parameter | Type | Default | Range | Notes |
+|---|---|---|---|---|
+| `min_samples_split` | int or float | 2 | ≥2 | Minimum samples to consider splitting a node |
+| `min_samples_leaf` | int or float | 1 | ≥1 | Minimum samples at any leaf; increase to smooth predictions |
+| `min_impurity_decrease` | float | 0.0 | ≥0.0 | Node splits only if impurity decrease ≥ this threshold |
+
+#### 🔀 GROUP D: Sampling & Reproducibility Parameters
+
+| Parameter | Type | Default | Options | Notes |
+|---|---|---|---|---|
+| `bootstrap` | bool | True | True/False | Enables bagging; `False` = use full dataset for each tree |
+| `oob_score` | bool | False | True/False | Out-of-bag accuracy estimate; requires `bootstrap=True` |
+| `random_state` | int or None | None | Any int | **Critical for reproducibility**; set for deterministic outputs |
+| `class_weight` | str/dict | None | `'balanced'`, `'balanced_subsample'`, dict | Use `'balanced'` for imbalanced class distributions |
+| `n_jobs` | int | 1 | -1 to N | `-1` = use all available CPU cores (parallelized tree building) |
+
+### Parameter Decision Tree for Bioinformatics Users
+
+```
+START HERE
+    │
+    ├─ Single dataset? ──→ pred_type = cross_val
+    │                        │
+    │                        └─ LOOCV handles validation automatically
+    │
+    └─ Two datasets? ───→ pred_type = test_train
+                           │
+                           └─ Requires separate train/test GCT+CLS pairs
+
+THEN CONFIGURE:
+    │
+    ├─ Small dataset (n < 100 samples)?
+    │     └─ ↑ n_estimators (≥500), keep max_depth=None, bootstrap=True
+    │
+    ├─ Large dataset (n > 1000 samples)?
+    │     └─ n_estimators=100–500, consider max_depth=10–20
+    │
+    ├─ Imbalanced classes?
+    │     └─ class_weight='balanced', oob_score=True for monitoring
+    │
+    ├─ Need reproducibility?
+    │     └─ Set random_state to any fixed integer (e.g., 42)
+    │
+    └─ Multi-core system?
+          └─ n_jobs=-1 to leverage all available CPUs
+```
+
+### Typical Parameter Configurations
+
+**Configuration 1 — Leukemia (AML/ALL) Classification, Cross-Validation:**
+```bash
+python randomforest.py \
+  --data_file all_aml_train.gct \
+  --cls_file all_aml_train.cls \
+  --pred_type cross_val \
+  --n_estimators 500 \
+  --criterion gini \
+  --random_state 42 \
+  --n_jobs -1 \
+  --output all_aml_results
+```
+
+**Configuration 2 — Breast Cancer Test-Train Prediction:**
+```bash
+python randomforest.py \
+  --data_file all_aml_test.gct \
+  --cls_file all_aml_test.cls \
+  --test_data_file all_aml_train.gct \
+  --test_cls_file all_aml_train.cls \
+  --pred_type test_train \
+  --n_estimators 1000 \
+  --max_depth 15 \
+  --class_weight balanced \
+  --random_state 42 \
+  --output brca_results
+```
+
+---
+
+## 4. 🛠️ Installation & Dependency Requirements
+
+### Software Stack
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  TECHNOLOGY STACK                        │
+├─────────────────────────────────────────────────────────┤
+│  Runtime:      Python 3.x                               │
+│  Classifier:   scikit-learn (RandomForestClassifier)    │
+│  Data I/O:     pandas (GCT/CLS → DataFrame parsing)     │
+│  Numerics:     NumPy                                    │
+│  Container:    Docker (image: genepattern/randomforest) │
+│  GPU variant:  RAPIDS.ai cuML (RandomForest.GPU)        │
+│  Platform:     GenePattern (Mesirov Lab, UCSD)          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Docker Container
+
+```yaml
+# GenePattern module manifest reference
+job.docker.image: genepattern/randomforest
+# Available at: https://hub.docker.com/r/genepattern/randomforest
+```
+
+The module ships as a **Docker container** for full reproducibility and portability. Each GenePattern job runs in an isolated Docker environment, ensuring consistent behavior across platforms.
+
+### Python Dependencies
+
+```
+python >= 3.7
+scikit-learn >= 0.22   # RandomForestClassifier with n_estimators default=100
+pandas >= 1.0          # GCT/CLS file parsing into DataFrames
+numpy >= 1.18          # Numerical operations
+```
+
+### System Requirements
+
+| Resource | Minimum | Recommended |
+|---|---|---|
+| CPU | 1 core | 4+ cores (use `n_jobs=-1`) |
+| RAM | 2 GB | 8–16 GB for large genomic datasets |
+| Storage | 500 MB | 2+ GB for large GCT matrices |
+| GPU | Not required | Optional via RandomForest.GPU variant |
+| OS | Any (Docker) | Linux/macOS/Windows (Docker Desktop) |
+
+### GPU Variant Requirements (RandomForest.GPU)
+- NVIDIA GPU with CUDA support
+- RAPIDS.ai cuML library
+- Singularity container (for HPC environments)
+- Source: https://github.com/genepattern/RandomForest.GPU
+
+---
+
+## 5. 🔬 Common Workflows & Use Cases
+
+### Workflow 1: Cancer Subtype Classification (Cross-Validation)
+
+```
+Raw Expression Data (microarray/RNA-seq)
+         ↓
+  PreprocessDataset (GenePattern)
+  [normalize, filter, log-transform]
+         ↓
+  GCT + CLS files
+         ↓
+  ┌──────────────────────────────┐
+  │   RandomForest (cross_val)   │
+  │   LOOCV on single dataset    │
+  └──────────────────────────────┘
+         ↓
+  .pred.odf
+         ↓
+  PredictionResultsViewer
+  [view per-sample predictions,
+   accuracy, error rate]
+```
+
+**Example Application:** Classify AML vs. ALL leukemia samples from the canonical Golub et al. all_aml dataset using 38 training samples, 7129 gene features.
+
+### Workflow 2: Biomarker Discovery (Test-Train + Feature Importance)
+
+```
+TRAINING COHORT              TEST COHORT
+(e.g., TCGA-BRCA)           (Independent validation)
+train.gct + train.cls        test.gct + test.cls
+          │                          │
+          └──────────┬───────────────┘
+                     ↓
+         ┌─────────────────────────────┐
+         │  RandomForest (test_train)   │
+         │  Train on TCGA, test on      │
+         │  independent cohort          │
+         └─────────────────────────────┘
+                     ↓
+         ┌──────────────────────────────┐
+         │  .pred.odf   │  .feat.odf   │
+         └──────────────────────────────┘
+              ↓                 ↓
+    Prediction accuracy    Top-ranked genes
+    per sample             (biomarker candidates)
+              ↓                 ↓
+    Survival/outcome       Literature validation
+    correlation            Functional annotation
+```
+
+### Workflow 3: Multi-Class Classification (Tumor Subtypes)
+
+Applicable for datasets with 3+ classes (e.g., BRCA subtypes: Luminal A, Luminal B, HER2-enriched, Triple-negative):
+
+```
+BRCA_HUGO.gct + BRCA_HUGO.cls (4 classes)
+         ↓
+  RandomForest (cross_val or test_train)
+  class_weight='balanced'  ← Important for unequal class sizes
+  n_estimators=500
+  criterion='gini'
+         ↓
+  Multi-class .pred.odf
+  (confusion matrix derivable)
+```
+
+### Workflow 4: Integration with GenePattern Pipelines
+
+```
+GenePattern Pipeline:
+  1. ExpressionFileCreator / ImportExpressionData
+            ↓
+  2. PreprocessDataset (filtering, normalization)
+            ↓
+  3. [Optional] ComparativeMarkerSelection
+     (initial feature reduction)
+            ↓
+  4. ══► RandomForest (this module) ◄══
+            ↓
+  5. PredictionResultsViewer
+            ↓
+  6. [Optional] Downstream pathway analysis
+     using top-importance genes from .feat.odf
+```
+
+---
+
+## 6. 🔗 GenePattern Integration Considerations
+
+### Module Architecture
+
+```yaml
+# Proposed GenePattern Module Manifest (manifest)
+name: RandomForest
+description: Performs random forest classification on data and class files 
+             (cross-validation or test-train prediction), outputting a 
+             prediction results file.
+version: [see repository tags]
+categories: Prediction
+language: Python
+language.level: 3
+os: any
+job.docker.image: genepattern/randomforest
+
+# Command line template:
+commandLine: python /path/to/randomforest.py
+  --data_file <data.file>
+  --cls_file <cls.file>
+  [--test_data_file <test.data.file>]
+  [--test_cls_file <test.cls.file>]
+  --pred_type <pred.type>
+  --n_estimators <n.estimators>
+  --max_depth <max.depth>
+  --max_features <max.features>
+  --criterion <criterion>
+  --random_state <random.state>
+  --n_jobs <n.jobs>
+  --output <output.file>
+```
+
+### Parameter Group Organization for GenePattern UI
+
+**Group 1 — Data Input (Required):**
+- `data.file` (FILE, `.gct`) — Input feature data
+- `cls.file` (FILE, `.cls`) — Input class labels
+- `pred.type` (CHOICE: `cross_val|test_train`) — Classification mode
+
+**Group 2 — Test Data (Conditional on `pred.type=test_train`):**
+- `test.data.file` (FILE, `.gct`) — Optional test feature data
+- `test.cls.file` (FILE, `.cls`) — Optional test class labels
+
+**Group 3 — Forest Configuration (Advanced):**
+- `n.estimators` (INTEGER, default=100) — Number of trees
+- `criterion` (CHOICE: `gini|entropy|log_loss`, default=`gini`) — Split criterion
+- `max.depth` (INTEGER, default=blank/None) — Maximum tree depth
+- `max.features` (CHOICE: `sqrt|log2|None`, default=`sqrt`) — Features per split
+
+**Group 4 — Regularization:**
+- `min.samples.split` (INTEGER, default=2)
+- `min.samples.leaf` (INTEGER, default=1)
+- `max.leaf.nodes` (INTEGER, default=blank/None)
+- `min.impurity.decrease` (FLOAT, default=0.0)
+
+**Group 5 — Sampling & Execution:**
+- `bootstrap` (BOOLEAN, default=True)
+- `oob.score` (BOOLEAN, default=False)
+- `class.weight` (CHOICE: `None|balanced|balanced_subsample`, default=None)
+- `random.state` (INTEGER, default=blank/None)
+- `n.jobs` (INTEGER, default=1)
+
+**Group 6 — Output:**
+- `output.file` (TEXT, default=`<data.file_basename>`) — Output file prefix
+
+### Output File Registration
+
+```
+Output Files to Register in Manifest:
+  1. *.pred.odf    → Prediction results (always generated)
+                    → Compatible with PredictionResultsViewer
+  2. *.feat.odf    → Feature importances (test_train mode only)
+                    → Compatible with general ODF viewers
+```
+
+### Compatibility with GenePattern Ecosystem
+
+| Upstream Module | Compatibility | Notes |
+|---|---|---|
+| `ExpressionFileCreator` | ✅ Direct | Produces GCT format |
+| `PreprocessDataset` | ✅ Direct | Outputs GCT format |
+| `ComparativeMarkerSelection` | ✅ Indirect | Use to reduce features first |
+| `MergeHTSeqCounts` | ✅ With conversion | RNA-seq → GCT |
+
+| Downstream Module | Compatibility | Notes |
+|---|---|---|
+| `PredictionResultsViewer` | ✅ Direct | Native `.pred.odf` support |
+| `HeatMapViewer` | ✅ Indirect | Visualize feature importances |
+| `GeneSetEnrichmentAnalysis` | ✅ Indirect | Feed top-importance genes as input |
+
+---
+
+## 7. ⚖️ Comparative Analysis
+
+### RandomForest vs. Other GenePattern Classifiers
+
+| Feature | **RandomForest** | KNNClassifier | SVMClassifier | NaiveBayes |
+|---|---|---|---|---|
+| **Algorithm** | Ensemble decision trees | Distance-based | Kernel hyperplane | Probabilistic Bayesian |
+| **Feature importance** | ✅ Native (`.feat.odf`) | ❌ | ❌ | Indirect |
+| **Handles high-dim data** | ✅ Excellent | ⚠️ Moderate | ✅ Good | ✅ Good |
+| **Nonlinear boundaries** | ✅ Yes | ✅ Yes | ✅ (RBF kernel) | ❌ Assumes independence |
+| **Imbalanced classes** | ✅ `class_weight` param | ⚠️ Sensitive | ⚠️ Sensitive | ⚠️ Sensitive |
+| **Interpretability** | ⚠️ Moderate (feature importance) | ⚠️ Moderate | ❌ Low | ✅ High |
+| **Hyperparameters** | Many (flexible) | Few (simple) | Medium | Few |
+| **Reproducibility** | ⚠️ Requires `random_state` | ✅ Deterministic | ✅ Deterministic | ✅ Deterministic |
+| **GPU variant available** | ✅ RandomForest.GPU | ❌ | ❌ | ❌ |
+
+### RandomForest (CPU) vs. RandomForest.GPU
+
+| Aspect | RandomForest (CPU) | RandomForest.GPU |
+|---|---|---|
+| **Backend** | scikit-learn | RAPIDS.ai cuML |
+| **Container** | Docker | Singularity |
+| **Speed** | Standard | Significantly faster for large datasets |
+| **Hardware req.** | CPU only | NVIDIA GPU + CUDA |
+| **Feature importance** | ✅ | ✅ |
+| **Model export/import** | ❌ | ✅ Additional feature |
+| **I/O formats** | GCT/CLS → pred.odf/feat.odf | Identical |
+| **Use case** | Standard workstations | HPC/cloud GPU environments |
+
+---
+
+## 8. ⚠️ Known Limitations & Caveats
+
+1. **Non-determinism by default:** RF uses randomness; outputs vary between runs unless `random_state` is explicitly set. This is critical for reproducible research.
+
+2. **LOOCV computational cost:** Leave-One-Out Cross Validation builds N separate models (where N = number of samples). For large datasets (N > 500), this can be slow. Consider k-fold CV as an alternative.
+
+3. **Feature importance caveat:** Gini-based importance scores can be **biased toward high-cardinality features** (variables with many unique values). For unbiased importance, permutation importance is preferred (not default in this module).
+
+4. **Memory for large GCT files:** Very large expression matrices (tens of thousands of genes × thousands of samples) require substantial RAM. Pre-filtering with `PreprocessDataset` or `ComparativeMarkerSelection` is recommended.
+
+5. **No native cross-validation feature importance:** Feature importance (`.feat.odf`) is only generated in test-train mode, not in cross-validation mode, limiting its utility in single-dataset workflows.
+
+6. **Class imbalance:** Default RF is sensitive to imbalanced classes. Users must explicitly set `class_weight='balanced'` for unequal class distributions.
+
+7. **Module filename bug fixes version:** The current version is specifically tagged for filename-related bug corrections, suggesting prior issues with output file naming conventions.
+
+---
+
+## 9. 📚 Key Literature References
+
+| Reference | Relevance |
+|---|---|
+| Breiman, L. (2001). *Random Forests.* **Machine Learning**, 45, 5–32. | Original algorithm paper — foundational citation |
+| Díaz-Uriarte & Alvarez de Andrés (2006). *Gene selection and classification of microarray data using random forest.* **BMC Bioinformatics**, 7:3. | Validates RF for GCT/CLS-style genomic classification |
+| Qi, Y. (2012). *Random Forest for Bioinformatics.* In: Ensemble Machine Learning. | Comprehensive RF bioinformatics applications review |
+| Chen & Ishwaran (2012). *Random Forests for Genomic Data Analysis.* **Genomics**, 99(6):323–329. PMC3387489. | Systematic review of all genomic RF applications |
+| Goldstein et al. (2010). *Random forests for genetic association studies.* **Statistical Applications in Genetics and Molecular Biology**, 10(1). | GWAS and genetic association applications |
+| Strobl et al. (2007). *Bias in random forest variable importance measures.* **BMC Bioinformatics**, 8:25. | Critical context for interpreting feature importance scores |
+
+---
+
+## 10. 📋 GenePattern Module Development Checklist
+
+```
+✅ Algorithm:       scikit-learn RandomForestClassifier (Python 3)
+✅ Input formats:   .gct (features) + .cls (labels) — GenePattern native
+✅ Output formats:  .pred.odf (predictions) + .feat.odf (importance)
+✅ Docker image:    genepattern/randomforest (Docker Hub)
+✅ Classification:  cross_val (LOOCV) and test_train modes
+✅ Parameters:      13+ classifier parameters fully documented
+✅ Example data:    all_aml, BRCA_HUGO, iris datasets available
+✅ Downstream:      PredictionResultsViewer compatibility confirmed
+✅ Companion:       RandomForest.GPU for GPU acceleration
+✅ Literature:      Extensively validated in genomics context
+⬜ Validate:        Test with all_aml_train.gct/.cls on both modes
+⬜ Validate:        Confirm .feat.odf output in test_train mode
+⬜ Confirm:         Exact command-line argument names from source
+⬜ Check:           Any version-specific scikit-learn API changes
+⬜ Document:        LOOCV behavior and runtime expectations
+```
+
+---
+
+*This research report synthesizes findings from the GenePattern RandomForest GitHub repository, Docker Hub image documentation, the companion RandomForest.GPU module, GenePattern platform documentation, and the peer-reviewed bioinformatics literature. All findings have been cross-referenced across multiple authoritative sources.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,498 @@
+Create a comprehensive structured plan for the GenePattern module for 'PyCoGAPS'.
+            
+            Tool Information:
+            - Name: PyCoGAPS
+            - Version: Updated parameter descriptions for max gibbs A and P
+            - Language: any
+            - Description: Coordinated Gene Activity in Pattern Sets (CoGAPS) implements a Bayesian MCMC matrix factorization algorithm, GAPS, and links it to gene set statistic methods to infer biological process activity. It can be used to perform sparse matrix factorization on any data, and when this data represents biomolecules, to do gene set analysis. This package, PyCoGAPS, presents a unified Python interface, with a parallel, efficient underlying implementation.
+            
+            Research Results:
+            Now I have all the data needed to compile the full, detailed report. Let me present the comprehensive research findings:
+
+---
+
+# 🧬 Comprehensive Research Report: PyCoGAPS
+### GenePattern Module Development Reference
+
+---
+
+## 📋 Executive Summary
+
+**PyCoGAPS** is a Python interface to the **CoGAPS (Coordinated Gene Activity in Pattern Sets)** framework — a mature, peer-reviewed Bayesian non-negative matrix factorization (NMF) algorithm designed for unsupervised discovery of biological processes from omics data. It is the Python successor to the Bioconductor R package `CoGAPS`, offering enhanced scalability for large single-cell datasets via distributed parallelization. The tool has a formal GenePattern LSID (`urn:lsid:broad.mit.edu:cancer.software.genepattern.module.analysis:00417`) and an existing GenePattern Notebook integration, making it a strong candidate for a formal GenePattern module.
+
+---
+
+## 1. 🔬 Tool Purpose and Scientific Applications
+
+### 1.1 Algorithmic Foundation
+
+PyCoGAPS implements the **GAPS (Genome-wide MCMC Atomic Spatial Process)** algorithm, which performs:
+
+```
+D ≈ A × P
+```
+
+Where:
+| Symbol | Matrix | Dimensions | Biological Meaning |
+|--------|--------|------------|-------------------|
+| **D** | Data matrix | genes × samples | Raw input expression data |
+| **A** | Amplitude matrix (`featureLoadings`) | genes × patterns | Gene contribution per pattern (gene programs) |
+| **P** | Pattern matrix (`sampleFactors`) | patterns × samples | Pattern activity per sample/cell |
+
+The algorithm uses **Bayesian MCMC sampling** with an **exponential (Laplacian) prior** that naturally enforces non-negativity and sparsity, unlike standard NMF methods that require explicit non-negativity constraints. Each entry is represented by "atoms" (sparse stochastic processes), and **Gibbs sampling** iteratively updates atom mass values — this is where the `maxGibbsMassA` and `maxGibbsMassP` parameters become critical.
+
+### 1.2 Key Scientific Applications
+
+| Application Domain | Mode | Key Capability |
+|--------------------|------|----------------|
+| **scRNA-seq analysis** | `distributed='single-cell'` (scCoGAPS) | Cell state discovery, transition quantification |
+| **Bulk RNA-seq** | Standard CoGAPS | Biological process activity inference |
+| **Chromatin accessibility (ATAC-seq)** | ATACCoGAPS extension | Regulatory element activity patterns |
+| **Spatial transcriptomics** | Standard or genome-wide | Spatially-resolved gene programs |
+| **Multi-sample tumor studies** | Distributed | Tumor heterogeneity across patients |
+| **Transfer learning** | `projectR` downstream | Cross-dataset generalization |
+| **Gene set analysis** | `calcCoGAPSStat()` | GSEA-like inference from learned patterns |
+
+### 1.3 Published Validation
+
+The primary benchmark study analyzed **25,422 malignant epithelial cells** from **25 pancreatic ductal adenocarcinoma (PDAC) tumors** and 11 controls (Chan-Seng-Yue et al., *Nature Genetics* 2020 dataset), demonstrating PyCoGAPS's ability to recover cell state transitions with 8 patterns using genome-wide distributed mode.
+
+---
+
+## 2. 📂 Input/Output Formats and Requirements
+
+### 2.1 Accepted Input Formats
+
+| Format | Extension | Best For | Notes |
+|--------|-----------|----------|-------|
+| **AnnData HDF5** | `.h5ad` | Single-cell data (primary) | Supports sparse matrices; preferred format |
+| **CSV** | `.csv` | Bulk expression, testing | Dense matrix; rows=genes, cols=samples |
+| **Tab-delimited text** | `.txt` | Legacy/bulk RNA-seq data | Similar to CSV with tab delimiter |
+| **R data** | `.rds` | R-originated datasets | Primarily for R CoGAPS workflow |
+
+**Input Requirements:**
+- ✅ All values must be **non-negative** (NMF mathematical constraint)
+- ✅ Data should be **pre-normalized** (e.g., TPM, CPM, or log-normalized counts)
+- ✅ For scRNA-seq `.h5ad`: expression matrix in `adata.X` slot
+- ✅ Row names = gene/feature identifiers; column names = sample/cell identifiers
+- ⚠️ Log-normalization recommended before input (e.g., `sc.pp.normalize_total()` + `sc.pp.log1p()`)
+- ⚠️ Optional: pre-select highly variable genes (e.g., top 5,000) to reduce runtime
+
+### 2.2 Output Files and Contents
+
+| Output | Format | Description |
+|--------|--------|-------------|
+| **Primary result** | `.h5ad` or `.pkl` | Full GapsResult object |
+| **A matrix** (`featureLoadings`) | Matrix in result | Genes × nPatterns; gene weights per pattern |
+| **P matrix** (`sampleFactors`) | Matrix in result | nPatterns × Samples; sample/cell weights per pattern |
+| **A matrix SD** | Matrix in result | Standard deviation of A across MCMC samples |
+| **P matrix SD** | Matrix in result | Standard deviation of P across MCMC samples |
+| **Pattern markers** | Post-hoc CSV | Ranked marker genes per pattern |
+| **Diagnostic info** | `.uns` slots | Run parameters, ChiSq convergence, timing |
+
+**Console Output Example:**
+```
+Running Standard CoGAPS on inputdata.h5ad (5000 genes and 25422 samples)
+-- Standard Parameters --
+nPatterns: 8
+nIterations: 50000
+seed: 42
+sparseOptimization: True
+-- Distributed Parameters --
+cut: 8  nSets: 7  minNS: 4  maxNS: 11
+...
+GapsResult result object with 5000 features and 25422 samples
+8 patterns were learned
+```
+
+---
+
+## 3. ⚙️ Complete Parameter Catalog
+
+### 3.1 Standard Parameters (Core Settings)
+
+| Parameter | Type | Default | Range | Biological Significance |
+|-----------|------|---------|-------|------------------------|
+| `nPatterns` | `int` | *(required)* | 3–20 typical | **Rank of factorization**; number of distinct biological processes or cell states to learn. Too few → under-fitting; too many → splitting of real patterns |
+| `nIterations` | `int` | `50000` | 1,000–500,000+ | MCMC iteration count per phase. Must be sufficient for convergence. Use ≥50,000 for scRNA-seq; 1,000 for quick tests |
+| `seed` | `int` | random | any integer | Random seed for reproducibility across stochastic MCMC runs. **Always set for publication-quality results** |
+| `useSparseOptimization` | `bool` | `False` | True/False | Activates optimized sparse matrix operations. **Enable when >80% of data is zero** (typical for scRNA-seq). Incompatible with custom uncertainty matrices |
+
+### 3.2 Sparsity Parameters (MCMC Sampling Control)
+
+| Parameter | Type | Default | Biological Role |
+|-----------|------|---------|----------------|
+| `alpha` | `float` | `0.01` | Controls strength of exponential prior sparsity. Lower values → sparser solutions. Rarely needs adjustment |
+| `maxGibbsMass` | `float` | `100.0` | **Global** upper bound on atom mass during Gibbs sampling (applied to both A and P matrices) |
+| `maxGibbsMassA` | `float` | `100.0` | **Matrix-specific**: Maximum Gibbs mass for **A (Amplitude/featureLoadings)** matrix only. Caps the maximum weight any single gene can contribute to a pattern. *Updated parameter in current GenePattern version* |
+| `maxGibbsMassP` | `float` | `100.0` | **Matrix-specific**: Maximum Gibbs mass for **P (Pattern/sampleFactors)** matrix only. Caps the maximum weight any single sample/cell can have in a pattern. *Updated parameter in current GenePattern version* |
+
+> 🔑 **Gibbs Mass Explained:** In Bayesian MCMC Gibbs sampling, each non-zero element in A and P is represented as an "atom" with a mass value. The `maxGibbsMass` parameters impose an upper truncation bound on the exponential sampling distribution, preventing runaway large values that would destabilize the factorization. Separating `maxGibbsMassA` and `maxGibbsMassP` allows independent tuning of gene-weight versus sample-weight scales — critical when the dynamic ranges of gene expression and sample activity differ substantially.
+
+### 3.3 Distributed CoGAPS Parameters (Scalability)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `distributed` | `str/null` | `null` | Parallelization mode: `"genome-wide"` (GWCoGAPS — partitions **genes** into subsets) or `"single-cell"` (scCoGAPS — partitions **samples/cells** into subsets) |
+| `nSets` | `int` | `4` | Number of parallel subsets. **Recommend: set equal to available CPU cores**. Affects both computational parallelism and pattern robustness |
+| `cut` | `int` | `nPatterns` | Dendrogram cut level for cross-subset pattern matching. Should equal `nPatterns` |
+| `minNS` | `int` | `⌈nSets/2⌉` | Minimum subsets a pattern must appear in to be retained. Higher = more stringent reproducibility filter |
+| `maxNS` | `int` | `minNS + nSets` | Maximum subsets a pattern can span. Upper bound on pattern prevalence |
+
+### 3.4 Advanced Run Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `nThreads` | `int` | `1` | CPU threads for within-run parallelism |
+| `checkpointInterval` | `int` | `250` | Save checkpoint every N iterations; `0` = disabled. **Essential for long runs** |
+| `checkpointInFile` | `str` | `null` | Path to resume from saved checkpoint |
+| `checkpointOutFile` | `str` | `gaps_checkpoint.out` | Output checkpoint filename |
+| `fixedPatterns` | `matrix` | `null` | Fixed pattern matrix for second-phase distributed CoGAPS (custom pattern matching) |
+| `whichMatrixFixed` | `str` | `null` | `'A'` or `'P'` — which matrix is fixed during second phase |
+| `subsetDim` | `int` | `1` | Dimension for subsetting: `1`=genes, `2`=samples |
+| `samplingAnnotation` | `vector` | `null` | Stratification annotations for subset creation |
+| `samplingWeight` | `vector` | `null` | Weights for stratified sampling |
+| `nSnapshots` | `int` | `0` | Number of intermediate A/P matrix snapshots |
+| `snapshotPhase` | `str` | `"sampling"` | Phase for snapshots: `"equilibration"`, `"sampling"`, or `"all"` |
+| `takePumpSamples` | `bool` | `False` | Enable PUMP (Perturbed Updates to Matrix Products) sampling |
+
+### 3.5 File/Path Parameters
+
+| Parameter | Type | Default | Required? |
+|-----------|------|---------|-----------|
+| `path` | `str` | — | **Yes** — relative path to input data file |
+| `result_file` | `str` | `ModSimResult.h5ad` | No — output result filename |
+| `outputDirectory` | `str` | `output/` | No — directory for outputs |
+
+---
+
+## 4. 📦 Installation and Dependency Requirements
+
+### 4.1 Installation Methods
+
+```bash
+# Method 1: pip (recommended for Python environments)
+pip install pycogaps
+
+# Method 2: Docker (no local dependencies needed — recommended for GenePattern)
+docker pull fertiglab/pycogaps
+
+# Method 3: From source
+git clone https://github.com/FertigLab/pycogaps
+cd pycogaps && pip install .
+
+# Method 4: GenePattern Notebook (cloud-based, zero-install)
+# Access at: notebook.genepattern.org
+```
+
+### 4.2 Python Dependencies
+
+| Dependency | Role | Notes |
+|------------|------|-------|
+| `Python ≥ 3.6` | Runtime | Core requirement |
+| `anndata` | AnnData I/O | Read/write `.h5ad` files |
+| `scanpy` | scRNA-seq preprocessing | Log-normalization, HVG selection |
+| `numpy` | Matrix operations | Core numerical backend |
+| `pandas` | Data manipulation | Gene/sample annotations |
+| `matplotlib` | Visualization | Pattern plots |
+| `scipy` | Statistical utilities | Sparse matrix support |
+| `h5py` | HDF5 I/O | `.h5ad` file support |
+| `cmake` | Build system | **Required** for C++ GAPS engine compilation |
+
+### 4.3 System Requirements
+
+| Resource | Minimum | Recommended (PDAC-scale) |
+|----------|---------|--------------------------|
+| **RAM** | 4 GB | 16–128 GB |
+| **CPU** | 1 core | 8+ cores (for `nSets` parallelism) |
+| **OS** | Linux, macOS | Linux (Windows via Docker) |
+| **Disk** | 2 GB | 10+ GB (checkpoints + results) |
+
+> ⚠️ **Known Issue:** C++ compilation during `pip install` may require multiple attempts due to CMake dependency resolution. macOS ARM (Apple Silicon) may require Rosetta emulation or source build adjustments.
+
+### 4.4 Docker Configuration (YAML Parameter File)
+
+```yaml
+# params.yml - Docker configuration
+path: data/inputdata.h5ad
+result_file: MyResult.h5ad
+
+standard_params:
+  nPatterns: 8
+  nIterations: 50000
+  seed: 42
+  useSparseOptimization: True
+
+sparsity_params:
+  alpha: 0.01
+  maxGibbsMass: 100.0
+
+distributed_params:
+  distributed: "genome-wide"
+  nSets: 7
+  cut: 8
+  minNS: 4
+  maxNS: 11
+
+run_params:
+  checkpointInterval: 250
+  checkpointOutFile: gaps_checkpoint.out
+  nThreads: 8
+```
+
+---
+
+## 5. 🔄 Common Workflows and Use Cases
+
+### 5.1 Standard Workflow: Single-Cell RNA-seq
+
+```python
+import scanpy as sc
+from PyCoGAPS.parameters import *
+from PyCoGAPS.pycogaps_main import CoGAPS
+
+# 1. Load and preprocess
+adata = sc.read_h5ad("data/inputdata.h5ad")
+sc.pp.normalize_total(adata)
+sc.pp.log1p(adata)
+sc.pp.highly_variable_genes(adata, n_top_genes=5000)
+adata = adata[:, adata.var.highly_variable]
+
+# 2. Configure parameters
+params = CoParams(path="data/inputdata.h5ad")
+setParams(params, {
+    'nPatterns': 8,
+    'nIterations': 50000,
+    'seed': 42,
+    'useSparseOptimization': True,
+    'distributed': "genome-wide",
+    'nSets': 7,
+    'cut': 8,
+    'minNS': 4,
+    'maxNS': 11
+})
+
+# 3. Run CoGAPS
+result = CoGAPS(adata, params)
+
+# 4. Downstream analysis
+markers = patternMarkers(result)         # Gene markers per pattern
+cogaps_stats = calcCoGAPSStat(result)    # Gene set statistics
+# Visualize: project P matrix onto UMAP
+```
+
+### 5.2 Workflow Decision Tree
+
+```
+Input Data
+    │
+    ├── Bulk RNA-seq (≤ ~1000 genes, small n)
+    │       └── Standard CoGAPS, CSV input, nIterations=50000
+    │
+    ├── scRNA-seq (10K–100K cells)
+    │       ├── Select top HVGs (5000)
+    │       ├── useSparseOptimization=True
+    │       └── distributed="genome-wide" (preferred for speed)
+    │           or distributed="single-cell" (for cell-centric partitioning)
+    │
+    ├── ATAC-seq
+    │       └── ATACCoGAPS extension, genome-wide mode
+    │
+    └── Spatial transcriptomics
+            └── Standard or genome-wide mode, interpret
+                P matrix spatially
+```
+
+### 5.3 Reproducible Research Checklist
+
+- [ ] Set `seed` to a fixed integer
+- [ ] Document `nPatterns` rationale (biological knowledge or cross-validation)
+- [ ] Use `checkpointInterval` > 0 for runs > 30 minutes
+- [ ] For distributed runs: verify `cut == nPatterns`
+- [ ] Save full result `.h5ad` for downstream `projectR` transfer learning
+- [ ] Run `patternMarkers()` for biological interpretation
+- [ ] Validate convergence via ChiSq trace (printed during run)
+
+---
+
+## 6. 🔌 GenePattern Integration Considerations
+
+### 6.1 Module Identity
+
+| Property | Value |
+|----------|-------|
+| **GenePattern LSID** | `urn:lsid:broad.mit.edu:cancer.software.genepattern.module.analysis:00417` |
+| **Module Name** | `PyCoGAPS` |
+| **Category** | Single-Cell Analysis / Matrix Factorization / Gene Expression |
+| **Docker Image** | `fertiglab/pycogaps` |
+| **Implementation** | Python wrapper calling PyCoGAPS API |
+
+### 6.2 Recommended Module Parameter Groupings
+
+**Group 1 — Required Input/Output:**
+```
+input.file       [FILE]    .csv/.txt/.h5ad input expression matrix
+result.file      [TEXT]    Output filename (default: cogaps_result.h5ad)
+```
+
+**Group 2 — Standard CoGAPS Parameters:**
+```
+nPatterns         [INTEGER]   Number of patterns to learn (required, no default)
+nIterations       [INTEGER]   MCMC iterations (default: 50000)
+seed              [INTEGER]   Random seed (default: 0)
+useSparseOptimization [BOOLEAN] Sparse data optimization (default: false)
+```
+
+**Group 3 — Sparsity/Sampling Parameters:**
+```
+alpha             [FLOAT]     Prior sparsity (default: 0.01)
+maxGibbsMassA     [FLOAT]     Max Gibbs mass for A matrix (default: 100.0)
+maxGibbsMassP     [FLOAT]     Max Gibbs mass for P matrix (default: 100.0)
+```
+
+**Group 4 — Distributed CoGAPS Parameters:**
+```
+distributed       [CHOICE]    null / genome-wide / single-cell (default: null)
+nSets             [INTEGER]   Number of parallel subsets (default: 4)
+cut               [INTEGER]   Dendrogram cut level (default: nPatterns)
+minNS             [INTEGER]   Min subset pattern support
+maxNS             [INTEGER]   Max subset pattern spread
+```
+
+**Group 5 — Advanced Run Parameters:**
+```
+nThreads          [INTEGER]   CPU threads (default: 1)
+checkpointInterval [INTEGER]  Checkpoint frequency (default: 250)
+checkpointInFile   [FILE]     Resume from checkpoint (optional)
+```
+
+### 6.3 GenePattern-Specific Recommendations
+
+1. **Docker first**: Use `fertiglab/pycogaps` Docker image to avoid compilation issues. No local dependency management needed.
+
+2. **Input validation**:
+   - Verify non-negative values in input matrix
+   - Warn if `nPatterns` > `min(nGenes, nSamples)/10`
+   - Enforce `cut == nPatterns` when `distributed != null`
+   - Validate `useSparseOptimization=True` only with default uncertainty
+
+3. **Output packaging**:
+   - Primary output: `cogaps_result.h5ad` (AnnData-compatible)
+   - Auto-generate: `patternMarkers.csv`, `A_matrix.csv`, `P_matrix.csv`
+   - Auto-generate UMAP/heatmap visualization PDFs
+   - Include run log with parameter echo and ChiSq convergence trace
+
+4. **Computational resource guidance**:
+   - Standard mode: 4 GB RAM, 1 CPU, ~1 hour for 50K iterations on moderate datasets
+   - Distributed PDAC-scale: 16–32 GB RAM, 8 CPU cores, 2–8 hours
+   - Expose `nThreads` parameter for user control
+
+5. **Parameter interdependencies to enforce**:
+   ```
+   IF distributed != null:
+       REQUIRE nSets, cut, minNS, maxNS
+       VALIDATE cut == nPatterns
+       VALIDATE minNS <= nSets AND maxNS >= minNS
+   
+   IF checkpointInFile provided:
+       WARN nPatterns must match checkpoint nPatterns
+   
+   IF useSparseOptimization == True:
+       WARN incompatible with custom uncertainty matrix
+   ```
+
+---
+
+## 7. 📊 Comparative Analysis
+
+| Feature | **PyCoGAPS** | **cNMF** | **NMF (R)** | **MOFA+** | **scVI** |
+|---------|-------------|----------|-------------|-----------|---------|
+| **Bayesian uncertainty** | ✅ Full MCMC SD | ❌ | ❌ | ✅ Variational | ✅ Variational |
+| **Non-negativity** | ✅ Natural (prior) | ✅ | ✅ | ❌ | ❌ |
+| **Distributed scale** | ✅ 100K+ cells | ⚠️ Moderate | ❌ | ⚠️ Moderate | ✅ Millions |
+| **Gene set statistics** | ✅ Built-in | ❌ External | ❌ External | ❌ External | ❌ External |
+| **Transfer learning** | ✅ projectR | ❌ | ❌ | ✅ | ✅ |
+| **Multi-omics** | ❌ Single omic | ❌ | ❌ | ✅ | ⚠️ Limited |
+| **GenePattern support** | ✅ Native | ❌ | ❌ | ❌ | ❌ |
+| **Interpretability** | ✅ High (non-neg) | ✅ High | ✅ High | ⚠️ Medium | ⚠️ Medium |
+| **ATAC-seq support** | ✅ ATACCoGAPS | ❌ | ❌ | ✅ | ❌ |
+
+**PyCoGAPS Unique Advantages:**
+- 🥇 Only NMF tool with **principled Bayesian uncertainty quantification** (standard deviations for every matrix entry)
+- 🥇 **patternMarkers** statistic: a principled, biologically-grounded method for gene-to-pattern assignment
+- 🥇 **Native GenePattern Notebook** integration with established protocol
+- 🥇 Unified Python+R API serving both computational biologists and biomedical researchers
+- 🥇 **projectR** ecosystem for cross-dataset latent factor transfer
+
+---
+
+## 8. 📚 Key References
+
+| Year | Citation | Significance |
+|------|----------|-------------|
+| **2010** | Fertig EJ et al. *CoGAPS: an R/C++ package to identify patterns and biological process activity in transcriptomic data.* **Bioinformatics** 26(21):2792–3. DOI: 10.1093/bioinformatics/btq503 | **Original CoGAPS publication** |
+| **2017** | Stein-O'Brien GL et al. *PatternMarkers & GWCoGAPS for novel data-driven biomarkers via NMF.* **bioRxiv** 083717 | GWCoGAPS + patternMarkers |
+| **2018** | Stein-O'Brien GL et al. *Enter the Matrix: Factorization Uncovers Knowledge from Omics.* **Trends in Genetics** | NMF review, CoGAPS applications |
+| **2020** | Sherman TD et al. *CoGAPS 3: Bayesian NMF for single-cell analysis with asynchronous updates.* **BMC Bioinformatics** 21:453 | CoGAPS 3 architecture, PyCoGAPS foundation |
+| **2024** | Johnson J, Tsang A, Sherman T et al. *Inferring cellular and molecular processes in scRNA-seq data with NMF using Python, R, and GenePattern.* **Nature Protocols** (PMC10961825). DOI: 10.1038/s41596-023-00892-x | **Definitive PyCoGAPS + GenePattern Notebook protocol** |
+
+---
+
+## 9. ⚠️ Known Limitations and Caveats
+
+| Limitation | Impact | Mitigation |
+|------------|--------|-----------|
+| **Stochastic results** | Different runs give slightly different patterns | Always set `seed`; report seed in publications |
+| **nPatterns selection is non-trivial** | Under/over-specification alters biology | Cross-validation, biological validation, try multiple k |
+| **Runtime scales with iterations** | 50K iterations on 25K cells takes hours | Use distributed mode; use checkpoints |
+| **C++ compilation instability** | Installation failures on some systems | Use Docker image (avoids compilation entirely) |
+| **Non-negative input required** | Raw count matrices or negative-valued data incompatible | Pre-normalize data; handle log-transformations upstream |
+| **`useSparseOptimization` restriction** | Cannot be used with custom uncertainty | Document clearly in module UI |
+| **Convergence not always guaranteed** | ChiSq may not stabilize | Increase `nIterations`; monitor printed output |
+| **Memory for large scRNA-seq** | 25K cell PDAC: ~16–32 GB RAM needed | Expose memory requirements in module documentation |
+
+---
+
+## 10. 🗂️ Summary Card for GenePattern Module Development
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PyCoGAPS MODULE SUMMARY                    │
+├─────────────────────────────────────────────────────────────┤
+│ LSID:       urn:lsid:broad.mit.edu:...module.analysis:00417  │
+│ Language:   Python (interface) + C++ (GAPS engine)           │
+│ Docker:     fertiglab/pycogaps                               │
+│ Core Algo:  Bayesian MCMC NMF (GAPS)                         │
+├─────────────────────────────────────────────────────────────┤
+│ INPUT:      .csv / .txt / .h5ad (non-negative expression)    │
+│ OUTPUT:     .h5ad result (A matrix, P matrix, SDs, markers)  │
+├─────────────────────────────────────────────────────────────┤
+│ KEY PARAMS: nPatterns*, nIterations, seed,                   │
+│             useSparseOptimization, alpha,                    │
+│             maxGibbsMassA*, maxGibbsMassP*,                  │
+│             distributed, nSets, cut, minNS, maxNS            │
+│             (* = most important for GenePattern exposure)    │
+├─────────────────────────────────────────────────────────────┤
+│ USE CASES:  scRNA-seq, bulk RNA-seq, ATAC-seq, spatial tx    │
+│ SCALE:      ~100 genes to 25,000+ cells (distributed mode)   │
+│ RUNTIME:    Minutes (toy) to hours (production scRNA-seq)    │
+├─────────────────────────────────────────────────────────────┤
+│ PUBLICATION: Nature Protocols 2024 (PMC10961825)             │
+│ CITATION:   Fertig 2010 Bioinformatics + Sherman 2020 BMC    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+*Research compiled from: FertigLab/pycogaps GitHub, Bioconductor CoGAPS documentation, fertiglab.github.io/CoGAPSGuide, Nature Protocols 2024 (PMC10961825), BMC Bioinformatics 2020, GenePattern module registry, and peer-reviewed literature. All findings are traceable to primary sources.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

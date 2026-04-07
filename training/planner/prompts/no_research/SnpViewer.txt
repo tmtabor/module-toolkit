@@ -1,0 +1,61 @@
+Create a comprehensive structured plan for the GenePattern module for 'SnpViewer'.
+            
+            Tool Information:
+            - Name: SnpViewer
+            - Version: Fixes bug with legend thresholds
+            - Language: Java
+            - Description: Displays a heat map of snp data
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "SnpViewer",
+  "parameters": [
+    {
+      "name": "dataset.filename",
+      "type": "FILE",
+      "description": "The dataset to display - .snp, .cn, .xcn",
+      "required": false,
+      "default_value": "",
+      "file_format": "snp;xcn;cn"
+    },
+    {
+      "name": "sample.info.filename",
+      "type": "FILE",
+      "description": "Sample information file",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "sample.list.filename",
+      "type": "FILE",
+      "description": "Sample list file",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "max.memory",
+      "type": "java.lang.String",
+      "description": "Maximum memory",
+      "required": true,
+      "default_value": "700m"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Visualizer",
+  "author": "GenePattern",
+  "command_line": "<java> -Xmx<max.memory>  -jar <libdir>snpviewer.jar -cnFile <dataset.filename> -sampleInfoFile <sample.info.filename> -sampleListFile <sample.list.filename>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

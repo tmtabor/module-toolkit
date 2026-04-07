@@ -1,0 +1,149 @@
+{
+  "module_name": "CollapseDataset",
+  "description": "Collapses expression values from multiple input ids that map to a single target gene to a single value on a per-sample basis",
+  "author": "Aravind Subramanian, Josh Gould, David Eby; Broad Institute",
+  "input_file_formats": [
+    "chip",
+    "gct",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "gsea"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:25546:1",
+  "plan": "## CollapseDataset GenePattern Module — Implementation Plan\n\n### 1. Overview\nCollapseDataset is a GenePattern module that Collapses expression values from multiple input ids that map to a single target gene to a single value on a per-sample basis\n\n### 2. Parameters\nThe module exposes 6 parameters:\n- Required: dataset.file, collapse.mode, output.file.name, omit.features.with.no.symbol.match, dev.mode\n- Optional: chip.platform\n\n### 3. Command Line\n```\n/opt/gsea/GSEA_4.3.2/gsea-cli.sh CollapseDataset -res <dataset.file> -chip <chip.platform> -mode <collapse.mode> -dev_mode <dev.mode> -include_only_symbols <omit.features.with.no.symbol.match> <output.file.name> -run_as_genepattern true\n```\n\n### 4. Docker Image\nDocker image: genepattern/gsea_4.3.2\\:0.1\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "gsea-cli.sh",
+  "command_line": "/opt/gsea/GSEA_4.3.2/gsea-cli.sh CollapseDataset -res <dataset.file> -chip <chip.platform> -mode <collapse.mode> -dev_mode <dev.mode> -include_only_symbols <omit.features.with.no.symbol.match> <output.file.name> -run_as_genepattern true",
+  "parameters": [
+    {
+      "name": "dataset.file",
+      "description": "Dataset file - .res, .gct",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "res"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dataset.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "chip.platform",
+      "description": "DNA Chip (array) annotation file from GSEA website.  Upload your own chip file if the one corresponding to your DNA Microarray platform is not listed in the drop-down menu.  A chip file is only required if collapse dataset is set to true.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "chip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--chip.platform",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "collapse.mode",
+      "description": "Collapsing mode.  It is also possible to remap symbols from one namespace to another without collapsing (an error will occur if multiple source genes map to a single destination gene)",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "Max_probe",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Max_probe",
+          "value": "Max_probe"
+        },
+        {
+          "display": "Median_of_probes",
+          "value": "Median_of_probes"
+        },
+        {
+          "display": "Mean_of_probes",
+          "value": "Mean_of_probes"
+        },
+        {
+          "display": "Sum_of_probes",
+          "value": "Sum_of_probes"
+        },
+        {
+          "display": "Abs_max_of_probes",
+          "value": "Abs_max_of_probes"
+        },
+        {
+          "display": "Remap_only",
+          "value": "Remap_only"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--collapse.mode",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file.name",
+      "description": "The output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-out_file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "omit.features.with.no.symbol.match",
+      "description": "If there is no known gene symbol match for a probe set, omit it from the collapsed dataset",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "true",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "false",
+          "value": "false"
+        },
+        {
+          "display": "true",
+          "value": "true"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--omit.features.with.no.symbol.match",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "dev.mode",
+      "description": "Enable developer mode.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "false",
+          "value": "false"
+        },
+        {
+          "display": "true",
+          "value": "true"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--dev.mode",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/gsea_4.3.2:0.1"
+}

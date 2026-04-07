@@ -1,0 +1,428 @@
+{
+  "module_name": "Harmony",
+  "description": "Harmony is a batch correction tool. Upon use, this module will produce three scatterplots. One plot will show the data pre-Harmony, and can be found in the 'BeforeHarmonyPlot.png' file. In this plot, the x and y axes represent the 1st and 2nd principal components from PCA dimensional reduction (unless specified otherwise by the user). Another plot will show the data post-Harmony, and can be found in the 'AfterHarmonyPlot.png' file. In this plot, the x and y axes the same dimensions used in the pre-Harmony plot are shown, but adjusted by Harmony. Lastly, the third plot shows the pre-Harmony and post-Harmony plots side by side for comparison.",
+  "author": "Justin Lee;GenePattern Team",
+  "input_file_formats": [
+    "rds"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:49492:1",
+  "plan": "## Harmony GenePattern Module — Implementation Plan\n\n### 1. Overview\nHarmony is a GenePattern module that Harmony is a batch correction tool. Upon use, this module will produce three scatterplots. One plot will show the data pre-Harmony, and can be found in the 'BeforeHarmonyPlot.png' file. In this plot, the x and y axes represent the 1st and 2nd principal components from PCA dimensional reduction (unless specified otherwise by the user). Another plot will show the data post-Harmony, and can be found in the 'AfterHarmonyPlot.png' file. In this plot, the x and y axes the same dimensions used in the pre-Harmony plot are shown, but adjusted by Harmony. Lastly, the third plot shows the pre-Harmony and post-Harmony plots side by side for comparison.\n\n### 2. Parameters\nThe module exposes 27 parameters:\n- Required: Input.RDS.Files, Output.Name\n- Optional: Data.Set.Labels, Group.Name, Colors, Animate, reduction, dims.use, theta, lambda, sigma, nclust, tau, block.size, max.iter.harmony, max.iter.cluster, stop.early.cluster, epsilon.cluster, stop.early.harmony, epsilon.harmony, plot_convergence, verbose, reference_values, reduction.save, assay.use, project.dim, animation.iterations\n\n### 3. Command Line\n```\nRscript /opt/genepatt/src/Harmony_Wrapper_Script.R --file_list <Input.RDS.Files> --output_file <Output.Name>  <Data.Set.Labels>  <Colors>  <reduction>  <dims.use>  <theta>  <lambda>  <sigma>  <nclust>  <tau>  <block.size>  <max.iter.harmony>  <max.iter.cluster>  <epsilon.cluster>  <epsilon.harmony>  <plot_convergence>  <verbose>  <reference_values>  <reduction.save>  <project.dim>  <assay.use> <stop.early.cluster>  <stop.early.harmony> <Group.Name> <Animate> <animation.iterations>\n```\n\n### 4. Docker Image\nDocker image: genepattern/harmony\\:v1\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "Harmony_Wrapper_Script.R",
+  "command_line": "Rscript /opt/genepatt/src/Harmony_Wrapper_Script.R --file_list <Input.RDS.Files> --output_file <Output.Name>  <Data.Set.Labels>  <Colors>  <reduction>  <dims.use>  <theta>  <lambda>  <sigma>  <nclust>  <tau>  <block.size>  <max.iter.harmony>  <max.iter.cluster>  <epsilon.cluster>  <epsilon.harmony>  <plot_convergence>  <verbose>  <reference_values>  <reduction.save>  <project.dim>  <assay.use> <stop.early.cluster>  <stop.early.harmony> <Group.Name> <Animate> <animation.iterations>",
+  "parameters": [
+    {
+      "name": "Input.RDS.Files",
+      "description": "List of two or more Seurat objects to read in. The objects must be in .rds files.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "rds"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Input.RDS.Files",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.Name",
+      "description": "Name of the file to save the data to.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "harmonized_data",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Output.Name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Data.Set.Labels",
+      "description": "Labels of the datasets, separated by commas. These labels will assigned in the order of the input RDS files. The dataset names will be assigned to the file names by default.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data_sets",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Group.Name",
+      "description": "The name of the group that you would like to color by during the visualization steps. Harmony will color by dataset by default.\\nDefault\\: dataset_name",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "dataset_name",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--group_name",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Colors",
+      "description": "The colors you want to use to label the groups specified by the \"Group Name\" parameter, separated by commas. If no colors are specified, then colors will be automatically assigned. Refer to this link to see the list of colors you can choose from\\: https\\://www.datanovia.com/en/blog/awesome-list-of-657-r-color-names/",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--colors",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Animate",
+      "description": "Whether or not to produce an animation of the Harmony iterations.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "NO",
+          "value": "FALSE"
+        },
+        {
+          "display": "YES",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--animate",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "reduction",
+      "description": "Name of dimension reduction to use. \\nDefault\\: pca",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "pca",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reduction",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "dims.use",
+      "description": "Which PCA dimensions to use for Harmony. The PCA dimensions specified should be in numerical form and separated by commas. By default, use all",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dims.use",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "theta",
+      "description": "Diversity clustering penalty parameter. Specify for each variable in group.by.vars. theta \\= 0 does not encourage any diversity. Larger values of theta result in more diverse clusters.\\nDefault\\: 2",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--theta",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "lambda",
+      "description": "Ridge regression penalty parameter. Specify for each variable in group.by.vars. Lambda must be strictly positive. Smaller values result in more aggressive correction.\\nDefault\\: 1",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--lambda",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "sigma",
+      "description": "Width of soft kmeans clusters. Sigma scales the distance from a cell to cluster centroids. Larger values of sigma result in cells assigned to more clusters. Smaller values of sigma make soft kmeans cluster approach hard clustering.\\nDefault\\: 0.1",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sigma",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "nclust",
+      "description": "Number of clusters in model. nclust \\= 1 equivalent to simple linear regression.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--nclust",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "tau",
+      "description": "Protection against overclustering small datasets with large ones. tau is the expected number of cells per cluster.\\nDefault\\: 0",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--tau",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "block.size",
+      "description": "What proportion of cells to update during clustering. Between 0 to 1. Larger values may be faster but less accurate.\\nDefault\\: 0.05",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.05",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--block.size",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.iter.harmony",
+      "description": "Maximum number of iterations that Harmony will run.\\nDefault\\: 10",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.iter.harmony",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.iter.cluster",
+      "description": "Maximum number of rounds to run clustering at each round of Harmony. \\nDefault\\: 20",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "20",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.iter.cluster",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "stop.early.cluster",
+      "description": "Whether or not to stop clustering early. If TRUE, then the convergence tolerance is specified by the epsilon cluster parameter.\\nDefault\\: TRUE",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--stop.early.cluster",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "epsilon.cluster",
+      "description": "Convergence tolerance for clustering round of Harmony. A higher value indicates less tolerance, while a lower value indicates more tolerance.\\nDefault\\: 0.00005",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.00005",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--epsilon.cluster",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "stop.early.harmony",
+      "description": "Whether or not to stop harmony early. If TRUE, then the convergence tolerance is specified by the epsilon harmony parameter.\\nDefault\\: TRUE",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--stop.early.harmony",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "epsilon.harmony",
+      "description": "Convergence tolerance for Harmony. A higher value indicates less tolerance, while a lower value indicates more tolerance.\\nDefault\\: 0.0004",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.0004",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--epsilon.harmony",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "plot_convergence",
+      "description": "Whether to print the convergence plot of the clustering objective function. TRUE to plot, FALSE to suppress. This can be useful for debugging.\\nDefault\\: FALSE",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--plot_convergence",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "verbose",
+      "description": "Whether to print progress messages. TRUE to print, FALSE to suppress.\\nDefault\\: TRUE",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--verbose",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "reference_values",
+      "description": "Defines reference dataset(s). Cells that have batch variables values matching reference_values will not be moved",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reference_values",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "reduction.save",
+      "description": "Keyword to save Harmony reduction. Useful if you want to try Harmony with multiple parameters and save them as e.g. 'harmony_theta0', 'harmony_theta1', 'harmony_theta2'. \\nDefault\\: harmony",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "harmony",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reduction.save",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "assay.use",
+      "description": "Which assay to run PCA on if no PCA present?",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--assay.use",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "project.dim",
+      "description": "Project dimension reduction loadings. \\nDefault\\: TRUE",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--project.dim",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "animation.iterations",
+      "description": "Number of iterations to animate.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--animation.iterations",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/harmony:v1"
+}

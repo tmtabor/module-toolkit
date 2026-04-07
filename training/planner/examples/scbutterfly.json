@@ -1,0 +1,319 @@
+{
+  "module_name": "ScButterfly",
+  "description": "ScButterfly is a single-cell cross-modality translation module that leverages a Dual-Aligned Variational Autoencoder (DAVAE) framework to predict one omics profile from another at single-cell resolution. It enables bidirectional translation between scRNA-seq and scATAC-seq data (and optionally CITE-seq protein profiles), supports three model variants (Basic, Type-augmented, Cluster-augmented), and outputs predicted AnnData objects along with evaluation metrics and visualizations. Published in Nature Communications 2024.",
+  "author": "GenePattern Team",
+  "input_file_formats": [
+    "h5ad"
+  ],
+  "language": "Python",
+  "categories": [
+    "Single-Cell Analysis",
+    "Multi-Omics",
+    "Deep Learning",
+    "Cross-Modality Translation"
+  ],
+  "cpu_cores": 8,
+  "memory": "32GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:67489:1",
+  "plan": "## scButterfly GenePattern Module — Comprehensive Implementation Plan\n\n### 1. SCIENTIFIC OVERVIEW\nScButterfly (scButterfly v0.0.9, Nature Communications 2024, DOI:10.1038/s41467-024-47418-x) is a deep-learning tool for single-cell cross-modality translation using a Dual-Aligned Variational Autoencoder (DAVAE). It predicts scATAC-seq profiles from scRNA-seq (and vice versa), optionally supporting CITE-seq (ADT) and perturbation response tasks. Three model variants exist:\n  - scButterfly-B (Basic): direct paired training, no augmentation\n  - scButterfly-T (Type): uses cell type labels for augmentation + unpaired translation via optimal transport\n  - scButterfly-C (Cluster): uses MultiVI-based unsupervised clustering for augmentation\n\n### 2. MODULE ARCHITECTURE\n**Module Name:** ScButterfly\n**Wrapper Script:** scbutterfly_wrapper.py (Python argparse CLI)\n**Language:** Python 3.9+\n**Docker Image:** genepattern/scbutterfly:1\n\nThe wrapper implements a 6-step orchestration pipeline:\n1. Parse all CLI arguments\n2. Load .h5ad AnnData files\n3. Auto-split cells (train/val/test) or accept precomputed splits\n4. Call butterfly.load_data() → butterfly.data_preprocessing() → butterfly.augmentation() → butterfly.construct_model() → butterfly.train_model() → butterfly.test_model()\n5. Export predicted AnnData, metrics CSV, model checkpoint, UMAP PNG\n6. Generate summary report\n\n### 3. PARAMETER GROUPS\n\n**Group A — Input Data (required)**\n- rna.data: AnnData .h5ad with raw scRNA-seq counts (cells × genes)\n- atac.data: AnnData .h5ad with scATAC-seq peak counts (cells × peaks, peaks sorted by chromosome)\n- peaks.per.chrom: Comma-separated integers defining the number of peaks per chromosome in sorted order (e.g., \"500,450,800,...\"); required for the intra-chromosomal sparse architecture\n\n**Group B — Model Configuration**\n- model.variant: Choice of scButterfly-B (basic/None), scButterfly-T (cell_type_augmentation), scButterfly-C (MultiVI_augmentation)\n- cell.type.key: Column name in adata.obs containing cell type labels; required when model.variant=type\n\n**Group C — Preprocessing**\n- n.highly.var.genes: Number of highly variable genes from RNA data (default: 2000)\n- n.top.peaks: Number of top accessibility peaks from ATAC data (default: 30000)\n- train.ratio: Fraction of cells for training (default: 0.8) when auto-splitting\n- val.ratio: Fraction of cells for validation (default: 0.1) when auto-splitting\n\n**Group D — Training Hyperparameters**\n- n.epochs: Number of training epochs (default: 100)\n- batch.size: Mini-batch size (default: 64)\n- learning.rate: Adam optimizer learning rate (default: 0.0001)\n- weight.decay: L2 regularization coefficient (default: 0.000001)\n- device: Compute device — auto, cuda, cpu (default: auto)\n- seed: Random seed for reproducibility (default: 2023)\n- num.workers: DataLoader worker threads (default: 4)\n\n**Group E — Output Control**\n- save.model: Whether to save trained PyTorch model checkpoint (default: true)\n- generate.plots: Whether to generate UMAP visualizations (default: true)\n- output.prefix: Prefix for all output file names (default: scbutterfly_output)\n\n### 4. OUTPUT FILES\n- {output.prefix}_predicted_RNA.h5ad: Predicted RNA profiles (ATAC→RNA translation)\n- {output.prefix}_predicted_ATAC.h5ad: Predicted ATAC profiles (RNA→ATAC translation)\n- {output.prefix}_model.pt: Trained PyTorch model weights (if save.model=true)\n- {output.prefix}_metrics.csv: Evaluation metrics (AMI, ARI, HOM, NMI, Pearson, AUROC)\n- {output.prefix}_umap.png: UMAP visualization (if generate.plots=true)\n- {output.prefix}_run_log.txt: Execution log\n\n### 5. CRITICAL IMPLEMENTATION NOTES\n- ATAC peaks MUST be sorted by chromosome before input; the wrapper should validate this\n- peaks.per.chrom is architecturally critical; wrapper must parse and validate it\n- For model.variant=type, cell.type.key must be present in adata.obs\n- For model.variant=cluster, scvi-tools (MultiVI) must be installed in the container\n- GPU detection is automatic when device=auto; runtime falls back to CPU if no CUDA\n- Python 3.9 pinned in Docker to avoid compatibility issues\n- scButterfly v0.0.9 pinned in Docker for reproducibility\n\n### 6. DOCKER SPECIFICATION\nBase: pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime\nAdditional: pip install scButterfly==0.0.9 scanpy anndata muon episcanpy matplotlib seaborn scipy scikit-learn scvi-tools\n\n### 7. VALIDATION STRATEGY\n- Unit tests: verify each parameter parses and routes correctly\n- Integration test with PBMC 10x Multiome demo dataset (publicly available)\n- Smoke test with small synthetic AnnData (100 cells × 500 genes × 1000 peaks)\n- Assert output .h5ad files can be loaded and contain correct shapes\n- Assert metrics CSV contains all expected columns\n- GPU/CPU parity test: same results within floating-point tolerance\n\n### 8. IMPLEMENTATION ROADMAP\n1. Develop and test Docker container (Day 1-2)\n2. Implement Python wrapper with argparse (Day 2-3)\n3. Map all GenePattern parameter placeholders to API calls (Day 3)\n4. Validate command line template against all 19 parameters (Day 4)\n5. Create GenePattern manifest (module.yaml / manifest) (Day 4-5)\n6. Write user documentation and parameter help text (Day 5-6)\n7. Integration testing with PBMC demo dataset (Day 6-7)\n8. Final review and publication to GenePattern repository (Day 8)\n",
+  "wrapper_script": "scbutterfly_wrapper.py",
+  "command_line": "python <libdir>scbutterfly_wrapper.py --rna.data <rna.data> --atac.data <atac.data> --model.variant <model.variant> --peaks.per.chrom <peaks.per.chrom> --n.highly.var.genes <n.highly.var.genes> --n.top.peaks <n.top.peaks> --train.ratio <train.ratio> --val.ratio <val.ratio> <cell.type.key> --n.epochs <n.epochs> --batch.size <batch.size> --learning.rate <learning.rate> --weight.decay <weight.decay> --device <device> --seed <seed> --num.workers <num.workers> --save.model <save.model> --generate.plots <generate.plots> --output.prefix <output.prefix>",
+  "parameters": [
+    {
+      "name": "rna.data",
+      "description": "scRNA-seq AnnData file (.h5ad format). Must contain raw count matrix with shape cells × genes. This is the primary RNA modality input.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "h5ad"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--rna.data",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "atac.data",
+      "description": "scATAC-seq AnnData file (.h5ad format). Must contain peak accessibility matrix with shape cells × peaks. CRITICAL: Peaks must be sorted by chromosome in the same order as specified in peaks.per.chrom.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "h5ad"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--atac.data",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "model.variant",
+      "description": "Selects the scButterfly model variant. 'basic' (scButterfly-B): trains directly on paired data with no augmentation, best for clean paired datasets. 'type' (scButterfly-T): uses cell type label augmentation and supports unpaired translation via optimal transport; requires cell.type.key. 'cluster' (scButterfly-C): uses MultiVI-based unsupervised clustering for augmentation; best for datasets without cell type labels.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "basic",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Basic (scButterfly-B)",
+          "value": "basic"
+        },
+        {
+          "display": "Type-Augmented (scButterfly-T)",
+          "value": "type"
+        },
+        {
+          "display": "Cluster-Augmented (scButterfly-C)",
+          "value": "cluster"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--model.variant",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "peaks.per.chrom",
+      "description": "Comma-separated list of integers specifying the number of ATAC peaks per chromosome, in the same sorted order as the ATAC data (e.g., '500,450,800,700,...' for chr1,chr2,chr3,...). This parameter is architecturally critical as it defines the intra-chromosomal sparse connectivity pattern in the DAVAE encoder/decoder. The sum must equal the total number of peaks in atac.data after filtering.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--peaks.per.chrom",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "n.highly.var.genes",
+      "description": "Number of highly variable genes to select from the scRNA-seq data during preprocessing. Reducing this number decreases memory usage and training time but may reduce translation accuracy. Recommended range: 500–20000.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "2000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--n.highly.var.genes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "n.top.peaks",
+      "description": "Number of top accessibility peaks to retain from the scATAC-seq data during preprocessing. Full-genome scATAC-seq can contain 500K+ peaks; selecting the top 30K focuses on the most informative sites. Increasing this number improves resolution but significantly increases memory usage. Recommended range: 5000–200000.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "30000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--n.top.peaks",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "train.ratio",
+      "description": "Fraction of total cells to use for training when performing automatic train/validation/test splitting. The remaining cells are divided between validation and test sets according to val.ratio. Must be in range (0.0, 1.0).",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--train.ratio",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "val.ratio",
+      "description": "Fraction of total cells to use for validation when performing automatic splitting. The test set receives the remaining (1 - train.ratio - val.ratio) fraction of cells. Must be in range (0.0, 1.0) and train.ratio + val.ratio must be < 1.0.",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--val.ratio",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cell.type.key",
+      "description": "Column name in adata.obs (the cell metadata) containing cell type label strings. Required when model.variant is 'type' (scButterfly-T). These labels are used to perform cell-type-aware data augmentation and enable unpaired translation via optimal transport. Leave empty when using 'basic' or 'cluster' variants.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "cell_type",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cell.type.key",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "n.epochs",
+      "description": "Number of complete training passes (epochs) through the dataset. More epochs generally improve performance but increase training time. Recommended range: 50–500. For large datasets (>50K cells), 50–100 epochs are usually sufficient.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--n.epochs",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "batch.size",
+      "description": "Number of cells per mini-batch during stochastic gradient descent training. Larger batch sizes may improve training stability but require more GPU memory. Reduce if encountering out-of-memory errors. Recommended range: 32–256.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "64",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--batch.size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "learning.rate",
+      "description": "Learning rate for the Adam optimizer. Controls the step size during gradient descent. Lower values (1e-5) give more stable but slower training; higher values (1e-3) converge faster but may be unstable. Recommended range: 1e-5 to 1e-3.",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.0001",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--learning.rate",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "weight.decay",
+      "description": "L2 regularization coefficient (weight decay) applied during Adam optimization. Helps prevent overfitting, especially on small datasets. Set to 0 to disable regularization. Recommended range: 0 to 1e-4.",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.000001",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--weight.decay",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "device",
+      "description": "Computation device for neural network training. 'auto' automatically detects and uses a CUDA GPU if available, falling back to CPU otherwise. 'cuda' forces GPU usage (will error if no GPU). 'cpu' forces CPU-only computation (significantly slower for large datasets).",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "auto",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Auto-detect (GPU if available, else CPU)",
+          "value": "auto"
+        },
+        {
+          "display": "CUDA GPU",
+          "value": "cuda"
+        },
+        {
+          "display": "CPU only",
+          "value": "cpu"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--device",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "seed",
+      "description": "Random seed for reproducibility. Setting a fixed seed ensures identical results across repeated runs with the same inputs and parameters. Affects weight initialization, data shuffling, and stochastic operations.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "2023",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--seed",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.workers",
+      "description": "Number of parallel worker processes for the PyTorch DataLoader. More workers can speed up data loading for large datasets. Set to 0 for single-process loading (useful for debugging). Must not exceed the number of available CPU cores.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "4",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.workers",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "save.model",
+      "description": "Whether to save the trained model weights as a PyTorch checkpoint file ({output.prefix}_model.pt). Saved models can be used for subsequent inference on new data without retraining. Set to 'false' to save disk space when the checkpoint is not needed.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "true",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes — save model checkpoint",
+          "value": "true"
+        },
+        {
+          "display": "No — skip model saving",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--save.model",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "generate.plots",
+      "description": "Whether to generate UMAP visualizations comparing predicted and true single-cell profiles. Plots are saved as {output.prefix}_umap.png. Set to 'false' to skip visualization generation and save computation time.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "true",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes — generate UMAP plots",
+          "value": "true"
+        },
+        {
+          "display": "No — skip plot generation",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--generate.plots",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "Prefix string for all output file names. All output files will be named {output.prefix}_predicted_RNA.h5ad, {output.prefix}_predicted_ATAC.h5ad, {output.prefix}_model.pt, {output.prefix}_metrics.csv, {output.prefix}_umap.png, and {output.prefix}_run_log.txt.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "scbutterfly_output",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/scbutterfly:1"
+}

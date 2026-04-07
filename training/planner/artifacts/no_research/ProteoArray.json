@@ -1,0 +1,49 @@
+{
+  "module_name": "ProteoArray",
+  "description": "LC-MS proteomic data processing module",
+  "author": "Brian Piening (Fred Hutchinson Cancer Research Center)",
+  "input_file_formats": [
+    "zip"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:89640:1",
+  "plan": "## ProteoArray GenePattern Module — Implementation Plan\n\n### 1. Overview\nProteoArray is a GenePattern module that LC-MS proteomic data processing module\n\n### 2. Parameters\nThe module exposes 2 parameters:\n- Required: input.zip.filename, output.file\n- Optional: none\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>ProteoArray.jar<path.separator><libdir>jrap.jar<path.separator><libdir>xerces.jar org.fhcrc.edi.proteoArray.ProteoArray <input.zip.filename> <output.file>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "ProteoArray.jar<path.separator><libdir>jrap.jar<path.separator><libdir>xerces.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>ProteoArray.jar<path.separator><libdir>jrap.jar<path.separator><libdir>xerces.jar org.fhcrc.edi.proteoArray.ProteoArray <input.zip.filename> <output.file>",
+  "parameters": [
+    {
+      "name": "input.zip.filename",
+      "description": "zip file of LC-MS runs in mzXML format.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.zip.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "output filename",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.zip.filename_basename>.prot",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

@@ -1,0 +1,130 @@
+Create a comprehensive structured plan for the GenePattern module for 'STREAM.DetectDifferentiallyExpressedGenes'.
+            
+            Tool Information:
+            - Name: STREAM.DetectDifferentiallyExpressedGenes
+            - Version: inital revision
+            - Language: any
+            - Description: Used to detect differentially expressed genes between pairs of branches.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "STREAM.DetectDifferentiallyExpressedGenes",
+  "parameters": [
+    {
+      "name": "data.file",
+      "type": "FILE",
+      "description": "A STREAM pkl file containing gene expression data",
+      "required": true,
+      "default_value": "",
+      "file_format": "pkl",
+      "num_values": "1..1"
+    },
+    {
+      "name": "figure.width",
+      "type": "TEXT",
+      "description": "figure width",
+      "required": false,
+      "default_value": "8",
+      "prefix": "-fig_width",
+      "num_values": "0..1"
+    },
+    {
+      "name": "flag.use.precomputed",
+      "type": "TEXT",
+      "description": "If True, the previously computed scaled gene expression will be used.",
+      "required": false,
+      "default_value": "",
+      "choices": "\\=Off;-flag_use_precomputed \\=Use precomputed gene list",
+      "num_values": "0..1"
+    },
+    {
+      "name": "figure.height",
+      "type": "TEXT",
+      "description": "figure height",
+      "required": false,
+      "default_value": "8",
+      "prefix": "-fig_height",
+      "num_values": "0..1"
+    },
+    {
+      "name": "output.filename",
+      "type": "TEXT",
+      "description": "output file name prefix",
+      "required": true,
+      "default_value": "<data.file_basename>",
+      "num_values": "1..1"
+    },
+    {
+      "name": "num.genes",
+      "type": "TEXT",
+      "description": "The number of genes to plot.",
+      "required": true,
+      "default_value": "15",
+      "prefix": "-num_genes",
+      "num_values": "1..1"
+    },
+    {
+      "name": "root",
+      "type": "TEXT",
+      "description": "The starting node.",
+      "required": false,
+      "default_value": "",
+      "prefix": "-root",
+      "num_values": "0..1"
+    },
+    {
+      "name": "preference",
+      "type": "TEXT",
+      "description": "The preference of nodes. The branch with speficied nodes are preferred and will be dealt with first. The higher ranks the node have, The earlier the branch with tha node will be analyzed.  This will help generate the consistent results as shown in subway map and stream plot. Comma delimited eg S3,S4",
+      "required": false,
+      "default_value": "",
+      "prefix": "-preference",
+      "num_values": "0..1"
+    },
+    {
+      "name": "cutoff.zscore",
+      "type": "TEXT",
+      "description": "The z-score cutoff used for Mann - Whitney U test.",
+      "required": true,
+      "default_value": "1.5",
+      "prefix": "-cutoff_zscore",
+      "num_values": "1..1"
+    },
+    {
+      "name": "percentile.expr",
+      "type": "TEXT",
+      "description": "Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions.",
+      "required": true,
+      "default_value": "95",
+      "prefix": "-percentile_expr",
+      "num_values": "1..1"
+    },
+    {
+      "name": "cutoff.logfc",
+      "type": "TEXT",
+      "description": "The log-transformed fold change cutoff between a pair of branches.",
+      "required": true,
+      "default_value": "0.25",
+      "prefix": "-cutoff_logfc",
+      "num_values": "1..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/stream_diffex\\:0.10",
+  "categories": "Single-Cell",
+  "task_type": "Single-cell",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "command_line": "python /stream/diffex_command_line.py -m <data.file> -of <output.filename> <figure.width> <figure.height> <root> <preference> <cutoff.zscore>  <percentile.expr> <flag.use.precomputed> <cutoff.logfc> <num.genes> -n_jobs <job.cpuCount>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

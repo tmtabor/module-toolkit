@@ -1,0 +1,150 @@
+{
+  "module_name": "SplitDatasetTrainTest",
+  "description": "Splits a dataset (and cls file) into a number of train and test subsets",
+  "author": "Stefano Monti, Marc-Danie Nazaire",
+  "input_file_formats": [
+    "cls",
+    "gct",
+    "res"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:90615:1",
+  "plan": "## SplitDatasetTrainTest GenePattern Module — Implementation Plan\n\n### 1. Overview\nSplitDatasetTrainTest is a GenePattern module that Splits a dataset (and cls file) into a number of train and test subsets\n\n### 2. Parameters\nThe module exposes 8 parameters:\n- Required: input.dataset.file, cls.file, split.method, stratified, folds, seed, output.prefix\n- Optional: percentage.split.proportion\n\n### 3. Command Line\n```\n<R2.5> <libdir>SplitDatasetTrainTest.R parseCmdLine <input.dataset.file> <cls.file> <output.prefix> <split.method> <stratified> <folds> <seed> <libdir> <percentage.split.proportion>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "SplitDatasetTrainTest.R",
+  "command_line": "<R2.5> <libdir>SplitDatasetTrainTest.R parseCmdLine <input.dataset.file> <cls.file> <output.prefix> <split.method> <stratified> <folds> <seed> <libdir> <percentage.split.proportion>",
+  "parameters": [
+    {
+      "name": "input.dataset.file",
+      "description": "input dataset - .gct, .res",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "res",
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.dataset.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cls.file",
+      "description": "class template - .cls",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cls.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "split.method",
+      "description": "whether to split the data using a percentage split or cross validation approach",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "random",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "percentage split",
+          "value": "random"
+        },
+        {
+          "display": "cross-validation",
+          "value": "CV"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--split.method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "stratified",
+      "description": "whether to create splits stratified with respect to the class template",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "T",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "T"
+        },
+        {
+          "display": "no",
+          "value": "F"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--stratified",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "folds",
+      "description": "number of train/test splits to generate",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--folds",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "percentage.split.proportion",
+      "description": "proportion of data to be allocated to train file when split method is percentage split (ignored when split method is cross-validation)",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--percentage.split.proportion",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "seed",
+      "description": "random number generator seed",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "123456",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--seed",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "output saved to output.prefix.{train,test}.n.{gct|res,cls}, where n is the fold index",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.dataset.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

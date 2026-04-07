@@ -1,0 +1,88 @@
+{
+  "module_name": "AddFCSEventIndex",
+  "description": "Adds indexes to events in a Flow Cytometry Standard (FCS) data file.",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "input_file_formats": [
+    "fcs"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:28748:1",
+  "plan": "## AddFCSEventIndex GenePattern Module — Implementation Plan\n\n### 1. Overview\nAddFCSEventIndex is a GenePattern module that Adds indexes to events in a Flow Cytometry Standard (FCS) data file.\n\n### 2. Parameters\nThe module exposes 5 parameters:\n- Required: Input.data.file, Start.index, Index.parameter.short.name, Output.fcs.file.name\n- Optional: Index.parameter.long.name\n\n### 3. Command Line\n```\n<java> <java_flags> -jar <libdir>addfcseventindex.jar <Input.data.file> <Output.fcs.file.name> <Start.index> <Index.parameter.short.name> <Index.parameter.long.name>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "addfcseventindex.jar",
+  "command_line": "<java> <java_flags> -jar <libdir>addfcseventindex.jar <Input.data.file> <Output.fcs.file.name> <Start.index> <Index.parameter.short.name> <Index.parameter.long.name>",
+  "parameters": [
+    {
+      "name": "Input.data.file",
+      "description": "An FCS data file to which you want to add indexes.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fcs"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-InputFCS\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Start.index",
+      "description": "The index number for the first event in the data set; the default is 1. The index will be incremented by 1 for each of the events in the data set.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-StartIndex\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Index.parameter.short.name",
+      "description": "The short name ($PnN keyword) of the parameter to get the index; the default is \"Index.\"",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "Index",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-IndexParameterShortName\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Index.parameter.long.name",
+      "description": "The long name ($PnS keyword) of the parameter to get the index; the default is blank.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-IndexParameterLongName\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.fcs.file.name",
+      "description": "The output file name.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<Input.data.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-OutputFCS\\:",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

@@ -1,0 +1,637 @@
+Create a comprehensive structured plan for the GenePattern module for 'scVelo'.
+            
+            Tool Information:
+            - Name: scVelo
+            - Version: Initial release
+            - Language: any
+            - Description: Module for performing basic velocity analysis using the scVelo protocol on ScanpyUtilities processed datasets
+            
+            Research Results:
+            I now have all the research data needed to compile the comprehensive final report. Let me deliver the complete analysis:
+
+---
+
+# 🧬 Comprehensive Research Report: scVelo GenePattern Module
+
+---
+
+## 1. 📌 Executive Summary
+
+**scVelo** is a landmark, peer-reviewed Python toolkit for **RNA velocity analysis** in single-cell RNA sequencing (scRNA-seq) data. Published in *Nature Biotechnology* (Bergen et al., 2020; DOI: 10.1038/s41587-020-0591-3), it is currently the **most widely adopted RNA velocity framework** in the single-cell genomics community. The GenePattern `scVelo` module (v1) wraps this tool to perform basic velocity analysis on datasets previously preprocessed by the `ScanpyUtilities` GenePattern module, enabling non-programmers to access RNA velocity workflows through a standardized GUI.
+
+---
+
+## 2. 🔬 Tool Purpose & Scientific Applications
+
+### 2.1 Core Scientific Concept
+
+RNA velocity exploits the kinetic relationship between **unspliced (nascent) pre-mRNA** and **spliced (mature) mRNA** to predict the **future transcriptional state** of each cell. Because unspliced mRNA reflects gene induction and spliced mRNA reflects steady-state expression, the ratio and dynamics between these two species encode the direction of transcriptional change — a "velocity vector" in gene expression space.
+
+```
+Kinetic Model (Dynamical):
+du/dt = α(t) - β·u     [unspliced mRNA dynamics]
+ds/dt = β·u - γ·s      [spliced mRNA dynamics]
+
+where:  α = transcription rate (time-dependent)
+        β = splicing rate
+        γ = degradation rate
+```
+
+### 2.2 Three Velocity Models in scVelo
+
+| Model | Description | When to Use | Computation |
+|-------|-------------|-------------|-------------|
+| **Deterministic** | Steady-state ratio; original La Manno approach | Quick exploration; high-quality data | Fast (seconds) |
+| **Stochastic** *(default)* | Adds molecular fluctuation terms via 2nd-order moments | Standard analysis; balanced accuracy/speed | Moderate (minutes) |
+| **Dynamical** | Solves full ODE system of kinetics per gene | Transient states; most biological accuracy | Slow (minutes to hours) |
+
+### 2.3 Scientific Applications
+
+- 🧫 **Developmental Biology**: Trace lineage commitment decisions (e.g., pancreatic endocrinogenesis, neurogenesis, hematopoiesis)
+- 🔬 **Cell Differentiation**: Identify which progenitor states give rise to mature cell types
+- 🧬 **Cancer Biology**: Characterize tumor cell state transitions and plasticity
+- 🛡️ **Immunology**: Dynamics of immune cell activation, exhaustion, and differentiation
+- 🫁 **Organoid Research**: Recapitulate and study developmental programs in vitro
+- ⏱️ **Pseudotime Inference**: Direction-aware pseudotime ordering without requiring prior knowledge of start/end states
+- 🗺️ **Fate Mapping**: Integration with CellRank for probabilistic fate predictions
+
+### 2.4 Key Scientific Outputs
+- **Velocity vectors** per cell in gene expression space
+- **Velocity pseudotime**: RNA-velocity-guided temporal ordering of cells
+- **Latent time** (dynamical mode): Absolute inferred cell-internal time
+- **Terminal states**: Predicted root and endpoint cell populations
+- **Velocity confidence**: Per-cell reliability of velocity estimates
+- **Phase portraits**: Spliced vs. unspliced relationships per gene
+
+---
+
+## 3. 📂 Input/Output Formats & Requirements
+
+### 3.1 Primary Input: AnnData Object (`.h5ad`)
+
+The input must be an **AnnData-formatted HDF5 file** (`.h5ad`) produced by `ScanpyUtilities` or the `velocyto` pipeline. This is the central data structure of the Scanpy ecosystem.
+
+**Required AnnData Components for scVelo:**
+
+| Component | Key | Content | Status |
+|-----------|-----|---------|--------|
+| `adata.X` | — | Normalized, log-transformed gene expression matrix (cells × genes) | **Required** |
+| `adata.layers['spliced']` | `spliced` | Spliced mRNA count matrix | **Required** |
+| `adata.layers['unspliced']` | `unspliced` | Unspliced/pre-mRNA count matrix | **Required** |
+| `adata.obsm['X_umap']` | `X_umap` | UMAP (or other 2D) embedding coordinates | **Required** (for plots) |
+| `adata.obs` | — | Cell metadata: cluster labels, cell type annotations | **Recommended** |
+| `adata.var` | — | Gene metadata: gene names, highly variable flags | **Recommended** |
+| `adata.layers['ambiguous']` | `ambiguous` | Ambiguous read counts (from velocyto) | Optional |
+| `adata.obsm['X_pca']` | `X_pca` | PCA coordinates | Optional (computed internally) |
+
+> ⚠️ **Critical**: The `spliced` and `unspliced` layers are **non-negotiable** — scVelo cannot compute velocities without them. These must be generated upstream by `velocyto run`, `STARsolo`, `kallisto|bustools`, `alevin-fry`, or embedded in the ScanpyUtilities output.
+
+### 3.2 Alternative Input: Loom Files (`.loom`)
+
+```python
+# Load a loom file from velocyto
+ldata = scv.read('sample.loom', cache=True)
+# Merge with existing AnnData
+scv.utils.merge(adata, ldata)
+```
+
+Barcode string matching is required for successful merging.
+
+### 3.3 Primary Output: Modified AnnData (`.h5ad`)
+
+After processing, scVelo adds the following data to the AnnData object:
+
+**Added Layers:**
+| Layer Key | Content |
+|-----------|---------|
+| `velocity` | RNA velocity vectors per gene per cell |
+| `variance_velocity` | Variance of velocity (stochastic mode) |
+| `Ms` | First-order moment (smoothed spliced counts) |
+| `Mu` | First-order moment (smoothed unspliced counts) |
+
+**Added Observation Annotations (`.obs`):**
+| Key | Content |
+|-----|---------|
+| `velocity_pseudotime` | Velocity-derived pseudotime per cell |
+| `velocity_confidence` | Mean cosine correlation with neighbors (0–1) |
+| `velocity_length` | Speed/magnitude of velocity vector |
+| `latent_time` | Inferred absolute cell time (dynamical mode only) |
+| `root_cells` | Root cell probability scores |
+| `end_points` | Terminal state probability scores |
+
+**Added Variable Annotations (`.var`):**
+| Key | Content |
+|-----|---------|
+| `velocity_genes` | Boolean mask of genes used for velocity |
+| `fit_alpha` | Transcription rates (dynamical mode) |
+| `fit_beta` | Splicing rates (dynamical mode) |
+| `fit_gamma` | Degradation rates (dynamical mode) |
+| `fit_t_` | Switch time points (dynamical mode) |
+| `fit_likelihood` | Goodness-of-fit scores per gene |
+
+**Added Unstructured Annotations (`.uns`):**
+| Key | Content |
+|-----|---------|
+| `velocity_graph` | Sparse cell-cell transition probability matrix |
+| `velocity_graph_neg` | Negative cosine correlations |
+| `recover_dynamics` | Kinetic model parameters (dynamical mode) |
+
+### 3.4 Visualization Outputs
+
+| File | Plot Type | When Generated |
+|------|-----------|----------------|
+| `velocity_embedding_stream.png` | Streamline velocity field (most popular) | Default |
+| `velocity_embedding.png` | Individual cell velocity arrows | Optional |
+| `velocity_embedding_grid.png` | Grid-averaged velocity arrows | Optional |
+| `scatter_pseudotime.png` | Pseudotime colored scatter | Optional |
+| `scatter_latent_time.png` | Latent time colored scatter | Dynamical mode |
+| `phase_portraits.png` | Per-gene spliced/unspliced phase plots | Optional |
+
+---
+
+## 4. ⚙️ Parameter Analysis & Documentation
+
+### 4.1 Core Module-Level Parameters (GenePattern Interface)
+
+**GROUP 1: Input/Output**
+
+| Parameter | Type | Default | Required | Description |
+|-----------|------|---------|----------|-------------|
+| `input_file` | File (`.h5ad`) | — | ✅ Yes | AnnData object from ScanpyUtilities with spliced/unspliced layers |
+| `output_file` | String | `scvelo_output.h5ad` | ✅ Yes | Output AnnData file name |
+| `output_dir` | String | `./` | No | Directory for output files and figures |
+
+---
+
+**GROUP 2: Preprocessing (`scv.pp.*`)**
+
+| Parameter | Function | Type | Default | Biological Meaning |
+|-----------|----------|------|---------|-------------------|
+| `min_shared_counts` | `filter_and_normalize` | Integer | `20` | Minimum total counts (spliced + unspliced) required per gene |
+| `n_top_genes` | `filter_and_normalize` | Integer | `2000` | Number of highly variable genes to retain for velocity |
+| `flavor` | `filter_and_normalize` | Choice | `'seurat'` | HVG selection method: `'seurat'` or `'cell_ranger'` |
+| `n_pcs` | `pp.moments` | Integer | `30` | PCA dimensions for neighborhood computation |
+| `n_neighbors` | `pp.moments` | Integer | `30` | Number of nearest neighbors for moment computation |
+| `skip_normalization` | Boolean flag | Bool | `False` | Skip if data already normalized (from ScanpyUtilities) |
+
+---
+
+**GROUP 3: Velocity Estimation (`scv.tl.velocity`)**
+
+| Parameter | Type | Default | Range/Options | Biological Significance |
+|-----------|------|---------|---------------|------------------------|
+| `velocity_mode` | Choice | `'stochastic'` | `'deterministic'`, `'stochastic'`, `'dynamical'` | Model for transcriptional dynamics |
+| `min_r2` | Float | `0.01` | `0.0–1.0` | Minimum R² threshold for including a gene as velocity gene; lower = more genes |
+| `min_likelihood` | Float | `0.001` | `0.0–1.0` | Minimum model likelihood threshold (dynamical mode) |
+| `r2_adjusted` | Boolean | `None` | `True/False/None` | Use adjusted R² for gene filtering |
+| `fit_offset` | Boolean | `False` | `True/False` | Allow offset in linear regression (deterministic mode) |
+| `fit_offset2` | Boolean | `False` | `True/False` | Allow offset for unspliced equation |
+| `filter_genes` | Boolean | `False` | `True/False` | Filter genes to velocity genes during estimation |
+| `use_highly_variable` | Boolean | `True` | `True/False` | Restrict velocity to highly variable genes |
+| `groupby` | String | `None` | Cell obs key | Fit velocities per cell group (e.g., `'clusters'`) |
+| `diff_kinetics` | Boolean | `None` | `True/False` | Allow differential kinetics across groups |
+
+---
+
+**GROUP 4: Dynamical Model Recovery (`scv.tl.recover_dynamics`)**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `n_top_genes` | Integer | `None` | Number of top-likelihood genes for dynamics recovery |
+| `max_iter` | Integer | `10` | Maximum EM iterations for kinetics fitting |
+| `fit_connected_states` | Boolean | `True` | Fit connected induction/repression states |
+| `t0_max` | Float | `1` | Maximum initial time for dynamics |
+| `assignment_mode` | Choice | `'projection'` | `'projection'` or `'likelihood'` |
+| `n_jobs` | Integer | `None` (auto) | Parallel jobs for dynamics recovery; `-1` = all cores |
+
+---
+
+**GROUP 5: Velocity Graph (`scv.tl.velocity_graph`)**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `n_recurse_neighbors` | Integer | `None` | Recurse neighbors for graph construction (increases connectivity) |
+| `sqrt_transform` | Boolean | `None` | Square-root transform expression before cosine similarity |
+| `variance_stabilization` | Boolean | `None` | Apply variance stabilization to expression values |
+| `compute_uncertainties` | Boolean | `None` | Compute uncertainty estimates for transitions |
+| `mode_neighbors` | Choice | `'distances'` | `'distances'` or `'connectivities'` |
+| `n_jobs` | Integer | `None` | Number of parallel workers |
+
+---
+
+**GROUP 6: Pseudotime & Latent Time**
+
+| Parameter | Function | Type | Default | Description |
+|-----------|----------|------|---------|-------------|
+| `compute_pseudotime` | Flag | Boolean | `True` | Compute velocity pseudotime |
+| `root_key` | `velocity_pseudotime` | String | `None` | obs key specifying root cell(s) |
+| `end_key` | `velocity_pseudotime` | String | `None` | obs key specifying terminal cell(s) |
+| `n_dcs` | `velocity_pseudotime` | Integer | `10` | Number of diffusion components |
+| `compute_latent_time` | Flag | Boolean | `False` | Compute latent time (dynamical mode only) |
+| `min_likelihood_latent` | `latent_time` | Float | `0.1` | Minimum likelihood for latent time computation |
+| `min_confidence_latent` | `latent_time` | Float | `0.75` | Minimum velocity confidence for latent time |
+
+---
+
+**GROUP 7: Visualization (`scv.pl.*`)**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `basis` | String | `'umap'` | Embedding basis for velocity visualization: `'umap'`, `'pca'`, `'tsne'` |
+| `color_by` | String | `'clusters'` | obs key for cell coloring (e.g., `'clusters'`, `'velocity_pseudotime'`) |
+| `plot_type` | Choice | `'stream'` | `'stream'`, `'arrows'`, `'grid'` |
+| `density` | Float | `2` | Streamline density (stream plot) |
+| `smooth` | Float | `0.5` | Streamline smoothness |
+| `arrow_size` | Float | `1` | Scale of arrow heads (arrow plot) |
+| `arrow_length` | Float | `1` | Scale of arrow lengths |
+| `figsize_width` | Float | `7` | Figure width in inches |
+| `figsize_height` | Float | `5` | Figure height in inches |
+| `dpi` | Integer | `100` | Output resolution (dots per inch) |
+| `figure_format` | Choice | `'png'` | Output format: `'png'`, `'svg'`, `'pdf'` |
+| `figure_prefix` | String | `'scvelo_'` | Prefix for all output figure files |
+| `palette` | String | `None` | Color palette for clusters |
+| `alpha` | Float | `0.3` | Cell transparency |
+| `legend_loc` | String | `'on data'` | Legend position |
+
+---
+
+### 4.2 Parameter Groupings for GenePattern UI
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  PARAMETER GROUPS (GenePattern Module Manifest)                  │
+├──────────────────────────┬──────────────────────────────────────┤
+│  Group 1: Files          │  input_file, output_file, output_dir  │
+│  Group 2: Preprocessing  │  min_shared_counts, n_top_genes,      │
+│                          │  n_pcs, n_neighbors, skip_norm        │
+│  Group 3: Velocity       │  velocity_mode, min_r2,               │
+│  Estimation              │  min_likelihood, use_highly_variable  │
+│  Group 4: Advanced       │  fit_offset, filter_genes, groupby,   │
+│  Velocity                │  diff_kinetics, r2_adjusted           │
+│  Group 5: Dynamical      │  n_top_genes_dyn, max_iter, n_jobs    │
+│  Model (optional)        │                                        │
+│  Group 6: Graph &        │  n_recurse_neighbors, variance_stab,  │
+│  Pseudotime              │  compute_uncertainties, root_key      │
+│  Group 7: Visualization  │  basis, color_by, plot_type, dpi,     │
+│                          │  figsize, figure_format               │
+└──────────────────────────┴──────────────────────────────────────┘
+```
+
+---
+
+## 5. 🔧 Installation & Dependency Requirements
+
+### 5.1 Python Version
+- **Minimum**: Python 3.6
+- **Recommended**: Python 3.8–3.10 (for full compatibility with latest dependencies)
+
+### 5.2 Core Dependencies
+
+| Package | Minimum Version | Purpose |
+|---------|----------------|---------|
+| `numpy` | Latest stable | Numerical operations |
+| `scipy` | Latest stable | Sparse matrix operations, statistics |
+| `pandas` | Latest stable | Data manipulation |
+| `scikit-learn` | Latest stable | PCA, nearest neighbors |
+| `matplotlib` | Latest stable | Visualization |
+| `networkx` | Latest stable | Graph operations |
+| `anndata` | `>=0.7` | Core data structure |
+| `scanpy` | `>=1.5` | Preprocessing utilities, neighbor graphs |
+| `loompy` | `>=2.0` | Loom file I/O |
+
+### 5.3 Optional Dependencies
+
+| Package | Purpose | Install Command |
+|---------|---------|----------------|
+| `python-igraph` | PAGA / Louvain clustering | `pip install python-igraph` |
+| `louvain` | Community detection | `pip install louvain` |
+| `pybind11` | Fast neighbor search | `pip install pybind11` |
+| `hnswlib` | Approximate nearest neighbors | `pip install hnswlib` |
+| `leidenalg` | Leiden clustering | `pip install leidenalg` |
+
+### 5.4 Installation Commands
+
+```bash
+# PyPI (latest: 0.3.4)
+pip install -U scvelo
+
+# Bioconda (stable: 0.2.5)
+conda install -c bioconda -c conda-forge scvelo
+
+# Development version
+pip install git+https://github.com/theislab/scvelo
+```
+
+### 5.5 Docker Image Recommendation (GenePattern)
+
+```dockerfile
+FROM python:3.9-slim
+
+RUN pip install --no-cache-dir \
+    scvelo==0.3.4 \
+    scanpy>=1.9 \
+    anndata>=0.9 \
+    loompy>=3.0 \
+    matplotlib>=3.5 \
+    numpy>=1.21 \
+    scipy>=1.7 \
+    pandas>=1.3 \
+    scikit-learn>=1.0 \
+    python-igraph \
+    louvain \
+    leidenalg
+```
+
+---
+
+## 6. 🔄 Standard Workflows & Use Cases
+
+### 6.1 Basic scVelo Workflow (GenePattern Context)
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│           COMPLETE scVELO ANALYSIS PIPELINE                       │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  [UPSTREAM - ScanpyUtilities Module]                              │
+│  Raw Counts (.h5ad)                                               │
+│    ↓  QC, normalization, HVG selection                           │
+│    ↓  PCA, UMAP, clustering                                       │
+│    ↓  Spliced/unspliced layer embedding                           │
+│  Preprocessed AnnData (.h5ad) ─────────────────────────────────┐ │
+│                                                                  │ │
+│  [scVelo Module - v1]                                           ↓ │
+│                                                                    │
+│  STEP 1: Load & Validate AnnData                                  │
+│    scv.read('input.h5ad')                                         │
+│    Verify: adata.layers['spliced'], adata.layers['unspliced']     │
+│                                                                    │
+│  STEP 2: Preprocessing                                            │
+│    scv.pp.filter_and_normalize(adata,                             │
+│        min_shared_counts=20, n_top_genes=2000)                    │
+│    scv.pp.moments(adata, n_pcs=30, n_neighbors=30)                │
+│                                                                    │
+│  STEP 3: Velocity Estimation                                      │
+│    scv.tl.velocity(adata, mode='stochastic')  # or dynamical     │
+│                                                                    │
+│  STEP 4: Velocity Graph Construction                              │
+│    scv.tl.velocity_graph(adata)                                   │
+│                                                                    │
+│  STEP 5: Quality Metrics                                          │
+│    scv.tl.velocity_confidence(adata)                              │
+│                                                                    │
+│  STEP 6: Pseudotime (Optional)                                    │
+│    scv.tl.velocity_pseudotime(adata)                              │
+│                                                                    │
+│  STEP 7: Visualization                                            │
+│    scv.pl.velocity_embedding_stream(adata, basis='umap',          │
+│        color='clusters', save='stream.png')                       │
+│                                                                    │
+│  STEP 8: Export                                                   │
+│    adata.write('scvelo_output.h5ad')                              │
+│                                                                    │
+│  OUTPUT: Modified .h5ad + PNG/SVG figures                         │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### 6.2 Extended Workflow (Dynamical Mode)
+
+```python
+# For highest accuracy - adds recover_dynamics step
+scv.tl.recover_dynamics(adata, n_jobs=4)          # ~minutes-hours
+scv.tl.velocity(adata, mode='dynamical')           # uses kinetic params
+scv.tl.velocity_graph(adata)
+scv.tl.latent_time(adata)                          # inferred cell time
+scv.tl.terminal_states(adata)                      # root/end predictions
+scv.pl.scatter(adata, color='latent_time', color_map='gnuplot')
+```
+
+### 6.3 Integration with CellRank (Downstream)
+
+```python
+import cellrank as cr
+# scVelo output feeds directly into CellRank fate mapping
+vk = cr.kernels.VelocityKernel(adata).compute_transition_matrix()
+ck = cr.kernels.ConnectivityKernel(adata).compute_transition_matrix()
+combined_kernel = 0.8 * vk + 0.2 * ck
+estimator = cr.estimators.GPCCA(combined_kernel)
+```
+
+### 6.4 Common Use Case Scenarios
+
+| Use Case | Velocity Mode | Key Parameters | Expected Runtime |
+|----------|--------------|----------------|-----------------|
+| Quick exploration | `deterministic` | Default settings | < 5 minutes |
+| Standard publication | `stochastic` | `min_r2=0.01`, `n_top_genes=2000` | 5–20 minutes |
+| High-accuracy biology | `dynamical` | `max_iter=10`, `n_jobs=-1` | 30 min – 4 hours |
+| Cell fate prediction | `dynamical` + CellRank | `compute_latent_time=True` | 1–8 hours |
+| Trajectory comparison | `stochastic` + `groupby` | `groupby='condition'` | 10–40 minutes |
+
+---
+
+## 7. 🔗 GenePattern Integration Considerations
+
+### 7.1 Module Architecture
+
+```
+scVelo GenePattern Module Structure:
+├── manifest                    # Module metadata, parameters, Docker image
+├── scvelo_wrapper.py           # Main Python wrapper script
+├── scvelo_utils.py             # Helper functions (validation, I/O)
+├── requirements.txt            # Python dependencies
+├── Dockerfile                  # Container specification
+└── documentation.html          # GenePattern module documentation
+```
+
+### 7.2 Manifest File Key Entries
+
+```ini
+name=scVelo
+description=Module for performing basic velocity analysis using the scVelo protocol on ScanpyUtilities processed datasets
+version=1
+categories=Single Cell;RNA-seq;Trajectory Analysis
+os=any
+language=Python 3
+language.version=3.8+
+job.docker.image=genepattern/scvelo:v1
+LSID=urn:lsid:broad.mit.edu:cancer.software.genepattern.module.analysis:00000XXX
+author=GenePattern Team
+privacy=public
+quality=development
+```
+
+### 7.3 Data Flow with ScanpyUtilities
+
+```
+ScanpyUtilities Module Output Requirements for scVelo:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ MUST provide:
+   • adata.X (normalized, log-transformed expression)
+   • adata.layers['spliced'] (raw spliced counts)
+   • adata.layers['unspliced'] (raw unspliced counts)
+   • adata.obsm['X_umap'] (UMAP embedding)
+   • adata.obs['clusters'] or equivalent (cell annotations)
+
+⚠️ SHOULD provide:
+   • adata.obsm['X_pca'] (PCA coordinates)
+   • adata.var['highly_variable'] (HVG flags)
+   • adata.uns['neighbors'] (precomputed neighbors)
+
+❌ scVelo will FAIL without spliced/unspliced layers
+```
+
+### 7.4 Input Validation Requirements
+
+The GenePattern wrapper script should validate:
+
+```python
+def validate_input(adata):
+    # 1. Check required layers
+    assert 'spliced' in adata.layers, "ERROR: Missing 'spliced' layer"
+    assert 'unspliced' in adata.layers, "ERROR: Missing 'unspliced' layer"
+    
+    # 2. Check embedding availability
+    if 'X_umap' not in adata.obsm:
+        warn("No UMAP embedding found; generating PCA-based visualization")
+    
+    # 3. Check cell count thresholds
+    assert adata.n_obs >= 100, "WARNING: Very few cells (<100); results may be unreliable"
+    
+    # 4. Check for pre-existing processing
+    if adata.X.max() < 15:  # Log-transformed data
+        settings['skip_log'] = True
+    
+    # 5. Check gene count
+    if adata.n_vars < 500:
+        warn("Very few genes; consider relaxing n_top_genes threshold")
+```
+
+### 7.5 Error Handling Strategy
+
+| Error Condition | Recommended Action |
+|-----------------|-------------------|
+| Missing `spliced`/`unspliced` layers | **Fatal error** — clear message directing user to ScanpyUtilities |
+| Zero velocity genes after filtering | Warn and reduce `min_r2`; output partial results |
+| Memory error (large dataset) | Suggest reducing `n_top_genes` or using deterministic mode |
+| Barcode mismatch (loom merge) | Detailed mismatch report with overlap statistics |
+| NaN velocities | Warning; identify and report affected genes/cells |
+
+### 7.6 Computational Resource Recommendations
+
+| Dataset Size | RAM | CPUs | Estimated Runtime (Stochastic) | Estimated Runtime (Dynamical) |
+|-------------|-----|------|-------------------------------|------------------------------|
+| < 5,000 cells | 8 GB | 2 | 2–5 min | 15–30 min |
+| 5k–20k cells | 16 GB | 4 | 5–15 min | 30–90 min |
+| 20k–50k cells | 32 GB | 8 | 15–30 min | 1–4 hours |
+| > 50k cells | 64 GB | 16 | 30–60 min | 4–12 hours |
+
+---
+
+## 8. 📊 Comparative Analysis
+
+| Feature | scVelo | velocyto | UniTVelo | veloVI |
+|---------|--------|----------|----------|--------|
+| **Velocity Models** | 3 (deterministic/stochastic/dynamical) | 1 (steady-state) | 1 (unified-time) | 1 (variational) |
+| **Uncertainty Quantification** | Limited | None | None | ✅ Full |
+| **Scanpy/AnnData Native** | ✅ | Partial | ✅ | ✅ |
+| **Computational Speed** | ★★★☆ | ★★★★ | ★★☆☆ | ★★☆☆ |
+| **Biological Accuracy** | ★★★★ | ★★☆☆ | ★★★★ | ★★★★★ |
+| **Ease of Use** | ★★★★★ | ★★★☆ | ★★★☆ | ★★★☆ |
+| **Community Adoption** | ★★★★★ | ★★★★ | ★★ | ★★★ |
+| **CellRank Integration** | ✅ Native | Partial | Limited | ✅ |
+| **Tutorial Resources** | Excellent | Good | Limited | Moderate |
+| **GenePattern Suitability** | ★★★★★ | ★★★ | ★★★ | ★★ |
+
+**Why scVelo is optimal for GenePattern integration:**
+1. 🏆 **Most widely used** RNA velocity tool — users are familiar with it
+2. 🔌 **Native Scanpy compatibility** — seamless with ScanpyUtilities output
+3. 📖 **Excellent documentation** — reduces support burden
+4. 🧪 **Peer-reviewed validation** — published in Nature Biotechnology
+5. 🔧 **Multiple models** — one module serves beginner to advanced users
+6. 📦 **Stable API** — consistent behavior across versions
+
+---
+
+## 9. ⚠️ Known Limitations & Caveats
+
+### 9.1 Biological Assumptions
+- Assumes first-order transcriptional kinetics (simple ODE system)
+- Requires genes to exhibit both induction and repression phases for dynamical model accuracy
+- Results less reliable in highly synchronized or very slow-changing systems
+- UMAP layout influences *visual* interpretation but not the underlying velocity calculation
+
+### 9.2 Technical Limitations
+- **Dynamical model** is computationally expensive (hours for >20k cells)
+- **Sensitive to preprocessing**: spliced/unspliced quantification method significantly impacts results (see Soneson et al., PLOS Comp Bio 2021)
+- **Version compatibility**: AnnData version mismatches can cause cryptic errors; pin dependency versions
+- **Memory intensive**: Large datasets may require >32 GB RAM for dynamical mode
+- **Barcode matching**: Merging loom files requires exact barcode string overlap
+
+### 9.3 Active Development Notes
+- scVelo 0.3.x (PyPI) vs 0.2.5 (bioconda) — significant API changes between versions; GenePattern module should pin to a specific version
+- The tool is actively maintained by Theis Lab (Helmholtz Munich)
+- Community transitioning toward integrated tools (veloVI, CellRank 2); scVelo remains foundational
+
+---
+
+## 10. 📚 Citation & References
+
+| Reference | Details |
+|-----------|---------|
+| **Primary** | Bergen V, Lange M, Peidli S, Wolf FA, Theis FJ. "Generalizing RNA velocity to transient cell states through dynamical modeling." *Nature Biotechnology* **38**, 1408–1414 (2020). DOI: 10.1038/s41587-020-0591-3. PMID: 32747759 |
+| **Original RNA Velocity** | La Manno G et al. "RNA velocity of single cells." *Nature* **560**, 494–498 (2018). DOI: 10.1038/s41586-018-0414-6 |
+| **Preprocessing** | Soneson C et al. "Preprocessing choices affect RNA velocity results for droplet scRNA-seq data." *PLOS Comput Biol* **17**(1): e1008585 (2021). DOI: 10.1371/journal.pcbi.1008585 |
+| **Official Docs** | https://scvelo.readthedocs.io |
+| **Source Repository** | https://github.com/theislab/scvelo |
+| **GenePattern Module** | https://github.com/genepattern/scVelo/tree/v1 |
+| **PyPI Package** | https://pypi.org/project/scvelo/ (v0.3.4) |
+| **NIH HPC Notes** | https://hpc.nih.gov/apps/scvelo.html |
+
+---
+
+## 11. ✅ GenePattern Module Development Checklist
+
+```
+IMPLEMENTATION PRIORITIES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ HIGH PRIORITY
+   □ Validate spliced/unspliced layer presence on input
+   □ Support both .h5ad and .loom as input formats
+   □ Expose all 3 velocity modes with clear documentation
+   □ Generate standard visualization outputs (stream plot minimum)
+   □ Return modified .h5ad with all velocity annotations
+   □ Pin scVelo version in Docker image (recommend 0.2.5 for stability)
+   □ Implement clear error messages for common failure modes
+   □ Document parameter defaults with biological reasoning
+
+⚠️ MEDIUM PRIORITY
+   □ Optional dynamical mode (behind advanced settings flag)
+   □ Per-gene velocity confidence reporting
+   □ Support color_by parameter for cluster-colored plots
+   □ Optional CellRank output generation
+   □ Latent time computation toggle
+   □ Multi-figure output (stream + scatter + phase portraits)
+
+💡 LOW PRIORITY / FUTURE
+   □ Batch/multi-sample velocity support
+   □ Differential kinetics analysis
+   □ Terminal state identification
+   □ Integration with PAGA trajectory analysis
+   □ CellRank 2 compatibility
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+---
+
+*Report compiled from: scVelo official documentation (readthedocs.io), Nature Biotechnology publication (Bergen et al. 2020), GitHub repositories (theislab/scvelo and genepattern/scVelo), PyPI package metadata, NIH HPC documentation, PLOS Computational Biology methodology paper, and comparative community benchmarking resources. Research conducted comprehensively for GenePattern module v1 development.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

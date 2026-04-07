@@ -1,0 +1,141 @@
+{
+  "module_name": "AuDIT",
+  "description": "Automated Detection of Inaccurate and Imprecise Transitions in MRM Mass Spectrometry",
+  "author": "D. R. Mani, The Broad Institute",
+  "input_file_formats": [
+    "csv"
+  ],
+  "language": "any",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:41252:1",
+  "plan": "## AuDIT GenePattern Module — Implementation Plan\n\n### 1. Overview\nAuDIT is a GenePattern module that Automated Detection of Inaccurate and Imprecise Transitions in MRM Mass Spectrometry\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: data.file, skyline.export, pvalue.threshold, cv.threshold, all.pairs, output.intermediate.results, output.prefix\n- Optional: none\n\n### 3. Command Line\n```\n/build/audit/run_audit.sh <data.file> <output.prefix> <pvalue.threshold> <cv.threshold> <all.pairs> <skyline.export> <output.intermediate.results>\n```\n\n### 4. Docker Image\nDocker image: genepattern/audit\\:0.4\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_audit.sh",
+  "command_line": "/build/audit/run_audit.sh <data.file> <output.prefix> <pvalue.threshold> <cv.threshold> <all.pairs> <skyline.export> <output.intermediate.results>",
+  "parameters": [
+    {
+      "name": "data.file",
+      "description": "input file with pre-processed MRM data in csv format",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "csv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "skyline.export",
+      "description": "if \"yes\", data file is a Skyline csv export including following columns\\: Sample (usually derived from SampleName, having identical value for all its replicates), PeptideSequence, ReplicateName, FragmentIon, PrecursorCharge, ProductCharge, light Area, heavy Area. When \"no\", input must contain sample, replicate, peptide, transition.id, area, IS.area in that order.",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "TRUE"
+        },
+        {
+          "display": "no",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--skyline.export",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "pvalue.threshold",
+      "description": "p-value threshold above which transition is quantification-worthy. Must be a value between 0 and 1 inclusive.",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.00001",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--pvalue.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cv.threshold",
+      "description": "threshold for coefficient of variation below which transition is quantification-worthy",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cv.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "all.pairs",
+      "description": "calculate all possible pairs of relative ratios for a transition",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": "FALSE"
+        },
+        {
+          "display": "yes",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--all.pairs",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.intermediate.results",
+      "description": "create files with intermediate results",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": "FALSE"
+        },
+        {
+          "display": "yes",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.intermediate.results",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "file name prefix used for output file(s)",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.file_basename>-results",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/audit:0.4"
+}

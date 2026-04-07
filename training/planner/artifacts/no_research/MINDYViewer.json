@@ -1,0 +1,54 @@
+{
+  "module_name": "MINDYViewer",
+  "description": "Visualizes the results of MINDY",
+  "author": "Marc-Danie Nazaire",
+  "input_file_formats": [
+    "gct",
+    "mindy",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:12062:1",
+  "plan": "## MINDYViewer GenePattern Module — Implementation Plan\n\n### 1. Overview\nMINDYViewer is a GenePattern module that Visualizes the results of MINDY\n\n### 2. Parameters\nThe module exposes 2 parameters:\n- Required: dataset.file\n- Optional: mindy.file\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>swingx-0.9.1.jar<path.separator><libdir>jargs.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>jama-1.0.1.jar<path.separator><libdir>trove.jar<path.separator><libdir>collections-generic-4.0.jar<path.separator><libdir>commons-logging.jar<path.separator><libdir>ostermillerutils_1_04_03_for_kaffe.jar<path.separator><libdir>geworkbench-mindy.jar<path.separator><libdir>mindy-viewer.jar org.genepattern.modules.mindy.MINDYViewer -i <dataset.file> -m <mindy.file>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "swingx-0.9.1.jar<path.separator><libdir>jargs.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>jama-1.0.1.jar<path.separator><libdir>trove.jar<path.separator><libdir>collections-generic-4.0.jar<path.separator><libdir>commons-logging.jar<path.separator><libdir>ostermillerutils_1_04_03_for_kaffe.jar<path.separator><libdir>geworkbench-mindy.jar<path.separator><libdir>mindy-viewer.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>swingx-0.9.1.jar<path.separator><libdir>jargs.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>jama-1.0.1.jar<path.separator><libdir>trove.jar<path.separator><libdir>collections-generic-4.0.jar<path.separator><libdir>commons-logging.jar<path.separator><libdir>ostermillerutils_1_04_03_for_kaffe.jar<path.separator><libdir>geworkbench-mindy.jar<path.separator><libdir>mindy-viewer.jar org.genepattern.modules.mindy.MINDYViewer -i <dataset.file> -m <mindy.file>",
+  "parameters": [
+    {
+      "name": "dataset.file",
+      "description": "The dataset file - .res, .gct",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "res",
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dataset.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "mindy.file",
+      "description": "Output from MINDY- .mindy",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "mindy"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--mindy.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

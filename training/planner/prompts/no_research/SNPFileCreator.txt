@@ -1,0 +1,111 @@
+Create a comprehensive structured plan for the GenePattern module for 'SNPFileCreator'.
+            
+            Tool Information:
+            - Name: SNPFileCreator
+            - Version: Modified to output only snp format
+            - Language: Java
+            - Description: Performs normalization and probe-level summarization to generate a SNP file for a set of Affymetrix SNP chip CEL files.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "SNPFileCreator",
+  "parameters": [
+    {
+      "name": "cel.files",
+      "type": "FILE",
+      "description": "Zip file of CEL files",
+      "required": true,
+      "default_value": "",
+      "file_format": "zip"
+    },
+    {
+      "name": "genome.annotation",
+      "type": "java.lang.String",
+      "description": "The genome annotation to use. Either a genome annotation or genome annotation file must be specified, but not both.",
+      "required": false,
+      "default_value": "hg19",
+      "choices": ";hg19\\=UCSC hg19;hg18\\=USCS hg18"
+    },
+    {
+      "name": "genome.annotation.file",
+      "type": "FILE",
+      "description": "Genome annotation file. Either a genome annotation or genome annotation file must be specified, but not both.",
+      "required": false,
+      "default_value": "",
+      "file_format": "txt"
+    },
+    {
+      "name": "normalization.method",
+      "type": "java.lang.String",
+      "description": "The normalization method to apply.",
+      "required": true,
+      "default_value": "1",
+      "choices": "0\\=None;1\\=Quantile Normalization(dChip)"
+    },
+    {
+      "name": "summarization.method",
+      "type": "java.lang.String",
+      "description": "The summarization method to apply for SNP probes.",
+      "required": true,
+      "default_value": "5",
+      "choices": "1\\=Average Difference;2\\=PM/MM Difference Model (dChip);5\\=Median Polish"
+    },
+    {
+      "name": "sort.by.chromosome.and.location",
+      "type": "java.lang.String",
+      "description": "Whether to sort output file by chromosome and location. Filters out probesets without location information.",
+      "required": true,
+      "default_value": "yes",
+      "choices": "yes\\=Sort;no\\=Do no sort"
+    },
+    {
+      "name": "include.RandomGC.probesets",
+      "type": "java.lang.String",
+      "description": "Whether to include RandomGC probesets in output",
+      "required": true,
+      "default_value": "no",
+      "choices": "yes;no"
+    },
+    {
+      "name": "cdf.file",
+      "type": "FILE",
+      "description": "Custom CDF file.(.cdf, .cdf.gz) Leave blank to use default internally provided CDF file.",
+      "required": false,
+      "default_value": "",
+      "file_format": "cdf;.gz"
+    },
+    {
+      "name": "use.mismatch.probes",
+      "type": "java.lang.String",
+      "description": "Whether to use any mismatch probes in summarization step. NOTE\\: For data older than 250K, you will most likely want to set this to yes.",
+      "required": true,
+      "default_value": "no",
+      "choices": "yes;no"
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.lang.String",
+      "description": "The base name for the output files",
+      "required": true,
+      "default_value": "<cel.files_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "SNP Analysis",
+  "author": "David Twomey, Joshua Gould, Marc-Danie Nazaire",
+  "command_line": "<java> <java_flags> -cp <libdir>snp.jar<path.separator><libdir>opencsv-1.7.jar<path.separator><libdir>ant.jar<path.separator><libdir>commons-math-1.2.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>log4j.jar<path.separator><libdir>AffxFusion.jar<path.separator><libdir>gp-modules.jar org.genepattern.snp.SNPFileCreator -lib<libdir> -cdf<cdf.file> -dir<cel.files> -out<output.prefix> -mmt<summarization.method> -nmt<normalization.method> -srt<sort.by.chromosome.and.location> -gif<genome.annotation.file> -alsyes -oclyes -txtyes -log<libdir>log4j.properties -mmp<use.mismatch.probes> -rgc<include.RandomGC.probesets> -fmtsnp -gan<genome.annotation>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

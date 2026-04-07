@@ -1,0 +1,131 @@
+{
+  "module_name": "Picard.ReorderSam",
+  "description": "Reorders a SAM file or a BAM file to match contig ordering in a provided reference file",
+  "author": "Picard Tools",
+  "input_file_formats": [
+    "bam",
+    "dict",
+    "fa",
+    "fasta",
+    "fna",
+    "sam"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:13255:1",
+  "plan": "## Picard.ReorderSam GenePattern Module — Implementation Plan\n\n### 1. Overview\nPicard.ReorderSam is a GenePattern module that Reorders a SAM file or a BAM file to match contig ordering in a provided reference file\n\n### 2. Parameters\nThe module exposes 6 parameters:\n- Required: input.file, reference.file, reference.sequence.dictionary, allow.partial.overlap, allow.contig.length.discordance, output.prefix\n- Optional: none\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>ant.jar<path.separator><libdir>ReorderSam.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>gp-ReorderSam.jar org.genepattern.sam.ReorderSamWrapper -inputFileName <input.file> -allowInc <allow.partial.overlap> -contigLen <allow.contig.length.discordance> -refFileName <reference.file> -dict <reference.sequence.dictionary> -outputFileName <output.prefix>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "ant.jar<path.separator><libdir>ReorderSam.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>gp-ReorderSam.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>ant.jar<path.separator><libdir>ReorderSam.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>gp-ReorderSam.jar org.genepattern.sam.ReorderSamWrapper -inputFileName <input.file> -allowInc <allow.partial.overlap> -contigLen <allow.contig.length.discordance> -refFileName <reference.file> -dict <reference.sequence.dictionary> -outputFileName <output.prefix>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "A SAM or BAM file.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "sam",
+        "bam"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reference.file",
+      "description": "Reference sequence to which to reorder reads in FASTA format.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fasta",
+        "fa",
+        "fna"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reference.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reference.sequence.dictionary",
+      "description": "The sequence dictionary for the reference sequence file",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "dict"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reference.sequence.dictionary",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "allow.partial.overlap",
+      "description": "If yes, then allows only a partial overlap of the BAM contigs with the new reference sequence contigs. This requires a corresponding contig in the new reference for each read contig.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "true"
+        },
+        {
+          "display": "no",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--allow.partial.overlap",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "allow.contig.length.discordance",
+      "description": "If yes, then permits mapping from a read contig to a new reference contig with the same name but a different length. Use with extreme caution and a full knowledge of the possible consequences.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "true"
+        },
+        {
+          "display": "no",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--allow.contig.length.discordance",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "The prefix of the output SAM or BAM file.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

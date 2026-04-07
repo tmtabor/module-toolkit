@@ -1,0 +1,452 @@
+{
+  "module_name": "Tangram",
+  "description": "A method for spatial alignment of single cell transcriptomic data. See <a href\\=https\\://github.com/genepattern/Tangram/blob/main/README.md>documentation</a> for details on use cases.",
+  "author": "Julia Kononova, Omar Halawa - GenePattern;GenePattern @ Mesirov Lab, UCSD",
+  "input_file_formats": [
+    "gmt",
+    "h5ad",
+    "zip"
+  ],
+  "language": "Python",
+  "categories": [
+    "single-cell",
+    "singlecell",
+    "spatial analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:14818:1",
+  "plan": "## Tangram GenePattern Module — Implementation Plan\n\n### 1. Overview\nTangram is a GenePattern module that A method for spatial alignment of single cell transcriptomic data. See <a href\\=https\\://github.com/genepattern/Tangram/blob/main/README.md>documentation</a> for details on use cases.\n\n### 2. Parameters\nThe module exposes 28 parameters:\n- Required: single.cell.data.file, cell.type.metadata.field, spatial.data.file, classification.mode, cross.val.mode, training.mode, num.top.DE.genes, alignment.mode, alignment.cell.density, num.epochs, spot.size, scale.factor, spatial.opacity, training.opacity, testing.opacity, deconv.opacity, deconv.point.size, training.bin.num, testing.bin.num, color.mapping.perc, debug, verbose, output.file.tag, genes.to.plot.data.file\n- Optional: cluster.metadata.field, histological.image.file, img.metadata.field, training.genes.input\n\n### 3. Command Line\n```\npython /Tangram/main.py <single.cell.data.file> <cell.type.metadata.field> <spatial.data.file> <cluster.metadata.field> <histological.image.file> <img.metadata.field> <output.file.tag> <classification.mode> <cross.val.mode> <training.mode> <num.top.DE.genes> <training.genes.input> <alignment.mode> <alignment.cell.density> <num.epochs> <spot.size> <scale.factor> <spatial.opacity> <training.opacity> <testing.opacity> <training.bin.num> <testing.bin.num> <color.mapping.perc> <debug> <verbose> <genes.to.plot.data.file> --device \"cpu\" <deconv.opacity> <deconv.point.size>\n```\n\n### 4. Docker Image\nDocker image: omarhalawa/tangram\\:v1.0\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "main.py",
+  "command_line": "python /Tangram/main.py <single.cell.data.file> <cell.type.metadata.field> <spatial.data.file> <cluster.metadata.field> <histological.image.file> <img.metadata.field> <output.file.tag> <classification.mode> <cross.val.mode> <training.mode> <num.top.DE.genes> <training.genes.input> <alignment.mode> <alignment.cell.density> <num.epochs> <spot.size> <scale.factor> <spatial.opacity> <training.opacity> <testing.opacity> <training.bin.num> <testing.bin.num> <color.mapping.perc> <debug> <verbose> <genes.to.plot.data.file> --device \"cpu\" <deconv.opacity> <deconv.point.size>",
+  "parameters": [
+    {
+      "name": "single.cell.data.file",
+      "description": "Single-cell gene expression data file.<br>Takes a .h5ad format file (see <a href\\=https\\://github.com/scverse/anndata/issues/180\\#issuecomment-510451045>here</a>).",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "h5ad"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sc",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cell.type.metadata.field",
+      "description": "Field name in the scRNA/snRNA-Seq data containing cell type groupings.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sc_celltype_field",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "spatial.data.file",
+      "description": "Spatial gene expression data file.<br>Takes a .h5ad format file (see <a href\\=https\\://github.com/scverse/anndata/issues/180\\#issuecomment-510451045>here</a>).",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "h5ad"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sp",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cluster.metadata.field",
+      "description": "Field name in the spatial data containing cluster groupings. This parameter is optional.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sp_cluster_field",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "histological.image.file",
+      "description": "A .zip file of a zarr store containing a histology image (only provide input to run the optional deconvolution step).",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--img",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "img.metadata.field",
+      "description": "Name of the image layer in the histological image data to process during deconvolution.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--img_layer",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "classification.mode",
+      "description": "Mode of classification to carry out Tangram as either one of \"Test-Train\" or \"Cross-Validation.\"",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "Test-Train",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Test-Train",
+          "value": "Test-Train"
+        },
+        {
+          "display": "Cross-Validation",
+          "value": "Cross-Validation"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--classification_mode",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cross.val.mode",
+      "description": "If \"Cross-Validation\" is selected, specifies the mode of cross-validation to carry (\"Leave-One-Out\" or \"10-Fold\").",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "loo",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Leave-One-Out",
+          "value": "loo"
+        },
+        {
+          "display": "10-Fold",
+          "value": "10fold"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--cross_val_mode",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "training.mode",
+      "description": "Mode of training for Tangram algorithm, does one of the following\\:<br>\\n&nbsp;&nbsp;1. \"Top N Genes\";  uses top N differentially expressed genes stratified across cell types (set N in next parameter)\\n<br>\\n&nbsp;&nbsp;2. \"GMT File Input\"; input a <a href\\=\"https\\://www.genepattern.org/file-formats-guide\\#GMT\">.gmt file</a> where the first line's genes are used to train the model (training genes input)<br>\\n&nbsp;&nbsp;3. \"All Genes\"; all genes shared between the two datasets\\n<br>\\nDefault is \"Top N Genes.\"",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "Top N Genes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Top N Genes",
+          "value": "Top N Genes"
+        },
+        {
+          "display": "GMT File Input",
+          "value": "GMT File Input"
+        },
+        {
+          "display": "All Genes",
+          "value": "All Genes"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--training_mode",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.top.DE.genes",
+      "description": "Number of top differentially expressed genes, stratified across cell types and shared between the two datasets, to use for training the prediction model.<br>\\nOnly considered if training mode is set to \"Top N Genes.\"<br>\\nDefault is 100.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num_training_genes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "training.genes.input",
+      "description": "File input for the genes to use in model training.<br>Reads a single-line <a href\\=\"https\\://www.genepattern.org/file-formats-guide\\#GMT\">.gmt file</a>.<br>Only considered if training mode is set to \"GMT File Input.\"",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gmt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--marker_genes_input",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "alignment.mode",
+      "description": "Mode of alignment/mapping of either\\:<br>\\n&nbsp;&nbsp;1. \"cells\"; mapping at single-cell resolution<br>\\n&nbsp;&nbsp;2. \"clusters\"; averages single cells of the same cluster via the cell type metadata field annotation<br>\\n&nbsp;&nbsp;3. \"constrained\"; <b>for deconvolution</b>, adds a filter term to the loss function<br>\\n\\nDefault is \"cells.\"",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "cells",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "clusters",
+          "value": "clusters"
+        },
+        {
+          "display": "cells",
+          "value": "cells"
+        },
+        {
+          "display": "constrained",
+          "value": "constrained"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--alignment_mode",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "alignment.cell.density",
+      "description": "Alignment cell density. Use \"rna count-based\" if cell density is proportional to number of RNA molecules and \"uniform\" if spatial voxels are at single cell resolution.<br>\\n\\nDefault is RNA count-based.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "rna_count_based",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "RNA count-based",
+          "value": "rna_count_based"
+        },
+        {
+          "display": "Uniform",
+          "value": "uniform"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--density_prior",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.epochs",
+      "description": "Integer value for number of epochs, or iterations through the entire training dataset for the mapping process.<br>Default is 1000.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num_epochs",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "spot.size",
+      "description": "Diameter of gene plot spots.<br>Only considered if no 'spatial' field in spatial input.<br>Default is 50.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "50",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--spot_size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "scale.factor",
+      "description": "Gene plot scaling factor to map dots into space.<br>Only considered if no 'spatial' field in spatial input.<br>Default is 0.1.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--scale_factor",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "spatial.opacity",
+      "description": "Opacity value for single-cell scanpy spatial plot of original data.<br>Default is 0.7.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.7",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--spatial_alpha",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "training.opacity",
+      "description": "Opacity value for training score plots.<br>Default is 0.5.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--training_alpha",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "testing.opacity",
+      "description": "Opacity value for testing score plots.<br>Default is 0.5.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--testing_alpha",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "deconv.opacity",
+      "description": "Opacity value for single-cell scanpy spatial plot of post-deconvolution cell plot.<br>Default is 0.2.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--deconv_alpha",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "deconv.point.size",
+      "description": "Point size for single-cell scanpy spatial plot of post-deconvolution cell plot.<br>Default is 0.4.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.4",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--deconv_spot_size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "training.bin.num",
+      "description": "Number of bins in the training plot histogram.<br>Default is 20.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "20",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--train_bin_num",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "testing.bin.num",
+      "description": "Number of bins in the testing plot histogram.<br>Default is 20.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "20",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--test_bin_num",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "color.mapping.perc",
+      "description": "Percentile float value for setting color map range (a smaller value corresponds to the color map having a greater coverage of values).<br>Default is 0.02.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.02",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--perc",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "debug",
+      "description": "Debugging parameter for developers.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--debug",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "verbose",
+      "description": "Verbosity parameter.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--verbose",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file.tag",
+      "description": "Output filename tag to be used as a suffix for this run's output. <br>It is <b>encouraged</b> to change this parameter for every run you intend to do as to differentiate between outputs.<br>\\nDefault uses the basenames of both the scRNA/snRNA-seq and spatial input datasets.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<single.cell.data.file_basename>_<spatial.data.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--master_tag",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "genes.to.plot.data.file",
+      "description": "Input data file for genes to compare measured vs predicted data of. Reads the initial line of a <a href\\=\"https\\://www.genepattern.org/file-formats-guide\\#GMT\">.gmt file</a>.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gmt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--genes_to_plot",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "omarhalawa/tangram:v1.0"
+}

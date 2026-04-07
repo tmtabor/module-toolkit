@@ -1,0 +1,461 @@
+Create a comprehensive structured plan for the GenePattern module for 'Single.Cell.ssGSEA'.
+            
+            Tool Information:
+            - Name: Single.Cell.ssGSEA
+            - Version: Release after updates 0262025
+            - Language: any
+            - Description: Perform Single Cell ssGSEA. Can be used after Seurat.Clustering module.
+            
+            Research Results:
+            Now I have all the comprehensive information needed. Let me compile the complete research report:
+
+---
+
+# 🧬 Comprehensive Research Report: `Single.Cell.ssGSEA`
+
+---
+
+## 📋 Executive Summary
+
+**Single.Cell.ssGSEA** is a GenePattern-native bioinformatics module designed to perform Single-Sample Gene Set Enrichment Analysis (ssGSEA) specifically adapted for the unique statistical challenges of single-cell RNA-seq data — most critically, **transcriptomic sparsity**. It is the officially recommended replacement for the standard `ssGSEA` GenePattern module when analyzing scRNA-seq data, and is designed to slot directly into the GenePattern single-cell pipeline downstream of `Seurat.Clustering`.
+
+> 📌 **From the official ssGSEA GenePattern documentation:**
+> *"For single-cell data, use the [Single.Cell.ssGSEA](https://genepattern.github.io/Single.Cell.ssGSEA/documentation) module instead."*
+
+---
+
+## 1. 🎯 Tool Purpose & Scientific Applications
+
+### 1.1 Scientific Motivation
+
+Standard ssGSEA was developed for bulk RNA-seq data (Barbie et al., 2009), where each "sample" represents thousands of pooled cells. When applied naïvely to single-cell RNA-seq data, the extreme **sparsity** (dropout events, zero-inflation) introduces substantial instability in enrichment score estimation — leading to high coefficients of variation (CoV) and unreliable biological interpretations.
+
+The key scientific problem being solved:
+- **scRNA-seq dropout**: Genes with low expression are frequently not detected in any given cell, appearing as zeros.
+- **Per-cell scoring instability**: When scoring each cell individually, sparse gene expression profiles make it impossible to reliably rank genes, causing KS-statistic-based enrichment to vary dramatically across near-identical cells.
+- **Biological signal obscured by technical noise**: A cell type's characteristic pathway activity cannot be reliably detected with unadapted bulk methods.
+
+### 1.2 Technical Innovation
+
+Based on the benchmarking study **"Profiling ranked list enrichment scoring in sparse data elucidates algorithmic tradeoffs"** (Wenzel, Jun, Liefeld, Tamayo, Mesirov; *bioRxiv* 2024; DOI: 10.1101/2024.06.03.597180), the tool implements two key adaptations:
+
+| Adaptation | Bulk ssGSEA | Single.Cell.ssGSEA |
+|---|---|---|
+| **Normalization** | Rank / log-rank / none | **Centered Log-Ratio (CLR) across cells** |
+| **Scoring unit** | Per-sample | **Per-cluster (pseudo-bulk aggregation)** |
+| **Scoring statistic** | KS-like statistic | **KS statistic** (retained, now stabilized by CLR) |
+| **Data model** | GCT expression matrix | **Seurat RDS object with cluster metadata** |
+
+> 🔑 **Key Finding:** The combination of KS scoring + CLR normalization achieves the most stable scoring across all cell type × gene set combinations, yielding a CoV consistently below **10⁻⁵** — a dramatic improvement over applying standard ssGSEA to sparse data.
+
+### 1.3 Primary Scientific Applications
+
+1. **Pathway activity profiling by cell cluster**: Characterize which biological pathways are active in each cell population identified by Seurat clustering
+2. **Cell type functional annotation**: Annotate unknown clusters by their enrichment for known cell-type signature gene sets
+3. **Tumor microenvironment analysis**: Dissect cellular states and functional heterogeneity in cancer scRNA-seq data
+4. **Treatment response characterization**: Compare pathway activities across treatment groups or time points at single-cluster resolution
+5. **Novel subtype discovery**: Identify cellular subtypes based on coordinated activity of biological process pathways
+6. **Immune cell profiling**: Characterize immune cell activation states, polarization, and subset-specific functions
+
+---
+
+## 2. 📁 Input/Output Formats & Requirements
+
+### 2.1 Input Files
+
+#### `input_expression_data` *(Required)*
+| Property | Value |
+|---|---|
+| **Format** | R Data Serialization format (`.rds`) |
+| **Content** | Seurat object with single-cell RNA-seq data |
+| **Source** | Direct output of GenePattern `Seurat.Clustering` module |
+| **Required fields** | Normalized count matrix + cell metadata with cluster labels |
+| **Key metadata field** | `seurat_clusters` (default) — integer cluster IDs per cell |
+| **Seurat version compatibility** | Seurat v4 / v5 RDS objects |
+
+The Seurat RDS object is the standard output of the upstream `Seurat.Clustering` GenePattern module. It contains:
+- Raw and normalized count matrices (stored as assays)
+- Dimensionality reduction coordinates (PCA, UMAP, tSNE)
+- Cell metadata including the `seurat_clusters` column
+
+#### `gene_sets_database` *(Required)*
+| Property | Value |
+|---|---|
+| **Format** | GMT (Gene Matrix Transposed) format |
+| **Sources** | MSigDB, custom GMT files |
+| **Recommended collections** | Hallmark (H), C2 (KEGG, Reactome, BioCarta), C5 (GO:BP, GO:MF, GO:CC) |
+| **Gene identifier type** | HGNC gene symbols (must match expression matrix) |
+| **MSigDB URL** | https://www.gsea-msigdb.org/gsea/msigdb/collections.jsp |
+
+**GMT Format specification:**
+```
+GENE_SET_NAME  [Description]  GENE1  GENE2  GENE3  ...
+HALLMARK_APOPTOSIS  [tab-separated]  CASP3  BCL2  TP53  ...
+```
+
+### 2.2 Output Files
+
+#### Primary Output: `<output_prefix>.gct`
+| Property | Value |
+|---|---|
+| **Format** | GCT v1.2 (Gene Cluster Text) |
+| **Dimensions** | Gene Sets (rows) × Cell Clusters (columns) |
+| **Content** | scGSEA enrichment scores per gene set per cluster |
+| **Range** | Normalized enrichment scores (continuous) |
+| **Downstream use** | HeatmapViewer GenePattern module |
+
+**GCT structure:**
+```
+#1.2
+[N_gene_sets]  [N_clusters]
+NAME  Description  Cluster0  Cluster1  Cluster2  ...
+HALLMARK_APOPTOSIS  na  0.342  -0.128  0.891  ...
+```
+
+#### Secondary Output: `<output_prefix>.csv`
+| Property | Value |
+|---|---|
+| **Format** | Comma-Separated Values |
+| **Content** | Same enrichment score matrix as GCT |
+| **Use** | Downstream R/Python analysis, import into other tools |
+
+---
+
+## 3. ⚙️ Parameter Analysis & Usage Patterns
+
+### 3.1 Complete Parameter Catalog
+
+| Parameter | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `input_expression_data` | File (.rds) | — | ✅ Yes | Seurat object from upstream clustering |
+| `gene_sets_database` | File (.gmt) | — | ✅ Yes | Gene set definitions (MSigDB or custom) |
+| `output_prefix` | String | `scGSEA_scores` | No | Prefix for all output files |
+| `cluster_data_label` | String | `seurat_clusters` | No | Seurat metadata column for grouping cells |
+| `normalization_method` | Enum | `CLR` | No | Expression normalization before scoring |
+| `min_gene_set_size` | Integer | 15 | No | Minimum gene set size filter |
+| `weighting_exponent` | Float | 0.75 | No | Alpha exponent for KS enrichment scoring |
+| `gene_set_selection` | String | `ALL` | No | Comma-separated gene set names, or `ALL` |
+| `gene_symbol_column` | String | `Name` | No | Column in GCT identifying gene symbols |
+| `combine_mode` | Enum | `combine.add` | No | How to handle multiple database files |
+
+### 3.2 Parameter Groups for GenePattern Module Design
+
+**Group 1 — Required Inputs:**
+- `input_expression_data` — Seurat RDS file
+- `gene_sets_database` — GMT gene sets file
+
+**Group 2 — Cell Identity Configuration:**
+- `cluster_data_label` — crucial for linking to upstream Seurat workflow
+- `gene_set_selection` — subset analysis capability
+
+**Group 3 — Algorithm Configuration:**
+- `normalization_method` — CLR strongly recommended for single-cell data
+- `weighting_exponent` — fine-tuning of enrichment scoring sensitivity
+- `min_gene_set_size` — quality filter for small/unreliable gene sets
+
+**Group 4 — Output Configuration:**
+- `output_prefix` — file naming
+- `combine_mode` — multi-database handling
+
+### 3.3 Critical Parameter Decisions
+
+#### `normalization_method` — The Most Important Parameter
+```
+Supported values:
+  CLR       → Centered Log-Ratio across cells [RECOMMENDED for scRNA-seq]
+  rank      → Rank transformation
+  log.rank  → Log of rank transformation
+  log       → Log transformation
+  none      → No normalization
+```
+> ⚠️ **Scientific rationale for CLR default:** Benchmarking by Wenzel et al. (2024) demonstrated that CLR normalization before KS scoring eliminates the instability caused by scRNA-seq sparsity. This is the single most important algorithmic distinction from the bulk ssGSEA module.
+
+#### `cluster_data_label` — Integration with Seurat.Clustering
+```
+Default: "seurat_clusters"
+  → Automatically populated by Seurat.Clustering module
+  → Integer cluster IDs (0, 1, 2, ...)
+  
+Custom: "cell_type", "annotation", "condition", etc.
+  → Any categorical metadata column in the Seurat object
+  → Enables analysis by annotated cell types, conditions, or custom groupings
+```
+
+#### `weighting_exponent` (alpha)
+```
+Range:  0.0 → 1.0 (typical)
+Default: 0.75
+
+  α = 0:    Unweighted — equal contribution of all gene positions in ranked list
+  α = 0.75: Moderate weighting — standard GenePattern default
+  α = 1.0:  Linear weighting — proportional to expression magnitude
+```
+
+---
+
+## 4. 🔬 Algorithm Deep Dive
+
+### 4.1 The scGSEA Algorithm Pipeline
+
+```
+Single-Cell Expression Matrix (sparse)
+         │
+         ▼
+  [CLR Normalization]
+  For each gene g: CLR(x_g) = log(x_g / geometric_mean(x_all))
+  Applied across cells within each cluster
+         │
+         ▼
+  [Cell Aggregation by Cluster]
+  Cells grouped by seurat_clusters metadata
+  Pseudo-bulk profiles computed per cluster
+         │
+         ▼
+  [KS Enrichment Scoring] (per cluster × gene set)
+  For each gene set S:
+    - Rank genes by CLR-normalized expression
+    - Compute running enrichment score (KS statistic)
+    - ES = max deviation of gene set members vs. background
+         │
+         ▼
+  [Output: Gene Set × Cluster Enrichment Matrix]
+  GCT + CSV files
+```
+
+### 4.2 Why CLR + Cluster-Level Scoring Works
+
+The two key innovations address orthogonal aspects of the sparsity problem:
+
+1. **CLR normalization** addresses *within-cluster* sparsity by transforming zeros to be relative to the compositional context of the expressed genes — avoiding the zero-inflation artifact that corrupts ranking-based statistics.
+
+2. **Cluster-level aggregation** addresses *single-cell dropout* by pooling information across cells in the same cluster (pseudo-bulk approach), dramatically increasing effective sequencing depth and reducing the impact of individual cell dropout events.
+
+---
+
+## 5. 🔧 Installation & Dependency Requirements
+
+### 5.1 Core Dependencies
+
+| Dependency | Version | Purpose |
+|---|---|---|
+| **R** | ≥ 4.0 | Primary runtime environment |
+| **Seurat** | v4.x / v5.x | Seurat object parsing, normalization utilities |
+| **GSVA** | ≥ 1.40 | ssGSEA scoring infrastructure |
+| **cmapR** / **GSEABase** | Current | GCT file I/O |
+| **Matrix** | Current | Sparse matrix operations |
+| **data.table** | Current | Efficient data manipulation |
+
+### 5.2 Python Dependencies (if Python wrapper used)
+| Dependency | Purpose |
+|---|---|
+| **rpy2** | R-Python bridge |
+| **pandas** | Data manipulation |
+| **scipy** | Statistical functions |
+| **anndata** | Alternative single-cell object format |
+
+### 5.3 GenePattern Docker Container
+The module runs in a Docker container environment. Based on GenePattern's containerization architecture:
+```dockerfile
+FROM genepattern/base-r:4.x
+RUN R -e "install.packages(c('Seurat', 'GSVA', 'Matrix', 'data.table', 'cmapR'))"
+```
+
+### 5.4 Computational Requirements
+| Metric | Typical Range | Notes |
+|---|---|---|
+| **CPU** | 1–4 cores | Parallelizable per cluster |
+| **RAM** | 4–16 GB | Scales with number of cells and gene sets |
+| **Storage** | 500 MB – 5 GB | Primarily the input Seurat RDS file |
+| **Runtime** | 5–30 minutes | Depends on cell count, gene set count, cluster count |
+
+---
+
+## 6. 🔗 Common Workflows & Use Cases
+
+### 6.1 Primary GenePattern Workflow
+
+```
+10x Genomics / Smart-seq2 / Drop-seq Data
+            │
+            ▼
+   [Seurat.Clustering Module]
+   • QC filtering
+   • Normalization (SCTransform or LogNormalize)
+   • PCA + UMAP/tSNE
+   • SNN graph clustering
+   • Outputs: clustered.rds (Seurat object)
+            │
+            ▼ (clustered.rds)
+   [Single.Cell.ssGSEA Module]  ◀── GMT gene sets (MSigDB)
+   • CLR normalization
+   • Cluster aggregation
+   • KS scoring per cluster × gene set
+   • Outputs: scGSEA_scores.gct + .csv
+            │
+            ▼ (scGSEA_scores.gct)
+   [HeatmapViewer Module]
+   • Interactive heatmap of pathway activities
+   • Hierarchical clustering of gene sets
+   • Visual comparison across clusters
+```
+
+### 6.2 Extended Use Cases
+
+#### Use Case 1: Cell Type Functional Annotation
+```
+Workflow: Seurat.Clustering → [Manual annotation of clusters] → 
+          Single.Cell.ssGSEA (cluster_data_label = "cell_type") → 
+          HeatmapViewer
+Goal: Validate cell type annotations via known pathway activities
+Key gene sets: MSigDB C8 (cell type signature gene sets)
+```
+
+#### Use Case 2: Tumor Microenvironment Characterization
+```
+Gene sets: Hallmark (H) collection - TNF signaling, hypoxia, 
+           oxidative phosphorylation, inflammatory response
+cluster_data_label: "cell_type" (T cells, B cells, NK cells, 
+                                  macrophages, cancer cells)
+Output use: Identify activated/suppressed immune states in TME
+```
+
+#### Use Case 3: Drug Response Pathway Analysis
+```
+Two Seurat objects: treated vs. untreated samples, each clustered
+Run Single.Cell.ssGSEA on both → compare GCT outputs
+Identify pathways differentially active between conditions
+```
+
+#### Use Case 4: Developmental Trajectory Pathway Mapping
+```
+Time-course scRNA-seq → Seurat clustering (time points as clusters)
+Single.Cell.ssGSEA → Gene set activity over pseudotime
+Key gene sets: cell cycle (C2), development (C5 GO:BP)
+```
+
+---
+
+## 7. 🆚 Comparative Analysis
+
+### 7.1 Single.Cell.ssGSEA vs. Competing Methods
+
+| Feature | **Single.Cell.ssGSEA** | AUCell | UCell | escape | irGSEA |
+|---|---|---|---|---|---|
+| **Scoring unit** | Per-cluster (pseudo-bulk) | Per-cell | Per-cell | Per-cell | Per-cell |
+| **Handles sparsity** | ✅ CLR normalization | ✅ AUC-based | ⚠️ Partial | ⚠️ Library normalization | ⚠️ Method-dependent |
+| **Input format** | Seurat RDS | SCE/Seurat | SCE/Seurat | Seurat | Seurat |
+| **Output format** | GCT + CSV | Matrix | Matrix | Data frame | Matrix |
+| **GenePattern-native** | ✅ Yes | ❌ No | ❌ No | ❌ No | ❌ No |
+| **GMT gene sets** | ✅ Full MSigDB compatible | ✅ | ✅ | ✅ | ✅ |
+| **Visualization output** | GCT → HeatmapViewer | Custom | Custom | ggplot | Custom |
+| **Benchmarked stability (CoV)** | **<10⁻⁵** (Wenzel 2024) | Moderate | Moderate (SSD poor) | Not benchmarked | Aggregated |
+| **CZI-funded development** | ✅ Yes | No | No | No | No |
+
+### 7.2 Key Competitive Advantages for GenePattern Integration
+
+1. **Native GenePattern ecosystem fit**: Designed for the GenePattern workflow, accepts Seurat.Clustering output directly without format conversion
+2. **Scientifically validated**: Based on rigorous benchmarking (Wenzel et al. 2024, AACR 2024 Abstract 2343)
+3. **CZI-backed development**: Funded by the Chan Zuckerberg Initiative for robustness and sustainability
+4. **Optimal sparsity handling**: Empirically demonstrated superior CoV vs. all alternatives in sparse data benchmarks
+5. **Downstream pipeline-ready**: GCT output directly feeds HeatmapViewer without transformation
+6. **Standard GMTcompatibility**: Full MSigDB collections are directly usable
+
+---
+
+## 8. 🏗️ GenePattern Module Integration Considerations
+
+### 8.1 Module Manifest (`manifest`) Key Fields
+```properties
+name=Single.Cell.ssGSEA
+description=A version of Single Sample GSEA adapted to the sparsity of single cell RNA-seq data. Can be used after Seurat.Clustering module.
+version=0.2.6.2025
+author=GenePattern Team; Alexander T. Wenzel, John Jun, Ted Liefeld, Pablo Tamayo, Jill P. Mesirov
+language=R
+commandLine=Rscript <libdir>sc_ssGSEA.R \
+  -i <input_expression_data> \
+  -D <gene_sets_database> \
+  -o <output_prefix> \
+  -c <cluster_data_label> \
+  -n <normalization_method> \
+  -v <min_gene_set_size> \
+  -w <weighting_exponent> \
+  -s <gene_set_selection>
+```
+
+### 8.2 Parameter Type Mappings (GenePattern UI)
+
+| Parameter | GP UI Type | Validation Rules |
+|---|---|---|
+| `input_expression_data` | `FILE` | Accept: `.rds` |
+| `gene_sets_database` | `FILE` | Accept: `.gmt`, `.gmx` |
+| `output_prefix` | `TEXT` | No spaces, no special chars |
+| `cluster_data_label` | `TEXT` | Default: `seurat_clusters` |
+| `normalization_method` | `CHOICE` | `CLR;rank;log.rank;log;none` |
+| `min_gene_set_size` | `INTEGER` | Range: 1–500; Default: 15 |
+| `weighting_exponent` | `FLOAT` | Range: 0.0–1.0; Default: 0.75 |
+| `gene_set_selection` | `TEXT` | Default: `ALL` |
+
+### 8.3 Known Limitations & Caveats
+
+| Issue | Details | Mitigation |
+|---|---|---|
+| **Large Seurat objects** | Memory-intensive for >500K cells | Recommend RAM ≥ 16GB for large datasets |
+| **Gene symbol matching** | GMT gene symbols must match Seurat feature names | Pre-processing step for Ensembl IDs |
+| **Cluster aggregation loses per-cell resolution** | Cannot detect rare single-cell states within a cluster | Use with sufficiently granular Seurat clustering (high resolution) |
+| **CLR sensitivity to zero inflation** | CLR may behave poorly with extreme sparsity | Filter low-quality cells upstream in Seurat.Clustering |
+| **Gene set size trade-off** | Very small gene sets (<10 genes) are unstable | Use `min_gene_set_size ≥ 15` |
+| **Species specificity** | GMT files are species-specific | Ensure GMT matches organism of scRNA-seq experiment |
+
+### 8.4 Recommended Module Testing Data
+```
+Test Input: PBMC 3K dataset (10x Genomics)
+  → Pre-clustered Seurat RDS (from Seurat.Clustering)
+  → Gene sets: MSigDB Hallmark collection
+  
+Expected output: 50 hallmark gene set scores × N clusters
+Validation: Hallmark_Interferon_Gamma_Response high in activated T cells
+            Hallmark_Oxidative_Phosphorylation high in NK cells
+```
+
+---
+
+## 9. 📚 References & Authoritative Sources
+
+| Source | URL/Citation |
+|---|---|
+| **Primary GitHub Repository** | https://github.com/genepattern/Single.Cell.ssGSEA |
+| **Source Code (scGSEA)** | https://github.com/genepattern/scGSEA/tree/main/src |
+| **PyPI Package** | https://pypi.org/project/scGSEA/ |
+| **GenePattern Documentation** | https://genepattern.github.io/Single.Cell.ssGSEA/documentation |
+| **Benchmarking Paper** | Wenzel AT, Jun J, Liefeld T, Tamayo P, Mesirov JP. *"Profiling ranked list enrichment scoring in sparse data elucidates algorithmic tradeoffs."* bioRxiv 2024. DOI: 10.1101/2024.06.03.597180 |
+| **AACR Abstract** | Wenzel AT, Jun J, Mesirov JP. Abstract 2343. *Cancer Research* 84(6_Supplement), 2024. |
+| **CZI Funding** | https://chanzuckerberg.com/science/programs-resources/cell-science/data-insights/gene-set-enrichment-analysis-for-single-cell-data-scgsea/ |
+| **Original ssGSEA Reference** | Barbie DA et al. *"Systematic RNA interference reveals that oncogenic KRAS-driven cancers require TBK1."* Nature 2009. |
+| **Standard ssGSEA Module (bulk)** | https://gsea-msigdb.github.io/ssGSEA-gpmodule/v10/ |
+| **MSigDB Gene Sets** | https://www.gsea-msigdb.org/gsea/msigdb/collections.jsp |
+
+---
+
+## 10. 🚀 Summary Recommendations for GenePattern Module Development
+
+| Priority | Recommendation |
+|---|---|
+| 🔴 **Critical** | Ensure `cluster_data_label` parameter defaults to `seurat_clusters` to guarantee seamless upstream compatibility with `Seurat.Clustering` |
+| 🔴 **Critical** | Default `normalization_method` to `CLR` — this is the scientifically validated adaptation that distinguishes this module from bulk ssGSEA |
+| 🟠 **High** | Provide curated MSigDB GMT file links in the module UI (Hallmark, C2-KEGG, C5-GO) for accessibility |
+| 🟠 **High** | Ensure GCT output format exactly matches HeatmapViewer input spec for pipeline continuity |
+| 🟡 **Medium** | Add parameter validation: warn if `min_gene_set_size < 10` or if `cluster_data_label` column is not found in the Seurat object |
+| 🟡 **Medium** | Include gene symbol/identifier mismatch detection between GMT file and Seurat feature names |
+| 🟢 **Low** | Consider adding optional UMAP-overlay output for per-cluster pathway activity visualization |
+| 🟢 **Low** | Provide example Seurat RDS + GMT files as test datasets in the module documentation |
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,46 @@
+Create a comprehensive structured plan for the GenePattern module for 'ConvertLineEndings'.
+            
+            Tool Information:
+            - Name: ConvertLineEndings
+            - Version: latest
+            - Language: Perl
+            - Description: Converts line endings to the host operating system's format.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ConvertLineEndings",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "The input file (any non-binary file format)",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "The output file",
+      "required": true,
+      "default_value": "<input.filename_basename>.cvt.<input.filename_extension>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Joshua Gould, Broad Institute",
+  "command_line": "<perl> <libdir>to_host.pl <input.filename> <output.file>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

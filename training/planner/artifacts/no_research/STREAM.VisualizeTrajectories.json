@@ -1,0 +1,293 @@
+{
+  "module_name": "STREAM.VisualizeTrajectories",
+  "description": "Generates flat tree subway and stream plots that intuitively represents trajectories as linear segments on a 2D plane",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "input_file_formats": [
+    "pkl"
+  ],
+  "language": "Python",
+  "categories": [
+    "Single-Cell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:25265:1",
+  "plan": "## STREAM.VisualizeTrajectories GenePattern Module — Implementation Plan\n\n### 1. Overview\nSTREAM.VisualizeTrajectories is a GenePattern module that Generates flat tree subway and stream plots that intuitively represents trajectories as linear segments on a 2D plane\n\n### 2. Parameters\nThe module exposes 18 parameters:\n- Required: data.file, percentile.dist, figure.legend.num.columns, output.filename, subway.factor, color.by, factor.num.win, factor.min.win, factor.width, factor.zoom.in\n- Optional: figure.width, figure.height, root, preference, flag.log.view, create.cell.plots, create.gene.plots, genes\n\n### 3. Command Line\n```\npython /stream/visualization_command_line.py -m <data.file> -of <output.filename> <figure.width> <figure.height> <figure.legend.num.columns> <root> <preference> <subway.factor> <color.by>  <factor.num.win> <factor.min.win> <factor.width> <flag.log.view> <factor.zoom.in> <create.cell.plots> <create.gene.plots> <genes> <percentile.dist>\n```\n\n### 4. Docker Image\nDocker image: genepattern/stream_visualization\\:0.12\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "visualization_command_line.py",
+  "command_line": "python /stream/visualization_command_line.py -m <data.file> -of <output.filename> <figure.width> <figure.height> <figure.legend.num.columns> <root> <preference> <subway.factor> <color.by>  <factor.num.win> <factor.min.win> <factor.width> <flag.log.view> <factor.zoom.in> <create.cell.plots> <create.gene.plots> <genes> <percentile.dist>",
+  "parameters": [
+    {
+      "name": "data.file",
+      "description": "A STREAM pkl file containing gene expression data",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "pkl"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "percentile.dist",
+      "description": "Percentile of cells' distances from branches (between 0 and 100) used for calculating the distances between branches of subway map.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-percentile_dist",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "figure.width",
+      "description": "figure width",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_width",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "figure.legend.num.columns",
+      "description": "The number of columns that the legend has.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_legend_ncol",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "figure.height",
+      "description": "figure height",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_height",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.filename",
+      "description": "The output file name prefix.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "root",
+      "description": "The starting node.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "S1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-root",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "preference",
+      "description": "The preference of nodes. The branch with speficied nodes are preferred and put on the top part of subway plot. The higher ranks the node have, the closer to the top the branch with that node is. e.g. S3,S4.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "S3,S4",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-preference",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "subway.factor",
+      "description": "The factor used to adjust the distances between branches of subway map.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "2.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-subway_factor",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "color.by",
+      "description": "Specify how to color cells.'label'\\: the cell labels. 'branch'\\: the branch id identifed by STREAM.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "label",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "label",
+          "value": "label"
+        },
+        {
+          "display": "branch",
+          "value": "branch"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-color_by",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "factor.num.win",
+      "description": "Number of sliding windows.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-factor_num_win",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "factor.min.win",
+      "description": "The factor used to calculate the sliding window size based on shortest branch.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "2.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-factor_min_win",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "factor.width",
+      "description": "The ratio between length and width of stream plot.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "2.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-factor_width",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "flag.log.view",
+      "description": "If True,the number of cells (the width) is logarithmized when outputing stream plot.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Off",
+          "value": ""
+        },
+        {
+          "display": "On",
+          "value": "-flag_log_view"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--flag.log.view",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "factor.zoom.in",
+      "description": "If flag_log_view is True, the factor used to zoom in the thin branches.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-factor_zoomin",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "create.cell.plots",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "-flag_cells",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "No Cell Plots",
+          "value": ""
+        },
+        {
+          "display": "Create Cell Plots",
+          "value": "-flag_cells"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--create.cell.plots",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "create.gene.plots",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "No gene plots",
+          "value": ""
+        },
+        {
+          "display": "Create Gene Plots",
+          "value": "-flag_genes"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--create.gene.plots",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "genes",
+      "description": "comma delimited list of genes, e.g. Car2,Gata1,Epx",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-genes",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/stream_visualization:0.12"
+}

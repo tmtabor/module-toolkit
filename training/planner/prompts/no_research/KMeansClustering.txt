@@ -1,0 +1,77 @@
+Create a comprehensive structured plan for the GenePattern module for 'KMeansClustering'.
+            
+            Tool Information:
+            - Name: KMeansClustering
+            - Version: Fixed listing of acceptable input file formats
+            - Language: Java
+            - Description: Module that performs the K-Means Clustering algorithm
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "KMeansClustering",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "File containing data to cluster - .res, .gct, .odf",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct;res;odf;"
+    },
+    {
+      "name": "output.base.name",
+      "type": "java.lang.String",
+      "description": "The base output file name - .gct",
+      "required": true,
+      "default_value": "<input.filename_basename>_KMcluster_output"
+    },
+    {
+      "name": "number.of.clusters",
+      "type": "java.lang.Integer",
+      "description": "Number of centroids (clusters)",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "seed.value",
+      "type": "java.lang.Integer",
+      "description": "Seed value for random number generator",
+      "required": true,
+      "default_value": "12345"
+    },
+    {
+      "name": "cluster.by",
+      "type": "java.lang.String",
+      "description": "Whether to cluster by rows or columns",
+      "required": true,
+      "default_value": "",
+      "choices": "0\\=rows;1\\=columns"
+    },
+    {
+      "name": "distance.metric",
+      "type": "java.lang.String",
+      "description": "How to compute distance between points",
+      "required": true,
+      "default_value": "0",
+      "choices": "0\\=Euclidean;1\\="
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Clustering",
+  "author": "Marc-Danie Nazaire, gp-help@broad.mit.edu, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>kmeansclustering.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.kmeans.KMeansClustering <input.filename> <output.base.name> <number.of.clusters> <seed.value> <cluster.by> <distance.metric>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

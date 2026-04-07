@@ -1,0 +1,215 @@
+{
+  "module_name": "KNNXValidation",
+  "description": "KNN classification with Leave-One-Out Cross-Validation",
+  "author": "Joshua Korn, Joshua Gould (Broad Institute)",
+  "input_file_formats": [
+    "Dataset",
+    "cls",
+    "gct",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:43218:1",
+  "plan": "## KNNXValidation GenePattern Module — Implementation Plan\n\n### 1. Overview\nKNNXValidation is a GenePattern module that KNN classification with Leave-One-Out Cross-Validation\n\n### 2. Parameters\nThe module exposes 10 parameters:\n- Required: data.filename, class.filename, num.features, feature.selection.statistic, num.neighbors, weighting.type, distance.measure, pred.results.file, feature.summary.file\n- Optional: min.std\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>knnxval.jar org.genepattern.modules.knnxval.KNNXValidation -t<data.filename> -c<class.filename> -o<pred.results.file> -n<num.features> -f<feature.summary.file> -k<num.neighbors> -w<weighting.type> -d<distance.measure> -S<feature.selection.statistic> -M<min.std>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "gp-modules.jar<path.separator><libdir>knnxval.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>knnxval.jar org.genepattern.modules.knnxval.KNNXValidation -t<data.filename> -c<class.filename> -o<pred.results.file> -n<num.features> -f<feature.summary.file> -k<num.neighbors> -w<weighting.type> -d<distance.measure> -S<feature.selection.statistic> -M<min.std>",
+  "parameters": [
+    {
+      "name": "data.filename",
+      "description": "data file - .gct, .res, .odf type \\= Dataset",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "res",
+        "gct",
+        "Dataset"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "class.filename",
+      "description": "class file - .cls",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--class.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.features",
+      "description": "number of selected features",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.features",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "feature.selection.statistic",
+      "description": "statistic to use to perform feature selection",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "SNR",
+          "value": "0"
+        },
+        {
+          "display": "T-Test",
+          "value": "1"
+        },
+        {
+          "display": "SNR (median)",
+          "value": "2"
+        },
+        {
+          "display": "T-Test (median)",
+          "value": "3"
+        },
+        {
+          "display": "SNR (min std)",
+          "value": "4"
+        },
+        {
+          "display": "T-Test (min std)",
+          "value": "5"
+        },
+        {
+          "display": "SNR (median, min std)",
+          "value": "6"
+        },
+        {
+          "display": "T-Test (median, min std)",
+          "value": "7"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--feature.selection.statistic",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.std",
+      "description": "minimum standard deviation if feature selection statistic includes min std option",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.std",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.neighbors",
+      "description": "number of neighbors for KNN",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.neighbors",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "weighting.type",
+      "description": "weighting type for neighbors",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "distance",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "none",
+          "value": "1"
+        },
+        {
+          "display": "One-over-k",
+          "value": "2"
+        },
+        {
+          "display": "distance",
+          "value": "3"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--weighting.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "distance.measure",
+      "description": "distance measure",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Cosine Distance",
+          "value": "2"
+        },
+        {
+          "display": "Euclidean Distance",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--distance.measure",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "pred.results.file",
+      "description": "prediction results output file name .odf type \\= Prediction Results",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.filename_basename>.pred.odf",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--pred.results.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "feature.summary.file",
+      "description": "feature summary output file name - .odf type \\= Prediction Features",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.filename_basename>.feat.odf",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--feature.summary.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

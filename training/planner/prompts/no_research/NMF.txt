@@ -1,0 +1,107 @@
+Create a comprehensive structured plan for the GenePattern module for 'NMF'.
+            
+            Tool Information:
+            - Name: NMF
+            - Version: Annotated for GP 1.4
+            - Language: Perl
+            - Description: Non-negative Matrix Factorization
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "NMF",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "Input file in GCT format with input data (V matrix) (GCT format only). e.g. ALL_vs_AML.gct",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "Output log file. e.g. NMF.log",
+      "required": true,
+      "default_value": "<input.filename_basename>.log"
+    },
+    {
+      "name": "nfact",
+      "type": "java.lang.Integer",
+      "description": "Number of NMF factors. e.g. 2, 4, 10",
+      "required": false,
+      "default_value": "4"
+    },
+    {
+      "name": "niter",
+      "type": "java.lang.Integer",
+      "description": "Number of NMF iterations. e.g. 100, 250, 500",
+      "required": false,
+      "default_value": "100"
+    },
+    {
+      "name": "print.dump",
+      "type": "java.lang.Integer",
+      "description": "Print matrices in output for debug",
+      "required": false,
+      "default_value": "0",
+      "choices": "0\\=no;1\\=yes"
+    },
+    {
+      "name": "cnorm.flag",
+      "type": "java.lang.Integer",
+      "description": "Column normalization flag",
+      "required": false,
+      "default_value": "0",
+      "choices": "0\\=no normalization;1\\=normalization"
+    },
+    {
+      "name": "rnorm.flag",
+      "type": "java.lang.Integer",
+      "description": "Row normalization flag",
+      "required": false,
+      "default_value": "0",
+      "choices": "0\\=no normalization;1\\=normalization"
+    },
+    {
+      "name": "gshift",
+      "type": "java.lang.Integer",
+      "description": "Global additive shift after normalization. e.g. 1, 4",
+      "required": false,
+      "default_value": "0"
+    },
+    {
+      "name": "norm.type",
+      "type": "java.lang.Integer",
+      "description": "Type of normalization",
+      "required": false,
+      "default_value": "0",
+      "choices": "0\\=standardize;1\\=rescale\\: min\\=0, max\\=1"
+    },
+    {
+      "name": "seed",
+      "type": "java.lang.Integer",
+      "description": "Random seed used to initialize W and H matrices by the randon number generator. e.g. 4585, 4567, 5980",
+      "required": false,
+      "default_value": "12345"
+    }
+  ],
+  "docker_image_tag": "genepattern/docker-perl52\\:0.1",
+  "categories": "",
+  "task_type": "Dimension Reduction",
+  "author": "Pablo Tamayo, Broad Institute",
+  "command_line": "<perl> <libdir>NMF_prototype.pl -s <seed> -n <niter> -f <nfact> -v <input.filename> -p <print.dump> -c <cnorm.flag> -r <rnorm.flag>  -g <gshift> -m <norm.type> -o <output.file>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

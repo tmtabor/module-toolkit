@@ -1,0 +1,120 @@
+{
+  "module_name": "Seurat.Clustering",
+  "description": "Companion module for the <a href\\=\"https\\://notebook.genepattern.org/services/sharing/notebooks/376/preview/\">Seurat notebook</a>. Performs clustering and marker identification on single cell data.",
+  "author": "Satija Lab New York Genome Canter, Wrapped as a module by Ted Liefeld & Edwin Juarez, UCSD School of Medicine.;UCSD - Mesirov Lab",
+  "input_file_formats": [
+    "rds"
+  ],
+  "language": "R",
+  "categories": [
+    "clustering",
+    "singlecell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:51194:1",
+  "plan": "## Seurat.Clustering GenePattern Module — Implementation Plan\n\n### 1. Overview\nSeurat.Clustering is a GenePattern module that Companion module for the <a href\\=\"https\\://notebook.genepattern.org/services/sharing/notebooks/376/preview/\">Seurat notebook</a>. Performs clustering and marker identification on single cell data.\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: input.seurat.rds.file, output.filename, resolution, reduction, nmarkers\n- Optional: maximum_dimension, seed\n\n### 3. Command Line\n```\nRscript --no-save --quiet --slave --no-restore <libdir>run_seurat_clustering.R --input.file\\=<input.seurat.rds.file> --output.file\\=<output.filename> --max_dim\\=<maximum_dimension> --resolution\\=<resolution> --reduction\\=<reduction> --nmarkers\\=<nmarkers> --seed\\=<seed>\n```\n\n### 4. Docker Image\nDocker image: genepattern/seurat-suite\\:4.0.3\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_seurat_clustering.R",
+  "command_line": "Rscript --no-save --quiet --slave --no-restore <libdir>run_seurat_clustering.R --input.file=<input.seurat.rds.file> --output.file=<output.filename> --max_dim=<maximum_dimension> --resolution=<resolution> --reduction=<reduction> --nmarkers=<nmarkers> --seed=<seed>",
+  "parameters": [
+    {
+      "name": "input.seurat.rds.file",
+      "description": "RDS file containing a preprocessed Seurat object",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "rds"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.seurat.rds.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "Name for output rds file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.seurat.rds.file_basename>.clustered",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "maximum_dimension",
+      "description": "Max num dimensions to cluster",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--maximum_dimension",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "resolution",
+      "description": "resolution",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.05",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--resolution",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reduction",
+      "description": "The reduction to use (only umap is implemented in version 1.1 of this module, version 2 will include tsne)",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "umap",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "umap",
+          "value": "umap"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--reduction",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "nmarkers",
+      "description": "How many cluster markers to output (a CSV file with this number of top markers per cluster will be created in addition to a CSV file with all of the cluster markers found)",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "50",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--nmarkers",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "seed",
+      "description": "Random number seed.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "17",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--seed",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/seurat-suite:4.0.3"
+}

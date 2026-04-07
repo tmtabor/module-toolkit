@@ -1,0 +1,103 @@
+Create a comprehensive structured plan for the GenePattern module for 'NMFConsensus'.
+            
+            Tool Information:
+            - Name: NMFConsensus
+            - Version: Added output files to manifest. Doc edits.
+            - Language: R 2.5
+            - Description: Non-negative Matrix Factorization (NMF) Consensus Clustering
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "NMFConsensus",
+  "parameters": [
+    {
+      "name": "dataset.filename",
+      "type": "FILE",
+      "description": "Input dataset (gct or res)",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "k.initial",
+      "type": "java.lang.Integer",
+      "description": "Initial value of K",
+      "required": true,
+      "default_value": "2"
+    },
+    {
+      "name": "k.final",
+      "type": "java.lang.Integer",
+      "description": "Final value of K",
+      "required": true,
+      "default_value": "5"
+    },
+    {
+      "name": "num.clusterings",
+      "type": "java.lang.Integer",
+      "description": "Number of clusterings per value of K",
+      "required": true,
+      "default_value": "20"
+    },
+    {
+      "name": "max.num.iterations",
+      "type": "java.lang.Integer",
+      "description": "Maximum number of NMF iterations per clustering",
+      "required": true,
+      "default_value": "2000"
+    },
+    {
+      "name": "error.function",
+      "type": "java.lang.String",
+      "description": "Error function",
+      "required": true,
+      "default_value": "divergence",
+      "choices": "divergence;euclidean"
+    },
+    {
+      "name": "random.seed",
+      "type": "java.lang.Integer",
+      "description": "Seed for random number generator",
+      "required": true,
+      "default_value": "123456789"
+    },
+    {
+      "name": "output.file.prefix",
+      "type": "java.lang.String",
+      "description": "Prefix to append to all output files",
+      "required": true,
+      "default_value": "<dataset.filename_basename>"
+    },
+    {
+      "name": "stop.convergence",
+      "type": "java.lang.Integer",
+      "description": "How many \"no change\" checks are needed to stop NMF iterations before max iterations is reached(convergence)",
+      "required": true,
+      "default_value": "40"
+    },
+    {
+      "name": "stop.frequency",
+      "type": "java.lang.Integer",
+      "description": "Frequency (NMF iterations) of \"no change\" checks",
+      "required": true,
+      "default_value": "10"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Clustering",
+  "author": "Jean-Phillipe Brunet and Pablo Tamayo, The Broad Institute",
+  "command_line": "<R2.5> <libdir>nmfconsensus.R nmfconsensus <dataset.filename> <k.initial> <k.final> <num.clusterings> <max.num.iterations> <error.function> <random.seed> <stop.convergence> <stop.frequency> T <output.file.prefix>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

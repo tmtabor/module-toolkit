@@ -1,0 +1,960 @@
+{
+  "module_name": "OpenCRAVAT",
+  "description": "<img src\\=\"https\\://opencravat.org/images/OpenCRAVAT_Logo-0-sm.png\" width\\=50px alt\\=\"img\"/>OpenCRAVAT performs genomic variant interpretation including variant impact, annotation, and scoring.",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "input_file_formats": [
+    "VCF",
+    "tab",
+    "tsv",
+    "txt",
+    "vcf"
+  ],
+  "language": "Python",
+  "categories": [
+    "variant annotation"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:79064:1",
+  "plan": "## OpenCRAVAT GenePattern Module — Implementation Plan\n\n### 1. Overview\nOpenCRAVAT is a GenePattern module that <img src\\=\"https\\://opencravat.org/images/OpenCRAVAT_Logo-0-sm.png\" width\\=50px alt\\=\"img\"/>OpenCRAVAT performs genomic variant interpretation including variant impact, annotation, and scoring.\n\n### 2. Parameters\nThe module exposes 20 parameters:\n- Required: input.file, cravat.username, cravat.password, assembly\n- Optional: variants, cancer, clinical.relevance, dbnsfp, denovo, evolution, genes, genomic.features, germline, interactions, literature, multiplex.assays, noncoding, populations, protein.visualization, variant.effect.prediction\n\n### 3. Command Line\n```\npython /opencravat/opencravat_command_line.py -i <input.file> -user <cravat.username> -pass <cravat.password> -assembly <assembly> <variants> <cancer> <clinical.relevance> <dbnsfp> <denovo> <evolution> <genes> <genomic.features> <germline> <interactions> <literature> <multiplex.assays> <noncoding> <populations> <protein.visualization>  <variant.effect.prediction>\n```\n\n### 4. Docker Image\nDocker image: genepattern/opencravat\\:0.4\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "opencravat_command_line.py",
+  "command_line": "python /opencravat/opencravat_command_line.py -i <input.file> -user <cravat.username> -pass <cravat.password> -assembly <assembly> <variants> <cancer> <clinical.relevance> <dbnsfp> <denovo> <evolution> <genes> <genomic.features> <germline> <interactions> <literature> <multiplex.assays> <noncoding> <populations> <protein.visualization>  <variant.effect.prediction>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "Input file in one of the supported OpenCRAVAT input file formats like VCF, tab delimited, as well as formats provided by 23andMe, Ancestry, and dbSNP.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv",
+        "VCF",
+        "vcf",
+        "tab",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cravat.username",
+      "description": "OpenCravat username (<a href\\=\"http\\://run.opencravat.org/server/nocache/login.html\" target\\=\"_blank\">Register</a> at <a href\\=\"https\\://run.opencravat.org\">opencravat.org</a> if you do not have one).",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cravat.username",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cravat.password",
+      "description": "OpenCravat account password",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cravat.password",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "variants",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "1000 Genomes",
+          "value": "thousandgenomes"
+        },
+        {
+          "display": "ABRaOM",
+          "value": "abraom"
+        },
+        {
+          "display": "CHASMPlus",
+          "value": "chasmplus"
+        },
+        {
+          "display": "CIViC",
+          "value": "civic"
+        },
+        {
+          "display": "ClinVar",
+          "value": "clinvar"
+        },
+        {
+          "display": "COSMIC",
+          "value": "cosmic"
+        },
+        {
+          "display": "dbSNP",
+          "value": "dbsnp"
+        },
+        {
+          "display": "Denovo-DB",
+          "value": "denovo"
+        },
+        {
+          "display": "ESP6500",
+          "value": "esp6500"
+        },
+        {
+          "display": "FATHMM",
+          "value": "fathmm"
+        },
+        {
+          "display": "gnomAD",
+          "value": "gnomad"
+        },
+        {
+          "display": "GRASP",
+          "value": "grasp"
+        },
+        {
+          "display": "GTEx eQTLs",
+          "value": "gtex"
+        },
+        {
+          "display": "HGDP",
+          "value": "hgdp"
+        },
+        {
+          "display": "HGVS  Format",
+          "value": "hgvs"
+        },
+        {
+          "display": "MuPIT",
+          "value": "mupit"
+        },
+        {
+          "display": "Mutation Assessor",
+          "value": "mutation_assessor"
+        },
+        {
+          "display": "MutPred",
+          "value": "mutpred1"
+        },
+        {
+          "display": "NDEx",
+          "value": "ndex"
+        },
+        {
+          "display": "PharmGKB",
+          "value": "pharmgkb"
+        },
+        {
+          "display": "PhD-SNPg",
+          "value": "phdsnpg"
+        },
+        {
+          "display": "Promoter IR",
+          "value": "javierre_promoters"
+        },
+        {
+          "display": "REVEL",
+          "value": "revel"
+        },
+        {
+          "display": "Segway",
+          "value": "segway"
+        },
+        {
+          "display": "SIFT",
+          "value": "sift"
+        },
+        {
+          "display": "SiPhy",
+          "value": "siphy"
+        },
+        {
+          "display": "VEST4",
+          "value": "vest"
+        },
+        {
+          "display": "VISTA Enhancer Browser",
+          "value": "vista_enhancer"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann1",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "cancer",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "BRCA1 Multiplex Assay",
+          "value": "brca1_func_assay"
+        },
+        {
+          "display": "Cancer Gene Census",
+          "value": "cgc"
+        },
+        {
+          "display": "Cancer Gene Landscape",
+          "value": "cgl"
+        },
+        {
+          "display": "CHASMPlus",
+          "value": "chasmplus"
+        },
+        {
+          "display": "CIViC",
+          "value": "civic"
+        },
+        {
+          "display": "CIViC Gene",
+          "value": "civic_gene"
+        },
+        {
+          "display": "ClinVar",
+          "value": "clinvar"
+        },
+        {
+          "display": "COSMIC",
+          "value": "cosmic"
+        },
+        {
+          "display": "COSMIC Gene",
+          "value": "cosmic_gene"
+        },
+        {
+          "display": "MuPIT",
+          "value": "mupit"
+        },
+        {
+          "display": "Mutation Assessor",
+          "value": "mutation_assessor"
+        },
+        {
+          "display": "NDEx",
+          "value": "ndex"
+        },
+        {
+          "display": "TARGET",
+          "value": "target"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann2",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "clinical.relevance",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "CIViC",
+          "value": "civic"
+        },
+        {
+          "display": "CIViC gene",
+          "value": "civic_gene"
+        },
+        {
+          "display": "ClinVar",
+          "value": "clinvar"
+        },
+        {
+          "display": "Denovo-DB",
+          "value": "denovo"
+        },
+        {
+          "display": "GRASP",
+          "value": "grasp"
+        },
+        {
+          "display": "PharmGKB",
+          "value": "pharmgkb"
+        },
+        {
+          "display": "TARGET",
+          "value": "target"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann3",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "dbnsfp",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "BioGRID",
+          "value": "biogrid"
+        },
+        {
+          "display": "Essential Genes",
+          "value": "ess_gene"
+        },
+        {
+          "display": "FATHMM",
+          "value": "fathmm"
+        },
+        {
+          "display": "GERP++",
+          "value": "gerp"
+        },
+        {
+          "display": "GHIS",
+          "value": "ghis"
+        },
+        {
+          "display": "GTEx eQTLs",
+          "value": "gtex"
+        },
+        {
+          "display": "IntAct",
+          "value": "intact"
+        },
+        {
+          "display": "InterPro",
+          "value": "interpro"
+        },
+        {
+          "display": "LoFtool",
+          "value": "loftool"
+        },
+        {
+          "display": "Mutation Assessor",
+          "value": "mutation_assessor"
+        },
+        {
+          "display": "MutPred",
+          "value": "mutpred1"
+        },
+        {
+          "display": "p(HI)",
+          "value": "phi"
+        },
+        {
+          "display": "P(rec)",
+          "value": "prec"
+        },
+        {
+          "display": "Phast Cons",
+          "value": "phastcons"
+        },
+        {
+          "display": "PhD-SNPg",
+          "value": "phdsnpg"
+        },
+        {
+          "display": "PhyloP",
+          "value": "phylop"
+        },
+        {
+          "display": "SiPhy",
+          "value": "siphy"
+        },
+        {
+          "display": "UK10k Cohorts",
+          "value": "uk10k_cohort"
+        },
+        {
+          "display": "UniProt",
+          "value": "uniprot"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann4",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "denovo",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Denovo-DB",
+          "value": "denovo"
+        },
+        {
+          "display": "MuPIT",
+          "value": "mupit"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann5",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "evolution",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "GERP++",
+          "value": "gerp"
+        },
+        {
+          "display": "LINSIGHT",
+          "value": "linsight"
+        },
+        {
+          "display": "Phast Cons",
+          "value": "phastcons"
+        },
+        {
+          "display": "PhyloP",
+          "value": "phylop"
+        },
+        {
+          "display": "RVIS",
+          "value": "rvis"
+        },
+        {
+          "display": "SiPhy",
+          "value": "siphy"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann6",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "genes",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "BioGRID",
+          "value": "biogrid"
+        },
+        {
+          "display": "Cancer Gene Census",
+          "value": "cgc"
+        },
+        {
+          "display": "Cancer Gene Landscape",
+          "value": "cgl"
+        },
+        {
+          "display": "CIViC Gene",
+          "value": "civic_gene"
+        },
+        {
+          "display": "COSMIC Gene",
+          "value": "cosmic_gene"
+        },
+        {
+          "display": "Essential Genes",
+          "value": "ess_gene"
+        },
+        {
+          "display": "ExAC Gene and CNV",
+          "value": "exac_gene"
+        },
+        {
+          "display": "Gene Ontology",
+          "value": "go"
+        },
+        {
+          "display": "GHIS",
+          "value": "ghis"
+        },
+        {
+          "display": "gnomAD Gene",
+          "value": "gnomad_gene"
+        },
+        {
+          "display": "IntAct",
+          "value": "intact"
+        },
+        {
+          "display": "InterPro",
+          "value": "interpro"
+        },
+        {
+          "display": "LoFtool",
+          "value": "loftool"
+        },
+        {
+          "display": "MuPIT",
+          "value": "mupit"
+        },
+        {
+          "display": "NCBI Gene",
+          "value": "NCBI Gene"
+        },
+        {
+          "display": "NDEx",
+          "value": "ndex"
+        },
+        {
+          "display": "p(HI)",
+          "value": "phi"
+        },
+        {
+          "display": "P(rec)",
+          "value": "prec"
+        },
+        {
+          "display": "PubMed",
+          "value": "pubmed"
+        },
+        {
+          "display": "RVIS",
+          "value": "rvis"
+        },
+        {
+          "display": "TARGET",
+          "value": "target"
+        },
+        {
+          "display": "UniProt",
+          "value": "uniprot"
+        },
+        {
+          "display": "VEST4",
+          "value": "vest"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann7",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "genomic.features",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "LINSIGHT",
+          "value": "linsight"
+        },
+        {
+          "display": "ncRNA",
+          "value": "ncrna"
+        },
+        {
+          "display": "Promoter IR",
+          "value": "javierre_promoters"
+        },
+        {
+          "display": "Pseudogene",
+          "value": "pseudogene"
+        },
+        {
+          "display": "Repeat Sequences",
+          "value": "repeat"
+        },
+        {
+          "display": "VISTA Enhancer Browser",
+          "value": "vista_enhancer"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann8",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "germline",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "1000 Genomes",
+          "value": "thousandgenomes"
+        },
+        {
+          "display": "ClinVar",
+          "value": "clinvar"
+        },
+        {
+          "display": "dbSNP",
+          "value": "dbsnp"
+        },
+        {
+          "display": "Denovo-DB",
+          "value": "denovo"
+        },
+        {
+          "display": "ESP6500",
+          "value": "esp6500"
+        },
+        {
+          "display": "ExAC Gene and CNV",
+          "value": "exac_gene"
+        },
+        {
+          "display": "gnomAD",
+          "value": "gnomad"
+        },
+        {
+          "display": "GRASP",
+          "value": "grasp"
+        },
+        {
+          "display": "GTEx eQTLs",
+          "value": "gtex"
+        },
+        {
+          "display": "Mutation Assessor",
+          "value": "mutation_assessor"
+        },
+        {
+          "display": "MutPred",
+          "value": "mutpred1"
+        },
+        {
+          "display": "PhD-SNPg",
+          "value": "phdsnpg"
+        },
+        {
+          "display": "PolyPhen-2",
+          "value": "polyphen2"
+        },
+        {
+          "display": "REVEL",
+          "value": "revel"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann9",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "interactions",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "BioGRID",
+          "value": "biogrid"
+        },
+        {
+          "display": "IntAct",
+          "value": "intact"
+        },
+        {
+          "display": "NDEx",
+          "value": "ndex"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann10",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "literature",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "CIViC",
+          "value": "civic"
+        },
+        {
+          "display": "CIViC Gene",
+          "value": "civic_gene"
+        },
+        {
+          "display": "ClinVar",
+          "value": "clinvar"
+        },
+        {
+          "display": "dbSNP",
+          "value": "dbsnp"
+        },
+        {
+          "display": "GRASP",
+          "value": "grasp"
+        },
+        {
+          "display": "PubMed",
+          "value": "pubmed"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann11",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "multiplex.assays",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "BRCA1 Multiplex Assay",
+          "value": "brca1_func_assay"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann12",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "noncoding",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "1000 Genomes",
+          "value": "thousandgenomes"
+        },
+        {
+          "display": "dbSNP",
+          "value": "dbsnp"
+        },
+        {
+          "display": "Denovo-DB",
+          "value": "denovo"
+        },
+        {
+          "display": "gnomAD",
+          "value": "gnomad"
+        },
+        {
+          "display": "GRASP",
+          "value": "grasp"
+        },
+        {
+          "display": "GTEx eQTLs",
+          "value": "gtex"
+        },
+        {
+          "display": "LINSIGHT",
+          "value": "linsight"
+        },
+        {
+          "display": "ncRNA",
+          "value": "ncrna"
+        },
+        {
+          "display": "PhD-SNPg",
+          "value": "phdsnpg"
+        },
+        {
+          "display": "Promoter IR",
+          "value": "javierre_promoters"
+        },
+        {
+          "display": "Segway",
+          "value": "segway"
+        },
+        {
+          "display": "VISTA Enhancer Browser",
+          "value": "vista_enhancer"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann13",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "populations",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "1000 Genomes",
+          "value": "thousandgenomes"
+        },
+        {
+          "display": "ABRaOM",
+          "value": "abraom"
+        },
+        {
+          "display": "dbSNP",
+          "value": "dbsnp"
+        },
+        {
+          "display": "ESP6500",
+          "value": "esp6500"
+        },
+        {
+          "display": "ExAC Gene and CNV",
+          "value": "exac_gene"
+        },
+        {
+          "display": "gnomAD",
+          "value": "gnomad"
+        },
+        {
+          "display": "gnomAD Gene",
+          "value": "gnomad_gene"
+        },
+        {
+          "display": "HGDP",
+          "value": "hgdp"
+        },
+        {
+          "display": "UK10k Cohorts",
+          "value": "uk10k_cohort"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann14",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "protein.visualization",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "MuPIT",
+          "value": "mupit"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann15",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "variant.effect.prediction",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "CHASMPlus",
+          "value": "chasmplus"
+        },
+        {
+          "display": "FATHMM",
+          "value": "fathmm"
+        },
+        {
+          "display": "LINSIGHT",
+          "value": "linsight"
+        },
+        {
+          "display": "MuPIT",
+          "value": "mupit"
+        },
+        {
+          "display": "Mutation Assessor",
+          "value": "mutation_assessor"
+        },
+        {
+          "display": "MutPred",
+          "value": "mutpred1"
+        },
+        {
+          "display": "PhD-SNPg",
+          "value": "phdsnpg"
+        },
+        {
+          "display": "PolyPhen-2",
+          "value": "polyphen2"
+        },
+        {
+          "display": "REVEL",
+          "value": "revel"
+        },
+        {
+          "display": "SIFT",
+          "value": "sift"
+        },
+        {
+          "display": "VEST4",
+          "value": "vest"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-ann16",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "assembly",
+      "description": "Genome assembly to use",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "hg38",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "GRCh38/hg38",
+          "value": "hg38"
+        },
+        {
+          "display": "GRCh37/hg19",
+          "value": "hg19"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--assembly",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/opencravat:0.4"
+}

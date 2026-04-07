@@ -1,0 +1,63 @@
+Create a comprehensive structured plan for the GenePattern module for 'UniquifyLabels'.
+            
+            Tool Information:
+            - Name: UniquifyLabels
+            - Version: latest
+            - Language: Java
+            - Description: Makes row and column labels unique
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "UniquifyLabels",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "input filename - .res, .gct, .odf type\\=Dataset",
+      "required": true,
+      "default_value": "",
+      "file_format": "res;gct;Dataset"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "output file",
+      "required": true,
+      "default_value": "<input.filename_basename>.unique"
+    },
+    {
+      "name": "make.row.labels.unique",
+      "type": "java.lang.String",
+      "description": "whether to make the row labels unique",
+      "required": true,
+      "default_value": "yes",
+      "choices": "yes;no"
+    },
+    {
+      "name": "make.column.labels.unique",
+      "type": "java.lang.String",
+      "description": "whether to make the column labels unique",
+      "required": true,
+      "default_value": "yes",
+      "choices": "yes;no"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Joshua Gould, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>UniquifyLabels.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.unique.Unique <input.filename> <output.file> <make.row.labels.unique> <make.column.labels.unique>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

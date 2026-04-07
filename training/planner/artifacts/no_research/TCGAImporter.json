@@ -1,0 +1,115 @@
+{
+  "module_name": "TCGAImporter",
+  "description": "This module imports data from TCGA by taking in a GDC manifest file, downloading the files listed on that manifest, renaming them to be human-friendly, and compiling them into a GCT file to be computer-friendly.",
+  "author": "Edwin F. Juarez & Andy Zhang;UCSD -- Mesirov Lab",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "Python",
+  "categories": [
+    "Data Format Conversion"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:83857:1",
+  "plan": "## TCGAImporter GenePattern Module — Implementation Plan\n\n### 1. Overview\nTCGAImporter is a GenePattern module that This module imports data from TCGA by taking in a GDC manifest file, downloading the files listed on that manifest, renaming them to be human-friendly, and compiling them into a GCT file to be computer-friendly.\n\n### 2. Parameters\nThe module exposes 5 parameters:\n- Required: manifest, gct, translate_gene_id, cls\n- Optional: output_file_name\n\n### 3. Command Line\n```\npython /usr/local/bin/TCGAImporter/download_from_manifest.py -m <manifest> -o <output_file_name> -g <gct> -t <translate_gene_id> -c <cls>\n```\n\n### 4. Docker Image\nDocker image: genepattern/docker-download-from-gdc\\:1.5\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "download_from_manifest.py",
+  "command_line": "python /usr/local/bin/TCGAImporter/download_from_manifest.py -m <manifest> -o <output_file_name> -g <gct> -t <translate_gene_id> -c <cls>",
+  "parameters": [
+    {
+      "name": "manifest",
+      "description": "The relative path of the manifest used to download the data. This file is obtained from the GDC data portal (https\\://portal.gdc.cancer.gov/).",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--manifest",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output_file_name",
+      "description": "The base name to use for output files. E.g., if you type \"TCGA_dataset\" then the GCT file will be named \"TCGA_dataset.gct\"",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "TCGA_dataset",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output_file_name",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gct",
+      "description": "whether or not to create a gct file",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "True",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--gct",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "translate_gene_id",
+      "description": "Whether or not to translate ENSEMBL IDs (e.g., ENSG00000012048) to Hugo Gene Symbol (e.g., BRCA1)",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "True",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "False",
+          "value": "False"
+        },
+        {
+          "display": "True",
+          "value": "True"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--translate_gene_id",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cls",
+      "description": "Whether or not to translate create a cls file separating Normal and Tumor classes based on TCGA Sample ID.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "True",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "False",
+          "value": "False"
+        },
+        {
+          "display": "True",
+          "value": "True"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--cls",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/docker-download-from-gdc:1.5"
+}

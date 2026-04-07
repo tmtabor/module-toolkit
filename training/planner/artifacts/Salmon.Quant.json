@@ -1,0 +1,422 @@
+{
+  "module_name": "Salmon.Quant",
+  "description": "Perform transcript-level quantification of RNA-seq data using Salmon (version 1.6.0).<br>\\n\\nSee\\: <a href\\=\"https\\://salmon.readthedocs.io/en/latest/salmon.html\\#using-salmon\" target\\=\"_blank\">The Salmon User Guide</a>\\nfor detailed usage guidelines.",
+  "author": "Anthony S. Castanza;UCSD-MesirovLab",
+  "input_file_formats": [
+    "fastq.gz",
+    "fq.gz",
+    "tar.gz"
+  ],
+  "language": "any",
+  "categories": [
+    "rna-seq"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:45999:1",
+  "plan": "## Salmon.Quant GenePattern Module — Implementation Plan\n\n### 1. Overview\nSalmon.Quant is a GenePattern module that Perform transcript-level quantification of RNA-seq data using Salmon (version 1.6.0).<br>\\n\\nSee\\: <a href\\=\"https\\://salmon.readthedocs.io/en/latest/salmon.html\\#using-salmon\" target\\=\"_blank\">The Salmon User Guide</a>\\nfor detailed usage guidelines.\n\n### 2. Parameters\nThe module exposes 18 parameters:\n- Required: Reads, Transcriptome.Index, Library.Type, Sampling, seqBias, gcBias, posBias, N.Sampling, Mimic.Bowtie, Recover.Orphans, Hard.Filter, Allow.Dovetail, Dump.EQ, reduce.GC.Memory, Range.Factorization, Range.Factorization.Bins, biasSpeedSamp, biasSpeedSamp.Factor\n- Optional: none\n\n### 3. Command Line\n```\n<libdir>salmon_quant.sh -r <Reads> -i <Transcriptome.Index> -l <Library.Type> -e <Sampling> -n <N.Sampling> -s <seqBias> -g <gcBias> -p <posBias> -t <Mimic.Bowtie> -o <Recover.Orphans> -h <Hard.Filter> -d <Allow.Dovetail> -q <Dump.EQ> -m <reduce.GC.Memory> -f <Range.Factorization> -c <Range.Factorization.Bins> -b <biasSpeedSamp> -a <biasSpeedSamp.Factor> -j <job.cpuCount>\n```\n\n### 4. Docker Image\nDocker image: genepattern/salmon-quant\\:beta_1.6.0\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "salmon_quant.sh",
+  "command_line": "<libdir>salmon_quant.sh -r <Reads> -i <Transcriptome.Index> -l <Library.Type> -e <Sampling> -n <N.Sampling> -s <seqBias> -g <gcBias> -p <posBias> -t <Mimic.Bowtie> -o <Recover.Orphans> -h <Hard.Filter> -d <Allow.Dovetail> -q <Dump.EQ> -m <reduce.GC.Memory> -f <Range.Factorization> -c <Range.Factorization.Bins> -b <biasSpeedSamp> -a <biasSpeedSamp.Factor> -j <job.cpuCount>",
+  "parameters": [
+    {
+      "name": "Reads",
+      "description": "RNA-seq Reads.<br>\\n<br>Paired-end reads must be gzipped and named as follows\\:<br>\\nRead 1\\: SampleID_R1.fastq.gz, SampleID_1.fastq.gz, SampleID_R1.fq.gz, or SampleID_1.fq.gz<br>\\nRead 2\\: SampleID_R2.fastq.gz, SampleID_2.fastq.gz, SampleID_R2.fq.gz, or SampleID_2.fq.gz<br>\\nWhere \"SampleID\" is the same string for both members of each pair.<br>\\n<br>\\nSingle-end reads must not have a _R1/_1 or _R2/_2 suffix before the .fq.gz/.fastq.gz file extension.<br><br>\\n<b>Warning\\:</b> Splitting reads for a single sample across multiple files (eg\\: SampleA_R1_001.fq.gz, SampleA_R1_002.fq.gz; SampleA_R2_001.fq.gz, SampleA_R2_002.fq.gz;) is not supported.",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": [
+        "fastq.gz",
+        "fq.gz",
+        "fastq.gz",
+        "fq.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Reads",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Transcriptome.Index",
+      "description": "An Indexed transcriptome created with `Salmon Indexer`.<br>\\nMust be in .tar.gz format.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": "https\\://datasets.genepattern.org/data/module_support_files/Salmon.Quant/gencode.v39.annotation.k31.salmon_full_decoy_index.tar.gz",
+      "file_formats": [
+        "tar.gz",
+        "tar.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Transcriptome.Index",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Library.Type",
+      "description": "The library type of the RNA-seq. This describes the relative orientation of the reads. (Default\\: automatic inference of library type)\\n<br><br>\\nCommon Salmon options are described in contrast with equivalent options from other quantification tools.\\n<style type\\=\"text/css\">\\n.tg  {border-collapse\\:collapse;border-spacing\\:0;}\\n.tg td{border-color\\:black;border-style\\:solid;border-width\\:1px;font-family\\:Arial, sans-serif;font-size\\:12px;}\\n.tg th{border-color\\:black;border-style\\:solid;border-width\\:1px;font-family\\:Arial, sans-serif;font-size\\:12px;\\n  font-weight\\:normal;}\\n.tg .tg-0pky{border-color\\:inherit;text-align\\:left;vertical-align\\:top}\\n</style>\\n<table class\\=\"tg\">\\n<tbody>\\n  <tr>\\n    <th class\\=\"tg-0pky\">RSeQC Result (Majority of Reads)</th>\\n    <th class\\=\"tg-0pky\">No clear majority</th>\\n    <th class\\=\"tg-0pky\">1++,1--,2+-,2-+</th>\\n    <th class\\=\"tg-0pky\">1+-,1-+,2++,2--</th>\\n  </tr>\\n  <tr>\\n    <td class\\=\"tg-0pky\">Salmon / Sailfish</td>\\n    <td class\\=\"tg-0pky\">IU</td>\\n    <td class\\=\"tg-0pky\">ISF</td>\\n    <td class\\=\"tg-0pky\">ISR</td>\\n  </tr>\\n  <tr>\\n    <td class\\=\"tg-0pky\">TopHat / Cufflinks</td>\\n    <td class\\=\"tg-0pky\">library-type fr-unstranded</td>\\n    <td class\\=\"tg-0pky\">library-type fr-secondstrand</td>\\n    <td class\\=\"tg-0pky\">library-type fr-firststrand</td>\\n  </tr>\\n  <tr>\\n    <td class\\=\"tg-0pky\">HISAT2</td>\\n    <td class\\=\"tg-0pky\">default</td>\\n    <td class\\=\"tg-0pky\">--rna-strandedness FR</td>\\n    <td class\\=\"tg-0pky\">-rna-strandedness RF</td>\\n  </tr>\\n  <tr>\\n    <td class\\=\"tg-0pky\">HTSeq</td>\\n    <td class\\=\"tg-0pky\">stranded --no</td>\\n    <td class\\=\"tg-0pky\">stranded --yes</td>\\n    <td class\\=\"tg-0pky\">stranded --reverse</td>\\n  </tr>\\n</tbody>\\n</table>\\n\\nSee also\\: https\\://salmon.readthedocs.io/en/latest/salmon.html\\#what-s-this-libtype",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "A",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Automatic Detection",
+          "value": "A"
+        },
+        {
+          "display": "ISF (Inward, read 1 from the forward strand)",
+          "value": "ISF"
+        },
+        {
+          "display": "ISR (Inward, read 1 from the reverse strand)",
+          "value": "ISR"
+        },
+        {
+          "display": "IU (Inward, Unstranded)",
+          "value": "IU"
+        },
+        {
+          "display": "OSF (Outward, read 1 from the forward strand)",
+          "value": "OSF"
+        },
+        {
+          "display": "OSR (Outward, read 1 from the reverse strand)",
+          "value": "OSR"
+        },
+        {
+          "display": "OU (Outward, Unstranded)",
+          "value": "OU"
+        },
+        {
+          "display": "SF (Single-End, read 1 from the forward strand)",
+          "value": "SF"
+        },
+        {
+          "display": "SR (Single-End, read 1 from the reverse strand)",
+          "value": "SR"
+        },
+        {
+          "display": "U (Single-End, Unstranded)",
+          "value": "U"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Library.Type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Sampling",
+      "description": "Sampling method for assessing technical variance, used for downstream differential gene/transcript expression analysis with Sleuth (not needed for DESeq2).\\n<br><br>\\nMethods available\\:<br> <b>None</b> - skips technical variance estimation<br>\\n<b>Bootstraps</b> (Recommended) (bootstrapped abundance estimates) - resampling (with replacement) from the counts assigned to the fragment equivalence classes, and then re-running the optimization procedure for each such sample.<br>\\n<b>GibbsSamples</b> - samples are generated using posterior Gibbs sampling over the fragment equivalence classes rather than bootstrapping.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "BOOT",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "None",
+          "value": "NA"
+        },
+        {
+          "display": "Bootstraps",
+          "value": "BOOT"
+        },
+        {
+          "display": "GibbsSamples",
+          "value": "GIBB"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Sampling",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "seqBias",
+      "description": "Salmon will learn and correct for sequence-specific biases in the input data. Specifically, this model will attempt to correct for random hexamer priming bias.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "true",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "true"
+        },
+        {
+          "display": "FALSE",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--seqBias",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gcBias",
+      "description": "Salmon learn and correct for fragment-level GC biases in the input data. Specifically, this model will attempt to correct for biases in how likely a sequence is to be observed based on its internal GC content.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "true",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "true"
+        },
+        {
+          "display": "FALSE",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--gcBias",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "posBias",
+      "description": "Salmon will construct a model of a position-specific fragment start distribution. This is meant to model non-uniform coverage biases that are sometimes present in RNA-seq data (e.g. 5' or 3' positional bias).",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "true",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "true"
+        },
+        {
+          "display": "FALSE",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--posBias",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "N.Sampling",
+      "description": "The number of bootstrapped estimates/Gibbs samples used for technical variance estimation",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "30",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--N.Sampling",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Mimic.Bowtie",
+      "description": "Sets the parameters related to mapping and selective alignment to mimic alignment using Bowtie2.\\n<br>\\noff\\: default\\n<br>\\nmimicBT2\\: mimic alignment using Bowtie2 (with the flags --no-discordant and --no-mixed), but using the default scoring scheme and allowing both mismatches and indels in alignments.\\n<br>\\nmimicStrictBT2\\: mimic alignment using Bowtie2 (with the flags suggested by RSEM), but using the default scoring scheme and allowing both mismatches and indels in alignments. These setting essentially disallow indels in the resulting alignments.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "off",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "off",
+          "value": "off"
+        },
+        {
+          "display": "mimicBT2",
+          "value": "BT2"
+        },
+        {
+          "display": "mimicStrictBT2",
+          "value": "Strict"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Mimic.Bowtie",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Recover.Orphans",
+      "description": "Perform orphan \"rescue\" for reads. That is, if mappings are discovered for only one end of a fragment, or if the mappings for the ends of the fragment don't fall on the same transcript, then this flag will cause salmon to look upstream or downstream of the discovered mapping (anchor) for a match for the opposite end of the given fragment.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "true"
+        },
+        {
+          "display": "FALSE",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Recover.Orphans",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Hard.Filter",
+      "description": "Turns off soft filtering and range-factorized equivalence classes, and removes all but the equally highest scoring mappings from the equivalence class label for each fragment.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "true"
+        },
+        {
+          "display": "FALSE",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Hard.Filter",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Allow.Dovetail",
+      "description": "Dovetailing mappings and alignments are considered discordant and discarded by default - this is the same behavior that is adopted by default in Bowtie2. If you wish to consider dovetailing mappings as concordant (the previous behavior), you can do so by setting Allow.Dovetail to true.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "true"
+        },
+        {
+          "display": "FALSE",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Allow.Dovetail",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Dump.EQ",
+      "description": "Setting to TRUE will cause Salmon to write a file in the auxiliary directory called eq_classes.txt that contains the equivalence classes and corresponding counts that were computed during quasi-mapping.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "true"
+        },
+        {
+          "display": "FALSE",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Dump.EQ",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reduce.GC.Memory",
+      "description": "Used with gcBias. This option replaces the per-nucleotide GC count with a rank-select capable bit vector, reducing the memory overhead from 4-bytes per nucleotide to ~1.25 bits, while being only marginally slower).",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "true"
+        },
+        {
+          "display": "FALSE",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--reduce.GC.Memory",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Range.Factorization",
+      "description": "Range-factorization allows using a data-driven likelihood factorization, which can improve quantification accuracy on certain classes of difficult transcripts.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "true"
+        },
+        {
+          "display": "FALSE",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Range.Factorization",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Range.Factorization.Bins",
+      "description": "Positive integer that determines fidelity of range factorization. The larger x, the closer the factorization to the un-factorized likelihood, but the larger the resulting number of equivalence classes. A value of 1 corresponds to salmon's traditional rich equivalence classes. We recommend 4 (default) as a reasonable parameter for this option (it is what was used in the range-factorization paper).\\n<br>\\nIgnored if Range.Factorization \\= FALSE",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "4",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Range.Factorization.Bins",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "biasSpeedSamp",
+      "description": "When evaluating the bias models (the GC-fragment model specifically), Salmon must consider the probability of generating a fragment of every possible length (with a non-trivial probability) from every position on every transcript. This results in a process that is quadratic in the length of the transcriptome. Setting biasSpeedSamp allows Salmon to consider only every ith fragment length and interploate the intermediate results speeding up this process by a multiplicative factor.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "true"
+        },
+        {
+          "display": "FALSE",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--biasSpeedSamp",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "biasSpeedSamp.Factor",
+      "description": "Set the sampling factor for biasSpeedSamp. Larger values speed up effective length correction, but may decrease the fidelity of bias modeling. However, reasonably small values (e.g. 10 or less) should have only a minor effect on the computed effective lengths, and can considerably speed up effective length correction on large transcriptomes. The default value for --biasSpeedSamp is 5.<br>\\nIgnored if biasSpeedSamp \\= FALSE",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--biasSpeedSamp.Factor",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/salmon-quant:beta_1.6.0"
+}

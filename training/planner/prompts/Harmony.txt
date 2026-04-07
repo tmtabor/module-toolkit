@@ -1,0 +1,395 @@
+Create a comprehensive structured plan for the GenePattern module for 'Harmony'.
+            
+            Tool Information:
+            - Name: Harmony
+            - Version: changed default values to be blank
+            - Language: any
+            - Description: Harmony is a batch correction tool. Upon use, this module will produce three scatterplots. One plot will show the data pre-Harmony, and can be found in the 'BeforeHarmonyPlot.png' file. In this plot, the x and y axes represent the 1st and 2nd principal components from PCA dimensional reduction (unless specified otherwise by the user). Another plot will show the data post-Harmony, and can be found in the 'AfterHarmonyPlot.png' file. In this plot, the x and y axes the same dimensions used in the pre-Harmony plot are shown, but adjusted by Harmony. Lastly, the third plot shows the pre-Harmony and post-Harmony plots side by side for comparison.
+            
+            Research Results:
+            Now I have all the information needed to compile the comprehensive final report. Let me present it:
+
+---
+
+# 🧬 Comprehensive Research Report: Harmony — GenePattern Module
+
+---
+
+## 1. 🔬 Tool Purpose & Scientific Background
+
+### Overview
+**Harmony** is a fast, sensitive, and accurate algorithm for **batch effect correction and multi-dataset integration** in single-cell genomics. It was originally published by Korsunsky et al. in *Nature Methods* (2019, DOI: [10.1038/s41592-019-0619-0](https://www.nature.com/articles/s41592-019-0619-0)) and has become one of the most widely adopted tools for single-cell RNA-seq (scRNA-seq) data integration, accumulating **4,000+ citations**.
+
+The GenePattern Harmony module wraps the Harmony algorithm as an accessible, user-friendly pipeline producing **before/after PCA scatterplots** alongside corrected embedding outputs for downstream analysis.
+
+### The Problem It Solves
+In single-cell genomics, data collected across **different experiments, donors, batches, labs, or technologies** contains unwanted technical variation ("batch effects") that obscures true biological signal. Harmony removes these effects while preserving biologically meaningful variation, enabling joint analysis of datasets from disparate sources.
+
+### The Algorithm (Iterative Correction in PCA Space)
+Harmony operates on **pre-computed low-dimensional embeddings** (typically PCA) rather than raw gene expression values:
+
+| Step | Action |
+|------|--------|
+| **1. Initialize** | Accept PCA embeddings (cells × PCs) and batch metadata |
+| **2. Cluster** | Perform soft k-means clustering in PCA space |
+| **3. Assess** | Compute batch composition within each cluster vs. global expectation |
+| **4. Correct** | Apply linear correction factors (`W`) to remove batch-specific offsets per cluster |
+| **5. Iterate** | Repeat steps 2–4 until convergence (objective function minimization) |
+
+**Key Outputs of the Object:**
+- `Z_corr` — Corrected cell embeddings *(cells × dims)* — the primary output used downstream
+- `Z_orig` — Original PCA embeddings *(cells × dims)*
+- `R` — Soft cluster assignment matrix
+- `W` — Batch correction weights
+
+---
+
+## 2. 📁 Input/Output Formats & Requirements
+
+### Required Inputs
+
+| Input | Format | Description |
+|-------|--------|-------------|
+| **PCA Embedding Matrix** | CSV/TSV, dense matrix | Cells as rows, principal components as columns (cells × PCs). Typically 20–50 PCs. |
+| **Metadata Table** | CSV/TSV, DataFrame | Cells as rows, covariate columns (must include batch/group variable). Row order must match embedding matrix. |
+| **Batch Variable Name** | String | Column name in metadata identifying batch, donor, dataset, etc. Can be a comma-separated list for multi-covariate correction. |
+
+> **Note on Pre-processing:** Harmony expects **already reduced** data. Upstream steps: normalize counts → log-transform → highly variable gene selection → scale → PCA. Harmony does NOT operate on raw count matrices (unless using `HarmonyMatrix()` with `do_pca=TRUE`).
+
+### GenePattern Module Outputs
+
+| Output File | Format | Description |
+|-------------|--------|-------------|
+| `BeforeHarmonyPlot.png` | PNG image | Scatter plot of cells in PCA space (PC1 vs PC2 by default) **before** correction, colored by batch variable |
+| `AfterHarmonyPlot.png` | PNG image | Same PCA dimensions **after** Harmony correction, showing batch mixing |
+| `CombinedPlot.png` *(or similar)* | PNG image | Side-by-side comparison of before and after plots |
+| **Corrected Embeddings** | CSV/TSV | Matrix of Harmony-corrected PCA coordinates (`Z_corr`) for downstream use |
+
+> **Plot Axes:** The x/y axes represent the 1st and 2nd principal components by default (`dim1=1`, `dim2=2`), but the user can specify alternative PC dimensions.
+
+---
+
+## 3. ⚙️ Parameter Analysis & Usage Patterns
+
+### Complete Parameter Catalog
+
+#### 🗂️ Group 1: Required / Core Inputs
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `data_mat` | File/Matrix | — | PCA embeddings matrix (cells × PCs) |
+| `meta_data` | File/DataFrame | — | Cell metadata table with batch labels |
+| `vars_use` | String/List | — | Batch variable column name(s) in metadata |
+
+#### 🔧 Group 2: Algorithm Behavior Parameters
+
+| Parameter | Type | Default | Range/Notes | Biological Significance |
+|-----------|------|---------|-------------|------------------------|
+| `theta` | Float or List | `2` (R) / `NULL`→2 (py) | ≥ 0 | **Diversity penalty strength.** Higher values enforce more aggressive batch mixing. Use lower values (0–1) when biological groups are confounded with batch to avoid over-correction. |
+| `lambda` / `lamb` | Float or List | `1` | > 0 | **Ridge regression regularization.** Prevents over-fitting the correction to small batches. Higher values = more conservative correction. |
+| `sigma` | Float or Array | `0.1` | > 0 | **Soft k-means cluster width.** Controls fuzziness of cluster assignment. Higher sigma = smoother, less sharp clusters. |
+| `nclust` | Integer | Auto: `min(N/30, 100)` | ≥ 1 | **Number of integration clusters.** Auto-calculated from dataset size. Increase for very large or heterogeneous datasets. |
+| `tau` | Integer | `0` | ≥ 0 | **Protection against over-clustering small datasets.** Sets a minimum expected cells per cluster. Useful when batch sizes are highly unequal. |
+
+#### 🔄 Group 3: Convergence & Iteration Parameters
+
+| Parameter | Type | Default | Notes |
+|-----------|------|---------|-------|
+| `max_iter_harmony` | Integer | `10` | Max Harmony outer-loop iterations. Increase to `20–50` for complex or large datasets. |
+| `max_iter_kmeans` / `max_iter_cluster` | Integer | `20` | Max k-means inner iterations per Harmony step. |
+| `epsilon_cluster` | Float | `1e-5` | Convergence tolerance for k-means step. |
+| `epsilon_harmony` | Float | `1e-4` | Convergence tolerance for full Harmony loop. |
+| `early_stop` | Boolean | `TRUE` | Stop iterations early if converged. |
+| `block_size` | Float | `0.05` | Fraction of cells updated per round (mini-batch). Lower values = slower but more memory-efficient. |
+
+#### 🎨 Group 4: Output / Visualization Parameters
+
+| Parameter | Type | Default | Notes |
+|-----------|------|---------|-------|
+| `dim1` | Integer | `1` | PC dimension for x-axis of scatter plots |
+| `dim2` | Integer | `2` | PC dimension for y-axis of scatter plots |
+| `color_by` | String | batch variable | Column in metadata used for cell coloring |
+| `plot_convergence` | Boolean | `FALSE` | Plot the Harmony objective function over iterations |
+| `verbose` | Boolean | `TRUE` | Print iteration progress to console/log |
+
+#### 🔁 Group 5: Reproducibility & Compute
+
+| Parameter | Type | Default | Notes |
+|-----------|------|---------|-------|
+| `random_state` | Integer | `0` | Random seed for reproducible k-means initialization |
+| `ncores` | Integer | `1` | Parallel CPU cores (R package; OPENBLAS threading caveat applies) |
+| `reference_values` | List | `NULL` | Specify reference batch(es) to anchor correction |
+| `cluster_prior` | Matrix | `NULL` | Prior probability distribution over clusters |
+
+### ⚠️ Parameter Interaction Warnings
+- **`theta` + `vars_use`**: When integrating over multiple covariates, provide a **list of theta values** (one per covariate), e.g., `theta=[2, 1]` for `vars_use=["batch", "donor"]`
+- **`lambda` + `tau`**: Both protect against over-correction of small batches; `tau` acts as a soft floor on cluster size while `lambda` regularizes correction magnitude
+- **`nclust` + dataset size**: With very large datasets (>500K cells), consider explicitly setting `nclust=100–200` to control memory usage
+- **Default "blank" values** *(GenePattern-specific)*: The GenePattern module version notes that "default values have been changed to be blank," meaning the module likely passes `NULL`/`None` for optional parameters and lets the underlying Harmony library determine optimal values dynamically
+
+---
+
+## 4. 🛠️ Installation & Dependency Requirements
+
+### Python (harmonypy) — Likely Backend for GenePattern Module
+
+```bash
+pip install harmonypy
+```
+
+| Dependency | Version | Role |
+|------------|---------|------|
+| `numpy` | ≥ 1.17 | Matrix operations, array math |
+| `pandas` | ≥ 0.25 | Metadata DataFrame handling |
+| `scikit-learn` | ≥ 0.21 | K-means clustering (`sklearn.cluster.KMeans`) |
+| `scipy` | ≥ 1.3 | Sparse matrix support |
+
+**⚠️ Known Issue:** OPENBLAS/OpenMP thread contention can cause hangs with `sklearn.cluster.KMeans` in multi-threaded environments (harmonypy GitHub Issue #29). Workaround: set `OMP_NUM_THREADS=1` or use `threadpoolctl`.
+
+### R (harmony package) — Alternative Backend
+
+```r
+# From CRAN
+install.packages("harmony")
+
+# Or development version
+devtools::install_github("immunogenomics/harmony")
+```
+
+| R Dependency | Purpose |
+|-------------|---------|
+| `Rcpp` / `RcppArmadillo` | C++ linear algebra core |
+| `dplyr` | Data manipulation |
+| `ggplot2` | Convergence plotting |
+| `Seurat` *(optional)* | Seurat object interface |
+| `SingleCellExperiment` *(optional)* | Bioconductor interface |
+
+### GenePattern Container Requirements
+For the GenePattern Docker environment, the likely `requirements.txt` / environment includes:
+
+```
+harmonypy>=0.0.9
+pandas>=1.3.0
+numpy>=1.21.0
+scikit-learn>=0.24.0
+scipy>=1.7.0
+matplotlib>=3.4.0   # for PNG plot generation
+seaborn>=0.11.0     # for styled scatter plots
+anndata>=0.7.6      # for .h5ad support
+scanpy>=1.8.0       # optional, for sc.external.pp.harmony_integrate
+```
+
+---
+
+## 5. 🔄 Common Workflows & Use Cases
+
+### Workflow 1: Standard scRNA-seq Multi-Sample Integration
+
+```
+Raw counts (cells × genes)
+    ↓ [QC, filtering]
+Normalized log counts
+    ↓ [Select HVGs, scale]
+PCA embeddings (cells × 30–50 PCs)
+    ↓ [CSV export OR in-memory]
+══════════════════════════════
+    Harmony GenePattern Module
+    • Input: PCA embeddings CSV
+    • Input: Metadata CSV (batch column)
+    • Output: Corrected embeddings CSV
+    • Output: Before/After/Combined PNGs
+══════════════════════════════
+    ↓
+Corrected embeddings → KNN graph → UMAP → Leiden clustering → DE analysis
+```
+
+### Workflow 2: Multi-Covariate Correction
+
+Useful when data has **multiple confounds** (e.g., both sequencing batch AND donor):
+```python
+ho = hm.run_harmony(pcs, meta, 
+                    vars_use=["sequencing_batch", "donor_id"],
+                    theta=[2, 1],  # Strong batch correction, softer donor correction
+                    lamb=[1, 1])
+```
+
+### Workflow 3: scATAC-seq Integration (LSI Embeddings)
+
+Harmony is also applied to **LSI (Latent Semantic Indexing)** embeddings from scATAC-seq, treating LSI components analogously to PCs:
+```r
+harmony_embeddings <- RunHarmony(lsi_embeddings, meta_data, 
+                                  vars_use = "library",
+                                  do_pca = FALSE)  # LSI already computed
+```
+
+### Workflow 4: Reference-Anchored Correction
+
+When one batch should be treated as a **reference** (e.g., a well-characterized control dataset):
+```r
+RunHarmony(embeddings, meta, vars_use="dataset",
+           reference_values="reference_dataset_label")
+```
+
+### Typical Parameter Tuning Scenarios
+
+| Scenario | Recommended Settings |
+|----------|---------------------|
+| Simple 2-batch correction | `theta=2`, `lambda=1`, defaults |
+| Many small batches | `tau=5–20`, `lambda=2–5` |
+| Biologically heterogeneous datasets | `theta=0.5–1` (reduce aggressiveness) |
+| Large datasets (>100K cells) | `nclust=100`, `block_size=0.05` |
+| Slow convergence | `max_iter_harmony=20–50` |
+| Dataset size imbalance | `tau=10`, `lambda=3` |
+
+---
+
+## 6. 📊 Comparative Analysis vs. Alternative Tools
+
+### Benchmark Performance Summary
+
+Based on Tran et al. (2020, *Genome Biology*) and Luecken et al. (2022, *Nature Methods*) benchmarks evaluating **kBET, LISI, ASW, and ARI** metrics:
+
+| Tool | Speed | Scalability | Bio Signal Preservation | Simple Batch | Complex Integration | Memory |
+|------|-------|-------------|------------------------|-------------|---------------------|--------|
+| **Harmony** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
+| Seurat CCA/RPCA | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
+| BBKNN | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| scVI | ⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ |
+| ComBat | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐⭐ |
+| Scanorama | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
+| MNN | ⭐⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐ |
+
+### Key Differentiators of Harmony
+
+**✅ Advantages:**
+1. **Fastest runtime** among all integration methods — scales linearly with cell number; benchmarked on 1M+ cells
+2. **Minimal over-correction** — preserves differential expression signal better than BBKNN, MNN, LIGER
+3. **Multi-covariate support** — natively handles multiple batch variables with independent penalty weights
+4. **Framework agnostic** — works with Seurat, Scanpy, SingleCellExperiment, raw matrices
+5. **Operates on embeddings** — no need to share gene space across datasets
+6. **Top-ranked** in Tran et al. 2020 benchmark (rank sum across all 4 metrics)
+
+**⚠️ Limitations & Caveats:**
+1. **Over-correction risk** when biological groups are fully confounded with batch (e.g., disease status = batch); reduce `theta` or use `reference_values` to mitigate
+2. **Requires pre-computed embeddings** — cannot be applied to raw counts without a PCA step
+3. **Linear correction only** — may not fully resolve non-linear batch effects (scVI more powerful here)
+4. **Not recommended for DE testing** — corrected embeddings should feed clustering/visualization, not differential expression analysis
+5. **OpenBLAS thread contention** — can cause silent hangs in Python without thread control
+
+---
+
+## 7. 🖥️ GenePattern Module Integration Considerations
+
+### Module Architecture
+
+The GenePattern Harmony module (`github.com/genepattern/Harmony`) functions as a **wrapper script** that:
+1. Accepts user-uploaded input files (PCA matrix + metadata CSV)
+2. Invokes the Harmony algorithm (R or Python backend)
+3. Generates before/after PCA scatter plots as PNG files
+4. Exports corrected embedding matrix for downstream GenePattern modules
+
+### Recommended Module Parameter Organization
+
+```
+┌─────────────────────────────────────────────┐
+│  GROUP 1: Required Inputs                    │
+│  • Input PCA embeddings file (CSV)           │
+│  • Input metadata file (CSV)                 │
+│  • Batch variable name (string)              │
+├─────────────────────────────────────────────┤
+│  GROUP 2: Harmony Core Parameters            │
+│  • theta (diversity penalty)                 │
+│  • lambda (regularization)                   │
+│  • sigma (cluster width)                     │
+│  • nclust (number of clusters)               │
+│  • tau (small batch protection)              │
+├─────────────────────────────────────────────┤
+│  GROUP 3: Convergence Settings               │
+│  • max_iter_harmony                          │
+│  • max_iter_kmeans                           │
+│  • epsilon_cluster                           │
+│  • epsilon_harmony                           │
+├─────────────────────────────────────────────┤
+│  GROUP 4: Visualization                      │
+│  • dim1 (x-axis PC)                          │
+│  • dim2 (y-axis PC)                          │
+│  • color_by (metadata column for coloring)  │
+├─────────────────────────────────────────────┤
+│  GROUP 5: Advanced / Reproducibility         │
+│  • random_state                              │
+│  • reference_values                          │
+│  • verbose                                   │
+└─────────────────────────────────────────────┘
+```
+
+### Input File Format Specifications
+
+**PCA Embeddings CSV:**
+```
+cell_id,PC_1,PC_2,...,PC_30
+AAACCCAAGCGTATGG,−3.14,1.72,...,0.05
+AAACCCAAGTACCGGA,2.33,−0.88,...,−0.12
+```
+
+**Metadata CSV:**
+```
+cell_id,batch,donor,cell_type,...
+AAACCCAAGCGTATGG,batch_1,donor_A,T_cell,...
+AAACCCAAGTACCGGA,batch_2,donor_B,B_cell,...
+```
+
+> ⚠️ **Critical:** Row order in both files **must be identical** and match cell identifiers.
+
+### Downstream GenePattern Module Compatibility
+
+The corrected embedding output from Harmony feeds naturally into:
+
+| Downstream Module | Use of Harmony Output |
+|-------------------|----------------------|
+| **UMAP** | Use corrected PCs as input for dimensionality reduction |
+| **Louvain/Leiden Clustering** | Build KNN graph on corrected embeddings |
+| **scRNA-seq QC/Visualization** | Overlay cell type annotations on post-Harmony UMAP |
+| **Trajectory Analysis** (Monocle, etc.) | Corrected embeddings as starting reduction |
+| **Label Transfer** | Harmonized space for cross-dataset annotation |
+
+---
+
+## 8. 📚 Literature & Citation Summary
+
+| Reference | Key Contribution |
+|-----------|-----------------|
+| **Korsunsky et al., *Nature Methods* 2019** | Original Harmony paper; algorithm description, benchmarks vs. MNN/BBKNN/MultiCCA |
+| **Tran et al., *Genome Biology* 2020** | Harmony ranked #1 among 14 batch correction methods (kBET, LISI, ASW, ARI) |
+| **Luecken et al., *Nature Methods* 2022** | Atlas-level benchmarking; Harmony + Seurat CCA best for simple batch correction |
+| **Slowkow et al. (harmonypy GitHub)** | Python port enabling Scanpy/AnnData integration |
+| **PMC12315870 (2024)** | Harmony and ComBat show smallest perturbation of differential expression signal |
+
+---
+
+## 9. 📝 Summary for GenePattern Module Development
+
+| Aspect | Details |
+|--------|---------|
+| **Primary Use** | Batch effect correction for single-cell genomics data |
+| **Core Algorithm** | Iterative soft k-means + linear correction in PCA space |
+| **Input** | PCA embeddings (CSV) + Cell metadata (CSV) + batch column name |
+| **Output** | Corrected embeddings (CSV) + 3 PNG plots (before, after, combined) |
+| **Key Parameters** | `vars_use`, `theta`, `lambda`, `sigma`, `nclust`, `tau`, `max_iter_harmony`, `dim1`/`dim2` |
+| **Default Strategy** | Blank defaults → Harmony auto-determines optimal values based on data |
+| **Language** | Python (harmonypy) or R (harmony) — both viable backends |
+| **License** | GPL-3 (R package) / MIT (harmonypy Python) |
+| **Citation Required** | Korsunsky et al., *Nature Methods*, 2019, DOI: 10.1038/s41592-019-0619-0 |
+| **Benchmark Ranking** | #1 in Tran et al. 2020 scRNA-seq benchmark; top-tier in Luecken et al. 2022 |
+| **Version Note** | GenePattern module version changed default values to be blank (dynamic auto-configuration) |
+| **Critical Warning** | Do NOT perform differential expression directly on Harmony-corrected values; use them only for visualization and clustering |
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

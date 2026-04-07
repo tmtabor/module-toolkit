@@ -1,0 +1,64 @@
+Create a comprehensive structured plan for the GenePattern module for 'VoomNormalize'.
+            
+            Tool Information:
+            - Name: VoomNormalize
+            - Version: Creating anti-logged normalized values as one of the outputs & fixing documentation
+            - Language: R3.1.3
+            - Description: Preprocess RNA-Seq count data in a GCT file so that it is suitable for use in GenePattern analyses. Formerly called "PreprocessReadCounts"
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "VoomNormalize",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "A GCT file containing raw RNA-Seq counts, such as is produced by MergeHTSeqCounts",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct",
+      "num_values": "1"
+    },
+    {
+      "name": "cls.file",
+      "type": "FILE",
+      "description": "A categorical CLS file specifying the phenotype classes for the samples in the GCT file.",
+      "required": true,
+      "default_value": "",
+      "file_format": "cls",
+      "num_values": "1"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "Output file name",
+      "required": true,
+      "default_value": "<input.file_basename>.preprocessed.gct"
+    },
+    {
+      "name": "expression.value.filter.threshold",
+      "type": "java.lang.Float",
+      "description": "Threshold to use when filtering CPM expression values; rows are kept only if the values (in CPM) for all columns are greater than this threshold",
+      "required": true,
+      "default_value": "0"
+    }
+  ],
+  "docker_image_tag": "genepattern/voomnormalize\\:1.0",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Arthur Liberzon, David Eby, Broad Institute; Edwin Juarez, UC San Diego.",
+  "command_line": "Rscript --no-save --quiet --slave --no-restore <libdir>run_gp_preprocess_read_counts.R <libdir> --input.file\\=<input.file> --cls.file\\=<cls.file> --output.file\\=<output.file> --expression.value.filter.threshold\\=<expression.value.filter.threshold>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

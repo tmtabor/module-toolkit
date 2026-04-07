@@ -1,0 +1,123 @@
+{
+  "module_name": "KMeansClustering",
+  "description": "Module that performs the K-Means Clustering algorithm",
+  "author": "Marc-Danie Nazaire, gp-help@broad.mit.edu, Broad Institute",
+  "input_file_formats": [
+    "gct",
+    "odf",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:18165:1",
+  "plan": "## KMeansClustering GenePattern Module — Implementation Plan\n\n### 1. Overview\nKMeansClustering is a GenePattern module that Module that performs the K-Means Clustering algorithm\n\n### 2. Parameters\nThe module exposes 6 parameters:\n- Required: input.filename, output.base.name, number.of.clusters, seed.value, cluster.by, distance.metric\n- Optional: none\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>kmeansclustering.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.kmeans.KMeansClustering <input.filename> <output.base.name> <number.of.clusters> <seed.value> <cluster.by> <distance.metric>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "kmeansclustering.jar<path.separator><libdir>gp-modules.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>kmeansclustering.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.kmeans.KMeansClustering <input.filename> <output.base.name> <number.of.clusters> <seed.value> <cluster.by> <distance.metric>",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "description": "File containing data to cluster - .res, .gct, .odf",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "res",
+        "odf"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.base.name",
+      "description": "The base output file name - .gct",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.filename_basename>_KMcluster_output",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.base.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "number.of.clusters",
+      "description": "Number of centroids (clusters)",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--number.of.clusters",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "seed.value",
+      "description": "Seed value for random number generator",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "12345",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--seed.value",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cluster.by",
+      "description": "Whether to cluster by rows or columns",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "rows",
+          "value": "0"
+        },
+        {
+          "display": "columns",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--cluster.by",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "distance.metric",
+      "description": "How to compute distance between points",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Euclidean",
+          "value": "0"
+        },
+        {
+          "display": "",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--distance.metric",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

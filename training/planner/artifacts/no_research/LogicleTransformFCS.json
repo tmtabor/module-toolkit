@@ -1,0 +1,136 @@
+{
+  "module_name": "LogicleTransformFCS",
+  "description": "Logicle transformation of (selected) parameters in a list mode FCS data file.",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "input_file_formats": [
+    "fcs"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:92921:1",
+  "plan": "## LogicleTransformFCS GenePattern Module — Implementation Plan\n\n### 1. Overview\nLogicleTransformFCS is a GenePattern module that Logicle transformation of (selected) parameters in a list mode FCS data file.\n\n### 2. Parameters\nThe module exposes 8 parameters:\n- Required: Input.fcs.data.file, Use.Fast.Implementation, Output.fcs.file.name\n- Optional: Parameters.to.transform, T, M, W, A\n\n### 3. Command Line\n```\n<java> <java_flags> -jar <libdir>logicletransform.jar <Input.fcs.data.file> <Output.fcs.file.name> <Parameters.to.transform> <T> <M> <W> <A> <Use.Fast.Implementation>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "logicletransform.jar",
+  "command_line": "<java> <java_flags> -jar <libdir>logicletransform.jar <Input.fcs.data.file> <Output.fcs.file.name> <Parameters.to.transform> <T> <M> <W> <A> <Use.Fast.Implementation>",
+  "parameters": [
+    {
+      "name": "Input.fcs.data.file",
+      "description": "FCS data file to transform.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fcs"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-InputFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Parameters.to.transform",
+      "description": "Comma-separated list of parameters to transform, parameters are specified by their short names ($PnN values); Optional. By default, all parameters with the \"FL\" prefix in their short name will be transformed.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-ParametersToTransform\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "T",
+      "description": "T > 0; Data value at the top of the scale range to be displayed, optional. The maximum input value will be used if no explicit value for T is provided.",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-T\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "M",
+      "description": "M < 0; Full width of the intended Logicle display in asymptotic decades, optional. The default value is 4.5 (decades). Note also that for the resulting Logicle transformation, Logicle (T) \\= M.",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "4.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-M\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "W",
+      "description": "W >\\= 0; Linearization width in asymptotic decades; optional. The described calculation will be used to set W for each of the transformed FCS parameters if no explicit value for W is provided.",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-W\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "A",
+      "description": "A, usually <\\= 0; Additional negative display range in asymptotic decades; optional. The default value is 0.",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-A\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Use.Fast.Implementation",
+      "description": "Use a fast implementation of Logicle with less precision; optional.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Use regular implementation, default",
+          "value": "no"
+        },
+        {
+          "display": "Use fast implementation",
+          "value": "t"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-Fas",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.fcs.file.name",
+      "description": "The output FCS file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<Input.fcs.data.file_basename>.logicle_transformed.fcs",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-OutputFile\\:",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

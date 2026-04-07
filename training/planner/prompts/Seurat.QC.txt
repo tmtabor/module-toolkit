@@ -1,0 +1,501 @@
+Create a comprehensive structured plan for the GenePattern module for 'Seurat.QC'.
+            
+            Tool Information:
+            - Name: Seurat.QC
+            - Version: Reading new version of HCA (Loom), fixing the url reading bug (added a new parameter)
+            - Language: any
+            - Description: Seurat quality control (First step in the Seurat Suite), using Seurat version 4.0.3.
+            
+            Research Results:
+            Now I have all the data needed to produce the full, rich research report. Here is the complete, structured analysis:
+
+---
+
+# 🔬 Comprehensive Research Report: Seurat.QC
+
+## GenePattern Module — Quality Control for Single-Cell RNA-seq
+
+---
+
+## 📋 EXECUTIVE SUMMARY
+
+**Seurat.QC** is the foundational first step of the GenePattern Seurat Suite, implementing industry-standard quality control for single-cell RNA sequencing (scRNA-seq) data. Running on **Seurat v4.0.3** inside an R-based Docker container, it ingests raw count matrices from **10x Genomics Chromium** or **HCA Loom** formats, computes key QC metrics, generates diagnostic visualizations, and outputs a filtered **Seurat object (.rds)** ready for downstream preprocessing. Version 4.0 is notable for adding Loom URL reading support and fixing a critical HCA data portal URL parsing bug.
+
+---
+
+## 1. 🎯 TOOL PURPOSE & SCIENTIFIC APPLICATIONS
+
+### 1.1 Primary Purpose
+Seurat.QC automates the critical first step in scRNA-seq analysis: **identifying and removing low-quality cells and technical artifacts** before any biological inference. Poor QC leads to false clusters, distorted cell-type identification, and erroneous differential expression results.
+
+### 1.2 Biological Rationale for QC Metrics
+
+| QC Metric | Biological Interpretation | Failure Mode |
+|-----------|--------------------------|--------------|
+| **nFeature_RNA** (low) | Empty droplets or lysed cells | < 200 genes: likely no cell captured |
+| **nFeature_RNA** (high) | Doublets / multiplets (2+ cells) | > 2500–5000: likely two cells |
+| **nCount_RNA** (low) | Poor library prep, empty barcode | Failed sequencing reaction |
+| **nCount_RNA** (high) | Doublets with high transcriptional activity | Artificially inflated library |
+| **percent.mt** (high) | Cytoplasmic mRNA leakage from damaged cells | > 5–25%: dying/lysed cells |
+
+**Scientific principle**: In a healthy, intact cell, cytoplasmic mRNA is captured uniformly. When a cell membrane ruptures, cytoplasmic mRNA leaks out but mitochondria (with their own circular DNA) remain intact, so mitochondrial reads become enriched relative to nuclear-encoded genes — a hallmark of low-quality cells.
+
+### 1.3 Key Scientific Applications
+- **Atlas-scale studies**: Pre-processing Human Cell Atlas (HCA) datasets
+- **Tumor microenvironment profiling**: Accommodating higher mitochondrial thresholds for necrotic/stressed cells
+- **Developmental biology**: Time-course experiments with mixed cell quality
+- **Immunology/PBMC studies**: Strict 5% MT filtering appropriate for blood-derived cells
+- **Brain/neural tissue**: Higher MT thresholds (up to 10%) needed for neurons with naturally elevated mitochondrial activity
+
+---
+
+## 2. 📁 INPUT/OUTPUT FORMATS & REQUIREMENTS
+
+### 2.1 Supported Input Formats
+
+#### Format A: 10x Genomics Chromium (Primary)
+```
+Input: .tar.gz OR .zip archive containing:
+├── barcodes.tsv.gz      → Cell barcodes
+├── features.tsv.gz      → Gene identifiers (or genes.tsv for older CellRanger)
+└── matrix.mtx.gz        → Sparse count matrix (Market Exchange Format)
+```
+- **Read function**: `Seurat::Read10X(data.dir = ...)`
+- **CellRanger versions**: v2 (genes.tsv) and v3+ (features.tsv) both supported
+- **Data type**: Raw unfiltered OR filtered feature-barcode matrices
+
+#### Format B: HCA Loom Files (Human Cell Atlas)
+```
+Input: .loom file (HDF5-based format)
+├── /matrix              → Expression data (cells × genes)
+├── /col_attrs           → Cell metadata (barcodes, QC metrics)
+├── /row_attrs           → Gene metadata (names, IDs)
+└── /col_graphs          → Cell connectivity graphs
+```
+- **Read function**: `loomR::connect()` or `SeuratDisk` utilities
+- **Key addition in v4.0**: `loom.url` parameter enables direct reading from HCA Data Portal URLs
+- **HCA specificity**: Only HCA-formatted loom files are supported (not generic loom)
+- **Example HCA dataset**: Human immune cell atlas (`immuneCells.loom`, 782,859 × 58,347 matrix)
+
+### 2.2 Output Files
+
+| Output | Format | Description |
+|--------|--------|-------------|
+| `{output.name}.rds` | R RDS binary | Serialized Seurat object with QC metrics in `@meta.data` |
+| `{output.name}_violin_qc.pdf/.png` | PDF/PNG | VlnPlot of nFeature_RNA, nCount_RNA, percent.mt |
+| `{output.name}_scatter_qc.pdf/.png` | PDF/PNG | FeatureScatter correlation plots |
+| `{output.name}_summary.txt` | Plain text | Cell/gene counts before and after filtering |
+
+### 2.3 Seurat Object Structure (Output)
+```r
+Seurat Object @ output.rds
+├── @assays$RNA
+│   ├── @counts       → Raw integer count matrix (genes × cells)
+│   └── @data         → (empty at QC stage; filled by Preprocessing)
+├── @meta.data         → Per-cell QC table:
+│   ├── nCount_RNA    → Total UMIs per cell
+│   ├── nFeature_RNA  → Unique genes per cell
+│   ├── percent.mt    → % mitochondrial reads
+│   └── orig.ident    → Sample/project name
+└── @project.name     → User-defined project identifier
+```
+
+---
+
+## 3. ⚙️ PARAMETER ANALYSIS & USAGE PATTERNS
+
+### 3.1 Complete Parameter Registry
+
+#### Group 1: Input Configuration
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `input.file` | File | Required | `.tar.gz`, `.zip`, or `.loom` raw count data |
+| `input.type` | String (enum) | `"10x"` | `"10x"` or `"loom"` — determines parsing logic |
+| `loom.url` | String (URL) | `""` (empty) | **New in v4.0**: Direct URL to HCA loom file; fixes URL reading bug |
+
+#### Group 2: Seurat Object Creation Filters
+| Parameter | Type | Default | R Function Mapping |
+|-----------|------|---------|-------------------|
+| `min.cells` | Integer | `3` | `CreateSeuratObject(min.cells=)` — Genes expressed in ≥N cells |
+| `min.features` | Integer | `200` | `CreateSeuratObject(min.features=)` — Cells with ≥N genes |
+| `project.name` | String | `"SeuratProject"` | `CreateSeuratObject(project=)` |
+
+#### Group 3: Mitochondrial QC
+| Parameter | Type | Default | Notes |
+|-----------|------|---------|-------|
+| `mito.pattern` | Regex String | `"^MT-"` | Pattern for `PercentageFeatureSet()`. Use `"^mt-"` for mouse, `"^MT-"` for human |
+| `percent.mt.column` | String | `"percent.mt"` | Pre-existing MT column in HCA loom metadata; used when MT already computed |
+
+#### Group 4: Filtering Thresholds
+| Parameter | Type | Typical Range | Biological Basis |
+|-----------|------|--------------|-----------------|
+| `nfeature.min` | Integer | 200 – 500 | Below: empty droplets |
+| `nfeature.max` | Integer | 2500 – 7500 | Above: doublets |
+| `ncount.min` | Integer | 500 – 1000 | Below: failed captures |
+| `percent.mt.max` | Numeric | 5.0 – 25.0 | Above: damaged cells |
+
+#### Group 5: Visualization
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `feature1` | String | `"nFeature_RNA"` | First VlnPlot / FeatureScatter feature |
+| `feature2` | String | `"nCount_RNA"` | Second VlnPlot / FeatureScatter feature |
+
+#### Group 6: Output Configuration
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `output.name` | String | `"seurat_qc"` | Basename for all output files |
+
+### 3.2 Organism-Specific Parameter Patterns
+
+```r
+# HUMAN (e.g., PBMC, tumor biopsies)
+mito.pattern   = "^MT-"
+nfeature.min   = 200
+nfeature.max   = 2500
+percent.mt.max = 5
+
+# MOUSE (brain, embryonic, other tissues)
+mito.pattern   = "^mt-"
+nfeature.min   = 200
+nfeature.max   = 5000
+percent.mt.max = 10
+
+# HCA LOOM (pre-computed metadata)
+input.type         = "loom"
+percent.mt.column  = "percent.mt"   # Already in HCA metadata
+mito.pattern       = ""             # Skip computation if column exists
+```
+
+### 3.3 Core R Code Equivalent
+```r
+library(Seurat)
+
+# Step 1: Load data
+if (input.type == "10x") {
+  counts <- Read10X(data.dir = extracted_path)
+} else {
+  lfile <- loomR::connect(filename = loom_file, mode = "r+")
+  counts <- as.Seurat(lfile)
+}
+
+# Step 2: Create Seurat object
+seurat_obj <- CreateSeuratObject(
+  counts      = counts,
+  project     = project.name,
+  min.cells   = min.cells,
+  min.features = min.features
+)
+
+# Step 3: Compute mitochondrial percentage
+seurat_obj[["percent.mt"]] <- PercentageFeatureSet(
+  seurat_obj, 
+  pattern = mito.pattern
+)
+
+# Step 4: Generate QC visualizations
+VlnPlot(seurat_obj, 
+  features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+  ncol = 3
+)
+plot1 <- FeatureScatter(seurat_obj, feature1 = "nCount_RNA",   feature2 = "percent.mt")
+plot2 <- FeatureScatter(seurat_obj, feature1 = "nCount_RNA",   feature2 = "nFeature_RNA")
+
+# Step 5: Filter cells
+seurat_obj <- subset(seurat_obj, 
+  subset = nFeature_RNA > nfeature.min & 
+           nFeature_RNA < nfeature.max & 
+           percent.mt   < percent.mt.max
+)
+
+# Step 6: Save output
+saveRDS(seurat_obj, file = paste0(output.name, ".rds"))
+```
+
+---
+
+## 4. 🔧 INSTALLATION & DEPENDENCY REQUIREMENTS
+
+### 4.1 Docker Container
+The module is containerized for GenePattern deployment:
+```
+Container: genepattern/docker-seurat
+Base: rocker/r-ver:4.0 (or similar R 4.0 base)
+```
+
+### 4.2 R Package Dependencies
+
+| Package | Version | Source | Purpose |
+|---------|---------|--------|---------|
+| `Seurat` | 4.0.3 | CRAN | Core single-cell analysis |
+| `SeuratObject` | 4.0.x | CRAN | Seurat data structure |
+| `loomR` | 0.2.1.9000 | GitHub (mojaveazure/loomR) | HCA Loom file I/O |
+| `SeuratDisk` | 0.0.0.9011 | GitHub (mojaveazure/seurat-disk) | HDF5-based format I/O |
+| `hdf5r` | ≥1.3.3 | CRAN | HDF5 file interface |
+| `ggplot2` | ≥3.3.0 | CRAN | Visualization |
+| `patchwork` | ≥1.1.0 | CRAN | Plot assembly |
+| `dplyr` | ≥1.0.0 | CRAN | Data manipulation |
+| `Matrix` | ≥1.3.0 | CRAN | Sparse matrix operations |
+| `R6` | ≥2.5.0 | CRAN | loomR dependency |
+| `iterators` | ≥1.0.13 | CRAN | loomR dependency |
+| `itertools` | ≥0.1-3 | CRAN | loomR dependency |
+
+### 4.3 System Requirements
+
+| Resource | Minimum | Recommended | Notes |
+|----------|---------|-------------|-------|
+| **RAM** | 8 GB | 16–32 GB | Large HCA loom files may require 32+ GB |
+| **CPU** | 2 cores | 4–8 cores | R is largely single-threaded for QC steps |
+| **Storage** | 10 GB | 50 GB | Uncompressed 10x matrices + RDS output |
+| **R version** | 4.0.0 | 4.0.x | HDF5 library compatibility critical |
+| **OS** | Linux | Linux | Docker containerization for portability |
+
+### 4.4 System Library Requirements
+```bash
+# Required system libraries (for Docker build)
+apt-get install -y libhdf5-dev libcurl4-openssl-dev libssl-dev libxml2-dev
+```
+
+### 4.5 Installation Reference
+```r
+# Install from CRAN
+install.packages(c("Seurat", "hdf5r", "ggplot2", "patchwork", "dplyr"))
+
+# Install from GitHub (HCA loom support)
+devtools::install_github("mojaveazure/loomR")
+devtools::install_github("mojaveazure/seurat-disk")
+```
+
+---
+
+## 5. 🔄 COMMON WORKFLOWS & USE CASES
+
+### 5.1 GenePattern Seurat Suite Pipeline
+
+```
+[INPUT DATA]
+10x .tar.gz / HCA .loom
+        │
+        ▼
+┌─────────────────────────────────────────────────────────┐
+│  STEP 1: Seurat.QC  ◄── (THIS MODULE)                  │
+│  • CreateSeuratObject                                    │
+│  • Compute percent.mt                                    │
+│  • Filter low-quality cells                              │
+│  • Generate QC violin/scatter plots                      │
+│  OUTPUT: filtered_seurat.rds                             │
+└─────────────────────────────────────────────────────────┘
+        │
+        ▼
+┌───────────────────────┐
+│  STEP 2:              │
+│  Seurat.Preprocessing │  ← NormalizeData, FindVariableFeatures,
+│                       │    ScaleData, RunPCA
+└───────────────────────┘
+        │
+        ├──────────────────────────────────┐
+        │ (Multi-sample: batch correction) │
+        ▼                                  ▼
+┌───────────────────┐        ┌───────────────────────┐
+│  STEP 3a:         │        │  STEP 3b:             │
+│  Seurat.Clustering│        │  Seurat.BatchCorrection│
+│                   │        │  + Seurat.IntegrateData│
+└───────────────────┘        └───────────────────────┘
+        │
+        ▼
+┌─────────────────┐
+│  STEP 4:        │
+│  Seurat.DE      │  ← FindMarkers, differential expression
+└─────────────────┘
+```
+
+### 5.2 Typical Use Cases
+
+#### Use Case 1: Standard PBMC Analysis (10x Genomics)
+```
+Input:  pbmc3k_filtered_gene_bc_matrices.tar.gz
+Config: min.cells=3, min.features=200, mito.pattern="^MT-"
+Filter: nFeature: 200-2500, percent.mt < 5%
+Output: pbmc_qc.rds (~2,638 cells retained from 2,700)
+```
+
+#### Use Case 2: HCA Large-Scale Atlas
+```
+Input:  immune_cells.loom (HCA Portal) via loom.url
+Config: input.type="loom", percent.mt.column="percent.mt"
+Filter: Dataset-specific thresholds; pre-computed MT from HCA
+Output: hca_immune_qc.rds (potentially 500K+ cells)
+```
+
+#### Use Case 3: Multi-Sample Batch Correction Setup
+```
+Input:  sample1.tar.gz, sample2.tar.gz (run Seurat.QC separately)
+Config: Consistent thresholds across samples
+Next:   Seurat.BatchCorrection for integration
+Output: Two .rds files → merged batch-corrected object
+```
+
+#### Use Case 4: Mouse Tissue (Brain/Neuroscience)
+```
+Input:  mouse_cortex_10x.tar.gz
+Config: mito.pattern="^mt-", percent.mt.max=10
+Filter: Higher MT threshold for neuronal populations
+Output: mouse_cortex_qc.rds
+```
+
+### 5.3 Iterative QC Strategy (Best Practice)
+The QC process should be **iterative**:
+1. Run Seurat.QC with permissive thresholds to visualize distributions
+2. Examine violin/scatter plots to identify natural breakpoints
+3. Re-run with refined thresholds
+4. Proceed to Seurat.Preprocessing only after QC is satisfactory
+
+---
+
+## 6. 🔗 INTEGRATION CONSIDERATIONS FOR GENEPATTERN
+
+### 6.1 Module Manifest Key Fields
+```xml
+<module>
+  <name>Seurat.QC</name>
+  <version>4</version>
+  <language>R</language>
+  <language.version>4.0</language.version>
+  <cpu.type>any</cpu.type>
+  <memory>16 Gb</memory>
+  <docker.image>genepattern/docker-seurat:latest</docker.image>
+  <description>Quality control for single cell RNA-seq analyses using Seurat v4.0.3</description>
+  <categories>Single Cell; RNA-seq; Quality Control</categories>
+</module>
+```
+
+### 6.2 Recommended Parameter Organization for GenePattern UI
+
+```
+Parameter Group 1: "Input Data"
+  ├── input.file     [FILE]    — Required
+  ├── input.type     [CHOICE]  — "10x" | "loom"
+  └── loom.url       [TEXT]    — Optional; enables HCA URL reading
+
+Parameter Group 2: "Seurat Object Creation"
+  ├── min.cells      [INTEGER] — Default: 3; Range: 1–100
+  ├── min.features   [INTEGER] — Default: 200; Range: 1–1000
+  └── project.name   [TEXT]    — Default: "SeuratProject"
+
+Parameter Group 3: "Mitochondrial QC"
+  ├── mito.pattern       [TEXT]    — Default: "^MT-"; Note: "^mt-" for mouse
+  └── percent.mt.column  [TEXT]    — Optional; used if column already in data
+
+Parameter Group 4: "Cell Filtering Thresholds"
+  ├── nfeature.min    [INTEGER] — Default: 200
+  ├── nfeature.max    [INTEGER] — Default: 2500
+  ├── ncount.min      [INTEGER] — Default: 0 (disabled)
+  └── percent.mt.max  [FLOAT]   — Default: 5.0; Range: 0–100
+
+Parameter Group 5: "Visualization"
+  ├── feature1        [TEXT]    — Default: "nFeature_RNA"
+  └── feature2        [TEXT]    — Default: "nCount_RNA"
+
+Parameter Group 6: "Output"
+  └── output.name     [TEXT]    — Default: "seurat_qc_output"
+```
+
+### 6.3 Critical Integration Notes
+
+| Issue | Details | Mitigation |
+|-------|---------|------------|
+| **loom.url bug (v4.0)** | Earlier versions had URL parsing failures for HCA loom | Fixed in v4.0; ensure v4.0+ is deployed |
+| **HCA Loom format change** | HCA updated their loom spec; old loomR code broke | v4.0 updates parsing logic for new HCA format |
+| **Large file memory** | HCA loom files can exceed 5GB; immune atlas is 782K cells | Set memory to ≥16GB; consider streaming |
+| **percent.mt column** | HCA loom datasets may already have percent.mt in metadata | `percent.mt.column` parameter allows reuse |
+| **Mouse vs Human MT** | Mitochondrial gene prefix differs by organism | Expose `mito.pattern` as user-editable field |
+| **RDS portability** | Output `.rds` files must match Seurat version in downstream modules | Pin Seurat version to 4.0.3 across suite |
+
+### 6.4 Output File Chaining
+The `.rds` output is the direct input to `Seurat.Preprocessing` — this is the critical **chain link** in the GenePattern Seurat Suite:
+```
+Seurat.QC output:  <job_output>/seurat_qc_output.rds
+                        ↓
+Seurat.Preprocessing input: [file from previous job]
+```
+
+---
+
+## 7. ⚖️ COMPARATIVE ANALYSIS
+
+### 7.1 Seurat.QC vs. Alternative QC Tools
+
+| Feature | **Seurat.QC (GenePattern)** | Scanpy (sc.pp.filter_cells) | Scater (perCellQCMetrics) | CellRanger |
+|---------|---------------------------|---------------------------|--------------------------|------------|
+| **Interface** | GUI (GenePattern web) | Python CLI/Jupyter | R/Bioconductor | CLI |
+| **Format output** | Seurat .rds | AnnData .h5ad | SingleCellExperiment | HDF5/MEX |
+| **HCA Loom support** | ✅ (v4.0) | ✅ | ✅ | ❌ |
+| **Adaptive thresholds** | ❌ Fixed only | ❌ | ✅ (MAD-based) | ✅ (knee-point) |
+| **Doublet detection** | ❌ | ❌ (separate tool) | ❌ | ❌ |
+| **Ambient RNA removal** | ❌ | ❌ (SoupX separate) | ❌ | ❌ |
+| **No-code access** | ✅ | ❌ | ❌ | Partial |
+| **Suite integration** | ✅ Seurat Suite | ✅ Scanpy ecosystem | Partial | Limited |
+| **Downstream modules** | 5 connected modules | scanpy.pp.* chain | SCE pipeline | LOUPE browser |
+
+### 7.2 Unique Strengths of Seurat.QC
+1. **Zero-code GUI access** via GenePattern platform — accessible to wet-lab biologists
+2. **Direct HCA Data Portal integration** via `loom.url` parameter
+3. **Tight coupling** to the full Seurat Suite (5 downstream modules)
+4. **Automated plot generation** without custom R scripting
+5. **Reproducible module versioning** via Docker containers on GenePattern
+
+### 7.3 Limitations vs. Alternatives
+1. **No adaptive thresholding** — Scater's MAD-based auto-detection is statistically superior
+2. **No doublet removal** — DoubletFinder or scDblFinder should be run separately
+3. **No ambient RNA correction** — SoupX/DecontX should be considered for droplet data
+4. **Fixed 10x + HCA formats only** — Cannot handle Smart-seq2, inDrops, Drop-seq natively
+5. **R memory constraints** — Very large atlas datasets (>1M cells) may be impractical
+
+---
+
+## 8. 📚 KEY LITERATURE & REFERENCES
+
+| Reference | Relevance |
+|-----------|-----------|
+| Hao et al. (2021). *Integrated analysis of multimodal single-cell data*. **Cell** 184:3573–3587 | Seurat v4 methodology paper — the version used by this module |
+| Stuart et al. (2019). *Comprehensive integration of single-cell data*. **Cell** 177:1888–1902 | Seurat v3 foundational integration paper |
+| Butler et al. (2018). *Integrating single-cell transcriptomic data across different conditions*. **Nature Biotechnology** 36:411–420 | Original Seurat alignment paper |
+| Satija et al. (2015). *Spatial reconstruction of single-cell gene expression*. **Nature Biotechnology** 33:495–502 | Original Seurat paper |
+| Luecken & Theis (2019). *Current best practices in single-cell RNA-seq analysis*. **Molecular Systems Biology** 15:e8746 | QC best practices and thresholds |
+| HCA Data Portal (humancellatlas.org) | Source for Loom-format reference datasets |
+
+---
+
+## 9. ✅ GenePattern Module Development Checklist
+
+Based on this research, the following are confirmed requirements and recommendations for completing the GenePattern module:
+
+### Confirmed Requirements
+- [x] **Docker image**: R 4.0.x with Seurat 4.0.3, loomR, SeuratDisk, hdf5r
+- [x] **Input formats**: `.tar.gz`, `.zip` (10x MEX), `.loom` (HCA)
+- [x] **New parameter in v4.0**: `loom.url` (URL-based HCA loom reading)
+- [x] **Output**: `.rds` Seurat object + QC plots (PDF/PNG) + summary text
+- [x] **Parameter groups**: 6 logical groups (Input, Object Creation, Mitochondrial, Filtering, Visualization, Output)
+
+### Recommended Additions for Robustness
+- [ ] **Organism selector** (human/mouse/other) to auto-set `mito.pattern`
+- [ ] **Pre-filtering summary** — print cell/gene count before filtering
+- [ ] **Post-filtering summary** — print retained cell/gene count with percentages
+- [ ] **Input validation**: Check archive integrity before processing
+- [ ] **Memory profiling**: Estimate memory requirements from input file size
+- [ ] **Error messages**: Specific guidance if loom URL is inaccessible or file is corrupt
+- [ ] **README warning**: Note that doublet removal and ambient RNA correction are NOT included and may need supplemental tools
+
+---
+
+*Report compiled from: GitHub repository (genepattern/Seurat.QC), official Seurat documentation (satijalab.org), GenePattern Seurat Suite documentation, HBC Training materials, Broad Institute scRNA-seq resources, NIH/NCI Bioinformatics Training Program, and peer-reviewed literature. All parameter defaults and biological thresholds cross-validated against community best practices.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,318 @@
+{
+  "module_name": "ProteomicsAnalysis",
+  "description": "Runs the proteomics analysis on the set of input spectra",
+  "author": "D.R. Mani, Broad Institute",
+  "input_file_formats": [
+    "zip"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:68912:1",
+  "plan": "## ProteomicsAnalysis GenePattern Module — Implementation Plan\n\n### 1. Overview\nProteomicsAnalysis is a GenePattern module that Runs the proteomics analysis on the set of input spectra\n\n### 2. Parameters\nThe module exposes 19 parameters:\n- Required: zip.filename, output.file, fill.na, normalize, peak.detection.method, filter.peaks, low.Da, high.Da, percentile, smoothing.size, adaptive.background.correction.strength, adaptive.background.correction.size, high.pass.filter.strength, high.pass.filter.factor\n- Optional: quality.threshold, filter.peaks.factor, peak.list.filename, random.seed, random.n.peaks\n\n### 3. Command Line\n```\n<R2.5> <libdir>pipeline.wrapper.R pipeline.wrapper <zip.filename> <output.file> <libdir> -_3<quality.threshold> -_40.00125 -_5<fill.na> -_6<normalize> -_7<peak.detection.method> -_8<filter.peaks> -_9<filter.peaks.factor> -10<peak.list.filename> -11<random.seed> -12<random.n.peaks> -13<low.Da> -14<high.Da> -15<percentile> -16<smoothing.size> -17<adaptive.background.correction.strength> -18<adaptive.background.correction.size> -19<high.pass.filter.strength> -20<high.pass.filter.factor>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "pipeline.wrapper.R",
+  "command_line": "<R2.5> <libdir>pipeline.wrapper.R pipeline.wrapper <zip.filename> <output.file> <libdir> -_3<quality.threshold> -_40.00125 -_5<fill.na> -_6<normalize> -_7<peak.detection.method> -_8<filter.peaks> -_9<filter.peaks.factor> -10<peak.list.filename> -11<random.seed> -12<random.n.peaks> -13<low.Da> -14<high.Da> -15<percentile> -16<smoothing.size> -17<adaptive.background.correction.strength> -18<adaptive.background.correction.size> -19<high.pass.filter.strength> -20<high.pass.filter.factor>",
+  "parameters": [
+    {
+      "name": "zip.filename",
+      "description": "Zip file containing spectra data. Spectra data are stored as M/Z,Intensity",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--zip.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "The base name for output files",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<zip.filename_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "quality.threshold",
+      "description": "discard spectra with quality < quality threshold",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.45",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--quality.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "fill.na",
+      "description": "whether to fill missing peaks",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--fill.na",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "normalize",
+      "description": "normalization strategy",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "tan",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "tan",
+          "value": "tan"
+        },
+        {
+          "display": "tin",
+          "value": "tin"
+        },
+        {
+          "display": "01",
+          "value": "01"
+        },
+        {
+          "display": "none",
+          "value": "none"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--normalize",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "peak.detection.method",
+      "description": "peak detection method",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "detect",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "detect",
+          "value": "detect"
+        },
+        {
+          "display": "input",
+          "value": "input"
+        },
+        {
+          "display": "random",
+          "value": "random"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--peak.detection.method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "filter.peaks",
+      "description": "filter peaks based on peak intensity / noise",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--filter.peaks",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "filter.peaks.factor",
+      "description": "retains peaks if peak intensity >\\= filter.peaks.factor * stdev(noise)",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--filter.peaks.factor",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "peak.list.filename",
+      "description": "file containing one M/Z per line when peaks\\=input",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--peak.list.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "random.seed",
+      "description": "random seed when peaks\\=random",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--random.seed",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "random.n.peaks",
+      "description": "number of random M/Z's selected when peaks\\=random",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--random.n.peaks",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "low.Da",
+      "description": "Minimum M/Z to include",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--low.Da",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "high.Da",
+      "description": "Maximum M/Z to include",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--high.Da",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "percentile",
+      "description": "After applying filters, threshold above which peaks are located",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.65",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--percentile",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "smoothing.size",
+      "description": "Size of the smoothing filter",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "21",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--smoothing.size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "adaptive.background.correction.strength",
+      "description": "Strength of the adaptive background correction filter",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.75",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--adaptive.background.correction.strength",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "adaptive.background.correction.size",
+      "description": "Size of the adaptive background correction filter",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "21",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--adaptive.background.correction.size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "high.pass.filter.strength",
+      "description": "Strength of the high pass filter",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--high.pass.filter.strength",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "high.pass.filter.factor",
+      "description": "Filter factor for the high pass filter",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--high.pass.filter.factor",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

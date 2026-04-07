@@ -1,0 +1,100 @@
+Create a comprehensive structured plan for the GenePattern module for 'Picard.SamToFastq'.
+            
+            Tool Information:
+            - Name: Picard.SamToFastq
+            - Version: Fixed issue with choice parameters not appearing as drop downs
+            - Language: Java
+            - Description: Convert SAM or BAM files to FASTQ format
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "Picard.SamToFastq",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "The SAM or BAM file",
+      "required": true,
+      "default_value": "",
+      "file_format": "bam;sam"
+    },
+    {
+      "name": "per.read.group",
+      "type": "TEXT",
+      "description": "Whether to output a fastq file per read group",
+      "required": true,
+      "default_value": "no",
+      "choices": "yes;no"
+    },
+    {
+      "name": "re-reverse.bases",
+      "type": "java.lang.String",
+      "description": "Whether to re-reverse bases and qualities of reads with negative strand flag set",
+      "required": true,
+      "default_value": "no",
+      "choices": "yes;no"
+    },
+    {
+      "name": "include.non.pf.reads",
+      "type": "java.lang.String",
+      "description": "Whether to include non-PF reads",
+      "required": true,
+      "default_value": "no",
+      "choices": "yes;no"
+    },
+    {
+      "name": "clipping.attribute",
+      "type": "java.lang.String",
+      "description": "Attribute that stores the position at which the SAM record should be clipped",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "clipping.action",
+      "type": "java.lang.String",
+      "description": "Action to take with clipped reads when a clipping attribute is specified",
+      "required": false,
+      "default_value": "none",
+      "choices": "none\\=;X\\=trim reads and qualities;N\\=change bases to Ns;change\\=change base quality values"
+    },
+    {
+      "name": "clipping.action.quality.value",
+      "type": "java.lang.String",
+      "description": "Value to set base qualities to when clipping action is \"change base quality values\"",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "fastq.output.prefix.1",
+      "type": "TEXT",
+      "description": "The fastq output file name for single-end fastq or first end of a paired fastq. Only specify when \"per read group\" is \"no\".",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "fastq.output.prefix.2",
+      "type": "java.lang.String",
+      "description": "The second end of a paired fastq. Only specify when \"per read group\" is \"no\".",
+      "required": false,
+      "default_value": ""
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Data Format Conversion",
+  "author": "GenePattern",
+  "command_line": "<java> <java_flags> -cp <libdir>jargs.jar<path.separator><libdir>SamToFastq.jar<path.separator><libdir>gp-samToFastq.jar org.genepattern.sam.SamToFastqWrapper -i<input.file> -g<per.read.group> -r<re-reverse.bases> -p<include.non.pf.reads> -c<clipping.attribute> -a<clipping.action> -q<clipping.action.quality.value> -o<fastq.output.prefix.1> -f<fastq.output.prefix.2>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

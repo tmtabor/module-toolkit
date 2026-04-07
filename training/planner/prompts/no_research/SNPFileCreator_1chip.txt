@@ -1,0 +1,117 @@
+Create a comprehensive structured plan for the GenePattern module for 'SNPFileCreator_1chip'.
+            
+            Tool Information:
+            - Name: SNPFileCreator_1chip
+            - Version: latest
+            - Language: Java
+            - Description: Processes Affymetrix SNP probe-level data into expression values
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "SNPFileCreator_1chip",
+  "parameters": [
+    {
+      "name": "network.directory.name",
+      "type": "java.lang.String",
+      "description": "Networked directory name where the CEL (and optionally TXT) files reside.",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "zip.file",
+      "type": "FILE",
+      "description": "A zip file containing CEL (and optionally TXT) files.",
+      "required": false,
+      "default_value": "",
+      "file_format": "zip"
+    },
+    {
+      "name": "chip.type",
+      "type": "java.lang.String",
+      "description": "Specify the chip type.",
+      "required": true,
+      "default_value": "GenomeWideSNP_6.cdf",
+      "choices": "GenomeWideSNP_5.cdf;GenomeWideSNP_6.cdf"
+    },
+    {
+      "name": "normalization.method",
+      "type": "java.lang.String",
+      "description": "The normalization method to apply.",
+      "required": true,
+      "default_value": "2",
+      "choices": "0\\=None;1\\=Quantile Normalization(dChip);2\\=Invariant Set Normalization(dChip);3\\=Divide by median, multiply by 1000"
+    },
+    {
+      "name": "reference.method",
+      "type": "java.lang.String",
+      "description": "Reference method to use in normalization",
+      "required": true,
+      "default_value": "median",
+      "choices": "median\\=Median;reference\\=Reference Supplied"
+    },
+    {
+      "name": "reference.file",
+      "type": "FILE",
+      "description": "Reference file to use. Leave blank if reference method is median.",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "model.method",
+      "type": "java.lang.String",
+      "description": "The summarization method to apply.",
+      "required": true,
+      "default_value": "5",
+      "choices": "1\\=Average Difference;3\\=Median Probe;4\\=Trimmed Mean;5\\=Median Polish"
+    },
+    {
+      "name": "allele.specific",
+      "type": "java.lang.String",
+      "description": "Create Allele Specific probe intensities",
+      "required": true,
+      "default_value": "yes",
+      "choices": "yes\\=Allele-Specific;no\\=Non Allele-Specific"
+    },
+    {
+      "name": "sort.snp.file",
+      "type": "java.lang.String",
+      "description": "Sorts output file by chromosome and location. Filters out probesets without location information",
+      "required": true,
+      "default_value": "yes",
+      "choices": "yes\\=Sort;no\\=Do no sort"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "The name of the output file.",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "output.file.format",
+      "type": "java.lang.String",
+      "description": "Output file format",
+      "required": true,
+      "default_value": "mpg",
+      "choices": "cg\\=Cancer Genome Format;mpg\\=Med Pop Format"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "SNP Analysis",
+  "author": "David Twomey",
+  "command_line": "<java> <java_flags> -cp <libdir>snp.jar<path.separator><libdir>commons-math-1.1.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>log4j-1.2.13.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.cg.modules.PreProcess.PreProcess -lib<libdir> -cdf<chip.type> -dir<network.directory.name> -zip<zip.file> -rmt<reference.method> -ref<reference.file> -out<output.file> -mmt<model.method> -oclno -olcyes -txtno -nmt<normalization.method> -gifgenome.info.6.0_build35 -srt<sort.snp.file> -als<allele.specific> -fmt<output.file.format> -log<libdir>log4j.properties"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

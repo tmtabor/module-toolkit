@@ -1,0 +1,133 @@
+{
+  "module_name": "PCAViewer",
+  "description": "Principal Component Analysis Visualizer (adapted from MeV, http\\://www.tigr.org/software/tm4/mev.html)",
+  "author": "TIGR, http://www.tigr.org/software/tm4/mev.html, mev@tigr.org",
+  "input_file_formats": [
+    "Matrix",
+    "cls",
+    "gct",
+    "gmt",
+    "gmx",
+    "grp",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:27796:1",
+  "plan": "## PCAViewer GenePattern Module — Implementation Plan\n\n### 1. Overview\nPCAViewer is a GenePattern module that Principal Component Analysis Visualizer (adapted from MeV, http\\://www.tigr.org/software/tm4/mev.html)\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: dataset.file, s.matrix.file, t.matrix.file, u.matrix.file\n- Optional: cls.or.sample.info.file, sample.info.class, featureset.file\n\n### 3. Command Line\n```\n<java> <java_flags> -jar <libdir>pcaviewer.jar <dataset.file> <s.matrix.file> <t.matrix.file> <u.matrix.file> -c<cls.or.sample.info.file> -k<sample.info.class> -f<featureset.file>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "pcaviewer.jar",
+  "command_line": "<java> <java_flags> -jar <libdir>pcaviewer.jar <dataset.file> <s.matrix.file> <t.matrix.file> <u.matrix.file> -c<cls.or.sample.info.file> -k<sample.info.class> -f<featureset.file>",
+  "parameters": [
+    {
+      "name": "dataset.file",
+      "description": "The dataset - .res, .gct",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "res",
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dataset.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "s.matrix.file",
+      "description": "The s matrix - .odf",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "Matrix"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--s.matrix.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "t.matrix.file",
+      "description": "The t matrix - .odf",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "Matrix"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--t.matrix.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "u.matrix.file",
+      "description": "The u matrix - .odf",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "Matrix"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--u.matrix.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cls.or.sample.info.file",
+      "description": "A cls or sample info file - .cls, .txt",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cls.or.sample.info.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.info.class",
+      "description": "The name of the class column to use in the sample info file (required if sample info file provided)",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sample.info.class",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "featureset.file",
+      "description": "The feature set file - .gmt, .gmx, .grp",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gmt",
+        "gmx",
+        "grp"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--featureset.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

@@ -1,0 +1,194 @@
+{
+  "module_name": "SNPFileCreator_SNP6",
+  "description": "Performs normalization and probe-level summarization to generate a SNP file for a set of Affymetrix SNP chip CEL files.",
+  "author": "David Twomey, Joshua Gould, Marc-Danie Nazaire",
+  "input_file_formats": [
+    "cdf",
+    "gz",
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "Variant Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:82506:1",
+  "plan": "## SNPFileCreator_SNP6 GenePattern Module — Implementation Plan\n\n### 1. Overview\nSNPFileCreator_SNP6 is a GenePattern module that Performs normalization and probe-level summarization to generate a SNP file for a set of Affymetrix SNP chip CEL files.\n\n### 2. Parameters\nThe module exposes 9 parameters:\n- Required: cel.files, normalization.method, summarization.method, sort.by.chromosome.and.location, include.RandomGC.probesets, use.mismatch.probes, output.prefix\n- Optional: genome.annotation.file, cdf.file\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>snp.jar<path.separator><libdir>opencsv-1.7.jar<path.separator><libdir>ant.jar<path.separator><libdir>commons-math-1.2.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>log4j.jar<path.separator><libdir>AffxFusion.jar<path.separator><libdir>gp-modules.jar org.genepattern.snp.SNPFileCreator -lib<libdir> -cdf<cdf.file> -dir<cel.files> -out<output.prefix> -mmt<summarization.method> -nmt<normalization.method> -srt<sort.by.chromosome.and.location> -gif<genome.annotation.file> -alsyes -oclyes -txtyes -log<libdir>log4j.properties -mmp<use.mismatch.probes> -rgc<include.RandomGC.probesets> -fmtsnp\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "snp.jar<path.separator><libdir>opencsv-1.7.jar<path.separator><libdir>ant.jar<path.separator><libdir>commons-math-1.2.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>log4j.jar<path.separator><libdir>AffxFusion.jar<path.separator><libdir>gp-modules.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>snp.jar<path.separator><libdir>opencsv-1.7.jar<path.separator><libdir>ant.jar<path.separator><libdir>commons-math-1.2.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>log4j.jar<path.separator><libdir>AffxFusion.jar<path.separator><libdir>gp-modules.jar org.genepattern.snp.SNPFileCreator -lib<libdir> -cdf<cdf.file> -dir<cel.files> -out<output.prefix> -mmt<summarization.method> -nmt<normalization.method> -srt<sort.by.chromosome.and.location> -gif<genome.annotation.file> -alsyes -oclyes -txtyes -log<libdir>log4j.properties -mmp<use.mismatch.probes> -rgc<include.RandomGC.probesets> -fmtsnp",
+  "parameters": [
+    {
+      "name": "cel.files",
+      "description": "One or more individual 6.0 CEL files or a directory containing 6.0 CEL files",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cel.files",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "genome.annotation.file",
+      "description": "Genome annotation file.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--genome.annotation.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "normalization.method",
+      "description": "The normalization method to apply.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "None",
+          "value": "0"
+        },
+        {
+          "display": "Quantile Normalization(dChip)",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--normalization.method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "summarization.method",
+      "description": "The summarization method to apply for SNP probes.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Average Difference",
+          "value": "1"
+        },
+        {
+          "display": "PM/MM Difference Model (dChip)",
+          "value": "2"
+        },
+        {
+          "display": "Median Polish",
+          "value": "5"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--summarization.method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sort.by.chromosome.and.location",
+      "description": "Whether to sort output file by chromosome and location. Filters out probesets without location information.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Sort",
+          "value": "yes"
+        },
+        {
+          "display": "Do no sort",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--sort.by.chromosome.and.location",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "include.RandomGC.probesets",
+      "description": "Whether to include RandomGC probesets in output",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--include.RandomGC.probesets",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cdf.file",
+      "description": "Custom CDF file.(.cdf, .cdf.gz) Leave blank to use default internally provided CDF file.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cdf",
+        "gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cdf.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "use.mismatch.probes",
+      "description": "Whether to use any mismatch probes in summarization step.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--use.mismatch.probes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "The base name for the output files",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<cel.files_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

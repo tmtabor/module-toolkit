@@ -1,0 +1,307 @@
+{
+  "module_name": "tfsites.FindTfSitesAlteredBySequenceVariation",
+  "description": "FindTfSitesAlteredBySequenceVariation reports the effects of all possible in silico single-nucleotide variants (SNVs) in a given sequence, for one transcription factor. Possible SNV effects include increasing (or optimizing) the affinity/score of a binding site, decreasing the affinity/score of a binding site, deleting a binding site, or creating a binding site.",
+  "author": "Joe Solvasson, modified into a GenePattern module as Ted Liefeld",
+  "input_file_formats": [
+    "tsv",
+    "txt"
+  ],
+  "language": "Python",
+  "categories": [
+    "Variant Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:81996:1",
+  "plan": "## tfsites.FindTfSitesAlteredBySequenceVariation GenePattern Module — Implementation Plan\n\n### 1. Overview\ntfsites.FindTfSitesAlteredBySequenceVariation is a GenePattern module that FindTfSitesAlteredBySequenceVariation reports the effects of all possible in silico single-nucleotide variants (SNVs) in a given sequence, for one transcription factor. Possible SNV effects include increasing (or optimizing) the affinity/score of a binding site, decreasing the affinity/score of a binding site, deleting a binding site, or creating a binding site.\n\n### 2. Parameters\nThe module exposes 19 parameters:\n- Required: DNA.sequences.to.annotate, TF.name, output.filename, PWM.minimum.score, output.image.as.svg, affinity.optimization.threshold, affinity.reduction.threshold, plot.resolution\n- Optional: core.binding.site.definition, affinity.reference.data, PWM.data, SNV.effect.type.to.report, zoom.range, motif.input.file, motif.input.format, motif.filter.keywords, motif.use.pseudocounts, motif.background.frequencies, motif.output.name\n\n### 3. Command Line\n```\npython /build/tfsites-webportal/04-findTfSitesAlteredBySequenceVariation/04-combined-generateMotifDatabase-and-findTfSitesAlteredBySequenceVariation.py  -d <DNA.sequences.to.annotate> <affinity.reference.data>  <PWM.data>  <PWM.minimum.score>    <SNV.effect.type.to.report> <affinity.optimization.threshold> <affinity.reduction.threshold> <output.image.as.svg> <zoom.range> <plot.resolution> -n <TF.name> <core.binding.site.definition>  --output_name  <output.filename> <motif.input.file> <motif.input.format> <motif.use.pseudocounts> <motif.filter.keywords> <motif.use.pseudocounts> <motif.background.frequencies> <motif.output.name>\n```\n\n### 4. Docker Image\nDocker image: genepattern/tfsites\\:17.0.16\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "04-combined-generateMotifDatabase-and-findTfSitesAlteredBySequenceVariation.py",
+  "command_line": "python /build/tfsites-webportal/04-findTfSitesAlteredBySequenceVariation/04-combined-generateMotifDatabase-and-findTfSitesAlteredBySequenceVariation.py  -d <DNA.sequences.to.annotate> <affinity.reference.data>  <PWM.data>  <PWM.minimum.score>    <SNV.effect.type.to.report> <affinity.optimization.threshold> <affinity.reduction.threshold> <output.image.as.svg> <zoom.range> <plot.resolution> -n <TF.name> <core.binding.site.definition>  --output_name  <output.filename> <motif.input.file> <motif.input.format> <motif.use.pseudocounts> <motif.filter.keywords> <motif.use.pseudocounts> <motif.background.frequencies> <motif.output.name>",
+  "parameters": [
+    {
+      "name": "DNA.sequences.to.annotate",
+      "description": "File containing one or more DNA sequences to be annotated.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--DNA.sequences.to.annotate",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "TF.name",
+      "description": "Name of the transcription factor to use for SNV analysis.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--TF.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "Output filename prefix.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "output",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "core.binding.site.definition",
+      "description": "IUPAC definition of core TF binding site (see <a href\\=\"https\\://www.bioinformatics.org/sms/iupac.html\">here</a>). Only optional if using PWM data but required if using affinity data.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-D",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "affinity.reference.data",
+      "description": "PBM affinity dataset used to assign a value to each binding site.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-r",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "PWM.data",
+      "description": "PWM dataset used to assign a value to each binding site.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-p",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "PWM.minimum.score",
+      "description": "PWM score required to predict a binding site.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.7",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-s",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.image.as.svg",
+      "description": "Option to output images as .svg in addition to .png. For manuscript preparation, .svg format is preferable.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-S",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "SNV.effect.type.to.report",
+      "description": "Specify one or more mutation types to analyze. SNV mutations can either increase (optimize) or decrease (sub-optimize) the affinity/score, delete a binding site, or create a binding site. Therefore, the possible mutation types are 'inc', 'dec', 'denovo', and 'del.' This option also takes the value 'all' if the user would like to analyze all of the listed mutation types.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "all",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-e",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "affinity.optimization.threshold",
+      "description": "Fold change threshold for mutations that increase the affinity/score. Only SNVs with fold change above this threshold will be reported. By default, all SNVs will be reported.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "1.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-o",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "affinity.reduction.threshold",
+      "description": "Fold change threshold for mutations that decrease the affinity/score. Only SNVs with fold change below this threshold will be reported. By default, all SNVs will be reported.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.9",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-b",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "plot.resolution",
+      "description": "Resolution of the plot, in dots (pixels) per inch.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "200",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-R",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "zoom.range",
+      "description": "Given a start position and an end position, zoom into a portion of the sequence. The numbers in the range are inclusive and 0-indexed. For example, the first 200 nucleotides of the sequence would be specified as\\: 0-199.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-z",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.input.file",
+      "description": "File containing matrix data for motif database generation (JASPAR format). If provided, motif database will be generated first.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_input_file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.input.format",
+      "description": "Specify whether input file contains PFMs or PWMs. Required if motif input file is provided.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "pfm",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "PFM",
+          "value": "pfm"
+        },
+        {
+          "display": "PWM",
+          "value": "pwm"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--motif_input_format",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.filter.keywords",
+      "description": "File containing keywords to filter motifs during database generation.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_filter_keywords",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.use.pseudocounts",
+      "description": "Whether to use pseudocounts when generating motif database.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--motif_use_pseudocounts",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.background.frequencies",
+      "description": "Background frequency for each nucleotide (comma-separated string in order of ATCG).",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.25,0.25,0.25,0.25",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_background_frequencies",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.output.name",
+      "description": "Name of motif database output file. If not specified, temporary file will be created.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "generated_motif_database.txt",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_output_name",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/tfsites:17.0.16"
+}

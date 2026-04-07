@@ -1,0 +1,46 @@
+Create a comprehensive structured plan for the GenePattern module for 'UploadFile'.
+            
+            Tool Information:
+            - Name: UploadFile
+            - Version: latest
+            - Language: Java
+            - Description: A utility for users to upload and share a common input file for use by modules within a pipeline.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "UploadFile",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "Please specify the file you wish to upload.",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "output.filename",
+      "type": "java.lang.String",
+      "description": "Please specify the new filename if required.",
+      "required": true,
+      "default_value": "<input.file_file>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Adrian Png, BC Cancer Research Centre",
+  "command_line": "<java> -cp <libdir>uploadfile.jar net.sf.flowcyt.gp.module.StageFiles -in <input.file> -out <output.filename>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

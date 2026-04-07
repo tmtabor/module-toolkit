@@ -1,0 +1,415 @@
+Create a comprehensive structured plan for the GenePattern module for 'CellFie'.
+            
+            Tool Information:
+            - Name: CellFie
+            - Version: update to reaction models
+            - Language: any
+            - Description: CellFie: Cellular Functions InferencE - An alternative approach to capture the breadth of cellular functions by performing a functional analysis of existing biological networks. Please refer to the documentation for details about the procedure.
+            
+            Research Results:
+            Now let me compile everything into the comprehensive final report:
+
+---
+
+# 🧬 Comprehensive Research Report: CellFie (Cellular Functions InferencE)
+
+---
+
+## 1. TOOL PURPOSE AND SCIENTIFIC BACKGROUND
+
+### Overview
+**CellFie** (Cellular Functions InferencE) is a computational framework developed by the **Lewis Lab at UC San Diego (LewisLabUCSD)** for quantifying the metabolic functions of cells from omics data. It bridges the gap between raw gene/protein expression data and interpretable biological function by leveraging **genome-scale metabolic models (GEMs)** to score the activity of hundreds of pre-defined **metabolic tasks** — functional units representing a cell's capacity to carry out specific biochemical conversions.
+
+> **Core Question Answered**: *"What is this cell doing metabolically, and at what level of activity?"*
+
+### Scientific Motivation
+Traditional pathway enrichment tools (e.g., GSEA, hypergeometric tests) detect statistical overrepresentation of genes in gene sets but do not capture mechanistic dependencies between genes and metabolic reactions. CellFie's key innovation is that it uses **Gene-Protein-Reaction (GPR) logic** embedded in genome-scale metabolic models to propagate gene expression scores through enzymatic reactions and into measurable metabolic task scores, providing **mechanistic, model-based functional inference**.
+
+### Primary Publication
+> **Richelle A, Kellman BP, Wenzel AT, Chiang AWT, et al.** "Model-based assessment of mammalian cell metabolic functionalities using omics data." *Cell Reports Methods*, 1(3):100040, **July 26, 2021**. DOI: [10.1016/j.crmeth.2021.100040](https://doi.org/10.1016/j.crmeth.2021.100040)
+
+---
+
+## 2. ALGORITHM AND COMPUTATIONAL METHODOLOGY
+
+### Step-by-Step Scoring Pipeline
+
+```
+Omics Data (Gene Expression)
+         │
+         ▼
+  ┌─────────────────────┐
+  │  1. GENE SCORING    │   GAL = 5 × log(1 + expression / threshold)
+  │  (Gene Activity     │   → Generates continuous per-gene activity score
+  │   Level, GAL)       │
+  └─────────┬───────────┘
+            │
+            ▼
+  ┌─────────────────────┐
+  │  2. REACTION        │   GPR Logic:
+  │  ACTIVITY SCORE     │   • AND (isoenzyme subunits) → MIN of gene scores
+  │  (RAS)              │   • OR (isozymes/alternatives) → SUM of gene scores
+  └─────────┬───────────┘
+            │
+            ▼
+  ┌─────────────────────┐
+  │  3. TASK SCORE      │   Aggregated from all reactions required by the task
+  │  (Continuous +      │   • Continuous: activity magnitude
+  │   Binary)           │   • Binary: 1 if task active, 0 if not
+  └─────────────────────┘
+```
+
+### Threshold Definition Methods
+CellFie provides multiple threshold strategies to determine if a gene is "expressed":
+
+| Method | Parameter Value | Description |
+|--------|----------------|-------------|
+| **Local - minmaxmean** | `ThreshType='local'`, `LocalThresholdType='minmaxmean'` | Lower/upper bounds set per-gene using distribution (recommended) |
+| **Local - mean** | `ThreshType='local'`, `LocalThresholdType='mean'` | Mean expression across samples used as local threshold |
+| **Local - custom** | `ThreshType='local'`, `LocalThresholdType='custom'` | User-defined custom value per gene |
+| **Global - value** | `ThreshType='global'`, `percentile_or_value='value'` | Single absolute expression cutoff across all genes |
+| **Global - percentile** | `ThreshType='global'`, `percentile_or_value='percentile'` | Threshold set as percentile of entire expression distribution |
+
+> ⭐ **Best Performing Configuration** (from benchmarking): `Local T2 + GM1 + Order 2` — local thresholding using the 25th percentile as lower bound and 75th percentile as upper bound across all genes and samples.
+
+---
+
+## 3. INPUT/OUTPUT FORMATS AND REQUIREMENTS
+
+### Input Specifications
+
+| Input | Format | Description | Requirements |
+|-------|--------|-------------|--------------|
+| **Gene Expression Matrix** | Tab-delimited / GCT / .mat | Genes (rows) × Samples (columns) | Genes must be in **Entrez ID** format |
+| **Reference Metabolic Model** | MATLAB `.mat` file | Genome-scale metabolic model with GPR rules | Must match organism of study |
+| **Threshold Parameters** | Command-line/config | ThreshType, bounds, method | See parameter table below |
+
+#### Supported Omics Data Types
+- ✅ **Microarray** (e.g., Affymetrix, Agilent)
+- ✅ **Bulk RNA-seq** (raw counts, TPM, RPKM, FPKM)
+- ✅ **Single-cell RNA-seq** (small datasets; use **scCellFie** for large atlas-scale data)
+- ✅ **Proteomics / Mass spectrometry** abundance data
+- ⚠️ Data units are flexible but must be **consistent across samples**; log-transformation may be appropriate
+
+#### Supported Reference Genome-Scale Models
+
+| Model | Organism | Description |
+|-------|----------|-------------|
+| **Recon2.2** (`MT_recon_2_2_entrez.mat`) | Human | Classic human metabolic model; most validated with CellFie |
+| **iHsa** | Human | Human-specific model with expanded GPR annotations |
+| **Human1 / Human-GEM** | Human | Latest comprehensive human GEM from Chalmers; includes updated reactions |
+| **Recon3D** | Human | 3D structural metabolic model |
+| Custom models | Any | Any COBRA-compatible GEM can be used |
+
+> 🔄 **Version Note**: The current CellFie version includes an **update to reaction models**, reflecting integration with newer GEMs such as Human-GEM / Human1, providing more complete and curated GPR associations than Recon2.
+
+### Output Files
+
+| Output Variable | File/Format | Description |
+|-----------------|-------------|-------------|
+| `score` / **taskScore** | Matrix (tasks × samples), TSV/CSV | **Continuous** metabolic task activity scores per sample |
+| `score_binary` | Matrix (tasks × samples), TSV/CSV | **Binary** task activity (1 = active, 0 = inactive) per sample |
+| `taskInfos` | Table/TSV | Task metadata: names, subsystem, description, source model |
+| `detailScoring` | Multi-column table | Reaction-level activity scores; **Column 6** = reaction scores for Escher map visualization |
+
+#### The 7 Metabolic Systems and 195 Tasks
+```
+CellFie Metabolic Coverage:
+├── 1. Energy Metabolism          (ATP production, oxidative phosphorylation, etc.)
+├── 2. Nucleotide Metabolism      (purine/pyrimidine synthesis, salvage pathways)
+├── 3. Carbohydrate Metabolism    (glycolysis, TCA cycle, gluconeogenesis, etc.)
+├── 4. Amino Acid Metabolism      (synthesis/degradation of all 20 amino acids)
+├── 5. Lipid Metabolism           (fatty acid synthesis/oxidation, phospholipids, etc.)
+├── 6. Vitamin & Cofactor Metabolism (folate, B vitamins, CoA, etc.)
+└── 7. Glycan Metabolism          (N-/O-glycosylation pathways, etc.)
+    TOTAL: 195 curated tasks
+```
+
+---
+
+## 4. PARAMETER ANALYSIS
+
+### Complete Parameter Reference
+
+| Parameter | Type | Default | Range/Options | Biological Significance |
+|-----------|------|---------|---------------|------------------------|
+| `ThreshType` | String | `'local'` | `'local'` or `'global'` | Local adapts per-gene; global applies single cutoff. Local is recommended for heterogeneous datasets |
+| `LocalThresholdType` | String | `'minmaxmean'` | `'minmaxmean'`, `'mean'`, `'custom'` | Controls how local per-gene threshold is computed |
+| `percentile_or_value` | String | `'value'` | `'value'` or `'percentile'` | Whether cutoff is absolute expression value or percentile of distribution |
+| `value_low` | Numeric | `25` | 0–1000 (value) or 0–1 (percentile) | **Lower threshold bound** — genes below this are inactive. Default=25th percentile |
+| `value_high` | Numeric | `75` | 0–1000 (value) or 0–1 (percentile) | **Upper threshold bound** — genes above this are fully active. Default=75th percentile |
+| `SampleNumber` | Integer | (required) | ≥1 | Number of columns (samples) in the expression matrix |
+| `ref` | String/Path | (required) | File path to `.mat` | Path to reference genome-scale metabolic model |
+
+### Parameter Dependencies and Logic
+
+```
+if ThreshType == 'global':
+    → use percentile_or_value + value_low only (single threshold)
+    → LocalThresholdType is IGNORED
+
+if ThreshType == 'local':
+    → LocalThresholdType determines per-gene method
+    → if LocalThresholdType == 'minmaxmean':
+        → use BOTH value_low AND value_high (lower/upper bounds)
+    → if LocalThresholdType == 'mean':
+        → use value_low as fraction of mean expression
+    → if LocalThresholdType == 'custom':
+        → user provides custom threshold vector
+```
+
+---
+
+## 5. INSTALLATION AND DEPENDENCIES
+
+### Core Dependencies
+
+```
+CellFie Core (MATLAB Implementation):
+├── MATLAB R2018b+ (required)
+│   └── Bioinformatics Toolbox (recommended)
+├── COBRA Toolbox v3.0+
+│   ├── openCOBRA (https://opencobra.github.io/)
+│   ├── Linear Programming solver (Gurobi, GLPK, or IBM CPLEX)
+│   └── Genome-scale metabolic models (.mat format)
+└── Escher v1.7.3 (optional, for visualization)
+```
+
+### GenePattern Module Deployment
+
+```dockerfile
+# Docker Image (already containerized for GenePattern)
+Docker Image: genepatterndev/cellfie:v0.7.0
+
+# GenePattern Module Repository
+https://github.com/genepattern/CellFie
+```
+
+### Ecosystem Variants and Installation Paths
+
+| Variant | Language | Install | Best For |
+|---------|----------|---------|----------|
+| **CellFie (original)** | MATLAB | Clone GitHub + COBRA Toolbox | Bulk RNA-seq, moderate sample sizes |
+| **ImmCellFie** | Web (RENCI-hosted) | Browser at immcellfie.org | No-code, immune cell studies |
+| **scCellFie** | Python | `pip install scCellFie` | Single-cell / spatial transcriptomics |
+| **secCellFie** | MATLAB/Web | Fork of CellFie | Secretory pathway, protein production |
+
+---
+
+## 6. COMMON WORKFLOWS AND USE CASES
+
+### Workflow 1: Standard Bulk Transcriptomics Analysis
+```
+RNA-seq data (raw counts/TPM)
+    → Normalize (TPM or similar)
+    → Convert gene identifiers to Entrez IDs
+    → Load into CellFie with local thresholding (25th/75th percentile)
+    → Select reference model (Recon2.2 or Human-GEM)
+    → Obtain 195-task score matrix
+    → Cluster samples by metabolic phenotype
+    → Visualize on Escher maps
+```
+
+### Workflow 2: Single-Cell Metabolic Profiling
+```
+scRNA-seq (10x Genomics, Smart-seq2)
+    → Use scCellFie (Python) for atlas-scale data
+    → Per-cell metabolic task scoring
+    → UMAP embedding by metabolic features
+    → Differential metabolic activity between cell types
+```
+
+### Workflow 3: Disease vs. Normal Comparison
+```
+Patient vs. healthy control transcriptomics
+    → CellFie scoring for each group
+    → Comparison of continuous + binary task scores
+    → Identify up/down-regulated metabolic tasks
+    → Link to phenotype or clinical variables
+```
+
+### Published Application Examples
+
+| Study Area | Application | Reference |
+|-----------|-------------|-----------|
+| **Neuroscience** | Metabolic clustering in Alzheimer's disease (ROSMAP dataset), identifying clusters correlated with pathological traits | Richelle et al. 2021 |
+| **Immunology** | Metabolic function profiling of immune cell subtypes (T cells, NK cells, monocytes, dendritic cells) | ImmCellFie paper 2023 |
+| **Bioprocessing** | Predicting antibody production capacity in CHO cells | secCellFie paper 2023 |
+| **Liver Disease** | Hepatokine secretion prediction in NAFLD cell model | secCellFie paper 2023 |
+| **Multi-tissue** | Comparing metabolic functional profiles across diverse human tissues and organs | Richelle et al. 2021 |
+
+---
+
+## 7. COMPARATIVE ANALYSIS
+
+### CellFie vs. Similar Tools
+
+| Feature | CellFie | GSEA | VIPER | scFEA | MetaboAnalyst |
+|---------|---------|------|-------|-------|---------------|
+| **Approach** | Mechanistic GEM-based | Statistical enrichment | Regulon network | Neural network flux | Statistical metabolomics |
+| **Model basis** | Genome-scale metabolic model | Gene set collections (MSigDB) | TF regulon networks | Flux balance | Metabolite-centric |
+| **Gene logic** | GPR rules (AND/OR) | None (set membership) | Regulon weights | Learned | Not applicable |
+| **Output** | Metabolic task scores | Enrichment scores | TF activity | Flux estimates | Pathway enrichment |
+| **Omics input** | Transcriptomics, proteomics | Transcriptomics | Transcriptomics | scRNA-seq | Metabolomics |
+| **Single-cell** | ⚠️ Limited (use scCellFie) | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No |
+| **GenePattern** | ✅ **Native module** | ✅ Available | ✅ Available | ❌ No | ❌ No |
+| **No-code access** | ✅ (ImmCellFie web) | ✅ | ❌ | ❌ | ✅ |
+| **Mechanistic insight** | ✅ High | ❌ Low | ⚠️ Medium | ⚠️ Medium | ❌ Low |
+
+### CellFie's Unique Strengths
+1. **Mechanistic foundation**: Uses biologically validated GPR logic from curated GEMs
+2. **Functional ontology**: 195 task-level descriptions more interpretable than gene-level output
+3. **Flexible omics**: Works with microarray, RNA-seq, or proteomics equally
+4. **Dual output**: Both binary (active/inactive) and continuous (magnitude) scores
+5. **GenePattern native**: Already deployed; active module with Docker support
+6. **Extensible ecosystem**: secCellFie (secretory), scCellFie (single-cell), ImmCellFie (web)
+
+---
+
+## 8. GENEPATTERN INTEGRATION CONSIDERATIONS
+
+### Existing Module Status
+- ✅ **Active GenePattern module exists**: `https://github.com/genepattern/CellFie`
+- ✅ **Docker-containerized**: `genepatterndev/cellfie:v0.7.0`
+- ✅ **Published with GenePattern integration** since the original 2021 paper
+
+### Recommended GenePattern Module Parameters (for updated module)
+
+```yaml
+# GenePattern Module Parameter Specification (manifest-style)
+
+module.name=CellFie
+module.description=Model-based inference of cellular metabolic functions from omics data
+
+parameters:
+  - name: input.file
+    type: FILE
+    required: true
+    description: Gene expression matrix in GCT format (genes as Entrez IDs × samples)
+    fileFormat: gct, txt, tsv
+
+  - name: reference.model
+    type: TEXT (dropdown)
+    required: true
+    default: Recon2.2
+    choices: [Recon2.2, Human-GEM, iHsa, Recon3D]
+    description: Reference genome-scale metabolic model for human/mammalian cells
+
+  - name: threshold.type
+    type: TEXT (dropdown)
+    required: true
+    default: local
+    choices: [local, global]
+    description: >
+      Thresholding strategy. 'local' computes per-gene thresholds (recommended);
+      'global' applies a single threshold across all genes.
+
+  - name: local.threshold.type
+    type: TEXT (dropdown)
+    required: false
+    default: minmaxmean
+    choices: [minmaxmean, mean, custom]
+    description: >
+      Method for computing local threshold (only used when threshold.type=local).
+      'minmaxmean' uses lower/upper percentile bounds (recommended).
+
+  - name: percentile.or.value
+    type: TEXT (dropdown)
+    required: true
+    default: percentile
+    choices: [percentile, value]
+    description: >
+      Whether threshold cutoffs are expressed as percentiles (0-1) or 
+      absolute expression values (0-1000).
+
+  - name: value.low
+    type: FLOAT
+    required: true
+    default: 25
+    range: 0-1000 (value mode) or 0-1 (percentile mode)
+    description: >
+      Lower expression threshold bound. Default 25 = 25th percentile of 
+      gene expression distribution. Genes below this are considered inactive.
+
+  - name: value.high
+    type: FLOAT
+    required: true
+    default: 75
+    range: 0-1000 (value mode) or 0-1 (percentile mode)
+    description: >
+      Upper expression threshold bound. Default 75 = 75th percentile.
+      Genes above this are considered maximally active.
+
+  - name: output.prefix
+    type: TEXT
+    required: false
+    default: cellfie_output
+    description: Prefix for output file names.
+```
+
+### Key Integration Notes
+
+1. **Gene ID Mapping**: Input data must use **Entrez IDs** as gene identifiers. A pre-processing step (e.g., BioMart conversion from gene symbols/Ensembl) should be documented or ideally provided as an upstream module.
+
+2. **File Format**: GCT format (GenePattern native) is the natural input. The matrix should be **genes (Entrez IDs) × samples**.
+
+3. **Updated Reaction Models**: The current version note references an "update to reaction models" — this likely reflects updated GPR data from **Human-GEM** / Human1, which is more complete than Recon2.2. The new module should expose model selection as a key user-facing parameter.
+
+4. **Computational Resources**: 
+   - Bulk RNA-seq (hundreds of samples): moderate RAM (~8–16 GB), no GPU needed
+   - Single-cell data (thousands of cells): use scCellFie Python version instead
+   - Runtime: typically minutes to tens of minutes depending on dataset size
+
+5. **Docker**: The existing Docker image `genepatterndev/cellfie:v0.7.0` bundles the MATLAB runtime + COBRA Toolbox, eliminating the need for users to install MATLAB. **Verify this image is current with the reaction model update**.
+
+6. **Output Compatibility**: Output TSV/CSV files should be clearly labeled:
+   - `*_taskScore.tsv` — for downstream clustering or visualization
+   - `*_binaryScore.tsv` — for presence/absence analysis
+   - `*_detailScoring.tsv` — for Escher map visualization
+   - `*_taskInfo.tsv` — for metadata about each task
+
+---
+
+## 9. KNOWN LIMITATIONS AND CAVEATS
+
+| Limitation | Impact | Mitigation |
+|-----------|--------|------------|
+| **Requires Entrez ID input** | Incompatible with symbol/Ensembl-only data | Add upstream ID conversion step |
+| **Human/mammalian-focused** | Limited models for non-human organisms | Custom GEM can be provided |
+| **MATLAB runtime dependency** | Heavy container; proprietary language | Docker containerization resolves for GenePattern |
+| **Single-cell scalability** | Large scRNA-seq datasets are slow | Redirect to scCellFie for single-cell |
+| **Task list fixed at 195** | May not cover all pathways of interest | Tasks extensible with custom models |
+| **Threshold sensitivity** | Results differ across threshold choices | Provide recommended defaults; document sensitivity |
+| **No statistical significance** | Task scores are not p-values | Pair with permutation testing or group comparison tools |
+
+---
+
+## 10. REFERENCES AND RESOURCES
+
+| Resource | Link |
+|---------|------|
+| 📄 **Primary Paper** (Richelle et al. 2021) | [Cell Reports Methods](https://doi.org/10.1016/j.crmeth.2021.100040) |
+| 💻 **Source Code** | [github.com/LewisLabUCSD/CellFie](https://github.com/LewisLabUCSD/CellFie) |
+| 🔧 **GenePattern Module** | [github.com/genepattern/CellFie](https://github.com/genepattern/CellFie) |
+| 🌐 **CellFie Web/Docs** | [cellfie.renci.org](http://cellfie.renci.org/) |
+| 🌐 **ImmCellFie Web Tool** | [immcellfie.org](https://immcellfie.org) |
+| 📦 **scCellFie (Python)** | [PyPI: scCellFie](https://pypi.org/project/scCellFie/) |
+| 📄 **ImmCellFie Paper** | [PMC9898792](https://pmc.ncbi.nlm.nih.gov/articles/PMC9898792/) |
+| 📄 **secCellFie Paper** | [ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/S1096717623001799) |
+| 🐳 **Docker Hub** | `genepatterndev/cellfie:v0.7.0` |
+| 🔬 **COBRA Toolbox** | [opencobra.github.io](https://opencobra.github.io/cobratoolbox/) |
+
+---
+
+> **Summary for GenePattern Module Development**: CellFie is a **mature, peer-reviewed, already-GenePattern-integrated tool** with a well-defined algorithm and clear parameter space. The updated module (reflecting new reaction models) should focus on: (1) exposing the reference model choice prominently, (2) providing sensible defaults matching the benchmarked best-performing configuration, (3) ensuring the Entrez ID requirement is clearly communicated, and (4) producing clearly labeled output files compatible with downstream GenePattern visualization modules. The Docker image `genepatterndev/cellfie:v0.7.0` provides a strong foundation but should be verified against the latest reaction model updates.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,112 @@
+{
+  "module_name": "GlobalAlignment",
+  "description": "standard global sequence analysis",
+  "author": "Mike Kamal, gp-help@broad.mit.edu",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:68188:1",
+  "plan": "## GlobalAlignment GenePattern Module — Implementation Plan\n\n### 1. Overview\nGlobalAlignment is a GenePattern module that standard global sequence analysis\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: subject.fasta.filename, match, mismatch, gapopen, gapextend, query.filename, output.file\n- Optional: none\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>DPJava.jar DemoStandardGlobal <query.filename> <subject.fasta.filename> <match> <mismatch> <gapopen> <gapextend> <output.file>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "DPJava.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>DPJava.jar DemoStandardGlobal <query.filename> <subject.fasta.filename> <match> <mismatch> <gapopen> <gapextend> <output.file>",
+  "parameters": [
+    {
+      "name": "subject.fasta.filename",
+      "description": "filename of subject FASTA file",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--subject.fasta.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "match",
+      "description": "> 0",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--match",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "mismatch",
+      "description": "< 0",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--mismatch",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gapopen",
+      "description": "< 0",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gapopen",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gapextend",
+      "description": "< 0",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gapextend",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "query.filename",
+      "description": "FASTA file",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--query.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "filename of output",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<subject.fasta.filename_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

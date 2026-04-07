@@ -1,0 +1,94 @@
+Create a comprehensive structured plan for the GenePattern module for 'CoGAPS'.
+            
+            Tool Information:
+            - Name: CoGAPS
+            - Version: set quality to 'development', set categories\='Tutorial'
+            - Language: any
+            - Description: Coordinated Gene Activity in Pattern Sets (CoGAPS) implements a Bayesian MCMC matrix factorization algorithm, GAPS, and links it to gene set statistic methods to infer biological process activity. It can be used to perform sparse matrix factorization on any data, and when this data represents biomolecules, to do gene set analysis.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "CoGAPS",
+  "parameters": [
+    {
+      "name": "data.file",
+      "type": "FILE",
+      "description": "A csv/tsv/gct/mtx file containing gene expression data",
+      "required": true,
+      "default_value": "",
+      "file_format": "mtx",
+      "num_values": "1..1"
+    },
+    {
+      "name": "output.file",
+      "type": "TEXT",
+      "description": "Output file name",
+      "required": true,
+      "default_value": "<data.file_basename>-result",
+      "num_values": "1..1"
+    },
+    {
+      "name": "num.patterns",
+      "type": "TEXT",
+      "description": "Number of Patterns",
+      "required": false,
+      "default_value": "",
+      "prefix": "--num.patterns\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "num.iterations",
+      "type": "TEXT",
+      "description": "Number of Iterations",
+      "required": true,
+      "default_value": "50000",
+      "num_values": "1..1"
+    },
+    {
+      "name": "param.file",
+      "type": "FILE",
+      "description": "An rds file containg a CogapsParams object",
+      "required": false,
+      "default_value": "",
+      "file_format": "rds",
+      "prefix": "--param.file\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "transpose.data",
+      "type": "CHOICE",
+      "description": "Transpose the dataset before running",
+      "required": true,
+      "default_value": "FALSE",
+      "choices": "TRUE\\=True;FALSE\\=False",
+      "num_values": "1..1"
+    },
+    {
+      "name": "github.tag",
+      "type": "TEXT",
+      "description": "Alternate github tag to use to pull a different version of cogaps to run - for testing and development only.",
+      "required": false,
+      "default_value": "",
+      "prefix": "--github.tag\\=",
+      "num_values": "0..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/docker-cogaps\\:v0.12",
+  "categories": "Tutorial",
+  "task_type": "Tutorial",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "command_line": "/usr/bin/Rscript --no-save --quiet --slave --no-restore /usr/local/bin/cogaps/run_cogaps_module.R  --data.file\\=<data.file>  --output.file\\=<output.file> <param.file> <num.patterns> --transpose.data\\=<transpose.data> --num.threads\\=<job.cpuCount> <github.tag> --num.iterations\\=<num.iterations>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

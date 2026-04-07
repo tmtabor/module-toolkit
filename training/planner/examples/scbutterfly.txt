@@ -1,0 +1,502 @@
+Create a comprehensive structured plan for the GenePattern module for 'scButterfly'.
+            
+            Tool Information:
+            - Name: scButterfly
+            - Version: latest
+            - Language: Python
+            - Description: 
+            
+            Research Results:
+            Now I have all the data I need. Let me compile the complete, comprehensive research report.
+
+---
+
+# 🦋 scButterfly — Comprehensive Bioinformatics Tool Research Report
+
+**Prepared for GenePattern Module Development**
+*Research conducted across Nature Communications, PubMed/PMC, GitHub, PyPI, and ReadTheDocs*
+
+---
+
+## 1. 🔬 TOOL OVERVIEW & SCIENTIFIC PURPOSE
+
+### Identification
+| Field | Details |
+|-------|---------|
+| **Full Name** | scButterfly |
+| **Version** | 0.0.9 (latest as of 2024) |
+| **Language** | Python 3.9+ |
+| **License** | MIT (Academic) |
+| **Repository** | https://github.com/BioX-NKU/scButterfly |
+| **Documentation** | https://scbutterfly.readthedocs.io |
+| **PyPI** | https://pypi.org/project/scButterfly |
+| **Source Code (Reproduction)** | https://github.com/BioX-NKU/scButterfly_source |
+
+### Citation
+> Cao Y, Zhao X, Tang S, Jiang Q, Li S, Li S, Chen S. **"scButterfly: a versatile single-cell cross-modality translation method via dual-aligned variational autoencoders."** *Nature Communications*, 15(1): 1–17, 2024. DOI: [10.1038/s41467-024-47418-x](https://doi.org/10.1038/s41467-024-47418-x). PMID: 38582890; PMCID: PMC10998864.
+> **Institution:** BioX Laboratory, Nankai University (NKU), China.
+
+---
+
+### Scientific Problem & Purpose
+
+scButterfly addresses one of the central challenges in modern single-cell genomics: **cross-modality translation** — the computational prediction of one type of genomic measurement from another at single-cell resolution. Specifically:
+
+- **Primary Problem:** Generating a complete multi-omic profile from a single-omic measurement. While technologies like 10x Multiome can simultaneously profile RNA and chromatin accessibility, they are expensive and technically demanding. Most existing datasets contain only one modality.
+- **Core Task:** Given cells profiled for scRNA-seq only, *predict* what their scATAC-seq profiles would look like (and vice versa).
+- **Biological Significance:** RNA-to-ATAC and ATAC-to-RNA translation illuminates the mechanistic relationships between **gene expression** and **chromatin accessibility**, forming a computational window into gene regulatory networks.
+
+### Key Scientific Applications
+1. **Bidirectional scRNA-seq ↔ scATAC-seq translation** (flagship use case)
+2. **scRNA-seq ↔ ADT (protein abundance) translation** for CITE-seq data
+3. **Single-cell perturbation response prediction** (predict post-perturbation cell states from control states)
+4. **Integrative multi-omics analysis** of cells with only one measured modality
+5. **Data enhancement** of poor-quality single-cell multi-omics data
+6. **Automatic cell type annotation of scATAC-seq data** via RNA-space annotation transfer
+7. **Consecutive/chained translation** across multiple modalities
+
+---
+
+## 2. 🏗️ TECHNICAL ARCHITECTURE
+
+### Core Framework: Dual-Aligned Variational Autoencoder (DAVAE)
+
+scButterfly is built on a novel **Dual-Aligned Variational Autoencoder** framework with **seven primary components**:
+
+```
+                     ┌─────────────────────────────────────────────────────┐
+                     │              scButterfly Architecture               │
+                     │                                                     │
+  scRNA-seq (Xr) ──► │ [Enr: RNA Encoder] ──► μr, σr                     │
+       ↑              │        │                  │                        │
+       │              │        ▼                  ▼                        │
+  [Der: RNA Decoder]  │  [Disr: RNA Discriminator]  ──── Alignment Loss   │
+       │              │        │                                           │
+       │              │   [Translator T]                                   │
+       │              │  (samples from N(μ,σ) → latent z)                 │
+  [Dea: ATAC Decoder] │        │                  ▲                        │
+       ↑              │        ▼                  │                        │
+  scATAC-seq (Xa) ──► │ [Ena: ATAC Encoder] ──► μa, σa                   │
+                     │  [Disa: ATAC Discriminator]  ── Alignment Loss     │
+                     └─────────────────────────────────────────────────────┘
+```
+
+| Component | Function |
+|-----------|----------|
+| **Enr** (RNA Encoder) | Maps scRNA-seq input → 128-dimensional mean vector; uses masking strategy to handle dropout noise |
+| **Ena** (ATAC Encoder) | Maps scATAC-seq input → latent space; intra-chromosomal connections only (pruned inter-chromosomal links) |
+| **T** (Translator) | Samples from multivariate Gaussian distribution; performs cross-modal translation |
+| **Der** (RNA Decoder) | Reconstructs RNA profiles from latent embeddings (two FC blocks + LeakyReLU) |
+| **Dea** (ATAC Decoder) | Reconstructs ATAC peak profiles; chromosome-aware architecture |
+| **Disr** (RNA Discriminator) | Adversarial alignment of RNA latent space |
+| **Disa** (ATAC Discriminator) | Adversarial alignment of ATAC latent space |
+
+### Key Architectural Innovations
+1. **Masking Strategy**: Randomly masks input features during encoding to simulate and handle the pervasive **dropout noise** in single-cell data.
+2. **Intra-Chromosomal Pruning**: The ATAC encoder/decoder only maintains connections *within* each chromosome — reducing computational burden while biologically motivated (regulatory elements act locally within chromosomes).
+3. **Dual Discriminators**: Two separate adversarial networks enforce alignment between the RNA and ATAC latent spaces, enabling high-fidelity cross-modal translation.
+4. **Optimal Transport for Unpaired Data**: When paired training cells are unavailable, scButterfly-T uses optimal transport strategies to find cross-modal correspondences.
+
+---
+
+## 3. 📦 MODEL VARIANTS
+
+scButterfly offers **three distinct model variants** controlled by the `aug_type` parameter:
+
+| Variant | Name | `aug_type` value | Description | Best For |
+|---------|------|------------------|-------------|----------|
+| **scButterfly-B** | Basic | `None` | No data augmentation; trains directly on paired data | Clean paired datasets with sufficient cells |
+| **scButterfly-T** | Type | `'cell_type_augmentation'` | Augments training data using cell-type label information from `adata.obs` | Datasets with available cell type annotations; also enables unpaired translation via optimal transport |
+| **scButterfly-C** | Cluster | `'MultiVI_augmentation'` | First trains a MultiVI model for unsupervised clustering, then uses predicted clusters for augmentation | Datasets without cell type labels; requires MultiVI |
+
+---
+
+## 4. 📋 INPUT/OUTPUT FORMATS & REQUIREMENTS
+
+### Input Data
+
+| Input | Format | Description |
+|-------|--------|-------------|
+| **RNA Data** | `AnnData` (`.h5ad`) | Raw count matrix; shape: `n_cells × n_genes` |
+| **ATAC Data** | `AnnData` (`.h5ad`) | Binary or count accessibility matrix; shape: `n_cells × n_peaks`; **peaks must be sorted by chromosome** |
+| **Cell Split Indices** | `list` / `array` | Cell barcodes or integer indices for `train_id`, `test_id`, `validation_id` |
+| **Cell Type Labels** *(optional)* | Column in `adata.obs` | String labels per cell; required for scButterfly-T |
+| **Peaks per Chromosome** *(required)* | Python `list` of `int` | Number of peaks in each chromosome (sorted order); critical for intra-chromosomal architecture |
+
+> ⚠️ **Critical Constraint**: ATAC peaks must be **sorted by chromosome** before input. The `peaks_count_per_chrom` parameter must match the chromosome order.
+
+### Output Data
+
+| Output | Format | Description |
+|--------|--------|-------------|
+| **Predicted Profiles** | `AnnData` (`.h5ad`) | Predicted modality profiles (RNA or ATAC) for test cells |
+| **Model Checkpoints** | PyTorch `.pt` files | Saved model weights for subsequent inference |
+| **Evaluation Metrics** | CSV / dict | AMI, ARI, HOM, NMI, Pearson correlation, AUROC scores |
+| **Embeddings** | Stored in `adata.obsm` | Latent space representations for downstream analysis |
+| **Visualizations** *(optional)* | PNG/PDF | t-SNE/UMAP plots of predicted vs. true profiles |
+
+---
+
+## 5. ⚙️ PARAMETERS — COMPLETE CATALOG
+
+### Group A: Data Loading Parameters
+*(Method: `butterfly.load_data()`)*
+
+| Parameter | Type | Default | Description | GenePattern Type |
+|-----------|------|---------|-------------|-----------------|
+| `RNA_data` | `AnnData` | **Required** | scRNA-seq AnnData object (raw counts, cells × genes) | File Input (`.h5ad`) |
+| `ATAC_data` | `AnnData` | **Required** | scATAC-seq AnnData object (cells × peaks, sorted by chrom) | File Input (`.h5ad`) |
+| `train_id` | `list` | **Required** | Indices/barcodes of training cells | File Input or Text |
+| `test_id` | `list` | **Required** | Indices/barcodes of test cells | File Input or Text |
+| `validation_id` | `list` | **Required** | Indices/barcodes of validation cells | File Input or Text |
+
+### Group B: Data Preprocessing Parameters
+*(Method: `butterfly.data_preprocessing()`)*
+
+| Parameter | Type | Default | Range | Description |
+|-----------|------|---------|-------|-------------|
+| `n_highly_var_genes` | `int` | `2000` | 500–20000 | Number of highly variable genes selected from RNA data |
+| `n_top_peaks` | `int` | `30000` | 5000–200000 | Number of top accessibility peaks selected from ATAC data |
+| `normalize` | `bool` | `True` | True/False | Normalize counts per cell (total count normalization) |
+| `log1p` | `bool` | `True` | True/False | Apply log(1+x) transformation to RNA counts |
+
+> 🔑 **Biological Note**: The number of `n_top_peaks` is a critical memory/compute tradeoff. The ATAC modality for full genome scans can have 500K+ peaks; reducing to 30K focuses on the most informative accessibility sites.
+
+### Group C: Augmentation Parameters
+*(Method: `butterfly.augmentation()`)*
+
+| Parameter | Type | Default | Options | Description |
+|-----------|------|---------|---------|-------------|
+| `aug_type` | `str` or `None` | `None` | `None`, `'cell_type_augmentation'`, `'MultiVI_augmentation'` | Selects model variant: None=scButterfly-B, cell_type=scButterfly-T, MultiVI=scButterfly-C |
+| `cell_type_key` | `str` | `'cell_type'` | Any `adata.obs` column | Column name in `adata.obs` containing cell type labels; only required when `aug_type='cell_type_augmentation'` |
+
+### Group D: Model Construction Parameters
+*(Method: `butterfly.construct_model()`)*
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `peaks_count_per_chrom` | `list[int]` | **Required** | Number of peaks per chromosome in sorted order; defines the intra-chromosomal sparse connectivity pattern |
+
+> ⚠️ **Critical**: This list must reflect the chromosome-sorted ATAC peak ordering. Human genome typically uses chr1-chr22, chrX, chrY.
+
+### Group E: Training Parameters
+*(Method: `butterfly.train_model()`)*
+
+| Parameter | Type | Default | Recommended Range | Description |
+|-----------|------|---------|-------------------|-------------|
+| `n_epochs` | `int` | `100` | 50–500 | Number of complete training passes through the dataset |
+| `batch_size` | `int` | `64` | 32–256 | Mini-batch size for stochastic gradient descent |
+| `learning_rate` | `float` | `1e-4` | `1e-5` to `1e-3` | Adam optimizer learning rate |
+| `weight_decay` | `float` | `1e-6` | `0` to `1e-4` | L2 regularization coefficient |
+| `device` | `str` | `'cuda'` if available | `'cuda'`, `'cpu'` | Computation device |
+| `seed` | `int` | `2023` | Any integer | Random seed for reproducibility |
+| `num_workers` | `int` | `4` | 0–16 | DataLoader worker threads for data loading |
+
+### Group F: Inference/Evaluation Parameters
+*(Method: `butterfly.test_model()`)*
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `test_id` | `list` | **Required** | Cell indices for prediction/evaluation |
+
+---
+
+## 6. 🔧 INSTALLATION & DEPENDENCIES
+
+### Recommended Installation
+
+```bash
+# 1. Create dedicated environment
+conda create -n scButterfly python==3.9
+conda activate scButterfly
+
+# 2a. Standard PyPI install (auto-resolves dependencies)
+pip install scButterfly
+
+# 2b. OR: Source install with specific CUDA version
+git clone https://github.com/Biox-NKU/scButterfly
+cd scButterfly
+# For CUDA 11.6:
+pip install scButterfly-0.0.9-py3-none-any.whl \
+    --extra-index-url https://download.pytorch.org/whl/cu116
+# For CPU-only:
+pip install scButterfly-0.0.9-py3-none-any.whl \
+    --extra-index-url https://download.pytorch.org/whl/cpu
+```
+
+### Dependency Matrix
+
+| Package | Category | Role | Notes |
+|---------|----------|------|-------|
+| **Python 3.9** | Runtime | Core language | Strictly recommended; 3.9 avoids known compatibility issues |
+| **PyTorch** | Deep Learning | Neural network backbone | Supports CUDA 10.2, 11.3, 11.6 or CPU |
+| **scanpy** | Bioinformatics | Single-cell analysis (preprocessing, QC, UMAP) | Brings anndata, numpy, scipy, matplotlib |
+| **anndata** | Data Format | AnnData container for all data I/O | Standard single-cell data format |
+| **muon** | Multi-omics | Multi-modal data containers (MuData) | Used for paired RNA+ATAC data handling |
+| **episcanpy** | Epigenomics | scATAC-seq preprocessing, peak filtering | ATAC-specific QC metrics |
+| **MultiVI** (scvi-tools) | Optional | Required only for scButterfly-C (`aug_type='MultiVI_augmentation'`) | Can be omitted for -B and -T variants |
+| **numpy** | Numerics | Array operations | Auto-installed with scanpy |
+| **scipy** | Numerics | Sparse matrix operations | Auto-installed with scanpy |
+| **scikit-learn** | ML | Evaluation metrics (AMI, ARI, NMI, HOM) | Auto-installed with scanpy |
+| **matplotlib / seaborn** | Visualization | Result plotting | Auto-installed with scanpy |
+| **tqdm** | Utility | Progress bars | Auto-installed |
+
+### Computational Resource Requirements
+
+| Resource | Minimum | Recommended | Notes |
+|----------|---------|-------------|-------|
+| **CPU** | 4 cores | 8–16 cores | More cores improve DataLoader throughput |
+| **RAM** | 16 GB | 32–64 GB | Scales with `n_top_peaks × n_cells` |
+| **GPU VRAM** | 8 GB | 16–24 GB | GTX 1080Ti / RTX 3090 / V100 appropriate |
+| **GPU** | Optional | Strongly recommended | ~10–50× speedup over CPU |
+| **Storage** | 10 GB | 50 GB | For model checkpoints, h5ad files |
+| **Training Time** | ~30 min (CPU, small) | ~1–4 hours (GPU, 10K–50K cells) | Scales with cells, peaks, epochs |
+
+---
+
+## 7. 🔄 WORKFLOWS & USE CASES
+
+### Primary Workflow: Paired scRNA-seq ↔ scATAC-seq Translation (scButterfly-B/T)
+
+```python
+import scanpy as sc
+from scButterfly.butterfly import Butterfly
+
+# --- Data Loading ---
+rna_adata = sc.read_h5ad("rna_counts.h5ad")   # cells × genes (raw counts)
+atac_adata = sc.read_h5ad("atac_counts.h5ad") # cells × peaks (sorted by chrom)
+
+# --- Train/Test Split ---
+import numpy as np
+n_cells = rna_adata.n_obs
+train_id = list(range(0, int(0.8 * n_cells)))
+test_id  = list(range(int(0.8 * n_cells), int(0.9 * n_cells)))
+val_id   = list(range(int(0.9 * n_cells), n_cells))
+
+# --- Initialize & Load ---
+butterfly = Butterfly()
+butterfly.load_data(rna_adata, atac_adata, train_id, test_id, val_id)
+
+# --- Preprocessing ---
+butterfly.data_preprocessing(
+    n_highly_var_genes=2000,
+    n_top_peaks=30000
+)
+
+# --- Augmentation (scButterfly-T with cell type labels) ---
+butterfly.augmentation(
+    aug_type='cell_type_augmentation',
+    cell_type_key='cell_type'    # column in atac_adata.obs or rna_adata.obs
+)
+
+# --- Construct Model (requires peaks per chromosome) ---
+peaks_per_chrom = [500, 450, 800, ...]  # peaks on chr1, chr2, chr3, etc.
+butterfly.construct_model(peaks_count_per_chrom=peaks_per_chrom)
+
+# --- Train ---
+butterfly.train_model(
+    n_epochs=100,
+    batch_size=64,
+    learning_rate=1e-4
+)
+
+# --- Predict & Evaluate ---
+predicted = butterfly.test_model(test_id=test_id)
+# predicted: AnnData with predicted modality profiles
+```
+
+### Workflow 2: Unpaired Data Translation (scButterfly-T with OT)
+
+Used when RNA and ATAC datasets are from different experiments (no paired cells). The tool uses **optimal transport** to construct pseudo-paired data before training.
+
+### Workflow 3: CITE-seq Translation (RNA ↔ ADT)
+
+```python
+from scButterfly.train_model_cite import train_model_cite
+# Similar API using scRNA-seq and surface protein (ADT) AnnData objects
+```
+
+### Workflow 4: Perturbation Response Prediction
+
+```python
+from scButterfly.train_model_perturb import train_model_perturb
+# Predicts post-perturbation single-cell profiles from control cell states
+# Uses optimal transport to align control and perturbed cells
+```
+
+---
+
+## 8. 📊 BENCHMARKING & PERFORMANCE VALIDATION
+
+### Evaluation Datasets
+
+| Dataset | Type | Cells | Special Feature |
+|---------|------|-------|-----------------|
+| **MB** (Mouse Brain) | 10x Multiome | ~10K | Standard benchmark |
+| **MCC** (Mouse Cerebral Cortex) | 10x Multiome | ~5K | Cell-type diversity |
+| **MK** (Mouse Kidney) | Paired multi-omics | ~5K | Tissue-specific regulatory patterns |
+| **PBMC** | 10x Multiome | ~10K | Human immune cells, widely used standard |
+| **BMMC** | NeurIPS 2021 Challenge | ~90K | Multi-site batch effects, most challenging |
+| **CL** | Multi-batch | ~15K | Batch effect robustness testing |
+| **MDS** | Multi-batch | ~12K | Batch effect robustness testing |
+
+### Evaluation Metrics Summary
+
+| Metric | What It Measures | Direction |
+|--------|-----------------|-----------|
+| **Pearson Correlation** (gene-wise) | Accuracy of RNA profile prediction per gene | Higher = better |
+| **AUROC** (peak-wise) | Accuracy of ATAC peak accessibility prediction | Higher = better |
+| **AMI** | Clustering quality of predicted cells vs. ground truth | Higher = better |
+| **ARI** | Adjusted clustering agreement | Higher = better |
+| **HOM** | Purity of predicted cell clusters | Higher = better |
+| **NMI** | Information-theoretic clustering consistency | Higher = better |
+
+### Competitive Performance
+
+| Tool | Paired Translation | Unpaired Data | Scalability | CITE-seq | Perturbation |
+|------|-------------------|--------------|-------------|----------|-------------|
+| **scButterfly-B** | ✅ Superior | ❌ | ✅ Good | ✅ | ✅ |
+| **scButterfly-T** | ✅ Superior | ✅ | ✅ Good | ✅ | ✅ |
+| **scButterfly-C** | ✅ Superior | ✅ | ✅ Good | ✅ | ✅ |
+| BABEL | ⚠️ Good | ❌ | ✅ Good | ❌ | ❌ |
+| JAMIE | ⚠️ Good | ✅ | ❌ Memory errors on large data | ❌ | ❌ |
+| MultiVI | ⚠️ Moderate | ✅ | ✅ Excellent | ✅ | ❌ |
+| scMM | ⚠️ Moderate | ⚠️ | ⚠️ | ❌ | ❌ |
+
+> **Key Competitive Advantage**: scButterfly outperforms BABEL, JAMIE, and scMM across the majority of benchmark metrics; JAMIE notably fails with memory errors on the large BMMC dataset where scButterfly succeeds. scButterfly uniquely extends to CITE-seq and perturbation use cases from the same framework.
+
+---
+
+## 9. ⚠️ KNOWN LIMITATIONS & CAVEATS
+
+| Limitation | Impact | Mitigation |
+|-----------|--------|------------|
+| **Requires chromosome-sorted ATAC peaks** | Data preparation burden; unsorted peaks will produce incorrect chromosomal architecture | Enforce sorting in preprocessing wrapper |
+| **Python 3.9 dependency** | May conflict with other tools requiring newer Python | Use dedicated conda environment |
+| **MultiVI dependency for scButterfly-C** | Additional large dependency; potential version conflicts | Make scButterfly-C optional in module; fallback to -B or -T |
+| **Paired training data needed (B & T)** | Can't be used directly on completely unpaired datasets for -B; -T mitigates via OT | Offer scButterfly-T as default when no paired data |
+| **GPU strongly recommended** | CPU training is feasible but very slow for > 10K cells | Document expected runtimes; consider cloud GPU resources |
+| **Memory scales with `n_top_peaks`** | Using all peaks (>100K) may exceed RAM | Provide guidance on `n_top_peaks` selection |
+| **No direct CLI tool** | Python API only; requires scripting knowledge | Wrap in Python argparse CLI for GenePattern |
+| **Version 0.0.9 still early-stage** | API may change in future versions | Pin version in Docker container |
+
+---
+
+## 10. 🔗 GENEPATTERN MODULE INTEGRATION DESIGN
+
+### Module Classification
+- **Category:** Single-Cell Analysis / Multi-Omics / Deep Learning
+- **Module Type:** Analysis (Machine Learning, Cross-Modality Translation)
+- **Related GenePattern Modules:** ScanpyUtilities, existing single-cell pipeline modules
+
+### Recommended Module Architecture
+
+```
+scButterfly GenePattern Module
+├── Input Parameters
+│   ├── [FILE] rna_h5ad          — scRNA-seq AnnData (.h5ad)
+│   ├── [FILE] atac_h5ad         — scATAC-seq AnnData (.h5ad)
+│   ├── [FILE/TEXT] cell_splits  — Train/test/val cell barcodes (optional; auto-split if absent)
+│   └── [FILE/TEXT] cell_types   — Cell type annotation CSV (optional; enables scButterfly-T)
+│
+├── Model Configuration
+│   ├── [CHOICE] model_variant   — {basic, type, cluster}  [default: basic]
+│   ├── [CHOICE] translation     — {RNA_to_ATAC, ATAC_to_RNA, bidirectional}  [default: bidirectional]
+│   └── [TEXT] peaks_per_chrom   — Comma-separated integers (e.g., "500,450,800,...")
+│
+├── Preprocessing Parameters
+│   ├── [INT] n_highly_var_genes — [default: 2000]
+│   ├── [INT] n_top_peaks        — [default: 30000]
+│   ├── [FLOAT] train_ratio      — [default: 0.8] (when auto-splitting)
+│   └── [FLOAT] val_ratio        — [default: 0.1] (when auto-splitting)
+│
+├── Training Parameters
+│   ├── [INT] n_epochs           — [default: 100]
+│   ├── [INT] batch_size         — [default: 64]
+│   ├── [FLOAT] learning_rate    — [default: 0.0001]
+│   ├── [FLOAT] weight_decay     — [default: 0.000001]
+│   ├── [INT] seed               — [default: 2023]
+│   └── [CHOICE] device          — {auto, cuda, cpu}  [default: auto]
+│
+└── Output Parameters
+    ├── [BOOL] save_model         — Save trained model weights [default: True]
+    ├── [BOOL] generate_plots     — Generate t-SNE/UMAP visualizations [default: True]
+    └── [TEXT] output_prefix      — Prefix for output file names
+```
+
+### Output Files
+| File | Format | Contents |
+|------|--------|---------|
+| `{prefix}_predicted_RNA.h5ad` | AnnData | Predicted RNA profiles (when translating ATAC→RNA) |
+| `{prefix}_predicted_ATAC.h5ad` | AnnData | Predicted ATAC profiles (when translating RNA→ATAC) |
+| `{prefix}_model.pt` | PyTorch | Trained model weights |
+| `{prefix}_metrics.csv` | CSV | AMI, ARI, HOM, NMI, Pearson, AUROC per run |
+| `{prefix}_umap.png` | PNG | UMAP visualization of predicted vs. true profiles |
+| `{prefix}_run_log.txt` | Text | Execution log with timing and progress |
+
+### Docker Container Specification
+
+```dockerfile
+FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
+RUN pip install --no-cache-dir \
+    scButterfly==0.0.9 \
+    scanpy anndata muon episcanpy \
+    matplotlib seaborn scipy scikit-learn \
+    scvi-tools  # for scButterfly-C optional mode
+```
+
+### Wrapper Script Strategy
+The GenePattern module should implement a **Python argparse wrapper** (`run_scbutterfly.py`) that:
+1. Parses all GenePattern-provided parameters from CLI arguments
+2. Loads `.h5ad` files, constructs `peaks_count_per_chrom` from ATAC peak annotations
+3. Instantiates `Butterfly()`, calls the 6-step API in sequence
+4. Handles GPU/CPU device detection automatically
+5. Exports all output files to GenePattern-standard output directory
+6. Generates a summary HTML/text report
+
+---
+
+## 11. 📚 SUMMARY TABLE FOR MODULE DEVELOPERS
+
+| Aspect | Detail |
+|--------|--------|
+| **Core Function** | Cross-modal translation between scRNA-seq and scATAC-seq (and CITE-seq, perturbation) |
+| **Algorithm** | Dual-Aligned Variational Autoencoder + adversarial training + data augmentation |
+| **Input Format** | AnnData `.h5ad` files (standard single-cell format) |
+| **Output Format** | AnnData `.h5ad` files with predicted profiles; `.pt` model checkpoints |
+| **Key Parameter** | `aug_type` selects model variant (B/T/C); `peaks_count_per_chrom` is architecturally required |
+| **GPU Required?** | Strongly recommended but not mandatory |
+| **Publication** | Nature Communications 2024 (peer-reviewed, high-impact) |
+| **Maturity** | Active development; v0.0.9; released March 2023; paper April 2024 |
+| **Community** | Growing adoption; cited in benchmarking studies (CrossMP, Briefings in Bioinformatics) |
+| **GenePattern Priority** | **HIGH** — Fills gap in single-cell multi-omics; complements existing ScanpyUtilities module |
+| **Complexity** | Medium — 6-step API; main challenge is ATAC chromosome-sorting preprocessing |
+| **Licensing** | MIT (open source, GenePattern compatible) |
+
+---
+
+## 12. 📖 REFERENCES
+
+1. Cao Y et al. "scButterfly: a versatile single-cell cross-modality translation method via dual-aligned variational autoencoders." *Nature Communications* 15, 2024. [DOI:10.1038/s41467-024-47418-x](https://doi.org/10.1038/s41467-024-47418-x)
+2. scButterfly GitHub Repository: https://github.com/BioX-NKU/scButterfly
+3. scButterfly ReadTheDocs: https://scbutterfly.readthedocs.io/en/latest/
+4. scButterfly PyPI: https://pypi.org/project/scButterfly/
+5. scButterfly Source Code: https://github.com/BioX-NKU/scButterfly_source
+6. PubMed PMID: 38582890; PMCID: PMC10998864
+7. CrossMP comparison paper: *Genes* 15(7):882, 2024. [PMC11276538](https://pmc.ncbi.nlm.nih.gov/articles/PMC11276538/)
+8. Benchmarking multi-omics integration: *Briefings in Bioinformatics* 25(2):bbae095, 2024.
+
+---
+
+*This report was generated through systematic research across the primary publication, official repository, PyPI, ReadTheDocs documentation, PubMed/PMC, and comparative literature. All technical details reflect the state of scButterfly v0.0.9 as published in Nature Communications (April 2024).*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

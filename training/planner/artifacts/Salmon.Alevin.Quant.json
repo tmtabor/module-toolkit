@@ -1,0 +1,392 @@
+{
+  "module_name": "Salmon.Alevin.Quant",
+  "description": "Quantification and analysis of 3' tagged-end single-cell sequencing data using Salmon's Alevin (v1.5.2) function.<br>\\n\\nSee\\: <a href\\=\"https\\://salmon.readthedocs.io/en/latest/alevin.html\" target\\=\"_blank\">The Alevin Documentation</a>\\nfor detailed usage guidelines.",
+  "author": "Anthony S. Castanza;UCSD-MesirovLab",
+  "input_file_formats": [
+    "fastq",
+    "fastq.gz",
+    "fq.gz",
+    "gtf",
+    "gtf.gz",
+    "gz",
+    "tar.gz",
+    "tsv",
+    "txt"
+  ],
+  "language": "any",
+  "categories": [
+    "rna-seq",
+    "single-cell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:70699:1",
+  "plan": "## Salmon.Alevin.Quant GenePattern Module — Implementation Plan\n\n### 1. Overview\nSalmon.Alevin.Quant is a GenePattern module that Quantification and analysis of 3' tagged-end single-cell sequencing data using Salmon's Alevin (v1.5.2) function.<br>\\n\\nSee\\: <a href\\=\"https\\://salmon.readthedocs.io/en/latest/alevin.html\" target\\=\"_blank\">The Alevin Documentation</a>\\nfor detailed usage guidelines.\n\n### 2. Parameters\nThe module exposes 18 parameters:\n- Required: Barcodes, Reads, Transcriptome.Index, Chemistry, Library.Type, TgMap, Output.Basename, GTF.Gene.ID.Type, mtRNA.From.GTF, rRNA.From.GTF, dumpMTX, expectCells, forceCells, dumpFeatures, numCellBootstraps\n- Optional: Whitelist, mtRNA, rRNA\n\n### 3. Command Line\n```\n<libdir>salmon_alevin_quant.sh -b <Barcodes> -q <Reads> -i <Transcriptome.Index> -c <Chemistry> -l <Library.Type> -t <TgMap> -z <Output.Basename> -u <GTF.Gene.ID.Type> -w <Whitelist> -m <mtRNA> -n <mtRNA.From.GTF> -r <rRNA> -s <rRNA.From.GTF> -x <dumpMTX> -e <expectCells> -f <forceCells> -d <dumpFeatures> -a <numCellBootstraps> -j <job.cpuCount>\n```\n\n### 4. Docker Image\nDocker image: genepattern/salmon-alevin-quant\\:beta\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "salmon_alevin_quant.sh",
+  "command_line": "<libdir>salmon_alevin_quant.sh -b <Barcodes> -q <Reads> -i <Transcriptome.Index> -c <Chemistry> -l <Library.Type> -t <TgMap> -z <Output.Basename> -u <GTF.Gene.ID.Type> -w <Whitelist> -m <mtRNA> -n <mtRNA.From.GTF> -r <rRNA> -s <rRNA.From.GTF> -x <dumpMTX> -e <expectCells> -f <forceCells> -d <dumpFeatures> -a <numCellBootstraps> -j <job.cpuCount>",
+  "parameters": [
+    {
+      "name": "Barcodes",
+      "description": "Cellular barcodes+UMI file(s), the FASTQ file containing CB+UMI raw sequences. Alevin also supports parsing of data from multiple files as long as the order is the same as in the \"Reads\" parameter.",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": [
+        "fastq.gz",
+        "fq.gz",
+        "gz",
+        "fastq",
+        "fq.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Barcodes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Reads",
+      "description": "The FASTQ file containing raw read-sequences. Alevin also supports parsing of data from multiple files as long as the order is the same as in the \"Barcodes\" parameter.",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": [
+        "fastq.gz",
+        "fq.gz",
+        "gz",
+        "fastq.gz",
+        "fq.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Reads",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Transcriptome.Index",
+      "description": "An Indexed transcriptome created with `Salmon Indexer`.<br>\\nMust be in .tar.gz format.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "tar.gz",
+        "tar.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Transcriptome.Index",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Chemistry",
+      "description": "The chemistry used by the single-cell sequencing platform.<br>\\nDrop-Seq, 10x Chromium v2, 10x Chromium v3, CITE-Seq, CEL-Seq, CEL-Seq2, and Quartz-Seq2 are currently supported. BD Rhapsody support is experimental.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "dropseq",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Drop-Seq",
+          "value": "dropseq"
+        },
+        {
+          "display": "10x Chromium v2",
+          "value": "chromium"
+        },
+        {
+          "display": "10x Chromium v3",
+          "value": "chromiumV3"
+        },
+        {
+          "display": "CITE-Seq",
+          "value": "citeseq"
+        },
+        {
+          "display": "CEL-Seq",
+          "value": "celseq"
+        },
+        {
+          "display": "CEL-Seq2",
+          "value": "celseq2"
+        },
+        {
+          "display": "Quartz-Seq2",
+          "value": "quartzseq2"
+        },
+        {
+          "display": "BD Rhapsody (Experimental)",
+          "value": "rhapsody"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Chemistry",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Library.Type",
+      "description": "The library type of the RNA-seq. This describes the relative orientation of paired end reads. \\n<br>\\nThe Alevin authors recommend using ISR (default) for both Drop-seq and Chromium chemistry.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "ISR",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "ISF (Inward, read 1 from the forward strand)",
+          "value": "ISF"
+        },
+        {
+          "display": "ISR (Inward, read 1 from the reverse strand)",
+          "value": "ISR"
+        },
+        {
+          "display": "IU (Inward, Unstranded)",
+          "value": "IU"
+        },
+        {
+          "display": "OSF (Outward, read 1 from the forward strand)",
+          "value": "OSF"
+        },
+        {
+          "display": "OSR (Outward, read 1 from the reverse strand)",
+          "value": "OSR"
+        },
+        {
+          "display": "OU (Outward, Unstranded)",
+          "value": "OU"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Library.Type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "TgMap",
+      "description": "A two column tsv (tab-separated) file with no header containing the transcript to gene map file. The first column lists each transcript present in the reference, the second column lists the corresponding gene.\\n<br>\\nAlternatively, a .GTF file can be supplied to automatically create a transcript to gene map.\\n<br>",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gtf.gz",
+        "gtf",
+        "gtf.gz",
+        "tsv",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--TgMap",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.Basename",
+      "description": "Base name to use for outputting the alevin quantification results. Should be made unique for downstream processing.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "alevin.output",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Output.Basename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "GTF.Gene.ID.Type",
+      "description": "If supplying a GTF file to automatically construct the transcript to gene map (TgMap parameter), map the transcripts to\\:<br>\\nthe Gene ID (GTF.Gene.ID.Type \\= gene_id) eg\\: ENSG00000141510<br>\\nthe Gene Symbol (GTF.Gene.ID.Type \\= gene_symbol) eg\\: TP53<br>\\n<b>This requires a GTF file to be supplied to \"TgMap\"</b>",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "gene_id",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "gene_id",
+          "value": "gene_id"
+        },
+        {
+          "display": "gene_id (Drop decimal versions)",
+          "value": "gene_id_noversion"
+        },
+        {
+          "display": "gene_symbol",
+          "value": "gene_symbol"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--GTF.Gene.ID.Type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Whitelist",
+      "description": "Optionally explicitly specify the whitelist cellular barcodes to use for cell detection and cellular barcode sequence correction. If not given, alevin generates its own set of putative cellular barcodes.\\n<br>\\nNote\\: Not 10x 724k whitelist\\n<br>\\nThis flag does not use the biologically known whitelist provided by 10x, instead it's the per experiment level whitelist file e.g. the file generated by cellranger with the name barcodes.tsv.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Whitelist",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "mtRNA",
+      "description": "The list of mitochondrial genes which are to be used as a feature for cellular barcode whitelising naive Bayes classification.\\n<br>\\nNote\\: \\n\\nIt is generally advisable to not use nuclear mitrochondrial genes in this as they can be both up and/or down regulated which might cancel out the usefulness of this feature. Please check issue \\#367 in salmon repo to know more about it.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--mtRNA",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "mtRNA.From.GTF",
+      "description": "If supplying a GTF file to automatically construct the transcript to gene map (TgMap parameter), automatically construct the mtRNA list from the GTF directly.\\n<br>\\nNote\\: if set to true, this will override the list supplied to the \"mtRNA\" parameter.\\n<br>\\n<b>This requires a GTF file to be supplied to \"TgMap\"</b>",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "true",
+          "value": "TRUE"
+        },
+        {
+          "display": "false",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--mtRNA.From.GTF",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "rRNA",
+      "description": "The list of ribosomal genes which are to be used as a feature for cellular barcode whitelising naive Bayes classification.\\n<br>",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--rRNA",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "rRNA.From.GTF",
+      "description": "If supplying a GTF file to automatically construct the transcript to gene map (TgMap parameter), automatically construct the rRNA list from the GTF directly.\\n<br>\\nNote\\: if set to true, this will override the list supplied to the \"rRNA\" parameter.\\n<br>\\n<b>This requires a GTF file to be supplied to \"TgMap\"</b>",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "true",
+          "value": "TRUE"
+        },
+        {
+          "display": "false",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--rRNA.From.GTF",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "dumpMTX",
+      "description": "Convert the default binary format of alevin for gene-count matrix into a human readable mtx (matrix market exchange) sparse format. Generates a new output called quants_mat.mtx in the compressed output folder.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "true",
+          "value": "TRUE"
+        },
+        {
+          "display": "false",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--dumpMTX",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "expectCells",
+      "description": "This command line flag uses the cellranger type white-listing procedure. As specified in their algorithm overview page, \"All barcodes whose total UMI counts exceed m/10 are called as cells\", where m is the frequency of the top 1% cells as specified by the parameter of this command line flag.\\n<br>\\nNote\\: Setting this parameter to \"0\" disables this option and, unless forceCells is specified, instead uses the default Alevin knee calculation heuristics.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--expectCells",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "forceCells",
+      "description": "By default, Alevin performs a heuristic based initial cellular barcode white-listing by finding the knee in the distribution of the barcode frequency. With this flag, by looking at the barcode frequency distribution, a user can explicitly specify the number of CB to consider for initial white-listing.\\n<br>\\nNote\\: Setting this parameter to \"0\" disables this option and, unless expectCells is specified, instead uses the default Alevin knee calculation heuristics.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--forceCells",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "dumpFeatures",
+      "description": "If activated, alevin dumps all the features used by the CB classification and their counts at each cell level. Generally used in pair with other flags.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "true",
+          "value": "TRUE"
+        },
+        {
+          "display": "false",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--dumpFeatures",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "numCellBootstraps",
+      "description": "Estimate the inferential uncertainty in the estimation of per cell level gene count matrix by performing bootstrapping of the reads in per-cell level equivalence classes, and generate the mean and variance of the count matrix. This option generates three additional files, namely, quants_mean_mat.gz, quants_var_mat.gz and quants_boot_rows.txt. The format of the files stay the same as quants_mat.gz while the row order is saved in quants_boot_rows.txt and the column order is stays the same as in file quants_mat_cols.txt.<br>\\nSet the number of bootstrap estimates to perform (0 \\= flag will not be passed to alevin). dumpFeatures must be set to \"true\".",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--numCellBootstraps",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/salmon-alevin-quant:beta"
+}

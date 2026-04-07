@@ -1,0 +1,93 @@
+Create a comprehensive structured plan for the GenePattern module for 'ComBat'.
+            
+            Tool Information:
+            - Name: ComBat
+            - Version: new batch correction tag
+            - Language: any
+            - Description: Batch Correction - Not intended for use with single-cell RNA-seq data.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ComBat",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "input file - .res, .gct (Note that this module is not intended for use with single-cell RNA-seq data)",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct;odf;res",
+      "num_values": "1..1"
+    },
+    {
+      "name": "sample.info.file",
+      "type": "FILE",
+      "description": "A file containing information about the samples. The sample info file must contain the three columns\\: Array, Sample, and Batch. Any additional columns are used as covariates in the analysis.(.txt file)",
+      "required": true,
+      "default_value": "",
+      "file_format": "txt",
+      "num_values": "1..1"
+    },
+    {
+      "name": "covariate.columns",
+      "type": "TEXT",
+      "description": "The covariate columns to use in analysis. This is either set to all, none, or a list specifying one or more covariate columns from sample info file to use in the analysis (i.e, 4, 5, 7, ...). If this is set to 'all' then all the covariate columns are used. If this is set to 'none' then none of the covariate columns are used.",
+      "required": true,
+      "default_value": "all",
+      "num_values": "1..1"
+    },
+    {
+      "name": "absent.calls.filter",
+      "type": "TEXT",
+      "description": "The filter to apply to genes with absent calls (a value between 0 and 1). Filters genes with absent calls in 1-(absent calls filter) of the samples. Ignored if input file is not a .res file.\\t",
+      "required": false,
+      "default_value": "",
+      "prefix": "-f",
+      "num_values": "0..1"
+    },
+    {
+      "name": "create.prior.plots",
+      "type": "TEXT",
+      "description": "[Temporary deactivated\\! currently the only accepted value accepted by this parameter is \"no\"]Whether to generate prior probability distribution plots. Ignored if non-parametric method is used.",
+      "required": false,
+      "default_value": "F",
+      "choices": "F\\=no;F\\=no",
+      "num_values": "0..1"
+    },
+    {
+      "name": "prior.method",
+      "type": "TEXT",
+      "description": "Empirical Bayes priors distribution estimation method to use. Either a parametric or non-parametric method can be applied. If unsure of which method to use try the parametric method first since it is faster.",
+      "required": false,
+      "default_value": "T",
+      "choices": "T\\=parametric;F\\=non-parametric",
+      "num_values": "0..1"
+    },
+    {
+      "name": "output.file",
+      "type": "TEXT",
+      "description": "Name of batch adjusted output file",
+      "required": true,
+      "default_value": "<input.file_basename>.combat.<input.file_extension>",
+      "num_values": "1..1"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "batch correction",
+  "task_type": "batch correction",
+  "author": "Marc-Danie Nazaire, Broad Institute",
+  "command_line": "<R2.7> <libdir>gp.combat.R parseCmdLine -i<input.file> -s<sample.info.file> -c<covariate.columns> <absent.calls.filter> -p<create.prior.plots> -m<prior.method> -o<output.file> -l<libdir>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

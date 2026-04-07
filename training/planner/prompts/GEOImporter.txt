@@ -1,0 +1,488 @@
+Create a comprehensive structured plan for the GenePattern module for 'GEOImporter'.
+            
+            Tool Information:
+            - Name: GEOImporter
+            - Version: Updated NCIBI FTP paths. Added ability to omit rows with all NA values. Updated to use R 4.0.3 via module specific Docker container.
+            - Language: any
+            - Description: Imports data from the Gene Expression Omnibus (GEO)
+            
+            Research Results:
+            Now I have all the data needed to produce the comprehensive, PhD-level research report. Here is the complete deliverable:
+
+---
+
+# 🧬 Comprehensive Research Report: GEOImporter (GenePattern Module)
+
+---
+
+## 📋 Executive Summary
+
+**GEOImporter** is a GenePattern data ingestion module developed and maintained by the Broad Institute that serves as a critical bridge between the **NCBI Gene Expression Omnibus (GEO)** public data repository and the GenePattern analytical ecosystem. The module automates the retrieval and reformatting of GEO SOFT-format microarray expression data into GenePattern-native **GCT** and **CLS** file formats, enabling seamless downstream analyses such as differential expression, gene set enrichment, and clustering — all without requiring programming expertise. Version 6 (the current release) introduced updated NCBI FTP path handling, an important NA-value filtering capability, and migration to an R 4.0.3 Docker container for reproducibility.
+
+---
+
+## 1. 🎯 Tool Purpose and Scientific Applications
+
+### 1.1 Primary Purpose
+
+GEOImporter eliminates the manual data wrangling barrier that would otherwise prevent bench scientists from leveraging the world's largest public functional genomics repository within a GUI-based analytical platform. Its core workflow is:
+
+```
+NCBI GEO Repository (GSE accession)
+         ↓  [Automatic SOFT download via FTP]
+    GEOImporter (R 4.0.3, GEOquery backend)
+         ↓  [Format conversion & NA filtering]
+   GCT + CLS files (GenePattern native formats)
+         ↓
+   Full GenePattern analytical pipeline
+```
+
+### 1.2 Scientific Applications
+
+| Application Domain | How GEOImporter Enables It |
+|---|---|
+| **Differential Gene Expression** | Imports GSE data → GCT + CLS → ComparativeMarkerSelection or DESeq2 |
+| **Gene Set Enrichment Analysis (GSEA)** | Produces GSEA-ready GCT + CLS files; NA row removal critical here |
+| **Unsupervised Clustering** | GCT output feeds directly into HierarchicalClustering or NMFConsensus |
+| **Biomarker Discovery** | Enables re-analysis of published public microarray datasets |
+| **Cross-Study Meta-Analysis** | Multiple GEO imports can be compared within GenePattern pipelines |
+| **Reproducible Research** | Accession-based retrieval ensures data provenance is tracked |
+| **Educational Bioinformatics** | Used in university courses as a zero-code entry point to expression analysis |
+
+### 1.3 The GEO Ecosystem Context
+
+GEO is the world's largest public functional genomics archive, currently hosting:
+- **>5 million samples** across hundreds of thousands of studies
+- **>85% NGS data** as of 2024 (though GEOImporter is optimized for the remaining array-based data)
+- **>200,000 GSE Series records** spanning 20+ years of genomic research
+- Data from virtually all major microarray platforms (Affymetrix, Illumina BeadArray, Agilent, etc.)
+
+**GEO Data Organization Hierarchy:**
+
+```
+GEO
+├── GPL (Platform)  — Array design, probe annotations
+├── GSM (Sample)    — Individual hybridization data tables
+├── GSE (Series)    — Complete study = multiple GSMs + GPLs  ← GEOImporter entry point
+└── GDS (Dataset)  — Curated GEO staff-compiled cross-study summaries
+```
+
+---
+
+## 2. 📁 Input/Output Formats and Requirements
+
+### 2.1 Inputs
+
+#### Input Method 1: GEO Accession Number (Primary — Recommended)
+- **Format:** `GSE` followed by integer digits (e.g., `GSE5788`, `GSE41662`, `GSE123456`)
+- **Resolution:** Module fetches data from NCBI FTP at runtime
+- **NCBI FTP Paths (updated in v6):**
+  - Series SOFT: `ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSEnnn/GSExxx/soft/`
+  - Series Matrix: `ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSEnnn/GSExxx/matrix/`
+- **Network Requirement:** Internet access to `ftp.ncbi.nlm.nih.gov` is **mandatory**
+
+#### Input Method 2: Pre-Downloaded SOFT File (Alternative)
+- **File Extensions:** `.soft`, `.soft.gz`
+- **Use Cases:** Offline environments, version-controlled reproducibility, firewall-restricted servers
+- **SOFT File Structure:**
+
+```
+^SERIES = GSE5788
+!Series_title = "Expression profiling..."
+!Series_geo_accession = GSE5788
+...
+^PLATFORM = GPL570
+!Platform_title = "[HG-U133_Plus_2] Affymetrix Human Genome U133 Plus 2.0 Array"
+...
+^SAMPLE = GSM134739
+!Sample_title = "Sample 1, normal tissue"
+!Sample_geo_accession = GSM134739
+...
+!sample_table_begin
+ID_REF    VALUE
+1007_s_at 9.876
+1053_at   7.234
+...
+!sample_table_end
+```
+
+### 2.2 Outputs
+
+#### Output 1: GCT File (Gene Cluster Text) — Primary Output
+Named `{accession}.gct` (e.g., `GSE5788.gct`)
+
+```
+#1.2                                    ← Version header (required)
+12625    45                              ← #genes  #samples
+NAME        Description    GSM134739  GSM134740  ...  GSM134783
+1007_s_at   DDR1 // disc...  9.876      8.432      ...  7.123
+1053_at     RFC2 // replic..  7.234      6.891      ...  8.456
+...
+```
+
+| GCT Field | Content | Source in GEO |
+|---|---|---|
+| `NAME` | Probe ID / Gene accession | `ID_REF` column from GSM data table |
+| `Description` | Gene annotation / probe description | GPL platform annotation table |
+| `GSMxxxxxx` (columns) | Normalized expression values | `VALUE` column (or custom) from each GSM |
+
+#### Output 2: CLS File (Class Labels) — Secondary Output
+Named `{accession}.cls` (when sample metadata allows class inference)
+
+```
+45 2 1                    ← num_samples  num_classes  format_version
+# tumor normal            ← # followed by space-delimited class names
+0 0 0 1 1 1 0 0 1 1 ...  ← 0-indexed class assignment per sample
+```
+
+**Biological Significance of CLS:** Encodes experimental design (e.g., tumor vs. normal, treated vs. control) directly from GEO sample metadata (`!Sample_characteristics_ch1`), enabling immediate supervised analysis without manual annotation.
+
+### 2.3 Data Type Compatibility Matrix
+
+| GEO Data Type | Accession Example | GEOImporter Compatible? | Notes |
+|---|---|---|---|
+| Affymetrix microarray | GSE5788 | ✅ Yes | Optimal use case |
+| Illumina BeadArray | GSE41662 | ✅ Yes | Works with VALUE column |
+| Agilent two-color | GSE12345 | ✅ Usually | May need non-VALUE column |
+| RNA-seq (NGS) | GSE123168 | ❌ No | Counts in supplementary files only |
+| ChIP-seq / ATAC-seq | GSE200000 | ❌ No | Not expression data |
+| Genome tiling arrays | GSE99999 | ⚠️ Limited | No standard VALUE column |
+| GEO DataSet (GDS) | GDS507 | ⚠️ Indirect | Use underlying GSE instead |
+
+---
+
+## 3. ⚙️ Parameter Analysis and Usage Patterns
+
+### 3.1 Full Parameter Catalog
+
+| # | Parameter Name | Type | Default | Required | Biological/Technical Significance |
+|---|---|---|---|---|---|
+| 1 | `geo.accession.number` | String (GSExxxx) | *(none)* | Conditional* | Primary data source identifier; drives FTP download |
+| 2 | `soft.file` | File (.soft/.soft.gz) | *(none)* | Conditional* | Alternative to online retrieval; enables offline reproducibility |
+| 3 | `data.column.name` | String | `VALUE` | Optional | Selects which processed data column to extract; platform-dependent |
+| 4 | `omit.rows.with.all.na.values` | Boolean (yes/no) | `yes` | Optional | Critical for GSEA; removes uninformative all-NA probe rows |
+| 5 | `output.file.prefix` | String | GSE accession | Optional | Controls output filename prefix |
+
+*Exactly one of `geo.accession.number` or `soft.file` must be provided.
+
+### 3.2 Parameter Deep Dive
+
+#### `data.column.name` — Critical Nuance
+The GEO SOFT format requires each GSM to have a data table with at least an `ID_REF` column. The second column is typically the processed expression value:
+
+| Common Column Names | Platform/Context |
+|---|---|
+| `VALUE` | Most microarray datasets (Affymetrix, Illumina) — **use this as default** |
+| `PROCESSED` | Some custom processed datasets |
+| `RMA` | RMA-normalized Affymetrix data (some submissions) |
+| `MAS5` | MAS5-normalized Affymetrix data |
+| `LOG2_RATIO` | Two-color array log2 ratios |
+
+**Best Practice:** Always inspect the GEO dataset page for the sample data table structure before running, particularly for non-Affymetrix platforms.
+
+#### `omit.rows.with.all.na.values` — v6 Addition (Critical for GSEA)
+This parameter was added in v6 directly in response to user-reported failures in the GSEA GenePattern module. GEO datasets frequently contain probes with no expression values across all samples (common when a platform annotation includes probes not used in all samples of a multi-platform series). **Recommendation: Always set to `yes` for GSEA workflows.**
+
+### 3.3 Usage Pattern Groups
+
+```
+┌──────────────────────────────────────────────────┐
+│ GROUP 1: DATA SOURCE (Mutually Exclusive)        │
+│  • geo.accession.number (online retrieval)       │
+│  • soft.file (offline/local file)                │
+└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│ GROUP 2: DATA EXTRACTION                         │
+│  • data.column.name → which expression metric    │
+│  • omit.rows.with.all.na.values → data quality  │
+└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│ GROUP 3: OUTPUT CONFIGURATION                    │
+│  • output.file.prefix → filename control        │
+└──────────────────────────────────────────────────┘
+```
+
+---
+
+## 4. 🔧 Installation and Dependency Requirements
+
+### 4.1 Runtime Environment
+
+| Component | Specification |
+|---|---|
+| **R Version** | 4.0.3 (enforced via Docker) |
+| **Container** | Module-specific Docker image (GenePattern Docker Hub) |
+| **Execution** | GenePattern server with Docker daemon |
+| **Network** | Outbound FTP to `ftp.ncbi.nlm.nih.gov` (port 21) for accession mode |
+
+### 4.2 R Package Dependencies
+
+| Package | Source | Role |
+|---|---|---|
+| **GEOquery** | Bioconductor | Core: `getGEO()`, SOFT parsing, FTP retrieval |
+| **Biobase** | Bioconductor | `ExpressionSet` S4 objects, `exprs()`, `pData()` |
+| **limma** | Bioconductor | Likely used for data structure handling |
+| **data.table** or **readr** | CRAN | Efficient file I/O for large datasets |
+
+**GEOquery Citation (Backend Library):**
+> Davis, S. & Meltzer, P.S. (2007). *GEOquery: a bridge between the Gene Expression Omnibus (GEO) and BioConductor.* Bioinformatics, 23(14):1846–1847. DOI: 10.1093/bioinformatics/btm254
+
+### 4.3 Docker Architecture
+
+```
+GenePattern Server
+└── Job Execution Request
+    └── docker run genepattern/geoimporter:r403
+        ├── /module/   — R scripts (mounted from module libdir)
+        ├── /input/    — Input files (mounted)
+        └── /output/   — Result files (mounted, returned to server)
+```
+
+The Docker container approach (introduced in GenePattern's modern architecture) ensures:
+- **Reproducibility**: Fixed R and package versions
+- **Isolation**: No conflicts with system R or other modules
+- **Portability**: Runs identically on any Docker-capable host
+
+### 4.4 GenePattern Module Manifest (manifest file) Key Properties
+
+```properties
+name=GEOImporter
+description=Imports data from the Gene Expression Omnibus (GEO)
+version=6
+job.docker.image=genepattern/geoimporter:r403
+language=R
+# Parameters mapped to R script arguments
+```
+
+---
+
+## 5. 🔬 Common Workflows and Use Cases
+
+### 5.1 Workflow 1: Classic Differential Expression Analysis
+
+```
+GEOImporter (GSExxxx)
+    │
+    ├──→ {accession}.gct ──→ PreprocessDataset ──→ {accession}.preprocessed.gct ──→ ComparativeMarkerSelection
+    │                                                                                         │
+    └──→ {accession}.cls ────────────────────────────────────────────────────────────────────┘
+                                                                                              │
+                                                                              ComparativeMarkerSelectionViewer
+                                                                                     (ranked gene list)
+```
+
+**Use Case:** Re-analysis of published microarray studies to reproduce or extend findings; ideal for validating biomarker signatures across cohorts.
+
+### 5.2 Workflow 2: Gene Set Enrichment Analysis (GSEA)
+
+```
+GEOImporter (GSExxxx, omit.rows.with.all.na.values=yes)
+    │
+    ├──→ {accession}.gct ──→ GSEA module ──→ Enrichment results
+    │                              ↑
+    ├──→ {accession}.cls ──────────┤
+    │                              ↑
+    └──────────────── MSigDB GMT gene sets (c2.all.v7.4.symbols.gmt)
+```
+
+**Critical Note:** The `omit.rows.with.all.na.values=yes` setting is essential here; GSEA will fail on rows that are entirely NA, and this was a documented community pain point resolved in v6.
+
+### 5.3 Workflow 3: Unsupervised Clustering
+
+```
+GEOImporter (GSExxxx)
+    │
+    └──→ {accession}.gct ──→ PreprocessDataset ──→ HierarchicalClustering ──→ HeatMapViewer
+                                                              OR
+                                                    NMFConsensus ──→ Subtype Discovery
+```
+
+**Use Case:** Unsupervised discovery of patient subgroups or co-expressed gene modules within publicly available datasets.
+
+### 5.4 Workflow 4: Multi-Study Pipeline (Advanced)
+
+```
+GEOImporter (GSE_Study1) ──→ GCT1
+GEOImporter (GSE_Study2) ──→ GCT2  ──→ MergeHTSeqCounts or custom merger ──→ Meta-analysis
+GEOImporter (GSE_Study3) ──→ GCT3
+```
+
+### 5.5 Educational/Course Use (Documented)
+
+GEOImporter is explicitly used in university bioinformatics curricula (documented at Tufts University, CS/Bio 40):
+```
+Step 1: Find a GSE on NCBI GEO
+Step 2: Enter GSE ID in GEOImporter (e.g., GSE5788)
+Step 3: Download output .gct file
+Step 4: Use .gct in ComparativeMarkerSelection for differential expression
+```
+
+---
+
+## 6. 🔗 Integration Considerations for GenePattern
+
+### 6.1 Module Positioning in GenePattern Ecosystem
+
+```
+Data Acquisition Layer:
+├── GEOImporter          ← Public array data (this module)
+├── TCGAImporter         ← Cancer Genome Atlas data
+├── caArrayImportViewer  ← NCI caArray data
+└── ExpressionFileCreator ← Raw Affymetrix CEL files
+
+Expression Analysis Layer (receives GCT + CLS):
+├── PreprocessDataset
+├── ComparativeMarkerSelection
+├── GSEA
+├── HierarchicalClustering
+├── NMFConsensus
+└── ClassNeighbors
+```
+
+### 6.2 File Format Compatibility
+
+| Output File | Extension | Accepted by (downstream modules) |
+|---|---|---|
+| Gene expression matrix | `.gct` | PreprocessDataset, ComparativeMarkerSelection, GSEA, HierarchicalClustering, NMFConsensus, ClassNeighbors, CART, SVM, KNN |
+| Class labels | `.cls` | ComparativeMarkerSelection, GSEA, ClassNeighbors, CART, SVM |
+
+### 6.3 Known Limitations and Mitigation Strategies
+
+| Limitation | Impact | Mitigation |
+|---|---|---|
+| **RNA-seq datasets not supported** | Cannot import NGS-based GEO data (85% of new submissions) | Use DESeq2Importer or manually convert supplementary counts files to GCT; document clearly in module help |
+| **All-NA rows in output** | Caused GSEA failures | ✅ Fixed in v6 with `omit.rows.with.all.na.values` parameter |
+| **NCBI FTP path instability** | Module breaks on NCBI infrastructure changes | ✅ Updated in v6; consider HTTPS fallback in future versions |
+| **Non-VALUE column names** | Default parameter fails for non-standard datasets | User must manually inspect GEO dataset; document common alternatives |
+| **Multi-platform GSE series** | May generate multiple GCT files or require platform selection | Consider adding platform filter parameter in future versions |
+| **Large GSE series (100+ samples)** | Slow FTP download, possible timeout | Consider progress indicator; server-side job timeout settings |
+| **Partial-NA rows** | Retained even in v6; can cause issues in some analyses | Post-hoc: user must handle via PreprocessDataset filtering |
+
+### 6.4 GenePattern Module Manifest Recommendations
+
+```properties
+name=GEOImporter
+description=Imports microarray gene expression data from the NCBI Gene Expression Omnibus (GEO). Enter a GEO Series accession number (e.g., GSE5788) to download and convert data to GenePattern GCT and CLS format files.
+version=6
+job.docker.image=genepattern/geoimporter:r403
+language=R
+os=any
+cpuType=any
+memory=2gb
+fileFormat=soft
+
+p1_name=geo.accession.number
+p1_description=GEO Series accession number (e.g. GSE5788). Either this or a SOFT file must be provided.
+p1_TYPE=TEXT
+p1_optional=
+
+p2_name=soft.file
+p2_description=A previously downloaded GEO SOFT format file. Use as an alternative to providing an accession number.
+p2_TYPE=FILE
+p2_fileFormat=soft;soft.gz
+p2_optional=on
+
+p3_name=data.column.name
+p3_description=The column name in the GEO sample data tables to use as expression values. Most GEO datasets use the default VALUE column. Common alternatives: PROCESSED, RMA, MAS5.
+p3_default_value=VALUE
+p3_TYPE=TEXT
+p3_optional=on
+
+p4_name=omit.rows.with.all.na.values
+p4_description=Remove rows (probes/genes) where all sample values are NA. Recommended: yes. Required for compatibility with GSEA and other downstream modules.
+p4_default_value=yes
+p4_TYPE=TEXT
+p4_choices=yes;no
+p4_optional=on
+
+p5_name=output.file.prefix
+p5_description=Prefix for output file names. Defaults to the GEO accession number (e.g. GSE5788).
+p5_TYPE=TEXT
+p5_optional=on
+```
+
+### 6.5 Comparison with Alternative Tools for GenePattern Integration
+
+| Tool | Interface | GCT Output | CLS Output | No-Code | Microarray | RNA-seq | GenePattern-Native |
+|---|---|---|---|---|---|---|---|
+| **GEOImporter** | GUI/GP Module | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| GEOquery (R) | R programming | Manual | Manual | ❌ | ✅ | ✅ | ❌ |
+| GEO2R | Web browser | ❌ | ❌ | ✅ | ✅ | Limited | ❌ |
+| TCGAImporter | GUI/GP Module | ✅ | ✅ | ✅ | N/A | ✅ | ✅ |
+| ExpressionFileCreator | GUI/GP Module | ✅ | ❌ | ✅ | Raw CEL | ❌ | ✅ |
+| recount3 | R programming | Manual | Manual | ❌ | ❌ | ✅ | ❌ |
+
+**GEOImporter's Unique Value Proposition:** It is the **only zero-code, GenePattern-native solution** for importing **published, public microarray data from GEO** with automatic GCT+CLS generation from sample metadata, directly integrated into the GenePattern pipeline drag-and-drop system.
+
+---
+
+## 7. 📚 Scientific Literature and Validation
+
+### 7.1 Key References
+
+1. **GEOImporter / GenePattern:**
+   > Reich, M., Liefeld, T., Gould, J., et al. (2006). *GenePattern 2.0.* Nature Genetics, 38, 500–501. [DOI: 10.1038/ng0506-500]
+
+2. **GEO Database (primary source):**
+   > Barrett, T., Wilhite, S.E., Ledoux, P., et al. (2013). *NCBI GEO: archive for functional genomics data sets—update.* Nucleic Acids Research, 41(D1), D991–D995. [DOI: 10.1093/nar/gks1193]
+
+3. **GEO 23-Year Update:**
+   > Clough, E. & Barrett, T. (2024). *NCBI GEO: archive for gene expression and epigenomics data sets: 23-year update.* Nucleic Acids Research (NAR Genomics & Bioinformatics).
+
+4. **GEOquery Backend Library:**
+   > Davis, S. & Meltzer, P.S. (2007). *GEOquery: a bridge between the Gene Expression Omnibus (GEO) and BioConductor.* Bioinformatics, 23(14), 1846–1847. [DOI: 10.1093/bioinformatics/btm254]
+
+5. **GenePattern Workflows Utilizing GEOImporter:**
+   > Mesirov, J.P. (2010). *Accessible reproducible research.* Science, 327(5964), 415–416.
+
+6. **GSEA (downstream from GEOImporter):**
+   > Subramanian, A., Tamayo, P., Mootha, V.K., et al. (2005). *Gene set enrichment analysis: a knowledge-based approach for interpreting genome-wide expression profiles.* PNAS, 102(43), 15545–15550.
+
+### 7.2 Community Adoption Evidence
+- Used in university computational biology courses (Tufts CS/Bio 40, documented 2019)
+- Active user forum threads on `groups.google.com/g/genepattern-help` documenting real-world usage
+- Featured in GenePattern's official Data Format Conversion documentation and PMC tutorial article (PMC3893799)
+
+---
+
+## 8. ⚠️ Known Issues and Caveats Summary
+
+> **⚠️ CRITICAL:** GEOImporter **cannot import RNA-seq GEO datasets**. Approximately 85% of new GEO submissions (as of 2024) are NGS-based. Users attempting to import RNA-seq accessions will encounter errors or empty outputs. The module is **specifically designed for and validated against array-based microarray data** stored in GEO SOFT format.
+
+> **⚠️ IMPORTANT:** Ensure `omit.rows.with.all.na.values = yes` when the downstream pipeline includes GSEA. This resolves a long-standing compatibility issue documented in the GenePattern community forums.
+
+> **ℹ️ NOTE:** The `data.column.name` default of `VALUE` is correct for ~90% of GEO microarray datasets, but non-standard depositions may use alternative column names. Always verify the GEO dataset structure before running.
+
+> **ℹ️ NOTE:** NCBI FTP paths are subject to change with NCBI infrastructure updates. Version 6 addressed the most recent FTP path change. Future path deprecations may require module updates.
+
+---
+
+## 9. 🏗️ GenePattern Module Development Checklist
+
+| Item | Status/Recommendation |
+|---|---|
+| Docker base image | `genepattern/geoimporter:r403` (R 4.0.3) |
+| R dependencies | GEOquery, Biobase (install via BiocManager in Docker build) |
+| Network access | FTP port 21 to `ftp.ncbi.nlm.nih.gov` must be open |
+| Input validation | Regex check on accession: `^GSE[0-9]+$` |
+| Mutual exclusivity | Validate exactly one of accession/SOFT file provided |
+| NA filtering | Default `omit.rows.with.all.na.values=yes` enforced in v6 |
+| Output naming | `{prefix}.gct` and `{prefix}.cls` (prefix = accession if not specified) |
+| Error messages | Clear guidance when RNA-seq accession is detected (no VALUE column in SOFT) |
+| Documentation | Include GEO accession lookup URL, common data.column.name values |
+| Testing datasets | GSE5788 (microarray, clean), GSE41662 (standard), GSE123168 (RNA-seq, test failure handling) |
+
+---
+
+*Report compiled from: NCBI GEO official documentation, GEOquery Bioconductor package documentation, GenePattern GitHub repository (genepattern/GEOImporter), GenePattern community forums, Broad Institute documentation, Tufts University course materials, PMC bioinformatics literature, and comparative tool analysis. All sources accessed and cross-validated.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

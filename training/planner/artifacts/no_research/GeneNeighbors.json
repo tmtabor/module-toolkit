@@ -1,0 +1,196 @@
+{
+  "module_name": "GeneNeighbors",
+  "description": "Select genes that most closely resemble a continuous profile (e.g., another gene)",
+  "author": "Ken Ross, Broad Institute",
+  "input_file_formats": [
+    "Dataset",
+    "gct",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:85991:1",
+  "plan": "## GeneNeighbors GenePattern Module — Implementation Plan\n\n### 1. Overview\nGeneNeighbors is a GenePattern module that Select genes that most closely resemble a continuous profile (e.g., another gene)\n\n### 2. Parameters\nThe module exposes 11 parameters:\n- Required: data.filename, gene.accession, num.neighbors, marker.list.file, marker.dataset.file, distance.metric, filter.data, min.threshold, max.threshold, min.fold.diff, min.abs.diff\n- Optional: none\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>RunMarkerSelection.jar edu.mit.wi.genome.expresso.alg.RunMarkerSelection.RunMarkerSelection -t <data.filename> \\r\\n-H -m <min.threshold> -M <max.threshold> -f -F <min.fold.diff> -D <min.abs.diff> -o <marker.list.file> -C -N <num.neighbors> -O <marker.dataset.file> -g <gene.accession> -k <distance.metric> -G <filter.data>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "gp-modules.jar<path.separator><libdir>RunMarkerSelection.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>RunMarkerSelection.jar edu.mit.wi.genome.expresso.alg.RunMarkerSelection.RunMarkerSelection -t <data.filename> \\r\\n-H -m <min.threshold> -M <max.threshold> -f -F <min.fold.diff> -D <min.abs.diff> -o <marker.list.file> -C -N <num.neighbors> -O <marker.dataset.file> -g <gene.accession> -k <distance.metric> -G <filter.data>",
+  "parameters": [
+    {
+      "name": "data.filename",
+      "description": "data file - .gct, .res, .odf",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "res",
+        "Dataset"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gene.accession",
+      "description": "reference gene accession from data file to find neighbors for",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gene.accession",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.neighbors",
+      "description": "number of neighbors to find",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "50",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.neighbors",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "marker.list.file",
+      "description": "output filename for analysis results - .odf file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.filename_basename>.markerlist",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--marker.list.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "marker.dataset.file",
+      "description": "output filename raw data for selected markers - .gct file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.filename_basename>.markerdata",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--marker.dataset.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "distance.metric",
+      "description": "continuous metric for finding neighbors",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Cosine distance",
+          "value": "0"
+        },
+        {
+          "display": "Euclidean distance",
+          "value": "1"
+        },
+        {
+          "display": "Manhattan distance",
+          "value": "2"
+        },
+        {
+          "display": "Pearson distance",
+          "value": "3"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--distance.metric",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "filter.data",
+      "description": "if no, values below will be ignored",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--filter.data",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.threshold",
+      "description": "minimum threshold for data",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "20",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.threshold",
+      "description": "maximum threshold for data",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "20000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.fold.diff",
+      "description": "minimum fold difference for filtering genes",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.fold.diff",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.abs.diff",
+      "description": "minimum absolute difference for filtering genes",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "50",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.abs.diff",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

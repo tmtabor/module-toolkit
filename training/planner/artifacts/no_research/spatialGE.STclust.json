@@ -1,0 +1,183 @@
+{
+  "module_name": "spatialGE.STclust",
+  "description": "This function performs spatial clustering on gene expression data using the STclust method.",
+  "author": "GenePattern Team",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "R",
+  "categories": [
+    "clustering",
+    "spatial transcriptomics"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:57558:1",
+  "plan": "## spatialGE.STclust GenePattern Module — Implementation Plan\n\n### 1. Overview\nspatialGE.STclust is a GenePattern module that This function performs spatial clustering on gene expression data using the STclust method.\n\n### 2. Parameters\nThe module exposes 11 parameters:\n- Required: input.file, dynamic.tree.cut\n- Optional: output.file, tissue.images, spatial.weight, distance.metric, linkage.method, number.of.genes, deep.split, minimum.clusters, maximum.clusters\n\n### 3. Command Line\n```\nRscript <libdir>stclust_wrapper_ai.R -j <job_id> -e <input.file> --ws <spatial.weight> --dist_metric <distance.metric> --linkage <linkage.method> --ks <dynamic.tree.cut> --mink <minimum.clusters> --maxk <maximum.clusters> --topgenes <number.of.genes> --deepSplit <deep.split> --output <output.file>    <tissue.images>\n```\n\n### 4. Docker Image\nDocker image: genepattern/spatialgp.preprocessing\\:0.4\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "stclust_wrapper_ai.R",
+  "command_line": "Rscript <libdir>stclust_wrapper_ai.R -j <job_id> -e <input.file> --ws <spatial.weight> --dist_metric <distance.metric> --linkage <linkage.method> --ks <dynamic.tree.cut> --mink <minimum.clusters> --maxk <maximum.clusters> --topgenes <number.of.genes> --deepSplit <deep.split> --output <output.file>    <tissue.images>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "STList object in .RDS file format to cluster on.",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "Path to save the output STlist object. Default is 'output.RData'.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "spatialGE_STclustered.rds",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "tissue.images",
+      "description": "Tar gz compressed file of the images of the samples in the STList object.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--images",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "spatial.weight",
+      "description": "Weight to be applied to spatial distances (0-1). Default is 0.025.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.025",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--spatial.weight",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "distance.metric",
+      "description": "Distance metric to be used. Default is 'euclidean'.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "euclidean",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--distance.metric",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "linkage.method",
+      "description": "Linkage method applied to hierarchical clustering. Default is 'ward.D2'",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "ward.D2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--linkage.method",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "dynamic.tree.cut",
+      "description": "Whether to automatically determine the number of clusters using Dynamic Tree Cut.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        },
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--dynamic.tree.cut",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "number.of.genes",
+      "description": "Number of genes with highest spot-to-spot expression variation. Default is 2000",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "2000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--number.of.genes",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "deep.split",
+      "description": "Logical or integer (1-4) to control cluster resolution. Default is FALSE",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        },
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--deep.split",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "minimum.clusters",
+      "description": "Minimum number of clusters (tissue domains). Must be >\\= 2. Only used if Dynamic Tree Cut is false.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--minimum.clusters",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "maximum.clusters",
+      "description": "Maximum number of clusters (tissue domains). Only used if Dynamic Tree Cut is false.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--maximum.clusters",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/spatialgp.preprocessing:0.4"
+}

@@ -1,0 +1,258 @@
+{
+  "module_name": "TCGA.SampleSelection",
+  "description": "Retrieve TCGA data from Broad FireBrowse and perform sample selection on the basis of expression levels for specific genes of interest for analysis using GSEA tools.",
+  "author": "Anthony S. Castanza;UCSD-MesirovLab",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "R",
+  "categories": [
+    "preprocess & utilities",
+    "gsea"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:20358:1",
+  "plan": "## TCGA.SampleSelection GenePattern Module — Implementation Plan\n\n### 1. Overview\nTCGA.SampleSelection is a GenePattern module that Retrieve TCGA data from Broad FireBrowse and perform sample selection on the basis of expression levels for specific genes of interest for analysis using GSEA tools.\n\n### 2. Parameters\nThe module exposes 6 parameters:\n- Required: TCGA.Collection, Gene.Symbol, High.Expression, Low.Expression, Output.Type, MSigDB.Version\n- Optional: none\n\n### 3. Command Line\n```\nRscript /TCGA_SS/TCGA_Datasets.R --id <TCGA.Collection> --symbol <Gene.Symbol> --high <High.Expression> --low <Low.Expression> --type <Output.Type> --msigdb <MSigDB.Version>\n```\n\n### 4. Docker Image\nDocker image: genepattern/tcga-sampleselection\\:beta6\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "TCGA_Datasets.R",
+  "command_line": "Rscript /TCGA_SS/TCGA_Datasets.R --id <TCGA.Collection> --symbol <Gene.Symbol> --high <High.Expression> --low <Low.Expression> --type <Output.Type> --msigdb <MSigDB.Version>",
+  "parameters": [
+    {
+      "name": "TCGA.Collection",
+      "description": "TCGA Study for sample selection",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "GBM",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Acute Myeloid Leukemia (LAML)",
+          "value": "LAML"
+        },
+        {
+          "display": "Adrenocortical carcinoma (ACC)",
+          "value": "ACC"
+        },
+        {
+          "display": "Bladder urothelial carcinoma (BLCA)",
+          "value": "BLCA"
+        },
+        {
+          "display": "Brain Lower Grade Glioma (LGG)",
+          "value": "LGG"
+        },
+        {
+          "display": "Breast invasive carcinoma (BRCA)",
+          "value": "BRCA"
+        },
+        {
+          "display": "Cervical and endocervical cancers (CESC)",
+          "value": "CESC"
+        },
+        {
+          "display": "Cholangiocarcinoma (CHOL)",
+          "value": "CHOL"
+        },
+        {
+          "display": "Colon adenocarcinoma (COAD)",
+          "value": "COAD"
+        },
+        {
+          "display": "Colorectal adenocarcinoma (COADREAD)",
+          "value": "COADREAD"
+        },
+        {
+          "display": "Esophageal carcinoma (ESCA)",
+          "value": "ESCA"
+        },
+        {
+          "display": "Glioblastoma multiforme (GBM)",
+          "value": "GBM"
+        },
+        {
+          "display": "Glioma (GBMLGG)",
+          "value": "GBMLGG"
+        },
+        {
+          "display": "Head and Neck squamous cell carcinoma (HNSC)",
+          "value": "HNSC"
+        },
+        {
+          "display": "Kidney Chromophobe (KICH)",
+          "value": "KICH"
+        },
+        {
+          "display": "Kidney renal clear cell carcinoma (KIRC)",
+          "value": "KIRC"
+        },
+        {
+          "display": "Kidney renal papillary cell carcinoma (KIRP)",
+          "value": "KIRP"
+        },
+        {
+          "display": "Liver hepatocellular carcinoma (LIHC)",
+          "value": "LIHC"
+        },
+        {
+          "display": "Lung adenocarcinoma (LUAD)",
+          "value": "LUAD"
+        },
+        {
+          "display": "Lung squamous cell carcinoma (LUSC)",
+          "value": "LUSC"
+        },
+        {
+          "display": "Lymphoid Neoplasm Diffuse Large B-cell Lymphoma (DLBC)",
+          "value": "DLBC"
+        },
+        {
+          "display": "Mesothelioma (MESO)",
+          "value": "MESO"
+        },
+        {
+          "display": "Ovarian serous cystadenocarcinoma (OV)",
+          "value": "OV"
+        },
+        {
+          "display": "Pan-kidney cohort (KICH+KIRC+KIRP) (KIPAN)",
+          "value": "KIPAN"
+        },
+        {
+          "display": "Pancreatic adenocarcinoma (PAAD)",
+          "value": "PAAD"
+        },
+        {
+          "display": "Pheochromocytoma and Paraganglioma (PCPG)",
+          "value": "PCPG"
+        },
+        {
+          "display": "Prostate adenocarcinoma (PRAD)",
+          "value": "PRAD"
+        },
+        {
+          "display": "Rectum adenocarcinoma (READ)",
+          "value": "READ"
+        },
+        {
+          "display": "Sarcoma (SARC)",
+          "value": "SARC"
+        },
+        {
+          "display": "Skin Cutaneous Melanoma (SKCM)",
+          "value": "SKCM"
+        },
+        {
+          "display": "Stomach adenocarcinoma (STAD)",
+          "value": "STAD"
+        },
+        {
+          "display": "Stomach and Esophageal carcinoma (STES)",
+          "value": "STES"
+        },
+        {
+          "display": "Testicular Germ Cell Tumors (TGCT)",
+          "value": "TGCT"
+        },
+        {
+          "display": "Thymoma (THYM)",
+          "value": "THYM"
+        },
+        {
+          "display": "Thyroid carcinoma (THCA)",
+          "value": "THCA"
+        },
+        {
+          "display": "Uterine Carcinosarcoma (UCS)",
+          "value": "UCS"
+        },
+        {
+          "display": "Uterine Corpus Endometrial Carcinoma (UCEC)",
+          "value": "UCEC"
+        },
+        {
+          "display": "Uveal Melanoma (UVM)",
+          "value": "UVM"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--TCGA.Collection",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Gene.Symbol",
+      "description": "HGNC Gene Symbol to use for expression level thresholding",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Gene.Symbol",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "High.Expression",
+      "description": "mRNA expression is greater than or equal to x standard deviations above the mean. <br>\\n(mRNA expression z-scores relative to all samples)",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--High.Expression",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Low.Expression",
+      "description": "mRNA expression is less than or equal to x standard deviations below the mean. <br>\\n(mRNA expression z-scores relative to all samples)",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "-1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Low.Expression",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.Type",
+      "description": "Type of RSEM quantifications to output\\:\\n<br>TPM (transcripts per million, within sample normalization, useful for ssGSEA)\\n<br> Raw counts (unnormalized counts, usable with DESeq2 or other DEG calculations).",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "scaled_estimate",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TPM",
+          "value": "scaled_estimate"
+        },
+        {
+          "display": "Raw Counts",
+          "value": "raw_count"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Output.Type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "MSigDB.Version",
+      "description": "MSigDB version to use for Gene Symbol lookup.<br>\\nThis version should match the version of the gene sets intended for all downstream analysis.<br><a href\\=\"https\\://software.broadinstitute.org/cancer/software/gsea/wiki/index.php/Release_Notes\" target\\=\"_blank\">Click here for a current listing of all MSigDB versions.</a>",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "latest",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--MSigDB.Version",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/tcga-sampleselection:beta6"
+}

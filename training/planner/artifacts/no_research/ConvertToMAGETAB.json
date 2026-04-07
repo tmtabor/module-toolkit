@@ -1,0 +1,106 @@
+{
+  "module_name": "ConvertToMAGETAB",
+  "description": "A module to export data from GenePattern in MAGE-TAB format",
+  "author": "Marc-Danie Nazaire(Broad Institute)",
+  "input_file_formats": [
+    "cls",
+    "gct",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:18396:1",
+  "plan": "## ConvertToMAGETAB GenePattern Module — Implementation Plan\n\n### 1. Overview\nConvertToMAGETAB is a GenePattern module that A module to export data from GenePattern in MAGE-TAB format\n\n### 2. Parameters\nThe module exposes 6 parameters:\n- Required: input.file, sample.reference.label, feature.reference.label, intensity.type.label, output.prefix\n- Optional: cls.file\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>limpopo-1.0-beta-20100420.jar<path.separator><libdir>convertMAGETAB.jar org.broadinstitute.mage.MAGETABCreator <input.file> <sample.reference.label> <feature.reference.label> <intensity.type.label> <output.prefix> <cls.file>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "gp-modules.jar<path.separator><libdir>limpopo-1.0-beta-20100420.jar<path.separator><libdir>convertMAGETAB.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>limpopo-1.0-beta-20100420.jar<path.separator><libdir>convertMAGETAB.jar org.broadinstitute.mage.MAGETABCreator <input.file> <sample.reference.label> <feature.reference.label> <intensity.type.label> <output.prefix> <cls.file>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "A dataset file  - .gct, .res",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "res"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cls.file",
+      "description": "A class file  - .cls",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cls.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.reference.label",
+      "description": "reference label for samples in the data matrix file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "Hybridization REF",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sample.reference.label",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "feature.reference.label",
+      "description": "reference label for features in the data matrix file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "CompositeElement REF",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--feature.reference.label",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "intensity.type.label",
+      "description": "label that specifies the type of intensity values in data matrix file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--intensity.type.label",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "prefix to use for output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

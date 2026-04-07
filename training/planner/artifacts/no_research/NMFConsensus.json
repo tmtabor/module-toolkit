@@ -1,0 +1,160 @@
+{
+  "module_name": "NMFConsensus",
+  "description": "Non-negative Matrix Factorization (NMF) Consensus Clustering",
+  "author": "Jean-Phillipe Brunet and Pablo Tamayo, The Broad Institute",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "R 2.5",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:43799:1",
+  "plan": "## NMFConsensus GenePattern Module — Implementation Plan\n\n### 1. Overview\nNMFConsensus is a GenePattern module that Non-negative Matrix Factorization (NMF) Consensus Clustering\n\n### 2. Parameters\nThe module exposes 10 parameters:\n- Required: dataset.filename, k.initial, k.final, num.clusterings, max.num.iterations, error.function, random.seed, output.file.prefix, stop.convergence, stop.frequency\n- Optional: none\n\n### 3. Command Line\n```\n<R2.5> <libdir>nmfconsensus.R nmfconsensus <dataset.filename> <k.initial> <k.final> <num.clusterings> <max.num.iterations> <error.function> <random.seed> <stop.convergence> <stop.frequency> T <output.file.prefix>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "nmfconsensus.R",
+  "command_line": "<R2.5> <libdir>nmfconsensus.R nmfconsensus <dataset.filename> <k.initial> <k.final> <num.clusterings> <max.num.iterations> <error.function> <random.seed> <stop.convergence> <stop.frequency> T <output.file.prefix>",
+  "parameters": [
+    {
+      "name": "dataset.filename",
+      "description": "Input dataset (gct or res)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dataset.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "k.initial",
+      "description": "Initial value of K",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--k.initial",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "k.final",
+      "description": "Final value of K",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--k.final",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.clusterings",
+      "description": "Number of clusterings per value of K",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "20",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.clusterings",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.num.iterations",
+      "description": "Maximum number of NMF iterations per clustering",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "2000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.num.iterations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "error.function",
+      "description": "Error function",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "divergence",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "divergence",
+          "value": "divergence"
+        },
+        {
+          "display": "euclidean",
+          "value": "euclidean"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--error.function",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "random.seed",
+      "description": "Seed for random number generator",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "123456789",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--random.seed",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file.prefix",
+      "description": "Prefix to append to all output files",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<dataset.filename_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file.prefix",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "stop.convergence",
+      "description": "How many \"no change\" checks are needed to stop NMF iterations before max iterations is reached(convergence)",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "40",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--stop.convergence",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "stop.frequency",
+      "description": "Frequency (NMF iterations) of \"no change\" checks",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--stop.frequency",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

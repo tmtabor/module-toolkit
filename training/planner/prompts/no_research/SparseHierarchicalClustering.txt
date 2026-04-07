@@ -1,0 +1,86 @@
+Create a comprehensive structured plan for the GenePattern module for 'SparseHierarchicalClustering'.
+            
+            Tool Information:
+            - Name: SparseHierarchicalClustering
+            - Version: Public Release
+            - Language: R
+            - Description: Cluster the samples in a data matrix using an adaptively-chosen subset of the features.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "SparseHierarchicalClustering",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "A GCT file containing data to cluster",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct"
+    },
+    {
+      "name": "method",
+      "type": "java.lang.String",
+      "description": "The type of linkage to use in the hierarchical clustering - \"single\", \"complete\", \"centroid\", or \"average.\"",
+      "required": true,
+      "default_value": "average",
+      "choices": "average;complete;single;centroid"
+    },
+    {
+      "name": "wbound",
+      "type": "java.lang.Integer",
+      "description": "The sum of gene weights; this is the tuning parameter for sparse hierarchical clustering. If a non-negative number is given, then this tuning parameter is used. Otherwise, a tuning parameter is selected via a permutation approach. Note\\: The program runs much more quickly if wbound is specified rather than left at -1.",
+      "required": true,
+      "default_value": "-1"
+    },
+    {
+      "name": "maxnumgenes",
+      "type": "java.lang.Integer",
+      "description": "By default, only the 5000 genes with highest variance will be used (for computational reasons). To use all the genes, set to -1. Warning\\: using all genes will be slow if there are many genes in the data set.",
+      "required": true,
+      "default_value": "5000"
+    },
+    {
+      "name": "cluster.features",
+      "type": "java.lang.String",
+      "description": "If a clustering of the genes with non-zero weights is desired, set to TRUE.",
+      "required": true,
+      "default_value": "false",
+      "choices": "true;false"
+    },
+    {
+      "name": "method.features",
+      "type": "java.lang.String",
+      "description": "The type of linkage used to cluster the features (if desired) - \"single\", \"complete\", \"centroid\", or \"average\". Used only if cluster features is set to \"TRUE\"",
+      "required": true,
+      "default_value": "average",
+      "choices": "average;complete;single;centroid"
+    },
+    {
+      "name": "standardize.arrays",
+      "type": "java.lang.String",
+      "description": "Whether or not the arrays should be standardized to have mean zero and standard deviation one before clustering is performed.",
+      "required": true,
+      "default_value": "true",
+      "choices": "true;false"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Clustering",
+  "author": "Daniela Witten, Stanford University",
+  "command_line": "<R2.5> <libdir>HSC2.R sparsecluster <libdir> <input.filename> <method> <wbound>  <cluster.features> <method.features> <maxnumgenes> <standardize.arrays>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

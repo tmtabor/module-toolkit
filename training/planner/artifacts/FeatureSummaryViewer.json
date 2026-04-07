@@ -1,0 +1,40 @@
+{
+  "module_name": "FeatureSummaryViewer",
+  "description": "Visualizes feature summary results in JavaScript",
+  "author": "Thorin Tabor, reimplemented in js by Ted Liefeld (UC San Diego, Broad Institute)",
+  "input_file_formats": [
+    "Feature Summary",
+    "feat.odf",
+    "odf"
+  ],
+  "language": "Javascript",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:25146:1",
+  "plan": "## FeatureSummaryViewer GenePattern Module — Implementation Plan\n\n### 1. Overview\nFeatureSummaryViewer is a GenePattern module that Visualizes feature summary results in JavaScript\n\n### 2. Parameters\nThe module exposes 1 parameters:\n- Required: feature.filename\n- Optional: none\n\n### 3. Command Line\n```\nfeature_summary_viewer.html ? <feature.filename>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.py",
+  "command_line": "feature_summary_viewer.html ? <feature.filename>",
+  "parameters": [
+    {
+      "name": "feature.filename",
+      "description": "odf file with or without features to summarize",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "odf",
+        "feat.odf",
+        "Feature Summary"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--feature.filename",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

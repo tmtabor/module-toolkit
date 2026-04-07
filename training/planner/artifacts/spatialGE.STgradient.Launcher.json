@@ -1,0 +1,68 @@
+{
+  "module_name": "spatialGE.STgradient.Launcher",
+  "description": "Reads the output of spatialGE.STclust and then launches an analysis to test for genes for which there is evidence of expression spatial gradients with respect to a \"reference\" tissue niche/domain (e.g., higher expression closer to reference tissue niche, lower expression as farther from reference tissue niche).",
+  "author": "Thorin Tabor;UCSD - Mesirov Lab",
+  "input_file_formats": [
+    "json",
+    "rds"
+  ],
+  "language": "Javascript",
+  "categories": [
+    "spatial transcriptomics",
+    "javascript"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:60736:1",
+  "plan": "## spatialGE.STgradient.Launcher GenePattern Module — Implementation Plan\n\n### 1. Overview\nspatialGE.STgradient.Launcher is a GenePattern module that Reads the output of spatialGE.STclust and then launches an analysis to test for genes for which there is evidence of expression spatial gradients with respect to a \"reference\" tissue niche/domain (e.g., higher expression closer to reference tissue niche, lower expression as farther from reference tissue niche).\n\n### 2. Parameters\nThe module exposes 3 parameters:\n- Required: dataset, sample.info, domain.info\n- Optional: none\n\n### 3. Command Line\n```\napp.html ? <dataset> <sample.info> <domain.info>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.py",
+  "command_line": "app.html ? <dataset> <sample.info> <domain.info>",
+  "parameters": [
+    {
+      "name": "dataset",
+      "description": "Normalized spatial transcriptomics data with clusters, coming from the spatialGE.STclust module.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "rds"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dataset",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.info",
+      "description": "JSON file containing spot/cell and gene statistics for each sample, coming from the spatialGE.Preprocessing module.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "json"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sample.info",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "domain.info",
+      "description": "JSON file containing domain/cluster statistics for each sample, coming from the spatialGE.STclust module.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "json"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--domain.info",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

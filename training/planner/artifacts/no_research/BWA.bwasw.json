@@ -1,0 +1,244 @@
+{
+  "module_name": "BWA.bwasw",
+  "description": "Aligns long sequences (>200 bp) to a sequence database using BWA 0.7.4 bwasw.",
+  "author": "Heng Li, Broad Institute",
+  "input_file_formats": [
+    "fa",
+    "fasta",
+    "fastq",
+    "fn",
+    "fq",
+    "zip"
+  ],
+  "language": "Perl",
+  "categories": [
+    "rna-seq"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:84354:1",
+  "plan": "## BWA.bwasw GenePattern Module — Implementation Plan\n\n### 1. Overview\nBWA.bwasw is a GenePattern module that Aligns long sequences (>200 bp) to a sequence database using BWA 0.7.4 bwasw.\n\n### 2. Parameters\nThe module exposes 15 parameters:\n- Required: BWA.index, read.file, output.prefix\n- Optional: mate.read.file, match.score, mismatch.penalty, gap.open.penalty, gap.extension.penalty, band.width, min.score.threshold, threshold.coefficient, z.best.heuristics, max.sa.interval.size, min.num.seeds, num.threads\n\n### 3. Command Line\n```\nperl /opt/genepatt/BWA.bwasw/src/bwa_bwasw_wrapper.pl -bwa <BWA_0.7.4>/bwa -libdir <libdir> -w1 <BWA.index> -p <read.file> -m <mate.read.file> -a <match.score> -b <mismatch.penalty> -q <gap.open.penalty> -r <gap.extension.penalty> -w <band.width> -t2 <min.score.threshold> -c <threshold.coefficient> -z <z.best.heuristics> -s <max.sa.interval.size> -n <min.num.seeds> -t1 <num.threads> -o <output.prefix>\n```\n\n### 4. Docker Image\nDocker image: genepattern/bwa_modules\\:v0.2\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "bwa_bwasw_wrapper.pl",
+  "command_line": "perl /opt/genepatt/BWA.bwasw/src/bwa_bwasw_wrapper.pl -bwa <BWA_0.7.4>/bwa -libdir <libdir> -w1 <BWA.index> -p <read.file> -m <mate.read.file> -a <match.score> -b <mismatch.penalty> -q <gap.open.penalty> -r <gap.extension.penalty> -w <band.width> -t2 <min.score.threshold> -c <threshold.coefficient> -z <z.best.heuristics> -s <max.sa.interval.size> -n <min.num.seeds> -t1 <num.threads> -o <output.prefix>",
+  "parameters": [
+    {
+      "name": "BWA.index",
+      "description": "A zip file or directory containing BWA index files.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--BWA.index",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "read.file",
+      "description": "Single-end or first paired-end reads file in FASTA or FASTQ format.  For paired-end data, this should be the forward (\"*_1\" or \"left\") input file.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fa",
+        "fasta",
+        "fastq",
+        "fn",
+        "fq"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--read.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "mate.read.file",
+      "description": "The reverse (\"*_2\" or \"right\") reads file for paired-end reads in FASTA or FASTQ format.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "fa",
+        "fasta",
+        "fastq",
+        "fn",
+        "fq"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--mate.read.file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "match.score",
+      "description": "The score of the match",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--match.score",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "mismatch.penalty",
+      "description": "Specifies the mismatch penalty.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--mismatch.penalty",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gap.open.penalty",
+      "description": "Gap open penalty.  The gap open penalty is the score taken away for the initiation of the gap in sequence. To make the match more significant you can try to make the gap penalty larger.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gap.open.penalty",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gap.extension.penalty",
+      "description": "Gap extension penalty.  The gap extension penalty is added to the standard gap penalty for each base or residue in the gap.  To reduce long gaps, increase the extension gap penalty.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gap.extension.penalty",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "band.width",
+      "description": "band width in the banded alignment",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--band.width",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min.score.threshold",
+      "description": "Minimum score threshold divided by the match score",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.score.threshold",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "threshold.coefficient",
+      "description": "Coefficient for threshold adjustment according to query length",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--threshold.coefficient",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "z.best.heuristics",
+      "description": "Z-best heuristics. Specifying a higher number increases accuracy at the cost of speed",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--z.best.heuristics",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.sa.interval.size",
+      "description": "Maximum SA interval size for initiating a seed. Specifying a higher number increases accuracy at the cost of speed.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.sa.interval.size",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min.num.seeds",
+      "description": "The minimum number of seeds contained in the best alignment from the forward-forward alignment process that allows the algorithm to skip performing the reverse alignment. BWA.bwasw tends to be faster and more accurate if the alignment is supported by more seeds.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.num.seeds",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "num.threads",
+      "description": "Number of threads",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "1",
+          "value": "1"
+        },
+        {
+          "display": "4",
+          "value": "4"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--num.threads",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.prefix",
+      "description": "Prefix to use for the output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<read.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/bwa_modules:v0.2"
+}

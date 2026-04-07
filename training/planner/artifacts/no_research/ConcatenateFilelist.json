@@ -1,0 +1,60 @@
+{
+  "module_name": "ConcatenateFilelist",
+  "description": "Concatenate all of the items in the input filelist into a single large file.",
+  "author": "Peter Carr, Broad Institute",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "any",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:37116:1",
+  "plan": "## ConcatenateFilelist GenePattern Module — Implementation Plan\n\n### 1. Overview\nConcatenateFilelist is a GenePattern module that Concatenate all of the items in the input filelist into a single large file.\n\n### 2. Parameters\nThe module exposes 3 parameters:\n- Required: filelist, output.filename\n- Optional: num.header.lines\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>ConcatenateFilelist.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar org.genepattern.module.concatenatefilelist.ConcatenateFilelist <filelist> <num.header.lines> <output.filename>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "ConcatenateFilelist.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>ConcatenateFilelist.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar org.genepattern.module.concatenatefilelist.ConcatenateFilelist <filelist> <num.header.lines> <output.filename>",
+  "parameters": [
+    {
+      "name": "filelist",
+      "description": "a text file containing a list of file paths",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--filelist\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.header.lines",
+      "description": "specify number of header lines so that they are output only once",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.header.lines\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "The name of the output file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename\\=",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

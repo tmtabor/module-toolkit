@@ -1,0 +1,201 @@
+{
+  "module_name": "Samtools.View",
+  "description": "SAMtools View: Format conversion and read filtering for SAM/BAM/CRAM next-generation sequencing alignment files. Part of the Samtools suite wrapping samtools v1.23.1 (HTSlib). Supports bidirectional SAM/BAM/CRAM interconversion, FLAG-based read filtering, MAPQ threshold filtering, genomic region extraction, and BED-targeted read extraction. Essential preprocessing step in virtually all NGS workflows including WGS, WES, RNA-seq, ChIP-seq, and ATAC-seq pipelines. Implements the GATK-recommended standard for alignment file manipulation. Citation: Li et al. (2009) Bioinformatics 25(16):2078-2079 [PMID:19505943]; Danecek et al. (2021) GigaScience 10(2):giab008.",
+  "author": "GenePattern Team",
+  "input_file_formats": [
+    "SAM",
+    "BAM",
+    "CRAM"
+  ],
+  "language": "C",
+  "categories": [
+    "Sequence Analysis",
+    "Preprocessing",
+    "NGS",
+    "File Conversion"
+  ],
+  "cpu_cores": 8,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:60819:1",
+  "plan": "\n# Comprehensive GenePattern Module Plan: Samtools Suite (samtools v1.23.1)\n\n## Executive Summary\n\nThis plan describes a **multi-module suite** approach for wrapping samtools v1.23.1 in GenePattern. Given samtools' 35+ subcommands spanning fundamentally different operations (format conversion, sorting, QC statistics, coverage analysis, variant calling preparation), a monolithic module would be unusable. Instead, we propose **8 focused modules** organized as a GenePattern module suite under the \"Samtools\" namespace. Each module wraps one primary subcommand, uses a dedicated bash wrapper script, and shares a common Docker image.\n\n**Suite Members:**\n1. Samtools.View — Format conversion and read filtering\n2. Samtools.Sort — Coordinate/name/template sorting\n3. Samtools.Index — BAM/CRAM index generation\n4. Samtools.Flagstat — FLAG-based QC statistics\n5. Samtools.Stats — Comprehensive QC metrics\n6. Samtools.Markdup — Duplicate marking and removal\n7. Samtools.Depth — Per-base read depth\n8. Samtools.Mpileup — Multi-sample pileup for variant calling\n\n---\n\n## Module 1: Samtools.View\n\n### Purpose\nPrimary format conversion (SAM↔BAM↔CRAM) and read filtering hub for NGS workflows.\n\n### Wrapper Script: samtools_wrapper.sh\nThe bash wrapper script parses named parameters from the GenePattern command line and constructs the appropriate samtools view invocation. It handles:\n- Converting output format choice (BAM/SAM/CRAM) to the correct flag (-b/-C or -O)\n- Conditionally adding -T reference flag when reference.genome is non-empty\n- Conditionally adding -L target.bed flag when target.bed is non-empty\n- Conditionally adding -r region flag when region is non-empty\n- Mapping include.header boolean to -h flag\n- Adding --write-index for BAM/CRAM output to auto-generate .bai/.crai files\n- Setting -@ threads appropriately\n- Constructing -q MAPQ, -f require.flags, -F exclude.flags arguments\n\n### Command Line\n```\nbash <libdir>samtools_wrapper.sh --input.file <input.file> --output.format <output.format> --output.filename <output.filename> <reference.genome> <region> <target.bed> --min.mapping.quality <min.mapping.quality> --require.flags <require.flags> --exclude.flags <exclude.flags> --include.header <include.header> --threads <threads>\n```\n\n### Parameter Groups\n**Required Inputs:**\n- input.file (File, SAM/BAM/CRAM)\n\n**Output Configuration:**\n- output.format (Choice: BAM/SAM/CRAM)\n- output.filename (Text)\n\n**Optional Inputs:**\n- reference.genome (File, FASTA) — required for CRAM I/O\n- region (Text) — genomic region filter\n- target.bed (File, BED) — targeted region filter\n\n**Read Filtering:**\n- min.mapping.quality (Integer, default 0)\n- require.flags (Integer, default 0)\n- exclude.flags (Integer, default 0)\n- include.header (Choice Yes/No, default Yes)\n\n**Performance:**\n- threads (Integer, default 4)\n\n### Output Files\n- {output.filename} — converted/filtered alignment file\n- {output.filename}.bai or .crai — auto-generated index (when output is BAM/CRAM)\n\n---\n\n## Module 2: Samtools.Sort\n\n### Purpose\nSorts alignment files by genomic coordinate (default), read name, or template coordinate. Required before indexing and many downstream tools.\n\n### Wrapper Script: samtools_sort_wrapper.sh\nHandles:\n- Mapping sort.order choice to -n (name), --template-coordinate, or default (coordinate)\n- Converting memory.per.thread string (e.g., \"4G\") to -m flag\n- Setting compression level -l\n- Adding --write-index for automatic index creation\n- Thread management with -@\n- Temp file prefix handling via -T\n\n### Command Line\n```\nbash <libdir>samtools_sort_wrapper.sh --input.file <input.file> --sort.order <sort.order> --output.filename <output.filename> --memory.per.thread <memory.per.thread> --compression.level <compression.level> --threads <threads> --write.index <write.index>\n```\n\n### Parameters\n- input.file (File, BAM/SAM/CRAM, required)\n- sort.order (Choice: coordinate/name/template-coordinate, default: coordinate)\n- output.filename (Text, default: sorted.bam)\n- memory.per.thread (Choice: 512M/1G/2G/4G/8G, default: 4G)\n- compression.level (Integer 0-9, default: 6)\n- threads (Integer, default: 4)\n- write.index (Choice Yes/No, default: Yes)\n\n---\n\n## Module 3: Samtools.Index\n\n### Purpose\nCreates index files (.bai, .csi, .crai) for sorted BAM/CRAM files, enabling random access by genomic coordinate.\n\n### Wrapper Script: samtools_index_wrapper.sh\nHandles:\n- Generating .bai (BAI), .csi (CSI), or auto-detected index from index.type choice\n- Passing -@ threads\n- Outputting index file alongside input BAM/CRAM\n- Warning when CSI is needed for large chromosomes (>512 Mb)\n\n### Command Line\n```\nbash <libdir>samtools_index_wrapper.sh --input.file <input.file> --index.type <index.type> --threads <threads>\n```\n\n### Parameters\n- input.file (File, BAM/CRAM, required)\n- index.type (Choice: BAI/CSI/auto, default: BAI)\n- threads (Integer, default: 4)\n\n### Output Files\n- {input.file}.bai — BAI index\n- {input.file}.csi — CSI index (if selected)\n- {input.file}.crai — CRAI index (CRAM files)\n\n---\n\n## Module 4: Samtools.Flagstat\n\n### Purpose\nGenerates quick summary statistics based on SAM FLAG field values. The fastest QC check for any alignment file.\n\n### Wrapper Script: samtools_flagstat_wrapper.sh\nHandles:\n- Mapping output.format choice to -O flag (default/json/tsv)\n- Setting output filename\n- Thread management\n\n### Command Line\n```\nbash <libdir>samtools_flagstat_wrapper.sh --input.file <input.file> --output.format <output.format> --output.filename <output.filename> --threads <threads>\n```\n\n### Parameters\n- input.file (File, SAM/BAM/CRAM, required)\n- output.format (Choice: text/json/tsv, default: json)\n- output.filename (Text, default: flagstat.json)\n- threads (Integer, default: 4)\n\n### Output Fields (samtools flagstat JSON)\nTotal reads, secondary, supplementary, duplicates, mapped, paired, read1, read2, properly paired, with itself and mate mapped, singletons, mate on different chromosome, QC-passed/failed counts for each.\n\n---\n\n## Module 5: Samtools.Stats\n\n### Purpose\nComprehensive BAM QC statistics covering read counts, base quality, insert size distribution, GC content, coverage histograms, and per-cycle quality metrics. Compatible with MultiQC.\n\n### Wrapper Script: samtools_stats_wrapper.sh\nHandles:\n- Optional -r reference for GC-depth plots\n- Optional -t target BED for targeted sequencing metrics\n- -d flag for excluding duplicates\n- -S split-by option (RG or SM)\n- Thread management\n\n### Command Line\n```\nbash <libdir>samtools_stats_wrapper.sh --input.file <input.file> <reference.genome> <target.bed> --exclude.duplicates <exclude.duplicates> <split.by> --output.filename <output.filename> --threads <threads>\n```\n\n### Parameters\n- input.file (File, SAM/BAM/CRAM, required)\n- reference.genome (File, FASTA, optional — enables GC-depth plots)\n- target.bed (File, BED, optional — targeted sequencing QC)\n- exclude.duplicates (Choice Yes/No, default: No)\n- split.by (Choice: none/RG/SM, optional — per-read-group stats)\n- output.filename (Text, default: stats.txt)\n- threads (Integer, default: 4)\n\n---\n\n## Module 6: Samtools.Markdup\n\n### Purpose\nMarks (and optionally removes) PCR and optical duplicate reads. Critical preprocessing step for variant calling workflows. Implements the samtools fixmate→markdup pipeline internally.\n\n### Important Design Decision\nThe Samtools.Markdup module wraps BOTH `samtools fixmate` AND `samtools markdup` as an integrated pipeline:\n1. fixmate -m (adds mate score ms tags — required by markdup)\n2. Name-sort → fixmate → coordinate-sort → markdup are all handled internally\nThis avoids exposing complex intermediate steps to the user.\n\n### Wrapper Script: samtools_markdup_wrapper.sh\nHandles:\n- Running name-sort → fixmate -m → coord-sort → markdup pipeline\n- -r flag for removing duplicates\n- -d INT for optical duplicate pixel distance (100 for HiSeq, 2500 for NovaSeq patterned flowcells)\n- -S flag for marking supplementary reads\n- --json stats output\n- Thread management throughout pipeline\n\n### Command Line\n```\nbash <libdir>samtools_markdup_wrapper.sh --input.file <input.file> --remove.duplicates <remove.duplicates> --optical.distance <optical.distance> --mark.supplementary <mark.supplementary> --output.filename <output.filename> --stats.filename <stats.filename> --threads <threads>\n```\n\n### Parameters\n- input.file (File, BAM/CRAM, required — should be coordinate-sorted)\n- remove.duplicates (Choice Yes/No, default: No — mark only)\n- optical.distance (Choice: disabled/100/2500, default: disabled — set to 100 for HiSeq 2500/4000, 2500 for NovaSeq patterned flowcells)\n- mark.supplementary (Choice Yes/No, default: Yes — recommended for GATK)\n- output.filename (Text, default: markdup.bam)\n- stats.filename (Text, default: markdup_stats.json)\n- threads (Integer, default: 4)\n\n---\n\n## Module 7: Samtools.Depth\n\n### Purpose\nGenerates per-base read depth (coverage) output for visualization, quality assessment, and coverage analysis. Outputs a 3-column TSV: chromosome, position, depth.\n\n### Wrapper Script: samtools_depth_wrapper.sh\nHandles:\n- -a flag for outputting zero-coverage positions\n- -q base quality filter\n- -Q mapping quality filter\n- -m max depth cap\n- Optional -r region restriction\n- Optional -b BED file restriction\n- Output file handling\n\n### Command Line\n```\nbash <libdir>samtools_depth_wrapper.sh --input.file <input.file> --output.all.positions <output.all.positions> --min.base.quality <min.base.quality> --min.mapping.quality <min.mapping.quality> --max.depth <max.depth> <region> <target.bed> --output.filename <output.filename>\n```\n\n### Parameters\n- input.file (File, BAM/CRAM, required)\n- output.all.positions (Choice Yes/No, default: No — if Yes, outputs zero-depth positions)\n- min.base.quality (Integer, default: 0)\n- min.mapping.quality (Integer, default: 0)\n- max.depth (Integer, default: 8000)\n- region (Text, optional — genomic region restriction)\n- target.bed (File, BED, optional — restrict to BED regions)\n- output.filename (Text, default: depth.txt)\n\n---\n\n## Module 8: Samtools.Mpileup\n\n### Purpose\nGenerates multi-sample pileup format output for variant calling preparation. Standard upstream step for bcftools call. Supports BAQ calculation, MAPQ/BQSR adjustments, and per-position statistics.\n\n### Wrapper Script: samtools_mpileup_wrapper.sh\nHandles:\n- -f reference (required for BAQ)\n- -q MAPQ and -Q base quality thresholds\n- -d depth cap\n- Optional -r region and -l BED file\n- -v flag for VCF output vs. pileup text\n- -C 50 MAPQ adjustment for BWA alignments\n- Output format and file handling\n\n### Command Line\n```\nbash <libdir>samtools_mpileup_wrapper.sh --input.file <input.file> --reference.genome <reference.genome> --min.mapping.quality <min.mapping.quality> --min.base.quality <min.base.quality> --max.depth <max.depth> <region> <target.bed> --output.vcf <output.vcf> --output.filename <output.filename>\n```\n\n### Parameters\n- input.file (File, BAM/CRAM, required)\n- reference.genome (File, FASTA, required — for BAQ calculation)\n- min.mapping.quality (Integer, default: 20)\n- min.base.quality (Integer, default: 20)\n- max.depth (Integer, default: 8000)\n- region (Text, optional)\n- target.bed (File, BED, optional)\n- output.vcf (Choice Yes/No, default: No — if Yes produces VCF instead of pileup)\n- output.filename (Text, default: mpileup.txt or mpileup.vcf)\n\n---\n\n## Docker & Infrastructure\n\n### Docker Image\n- Base: quay.io/biocontainers/samtools:1.23--h96c455f_0\n- All 8 modules share a single Docker image\n- Module-specific wrapper scripts are bundled in the libdir\n- Image includes: samtools 1.23.1, htslib, all compression libraries (zlib, bzip2, lzma, libdeflate)\n\n### Resource Requirements\n| Module | CPU | Memory | Notes |\n|---|---|---|---|\n| Samtools.View | 8 | 8GB | I/O-bound; benefits from threads |\n| Samtools.Sort | 8 | 32GB | Large temp disk (3x input); memory-intensive |\n| Samtools.Index | 4 | 4GB | RAM-light but CPU-moderate |\n| Samtools.Flagstat | 4 | 4GB | Very fast; minimal resources |\n| Samtools.Stats | 4 | 8GB | I/O and computation |\n| Samtools.Markdup | 8 | 16GB | Internal pipeline; multi-step |\n| Samtools.Depth | 4 | 8GB | Per-base output can be large |\n| Samtools.Mpileup | 8 | 16GB | Multi-file pileup; compute-intensive |\n\n---\n\n## Wrapper Script Design Pattern\n\nAll wrapper scripts follow this pattern:\n```bash\n#!/bin/bash\nset -euo pipefail\n\n# Parse named arguments\nwhile [[ $# -gt 0 ]]; do\n    case \"$1\" in\n        --input.file) INPUT_FILE=\"$2\"; shift 2 ;;\n        --output.format) OUTPUT_FORMAT=\"$2\"; shift 2 ;;\n        # ... other params\n        *) shift ;;\n    esac\ndone\n\n# Validate required parameters\nif [[ -z \"${INPUT_FILE:-}\" ]]; then\n    echo \"ERROR: input.file is required\" >&2\n    exit 1\nfi\n\n# Build command\nCMD=\"samtools view\"\n\n# Handle output format\ncase \"${OUTPUT_FORMAT}\" in\n    BAM) CMD=\"$CMD -b\" ;;\n    SAM) CMD=\"$CMD\" ;;\n    CRAM) CMD=\"$CMD -C\" ;;\nesac\n\n# Handle optional parameters (check for empty string)\nif [[ -n \"${REFERENCE_GENOME:-}\" ]]; then\n    CMD=\"$CMD -T ${REFERENCE_GENOME}\"\nfi\n\n# Include header\nif [[ \"${INCLUDE_HEADER}\" == \"true\" ]]; then\n    CMD=\"$CMD -h\"\nfi\n\n# Add threading\nCMD=\"$CMD -@ ${THREADS}\"\n\n# Add filtering\nCMD=\"$CMD -q ${MIN_MAPPING_QUALITY} -f ${REQUIRE_FLAGS} -F ${EXCLUDE_FLAGS}\"\n\n# Add output\nCMD=\"$CMD -o ${OUTPUT_FILENAME}\"\n\n# Add input\nCMD=\"$CMD ${INPUT_FILE}\"\n\n# Add write-index for indexed formats\nif [[ \"${OUTPUT_FORMAT}\" != \"SAM\" ]]; then\n    CMD=\"$CMD --write-index\"\nfi\n\necho \"Running: $CMD\"\neval \"$CMD\"\n```\n\n---\n\n## Validation & Testing Strategy\n\n### Unit Tests (per module)\n1. **Format conversion**: SAM→BAM, BAM→SAM, BAM→CRAM, CRAM→BAM\n2. **FLAG filtering**: Test -f 2, -F 4, -F 1796 with known outputs\n3. **MAPQ filtering**: Verify correct reads excluded at threshold\n4. **Region extraction**: Test chr:start-end format\n5. **BED filtering**: Verify BED-based extraction\n6. **Index generation**: Verify .bai/.csi/.crai created correctly\n7. **Sort order**: Verify coordinate and name sort correctness\n8. **Markdup pipeline**: Verify duplicate FLAG (0x400) marking\n9. **Stats output**: Verify SN/IS/COV sections present\n10. **Depth output**: Verify 3-column format, zero positions\n\n### Integration Tests\n1. **Full GATK workflow**: BWA output → Sort → Index → Markdup → Flagstat → Stats\n2. **RNA-seq workflow**: STAR output → Index → Flagstat → Stats → Coverage\n3. **BAM → CRAM compression**: Verify lossless round-trip with MD5 checksums\n4. **Empty input handling**: Verify graceful failure with appropriate error message\n5. **Large file handling**: Test with WGS BAM (30-80 GB)\n6. **Multi-threading**: Verify output consistency across different thread counts\n\n### Test Data\n- NA12878 WGS subset (chromosome 20 or 22)\n- Synthetic BAM with known FLAG patterns\n- Small SAM with all possible FLAG combinations\n- CRAM test file with reference\n\n---\n\n## Implementation Roadmap\n\n### Phase 1 (Critical Priority — Week 1-2)\n1. Samtools.View — Foundation; most versatile module\n2. Samtools.Sort — Required by virtually all pipelines\n3. Samtools.Index — Required for all random-access operations\n4. Samtools.Flagstat — Quick QC; very simple implementation\n\n### Phase 2 (High Priority — Week 3-4)\n5. Samtools.Stats — Comprehensive QC; MultiQC compatible\n6. Samtools.Markdup — GATK pipeline integration\n\n### Phase 3 (Medium Priority — Week 5-6)\n7. Samtools.Depth — Coverage analysis\n8. Samtools.Mpileup — Variant calling preparation\n\n### Post-Launch Considerations\n- Samtools.Merge — Multi-BAM merging\n- Samtools.Faidx — Reference FASTA indexing\n- Samtools.Convert — FASTQ/FASTA conversion\n- Pipeline module: Samtools.Preprocess (Sort → Index → Markdup → Flagstat combined)\n\n---\n\n## GenePattern Integration Notes\n\n1. **Index co-location**: BAM .bai files MUST be in the same directory as the BAM. GenePattern file staging must handle this; use --write-index flag consistently.\n\n2. **Reference genome registry**: Consider a reference genome dropdown linked to GenePattern's genome registry (GRCh38, GRCh37/hg19, mm10, mm39, etc.) for CRAM operations.\n\n3. **Threading convention**: -@ N means N ADDITIONAL threads. All wrappers set -@ (threads-1) when mapping to total thread count, OR simply pass threads directly as additional threads to be conservative.\n\n4. **Error handling**: All wrappers set `set -euo pipefail` and capture stderr to GenePattern job logs.\n\n5. **Temp disk for Sort**: Samtools.Sort creates up to 3x input size in temp files. GenePattern job scheduler must allocate sufficient scratch disk.\n\n6. **MultiQC compatibility**: Samtools.Stats output (bamstats.txt) is directly parseable by MultiQC for report generation in QC workflows.\n\n7. **CRAM version note**: samtools 1.21+ defaults to CRAM v3.1. For maximum downstream compatibility, wrapper should offer a CRAM version choice option or default to v3.0 with documentation.\n",
+  "wrapper_script": "samtools_wrapper.sh",
+  "command_line": "bash <libdir>samtools_wrapper.sh --input.file <input.file> --output.format <output.format> --output.filename <output.filename> <reference.genome> <region> <target.bed> --min.mapping.quality <min.mapping.quality> --require.flags <require.flags> --exclude.flags <exclude.flags> --include.header <include.header> --threads <threads>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "Input alignment file in SAM, BAM, or CRAM format. BAM and CRAM files should be sorted and indexed for region-based operations. SAM files may be unsorted. CRAM files require the reference.genome parameter to be set.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "SAM",
+        "BAM",
+        "CRAM"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.format",
+      "description": "Output file format. BAM produces a compressed binary file (recommended for storage). SAM produces a human-readable text file. CRAM produces a reference-compressed file (~40-50% smaller than BAM) and requires reference.genome to be specified.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "BAM",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "BAM (binary compressed)",
+          "value": "BAM"
+        },
+        {
+          "display": "SAM (text)",
+          "value": "SAM"
+        },
+        {
+          "display": "CRAM (reference-compressed)",
+          "value": "CRAM"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "Name of the output alignment file. The extension should match the chosen output format: .bam for BAM, .sam for SAM, .cram for CRAM.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "output.bam",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reference.genome",
+      "description": "Reference genome FASTA file. Must be indexed with samtools faidx (companion .fai file required). Required when the input or output format is CRAM. Also enables BAQ (Base Alignment Quality) computation for more accurate filtering.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "FASTA",
+        "FA",
+        "FA.GZ"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reference.genome",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "region",
+      "description": "Restrict output to reads overlapping a specific genomic region. Format: chr:start-end (e.g., chr1:1000000-2000000) or just a chromosome name (e.g., chr1). Requires a sorted and indexed BAM or CRAM input file.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--region",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "target.bed",
+      "description": "BED file specifying genomic target regions (e.g., exome capture targets, ChIP peaks). Only reads overlapping these regions will be included in the output. Useful for targeted sequencing data analysis.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "BED"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--target.bed",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min.mapping.quality",
+      "description": "Minimum mapping quality (MAPQ) score. Reads with MAPQ below this value are excluded. Range: 0-255. Default 0 retains all reads. Recommended value: 20 for variant calling workflows (excludes multi-mapping and low-confidence alignments).",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.mapping.quality",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "require.flags",
+      "description": "SAM FLAG bits that must ALL be set in a read for it to be included. Specified as an integer (decimal or 0x-prefixed hex). Examples: 2 = properly paired reads only; 64 = read 1 only; 128 = read 2 only. Default 0 = no FLAG requirement.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--require.flags",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "exclude.flags",
+      "description": "SAM FLAG bits that cause a read to be EXCLUDED if any are set. Examples: 4 = exclude unmapped; 1796 = exclude unmapped + secondary + QC-fail + duplicates (standard variant calling filter); 3844 = exclude unmapped + secondary + supplementary + QC-fail + duplicates. Default 0 = no exclusions.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--exclude.flags",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "include.header",
+      "description": "Include the SAM header (lines starting with @) in the output file. Strongly recommended to keep enabled (Yes) for compatibility with downstream tools that require header information such as reference sequence names and read groups.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "true",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes (include header)",
+          "value": "true"
+        },
+        {
+          "display": "No (exclude header)",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--include.header",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "threads",
+      "description": "Number of additional BAM compression/decompression threads to use. Total threads = threads + 1. Increasing thread count significantly speeds up processing for large files. Recommended: 4-8 for typical WGS data. Range: 0-32.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "4",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--threads",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/samtoolsview:1"
+}

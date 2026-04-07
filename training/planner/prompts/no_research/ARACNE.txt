@@ -1,0 +1,112 @@
+Create a comprehensive structured plan for the GenePattern module for 'ARACNE'.
+            
+            Tool Information:
+            - Name: ARACNE
+            - Version: fix problem with processing transcription factor list parameter
+            - Language: Java
+            - Description: Runs the ARACNE algorithm for reverse engineering cellular networks
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ARACNE",
+  "parameters": [
+    {
+      "name": "dataset.file",
+      "type": "FILE",
+      "description": "Dataset file - .res, .gct",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct;res"
+    },
+    {
+      "name": "hub.gene",
+      "type": "java.lang.String",
+      "description": "The name of a gene whose network interactions you want to reconstruct",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "hub.genes.file",
+      "type": "FILE",
+      "description": "A file containing a list of hub genes with one gene per line - .txt",
+      "required": false,
+      "default_value": "",
+      "file_format": "txt"
+    },
+    {
+      "name": "transcription.factor.file",
+      "type": "FILE",
+      "description": "A file containing a list of genes with one gene per line that encode transcription factors - .txt",
+      "required": false,
+      "default_value": "",
+      "file_format": "txt"
+    },
+    {
+      "name": "kernel.width",
+      "type": "java.lang.Float",
+      "description": "The kernel width (or window width) of the Gaussian Kernel Estimator",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "mi.threshold",
+      "type": "java.lang.Float",
+      "description": "Threshold for the mutual information (MI) estimate to be considered statistically significant",
+      "required": false,
+      "default_value": "0"
+    },
+    {
+      "name": "p.value",
+      "type": "java.lang.Float",
+      "description": "Threshold for the p-value of a MI estimate to be considered statistically significant",
+      "required": false,
+      "default_value": "1"
+    },
+    {
+      "name": "dpi.tolerance",
+      "type": "java.lang.Float",
+      "description": "The percentage of MI estimation considered as sampling error",
+      "required": false,
+      "default_value": "1"
+    },
+    {
+      "name": "mean.filter",
+      "type": "java.lang.Float",
+      "description": "Filter out non-informative genes whose mean expression value is smaller than mean filter",
+      "required": false,
+      "default_value": "0"
+    },
+    {
+      "name": "cv.filter",
+      "type": "java.lang.Float",
+      "description": "Filter out non-informative genes whose coefficient of variance is smaller than cv filter",
+      "required": false,
+      "default_value": "0"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "Output file name",
+      "required": false,
+      "default_value": "<dataset.file_basename>.output.adj"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Pathway Analysis",
+  "author": "Marc-Danie Nazaire, gp-help@broad.mit.edu, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>aracne-java.jar<path.separator><libdir>aracne-main.jar<path.separator><libdir>commons-cli.jar<path.separator><libdir>commons-logging-1.0.3.jar<path.separator><libdir>workbook-0.9.jar<path.separator><libdir>log4j-1.2.8.jar<path.separator><libdir>collections-generic-4.0.jar<path.separator><libdir>commons-math-1.0.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.aracne.ARACNE -i <dataset.file> -o <output.file> -h <hub.gene> -s <hub.genes.file> -l <transcription.factor.file> -k <kernel.width> -t <mi.threshold> -p <p.value> -e <dpi.tolerance> -f <mean.filter> <cv.filter>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,47 @@
+Create a comprehensive structured plan for the GenePattern module for 'Picard.BamToSam'.
+            
+            Tool Information:
+            - Name: Picard.BamToSam
+            - Version: Renamed from BamToSam to Picard.BamToSam
+            - Language: Java
+            - Description: Converts a BAM file to a SAM file
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "Picard.BamToSam",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "A BAM file",
+      "required": true,
+      "default_value": "",
+      "file_format": "bam"
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.lang.String",
+      "description": "A label used to name the output file",
+      "required": true,
+      "default_value": "<input.file_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Data Format Conversion",
+  "author": "Picard Tools",
+  "command_line": "<java> <java_flags> -cp <libdir>BamToSam.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>SamFormatConverter_gp_modified.jar org.genepattern.sam.SamFormat.BamToSam -inputFileName <input.file> -outputFileName <output.prefix>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

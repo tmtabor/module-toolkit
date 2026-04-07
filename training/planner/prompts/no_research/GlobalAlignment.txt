@@ -1,0 +1,81 @@
+Create a comprehensive structured plan for the GenePattern module for 'GlobalAlignment'.
+            
+            Tool Information:
+            - Name: GlobalAlignment
+            - Version: latest
+            - Language: Java
+            - Description: standard global sequence analysis
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "GlobalAlignment",
+  "parameters": [
+    {
+      "name": "subject.fasta.filename",
+      "type": "FILE",
+      "description": "filename of subject FASTA file",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "match",
+      "type": "java.lang.String",
+      "description": "> 0",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "mismatch",
+      "type": "java.lang.String",
+      "description": "< 0",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "gapopen",
+      "type": "java.lang.String",
+      "description": "< 0",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "gapextend",
+      "type": "java.lang.String",
+      "description": "< 0",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "query.filename",
+      "type": "FILE",
+      "description": "FASTA file",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "filename of output",
+      "required": true,
+      "default_value": "<subject.fasta.filename_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Sequence Analysis",
+  "author": "Mike Kamal, gp-help@broad.mit.edu",
+  "command_line": "<java> <java_flags> -cp <libdir>DPJava.jar DemoStandardGlobal <query.filename> <subject.fasta.filename> <match> <mismatch> <gapopen> <gapextend> <output.file>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

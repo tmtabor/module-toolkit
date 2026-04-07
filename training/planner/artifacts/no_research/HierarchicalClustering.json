@@ -1,0 +1,303 @@
+{
+  "module_name": "HierarchicalClustering",
+  "description": "Hierarchical Clustering",
+  "author": "Joshua Gould, gp-help@broad.mit.edu",
+  "input_file_formats": [
+    "Dataset",
+    "gct",
+    "pcl",
+    "res"
+  ],
+  "language": "any",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:40111:1",
+  "plan": "## HierarchicalClustering GenePattern Module — Implementation Plan\n\n### 1. Overview\nHierarchicalClustering is a GenePattern module that Hierarchical Clustering\n\n### 2. Parameters\nThe module exposes 10 parameters:\n- Required: input.filename, column.distance.measure, row.distance.measure, clustering.method, output.base.name\n- Optional: log.transform, row.center, row.normalize, column.center, column.normalize\n\n### 3. Command Line\n```\n<java> <java_flags> -Djava.awt.headless\\=true -Dlibdir\\=<libdir> -Dwin\\=cluster.exe -Dmac\\=clusterMac -Dlinux\\=clusterLinux -Dlinux64\\=clusterLinux64 -cp <libdir>hcl.jar<path.separator><libdir>legacy-gp-modules.jar<path.separator><libdir>ant.jar org.genepattern.modules.hcl.RunCluster -f <input.filename> <log.transform> <row.center> <row.normalize> <column.center> <column.normalize> -u <output.base.name> -e <column.distance.measure> -g <row.distance.measure> -m <clustering.method>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "hcl.jar<path.separator><libdir>legacy-gp-modules.jar<path.separator><libdir>ant.jar",
+  "command_line": "<java> <java_flags> -Djava.awt.headless=true -Dlibdir=<libdir> -Dwin=cluster.exe -Dmac=clusterMac -Dlinux=clusterLinux -Dlinux64=clusterLinux64 -cp <libdir>hcl.jar<path.separator><libdir>legacy-gp-modules.jar<path.separator><libdir>ant.jar org.genepattern.modules.hcl.RunCluster -f <input.filename> <log.transform> <row.center> <row.normalize> <column.center> <column.normalize> -u <output.base.name> -e <column.distance.measure> -g <row.distance.measure> -m <clustering.method>",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "description": "input data file name - .gct, .res, .pcl",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "Dataset",
+        "gct",
+        "res",
+        "pcl"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "column.distance.measure",
+      "description": "distance measure for column (sample) clustering",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "No column clustering",
+          "value": "0"
+        },
+        {
+          "display": "Uncentered correlation",
+          "value": "1"
+        },
+        {
+          "display": "Pearson correlation",
+          "value": "2"
+        },
+        {
+          "display": "Uncentered correlation, absolute value",
+          "value": "3"
+        },
+        {
+          "display": "Pearson correlation, absolute value",
+          "value": "4"
+        },
+        {
+          "display": "Spearman's rank correlation",
+          "value": "5"
+        },
+        {
+          "display": "Kendall's tau",
+          "value": "6"
+        },
+        {
+          "display": "Euclidean distance",
+          "value": "7"
+        },
+        {
+          "display": "City-block distance",
+          "value": "8"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--column.distance.measure",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "row.distance.measure",
+      "description": "distance measure for row (gene) clustering  NOTE\\: Filtering beforehand is recommended since row clustering is computationally intensive.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "No row clustering",
+          "value": "0"
+        },
+        {
+          "display": "Uncentered correlation",
+          "value": "1"
+        },
+        {
+          "display": "Pearson correlation",
+          "value": "2"
+        },
+        {
+          "display": "Uncentered correlation, absolute value",
+          "value": "3"
+        },
+        {
+          "display": "Pearson correlation, absolute value",
+          "value": "4"
+        },
+        {
+          "display": "Spearman's rank correlation",
+          "value": "5"
+        },
+        {
+          "display": "Kendall's tau",
+          "value": "6"
+        },
+        {
+          "display": "Euclidean distance",
+          "value": "7"
+        },
+        {
+          "display": "City-block distance",
+          "value": "8"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--row.distance.measure",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "clustering.method",
+      "description": "hierarchical clustering method to use",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "a",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Pairwise complete-linkage",
+          "value": "m"
+        },
+        {
+          "display": "Pairwise single-linkage",
+          "value": "s"
+        },
+        {
+          "display": "Pairwise centroid-linkage",
+          "value": "c"
+        },
+        {
+          "display": "Pairwise average-linkage",
+          "value": "a"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--clustering.method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "log.transform",
+      "description": "log-transform the data before clustering",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": ""
+        },
+        {
+          "display": "yes",
+          "value": "-l"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--log.transform",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "row.center",
+      "description": "whether to center each row (gene) in the data",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": ""
+        },
+        {
+          "display": "Subtract the mean of each row",
+          "value": "mean.row"
+        },
+        {
+          "display": "Subtract the median of each row",
+          "value": "median.row"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--row.center",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "row.normalize",
+      "description": "whether to normalize each row (gene) in the data",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": ""
+        },
+        {
+          "display": "yes",
+          "value": "-ng"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--row.normalize",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "column.center",
+      "description": "whether to center each column (sample) in the data",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": ""
+        },
+        {
+          "display": "Subtract the mean of each column",
+          "value": "mean.column"
+        },
+        {
+          "display": "Subtract the median of each column",
+          "value": "median.column"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--column.center",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "column.normalize",
+      "description": "whether to normalize each column (sample) in the data",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": ""
+        },
+        {
+          "display": "yes",
+          "value": "-na"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--column.normalize",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.base.name",
+      "description": "base name for output files",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.filename_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.base.name",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

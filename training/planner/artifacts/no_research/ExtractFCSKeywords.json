@@ -1,0 +1,71 @@
+{
+  "module_name": "ExtractFCSKeywords",
+  "description": "Extracts keyword(s) value(s) from a Flow Cytometry Standard (FCS) file.",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "input_file_formats": [
+    "fcs"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:32362:1",
+  "plan": "## ExtractFCSKeywords GenePattern Module — Implementation Plan\n\n### 1. Overview\nExtractFCSKeywords is a GenePattern module that Extracts keyword(s) value(s) from a Flow Cytometry Standard (FCS) file.\n\n### 2. Parameters\nThe module exposes 3 parameters:\n- Required: Input.FCS.data.file, Keywords.output.mode, Keywords.output.file.name\n- Optional: none\n\n### 3. Command Line\n```\n<java> <java_flags> -jar <libdir>extractfcskeywords.jar <Input.FCS.data.file> <Keywords.output.file.name> <Keywords.output.mode>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "extractfcskeywords.jar",
+  "command_line": "<java> <java_flags> -jar <libdir>extractfcskeywords.jar <Input.FCS.data.file> <Keywords.output.file.name> <Keywords.output.mode>",
+  "parameters": [
+    {
+      "name": "Input.FCS.data.file",
+      "description": "The input FCS data file from which the module will extract keyword/value pairs.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fcs"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-InputFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Keywords.output.mode",
+      "description": "The file format to be used to store the extracted keywords/value pairs.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "CSV",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "CSV file, default",
+          "value": "CSV"
+        },
+        {
+          "display": "Text file with FCS text segment chunk",
+          "value": "FCS"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-KeywordsMode\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Keywords.output.file.name",
+      "description": "The name for the file in which the keyword/value pairs are stored.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<Input.FCS.data.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-KeywordsOutputFile\\:",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

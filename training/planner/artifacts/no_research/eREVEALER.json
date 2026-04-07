@@ -1,0 +1,526 @@
+{
+  "module_name": "eREVEALER",
+  "description": "eREVEALER (enhanced Repeated Evaluation of VariablEs conditionAL Entropy and Redundancy) is an analysis method specifically suited to find groups of genomic alterations that match in a complementary way, a predefined functional activation, dependency of drug response target profile. The method starts by considering, if available, already known genomic alterations (seed) that are the known causes or are known or assumed associated with the target. REVEALER starts by finding the genomic alteration that best matches the target profile conditional to the known seed profile using the conditional mutual information. The newly discovered alteration is then merged with the seed to form a new summary feature, and then the process repeats itself finding additional complementary alterations that explain more and more of the target profile.",
+  "author": "Pablo Tamayo;Broad Institute",
+  "input_file_formats": [
+    "gct",
+    "gmt",
+    "txt"
+  ],
+  "language": "any",
+  "categories": [
+    "statistical methods"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:29001:1",
+  "plan": "## eREVEALER GenePattern Module — Implementation Plan\n\n### 1. Overview\neREVEALER is a GenePattern module that eREVEALER (enhanced Repeated Evaluation of VariablEs conditionAL Entropy and Redundancy) is an analysis method specifically suited to find groups of genomic alterations that match in a complementary way, a predefined functional activation, dependency of drug response target profile. The method starts by considering, if available, already known genomic alterations (seed) that are the known causes or are known or assumed associated with the target. REVEALER starts by finding the genomic alteration that best matches the target profile conditional to the known seed profile using the conditional mutual information. The newly discovered alteration is then merged with the seed to form a new summary feature, and then the process repeats itself finding additional complementary alterations that explain more and more of the target profile.\n\n### 2. Parameters\nThe module exposes 32 parameters:\n- Required: none\n- Optional: target_file, feature_files, target_name, direction, gene_locus, prefix, seed_files, seed_name, k_size, bandwidth_multiplication, bandwidth_adjustment, alpha, neighborhood, gene_set, separator, subset, feature_remove, feature_set, low_threshold, high_threshold, normalize, figure_format, if_intermediate, if_pvalue, if_cluster, if_bootstrap, if_collapse, num_top, max_iteration, verbose, tissue_file, gmt_file\n\n### 3. Command Line\n```\nREVEALER run --target_file <target_file> --feature_files <feature_files> <seed_files> --prefix <prefix>  <seed_name> --target_name <target_name> --k_size <k_size> --bandwidth_multiplication <bandwidth_multiplication> --bandwidth_adjustment <bandwidth_adjustment> --direction <direction> --num_top <num_top> --low_threshold <low_threshold> --high_threshold <high_threshold> --if_collapse <if_collapse> --figure_format <figure_format> --normalize <normalize> --gene_locus <gene_locus> --verbose <verbose> --max_iteration <max_iteration> <subset> --if_pvalue <if_pvalue> --if_bootstrap <if_bootstrap> --if_cluster <if_cluster> --if_intermediate <if_intermediate> --separator <separator> <gene_set> <gmt_file> --alpha <alpha>  <tissue_file> --neighborhood <neighborhood> <feature_remove> <feature_set>\\n\n```\n\n### 4. Docker Image\nDocker image: yoshihiko1218/revealer\\:v0.0.7\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.py",
+  "command_line": "REVEALER run --target_file <target_file> --feature_files <feature_files> <seed_files> --prefix <prefix>  <seed_name> --target_name <target_name> --k_size <k_size> --bandwidth_multiplication <bandwidth_multiplication> --bandwidth_adjustment <bandwidth_adjustment> --direction <direction> --num_top <num_top> --low_threshold <low_threshold> --high_threshold <high_threshold> --if_collapse <if_collapse> --figure_format <figure_format> --normalize <normalize> --gene_locus <gene_locus> --verbose <verbose> --max_iteration <max_iteration> <subset> --if_pvalue <if_pvalue> --if_bootstrap <if_bootstrap> --if_cluster <if_cluster> --if_intermediate <if_intermediate> --separator <separator> <gene_set> <gmt_file> --alpha <alpha>  <tissue_file> --neighborhood <neighborhood> <feature_remove> <feature_set>\\n",
+  "parameters": [
+    {
+      "name": "target_file",
+      "description": "Target profile dataset",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": "https\\://datasets.genepattern.org/data/module_support_files/REVEALER/CCLE_complete_sigs.gct",
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--target_file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "feature_files",
+      "description": "Features Dataset (e.g. https\\://datasets.genepattern.org/?prefix\\=data/module_support_files/REVEALER/CCLE_Mut_All.gct)",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": "https\\://datasets.genepattern.org/data/module_support_files/REVEALER/CCLE_Mut_All.gct",
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--feature_files",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "target_name",
+      "description": "Target profile name (e.g. BETA-CATENIN-REPORTER)",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "NFE2L2.V2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--target_name",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "direction",
+      "description": "Direction of match (e.g. positive)",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "positive",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--direction",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gene_locus",
+      "description": "Table with chromosomal location for each gene symbol (e.g. https\\://personal.broadinstitute.org/tamayo/REVEALER/datasets/hgnc_complete_set.Feb_20_2014.v2.txt)",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": "https\\://datasets.genepattern.org/data/module_support_files/REVEALER/allgeneLocus.txt",
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gene_locus",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "prefix",
+      "description": "Prefix of output files with results (e.g. BCAT_vs_MUT_CNA)",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "REVEALER",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--prefix",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "seed_files",
+      "description": "Features Dataset that contain seeds. If same file with feature file, then keep this blank.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--seed_files",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "seed_name",
+      "description": "seed(s) names (e.g. CTNNB1.MC_MUT)",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--seed_name",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "k_size",
+      "description": "Size of kernel indicating k variance far from middle. Has to be int. Default is 5",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--k_size",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "bandwidth_multiplication",
+      "description": "Value of bandwidth multiplier. Has to be float or int. Default is 0.65.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.65",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--bandwidth_multiplication",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "bandwidth_adjustment",
+      "description": "Value of bandwidth adjustment. Has to be float or int. Default is -0.95",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "-0.95",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--bandwidth_adjustment",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "alpha",
+      "description": "Power to raise value. Default is 1.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--alpha",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "neighborhood",
+      "description": "This indicates number of neighborhood for kernel. Higher number will lead to higher accuracy but lower speed.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "4",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--neighborhood",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gene_set",
+      "description": "Gene Set that is extracted. File format should be txt file with single column indicating genes.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gene_set",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "separator",
+      "description": "Separator between gene name and later part.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "_",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--separator",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "subset",
+      "description": "Subset of samples to be chosen. Has to be file with one column with subset of sample names in target file. Default is use all columns. File format should be txt file with single column indicating samples.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--subset",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "feature_remove",
+      "description": "features to remove manually. This one is specifically for some very universal features that interrupt calculation. File format should be txt file with single column indicating features.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--feature_remove",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "feature_set",
+      "description": "features to use specifically. This one is used if interested in interaction between some specific features. File format should be txt file with single column indicating features.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--feature_set",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "low_threshold",
+      "description": "Filter out features with less than low_threshold 1's (e.g. 3)",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--low_threshold",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "high_threshold",
+      "description": "Filter out features with more than high_threshold 1's (e.g. 50)",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "50",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--high_threshold",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "normalize",
+      "description": "Way to normalize the target. Can be standard or zerobase. Default is zerobase.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "zerobase",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "standard",
+          "value": "standard"
+        },
+        {
+          "display": "zerobase",
+          "value": "zerobase"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--normalize",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "figure_format",
+      "description": "Format for figure. Can be any figure format available in matplotlib. Default is pdf.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "pdf",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "pdf",
+          "value": "pdf"
+        },
+        {
+          "display": "png",
+          "value": "png"
+        },
+        {
+          "display": "jpg",
+          "value": "jpg"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--figure_format",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "if_intermediate",
+      "description": "Indicate if intermediate reports are generated. Has to be True or False. Default is True.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "True",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--if_intermediate",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "if_pvalue",
+      "description": "Indicate if pvalues are calculated and plotted on figure. Has to be True or False. Default is False.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "False",
+          "value": "False"
+        },
+        {
+          "display": "True",
+          "value": "True"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--if_pvalue",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "if_cluster",
+      "description": "Indicate if features are clustered using NMF for intermediate report. Has to be True or False. Default is False.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "False",
+          "value": "False"
+        },
+        {
+          "display": "True",
+          "value": "True"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--if_cluster",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "if_bootstrap",
+      "description": "Indicate if variance are calculated by bootstrap and plotted on figure. Has to be True or False. Default is False.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "False",
+          "value": "False"
+        },
+        {
+          "display": "True",
+          "value": "True"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--if_bootstrap",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "if_collapse",
+      "description": "Indicate if features are collapsed for intermediate report. Has to be True or False. Default is False.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "False",
+          "value": "False"
+        },
+        {
+          "display": "True",
+          "value": "True"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--if_collapse",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "num_top",
+      "description": "Number of top hits to show in heatmap for every iteration (e.g. 30)",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "30",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num_top",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max_iteration",
+      "description": "Maximum number of iterations (e.g. 2, if set to -1, it will stop automatically when IC stop increasing)",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max_iteration",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "verbose",
+      "description": "Verbose level for report. Setting 0 to get no report. Default is 1.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--verbose",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "tissue_file",
+      "description": "File of tissue information. This will create a output that have tissue distribution information of samples after sorting. File format should be gct file indicating type of tissue of sample.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--tissue_file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gmt_file",
+      "description": "gmt file for allele information. Usually got from preprocessing step.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gmt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gmt_file",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "yoshihiko1218/revealer:v0.0.7"
+}

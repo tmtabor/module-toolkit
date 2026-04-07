@@ -1,0 +1,105 @@
+Create a comprehensive structured plan for the GenePattern module for 'SNPMultipleSampleAnalysis'.
+            
+            Tool Information:
+            - Name: SNPMultipleSampleAnalysis
+            - Version: changed cytoband to <libdir>CytoBands.txt - per Josh's suggestion in gpat-189
+            - Language: any
+            - Description: Determine Regions of Concordant Copy Number Aberrations
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "SNPMultipleSampleAnalysis",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "The input file to analyze - .cn, .xcn, .snp, .txt",
+      "required": true,
+      "default_value": "",
+      "file_format": "txt"
+    },
+    {
+      "name": "cytoband.filename",
+      "type": "FILE",
+      "description": "Cytoband file to use",
+      "required": false,
+      "default_value": "<libdir>CytoBands.txt",
+      "file_format": "txt"
+    },
+    {
+      "name": "permutations",
+      "type": "java.lang.String",
+      "description": "Number of permutations to use",
+      "required": true,
+      "default_value": "500"
+    },
+    {
+      "name": "num.tests",
+      "type": "java.lang.String",
+      "description": "Number of MSA tests to use",
+      "required": true,
+      "default_value": "9"
+    },
+    {
+      "name": "num.positions.bin",
+      "type": "java.lang.String",
+      "description": "Number of positions per bin",
+      "required": true,
+      "default_value": "6"
+    },
+    {
+      "name": "resolution",
+      "type": "java.lang.String",
+      "description": "The size of the plotted chromosome diagram",
+      "required": true,
+      "default_value": "250000"
+    },
+    {
+      "name": "chromosomes",
+      "type": "java.lang.String",
+      "description": "Comma delimited list of chromosomes to analyze",
+      "required": true,
+      "default_value": "chr22"
+    },
+    {
+      "name": "analyze.by",
+      "type": "java.lang.String",
+      "description": "",
+      "required": true,
+      "default_value": "false",
+      "choices": "true\\=arms;false\\=chromosomes"
+    },
+    {
+      "name": "significance.level",
+      "type": "java.lang.String",
+      "description": "The value at which a region is called significant",
+      "required": true,
+      "default_value": ".05"
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.lang.String",
+      "description": "The prefix for output files",
+      "required": true,
+      "default_value": "<input.filename_basename>_"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "SNP Analysis",
+  "author": "Mitchell Guttman and Gregory R. Grant, University of Pennsylvania Center for Bioinformatics",
+  "command_line": "<java> <java_flags> -Djava.awt.headless\\=true -cp <libdir>MSACommandLine041007.jar<path.separator><libdir>gp_wrapper.jar org.genepattern.SNP_MSA_Wrapper -libdir <libdir> -file <input.filename> -cytoband <cytoband.filename> -saveDir ./ -chromosomes <chromosomes> -permutations <permutations> -useArms <analyze.by> -numberTests <num.tests> -binParam <num.positions.bin> -resolution <resolution> -significanceLevel <significance.level> -saveImages ./ -runName <output.prefix>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

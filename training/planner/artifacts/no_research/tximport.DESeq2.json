@@ -1,0 +1,262 @@
+{
+  "module_name": "tximport.DESeq2",
+  "description": "Imports RNA-seq quantifications from frequently used pipelines using the tximport package and outputs a DESeq2 \"normalized counts\" file in .GCT format suitable for use with GSEA, and/or a TPM .GCT suitable for ssGSEA.<br>\\nIf a Sample Info file is provided containing assignments of samples to phenotypes, gene level differential expression will be calculated using DESeq2 for the two phenotypes.",
+  "author": "Anthony S. Castanza;UCSD-MesirovLab",
+  "input_file_formats": [
+    "gff3",
+    "gtf",
+    "gz",
+    "h5",
+    "results",
+    "sf",
+    "tsv",
+    "txt"
+  ],
+  "language": "R",
+  "categories": [
+    "differential expression"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:85001:1",
+  "plan": "## tximport.DESeq2 GenePattern Module — Implementation Plan\n\n### 1. Overview\ntximport.DESeq2 is a GenePattern module that Imports RNA-seq quantifications from frequently used pipelines using the tximport package and outputs a DESeq2 \"normalized counts\" file in .GCT format suitable for use with GSEA, and/or a TPM .GCT suitable for ssGSEA.<br>\\nIf a Sample Info file is provided containing assignments of samples to phenotypes, gene level differential expression will be calculated using DESeq2 for the two phenotypes.\n\n### 2. Parameters\nThe module exposes 12 parameters:\n- Required: Quantifications, Quant.Type, Output.Normalized.Counts, Output.TPM, output.file.base, Reverse.Sign, Annotate.DEGs, Split.Identifiers, Min.Count.Filter, random.seed\n- Optional: Sample.Info, Transcriptome.Database\n\n### 3. Command Line\n```\n<Rscript> <libdir>tximport.deseq2.R --quant\\=<Quantifications> --type\\=<Quant.Type> --txdb\\=<Transcriptome.Database> --info\\=<Sample.Info> --counts\\=<Output.Normalized.Counts> --tpm\\=<Output.TPM> --basename\\=<output.file.base> --annotate\\=<Annotate.DEGs> --reverse\\=<Reverse.Sign> --split\\=<Split.Identifiers>  --filter\\=<Min.Count.Filter> --seed\\=<random.seed>\n```\n\n### 4. Docker Image\nDocker image: genepattern/tximport_deseq2\\:1.0\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "tximport.deseq2.R",
+  "command_line": "<Rscript> <libdir>tximport.deseq2.R --quant=<Quantifications> --type=<Quant.Type> --txdb=<Transcriptome.Database> --info=<Sample.Info> --counts=<Output.Normalized.Counts> --tpm=<Output.TPM> --basename=<output.file.base> --annotate=<Annotate.DEGs> --reverse=<Reverse.Sign> --split=<Split.Identifiers>  --filter=<Min.Count.Filter> --seed=<random.seed>",
+  "parameters": [
+    {
+      "name": "Quantifications",
+      "description": "Output files from the respective pipeline. Files must be named with the sample ID and the appropriate extension for the quantification tool.\\n<br>\\nExample\\:\\n\".genes.results\" files output from RSEM\\: Sample_1.genes.results\\n<br>\\n\".quant.sf\" or \".quant.sf.gz\" files output from Salmon/Sailfish\\: Sample_1.quant.sf/Sample_1.quant.sf.gz\\n<br>\\n\".abundance.h5\" or \".abundance.tsv\" files output from Kallisto\\: Sample_1.abundance.h5/Sample_1.abundance.h5.gz/Sample_1.abundance.tsv/Sample_1.abundance.tsv.gz\\n<br><br>\\nAll files must have been quantified using the same application and the same transcriptome.\\n<br>\\nSupports gzip (.gz) files.",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": [
+        "gz",
+        "h5",
+        "results",
+        "sf",
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Quantifications",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Sample.Info",
+      "description": "<b>Optional</b> tab delimited text file containing Sample ID to Phenotype mappings. Sample IDs should match exactly the ID used in the input file (without the file extension).<br>\\nIf provided, this file will be used to compute deferentially expressed genes using DESeq2.\\n<br>By default, Log2(FC) will be calculated for the first Factor level vs the second Factor level (Phenotype_A vs. Phenotype_B).\\n<br><br>\\n<style type\\=\"text/css\">\\n.tg  {border-collapse\\:collapse;border-spacing\\:0;}\\n.tg td{border-color\\:black;border-style\\:solid;border-width\\:1px;font-family\\:Arial, sans-serif;font-size\\:12px;}\\n.tg th{border-color\\:black;border-style\\:solid;border-width\\:1px;font-family\\:Arial, sans-serif;font-size\\:12px;\\n  font-weight\\:normal;}\\n.tg .tg-0pky{border-color\\:inherit;text-align\\:left;vertical-align\\:top}\\n</style>\\n<table class\\=\"tg\">\\n<tbody>\\n  <tr>\\n    <th class\\=\"tg-0pky\">SampleID</th>\\n    <th class\\=\"tg-0pky\">Factor</th>\\n  </tr>\\n  <tr>\\n    <td class\\=\"tg-0pky\">Sample_1</td>\\n    <td class\\=\"tg-0pky\">Phenotype_A</td>\\n  </tr>\\n  <tr>\\n    <td class\\=\"tg-0pky\">Sample_2</td>\\n    <td class\\=\"tg-0pky\">Phenotype_A</td>\\n  </tr>\\n  <tr>\\n    <td class\\=\"tg-0pky\">Sample_3</td>\\n    <td class\\=\"tg-0pky\">Phenotype_B</td>\\n  </tr>\\n  <tr>\\n    <td class\\=\"tg-0pky\">Sample_4</td>\\n    <td class\\=\"tg-0pky\">Phenotype_B</td>\\n  </tr>\\n</tbody>\\n</table>\\n<br>\\nCovariates can be provided as additional \"Factor\" columns. The first factor column (the second column in the table) will always be used as the primary factor for the differential expression analysis.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Sample.Info",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Quant.Type",
+      "description": "Select the type of quantifications to be imported.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "SALMON",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "RSEM .genes.results",
+          "value": "RSEM"
+        },
+        {
+          "display": "Salmon .quant.sf",
+          "value": "SALMON"
+        },
+        {
+          "display": "Sailfish .quant.sf",
+          "value": "SAILFISH"
+        },
+        {
+          "display": "Kallisto .abundance.h5",
+          "value": "KallistoH5"
+        },
+        {
+          "display": "Kallisto .abundance.tsv",
+          "value": "KallistoTSV"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Quant.Type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Transcriptome.Database",
+      "description": "For Salmon/Sailfish/Kallisto data providing the transcriptome file used to quantify the data is <b>required</b> and must be provided in GTF/GFF3 format. This parameter is not utilized for RSEM data.<br/>(Supports gzip [.gz] files).<br/>",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gff3",
+        "gtf",
+        "gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Transcriptome.Database",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Output.Normalized.Counts",
+      "description": "Compute count normalization with DESeq2 and output the normalized matrix. This is the ideal output for compatibility with GSEA.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Output.Normalized.Counts",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.TPM",
+      "description": "Transcripts per million (TPM) quantifications will be extracted and output. This is the ideal output for compatibility with ssGSEA.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Output.TPM",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file.base",
+      "description": "The base name of the output file(s). File extensions will be added automatically.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "Merged.Data",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file.base",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Reverse.Sign",
+      "description": "If computing differentially expressed genes, by default, Log2(FC) will be calculated for the first Factor level vs the second Factor level (Phenotype_A vs. Phenotype_B). Setting Reverse.Sign \\= TRUE will reverse the direction of the calculation and Log2(FC) will be calculated for the second Factor level vs the first Factor level (Phenotype_B vs. Phenotype_A).",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Reverse.Sign",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Annotate.DEGs",
+      "description": "If a Sample Info file and a Transcriptome Database have been provided, setting Annotate DEGs to TRUE will attempt to add gene symbols to the computed differential expression analysis.<br>Note\\: This does not affect the .GCT files which will still output only the underlying Gene IDs.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Annotate.DEGs",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Split.Identifiers",
+      "description": "Some pipelines produce a gene label that combines a reference ID and a Gene Symbol joined by an underscore (e.g. ENSG00000141510_TP53).\\n<br>\\n<b>TRUE</b> will attempt to split these into the reference ID and the Gene Symbol. The reference ID will be used as the NAME column of the GCT and the Gene Symbol will be used as the Description.\\n<br>\\n<b>FALSE</b> will leave the identifiers as-is.\\n",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Split.Identifiers",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Min.Count.Filter",
+      "description": "Keep genes with more than <Min.Count.Filter> counts summed over all samples (default\\: 1 count; 0 \\= disabled)",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Min.Count.Filter",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "random.seed",
+      "description": "Integer used to configure the workspace. Setting this to a constant ensures uniformity for any operations that use random numbers.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "779948241",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--random.seed",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/tximport_deseq2:1.0"
+}

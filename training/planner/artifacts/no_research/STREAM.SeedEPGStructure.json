@@ -1,0 +1,218 @@
+{
+  "module_name": "STREAM.SeedEPGStructure",
+  "description": "Seeding the initial elastic principal graph prior to starting the trajectory learning process.",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "input_file_formats": [
+    "pkl"
+  ],
+  "language": "Python",
+  "categories": [
+    "Single-Cell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:74869:1",
+  "plan": "## STREAM.SeedEPGStructure GenePattern Module — Implementation Plan\n\n### 1. Overview\nSTREAM.SeedEPGStructure is a GenePattern module that Seeding the initial elastic principal graph prior to starting the trajectory learning process.\n\n### 2. Parameters\nThe module exposes 14 parameters:\n- Required: data.file, num.components, num.clusters, preference.percentile, max.clusters, figure.legend.num.columns, output.filename, clustering, component.x, component.y\n- Optional: percent.neighbor.cells, damping, figure.width, figure.height\n\n### 3. Command Line\n```\npython /stream/structure_command_line.py -m <data.file> -of <output.filename> <percent.neighbor.cells> <figure.width> <figure.height> <figure.legend.num.columns> <num.clusters> <damping> <preference.percentile> <max.clusters> <clustering> <component.x> <component.y> <num.components>\n```\n\n### 4. Docker Image\nDocker image: genepattern/stream_seedepgstructure\\:0.2\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "structure_command_line.py",
+  "command_line": "python /stream/structure_command_line.py -m <data.file> -of <output.filename> <percent.neighbor.cells> <figure.width> <figure.height> <figure.legend.num.columns> <num.clusters> <damping> <preference.percentile> <max.clusters> <clustering> <component.x> <component.y> <num.components>",
+  "parameters": [
+    {
+      "name": "data.file",
+      "description": "A STREAM pkl file containing annotated and preprocessed gene expression data",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "pkl"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.components",
+      "description": "Number of components to be plotted.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-n_comp",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "percent.neighbor.cells",
+      "description": "Neighbor percentage. The percentage of points used as neighbors for spectral clustering.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-nb_pct",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "num.clusters",
+      "description": "Number of clusters (only valid once 'clustering' is specificed as 'sc' or 'kmeans').",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-n_clusters",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "damping",
+      "description": "Damping factor (between 0.5 and 1) for affinity propagation.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.75",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-damping",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "preference.percentile",
+      "description": "Preference percentile (between 0 and 100). The percentile of the input similarities for affinity propagation.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "50",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-pref_perc",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.clusters",
+      "description": "Number of clusters (only valid once 'clustering' is specificed as 'sc' or 'kmeans').",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "200",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-max_n_clusters",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "figure.width",
+      "description": "figure width",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_width",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "figure.legend.num.columns",
+      "description": "The number of columns that the legend has.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_legend_ncol",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "figure.height",
+      "description": "figure height",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_height",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.filename",
+      "description": "output file name prefix",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "clustering",
+      "description": "Clustering method used to infer the initial nodes. Choose from affinity propagation, K-Means clustering, spectral clustering",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "kmeans",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "KMeans Clustering",
+          "value": "kmeans"
+        },
+        {
+          "display": "Affinity Propagation",
+          "value": "ap"
+        },
+        {
+          "display": "Spectral Clustering",
+          "value": "sc"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-clustering",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "component.x",
+      "description": "Component used for x axis.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-comp1",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "component.y",
+      "description": "Component used for y axis.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-comp2",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/stream_seedepgstructure:0.2"
+}

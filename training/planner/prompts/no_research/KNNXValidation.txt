@@ -1,0 +1,107 @@
+Create a comprehensive structured plan for the GenePattern module for 'KNNXValidation'.
+            
+            Tool Information:
+            - Name: KNNXValidation
+            - Version: Set default value of distance measure to Euclidean
+            - Language: Java
+            - Description: KNN classification with Leave-One-Out Cross-Validation
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "KNNXValidation",
+  "parameters": [
+    {
+      "name": "data.filename",
+      "type": "FILE",
+      "description": "data file - .gct, .res, .odf type \\= Dataset",
+      "required": true,
+      "default_value": "",
+      "file_format": "res;gct;Dataset"
+    },
+    {
+      "name": "class.filename",
+      "type": "FILE",
+      "description": "class file - .cls",
+      "required": true,
+      "default_value": "",
+      "file_format": "cls"
+    },
+    {
+      "name": "num.features",
+      "type": "java.lang.Integer",
+      "description": "number of selected features",
+      "required": true,
+      "default_value": "10"
+    },
+    {
+      "name": "feature.selection.statistic",
+      "type": "java.lang.Integer",
+      "description": "statistic to use to perform feature selection",
+      "required": true,
+      "default_value": "0",
+      "choices": "0\\=SNR;1\\=T-Test;2\\=SNR (median);3\\=T-Test (median);4\\=SNR (min std);5\\=T-Test (min std);6\\=SNR (median, min std);7\\=T-Test (median, min std)"
+    },
+    {
+      "name": "min.std",
+      "type": "java.lang.Float",
+      "description": "minimum standard deviation if feature selection statistic includes min std option",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "num.neighbors",
+      "type": "java.lang.Integer",
+      "description": "number of neighbors for KNN",
+      "required": true,
+      "default_value": "3"
+    },
+    {
+      "name": "weighting.type",
+      "type": "java.lang.String",
+      "description": "weighting type for neighbors",
+      "required": true,
+      "default_value": "distance",
+      "choices": "1\\=none;2\\=One-over-k;3\\=distance"
+    },
+    {
+      "name": "distance.measure",
+      "type": "java.lang.String",
+      "description": "distance measure",
+      "required": true,
+      "default_value": "1",
+      "choices": "2\\=Cosine Distance;1\\=Euclidean Distance"
+    },
+    {
+      "name": "pred.results.file",
+      "type": "java.lang.String",
+      "description": "prediction results output file name .odf type \\= Prediction Results",
+      "required": true,
+      "default_value": "<data.filename_basename>.pred.odf"
+    },
+    {
+      "name": "feature.summary.file",
+      "type": "java.lang.String",
+      "description": "feature summary output file name - .odf type \\= Prediction Features",
+      "required": true,
+      "default_value": "<data.filename_basename>.feat.odf"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Prediction",
+  "author": "Joshua Korn, Joshua Gould (Broad Institute)",
+  "command_line": "<java> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>knnxval.jar org.genepattern.modules.knnxval.KNNXValidation -t<data.filename> -c<class.filename> -o<pred.results.file> -n<num.features> -f<feature.summary.file> -k<num.neighbors> -w<weighting.type> -d<distance.measure> -S<feature.selection.statistic> -M<min.std>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

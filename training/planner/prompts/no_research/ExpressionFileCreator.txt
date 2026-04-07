@@ -1,0 +1,118 @@
+Create a comprehensive structured plan for the GenePattern module for 'ExpressionFileCreator'.
+            
+            Tool Information:
+            - Name: ExpressionFileCreator
+            - Version: include R packages in container and fix for stderr output of install.packages(<repos_cdf>)
+            - Language: R2.15.3
+            - Description: Creates a RES or GCT file from a set of Affymetrix CEL files.  For IVT arrays only; use AffySTExpressionFileCreator for ST arrays.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ExpressionFileCreator",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "A zip file of CEL files",
+      "required": true,
+      "default_value": "",
+      "file_format": "zip"
+    },
+    {
+      "name": "method",
+      "type": "java.lang.String",
+      "description": "The method to use. Note that dchip and MAS5 will not work with ST arrays.",
+      "required": true,
+      "default_value": "RMA",
+      "choices": "dChip;GCRMA;MAS5;RMA"
+    },
+    {
+      "name": "quantile.normalization",
+      "type": "java.lang.String",
+      "description": "(GCRMA and RMA only) Whether to normalize data using quantile normalization",
+      "required": false,
+      "default_value": "",
+      "choices": "yes;no"
+    },
+    {
+      "name": "background.correct",
+      "type": "java.lang.String",
+      "description": "(RMA only) Whether to background correct using RMA background correction",
+      "required": false,
+      "default_value": "",
+      "choices": "yes;no"
+    },
+    {
+      "name": "compute.present.absent.calls",
+      "type": "java.lang.String",
+      "description": "Whether to compute Present/Absent calls",
+      "required": false,
+      "default_value": "no",
+      "choices": "yes\\=yes (create res file);no\\=no (create gct file)"
+    },
+    {
+      "name": "normalization.method",
+      "type": "java.lang.String",
+      "description": "(MAS5 only) The normalization method to apply after expression values are computed. The column having the median of the means is used as the reference unless the parameter value to scale to is given.",
+      "required": false,
+      "default_value": "median scaling",
+      "choices": "linear fit;mean scaling;median scaling;none;quantile normalization"
+    },
+    {
+      "name": "value.to.scale.to",
+      "type": "java.lang.String",
+      "description": "(median/mean scaling only) The value to scale to.",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "clm.file",
+      "type": "FILE",
+      "description": "A tab-delimited text file containing one scan, sample, and class per line",
+      "required": false,
+      "default_value": "",
+      "file_format": "txt;clm"
+    },
+    {
+      "name": "annotate.probes",
+      "type": "java.lang.String",
+      "description": "Whether to annotate probes with the gene symbol and description",
+      "required": true,
+      "default_value": "yes",
+      "choices": "yes;no"
+    },
+    {
+      "name": "cdf.file",
+      "type": "FILE",
+      "description": "Custom CDF file. Leave blank to use default internally provided CDF file (custom cdf file is not implemented for GCRMA).",
+      "required": false,
+      "default_value": "",
+      "file_format": "cdf"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "The base name of the output file(s)",
+      "required": true,
+      "default_value": "<input.file_basename>"
+    }
+  ],
+  "docker_image_tag": "genepattern/expressionfilecreator\\:v12.5",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Joshua Gould, David Eby, gp-help@broad.mit.edu, Broad Institute",
+  "command_line": "Rscript --no-save --quiet --slave --no-restore <libdir>expr.R <libdir> -i<input.file> -o<output.file> -m<method> -q<quantile.normalization> -b<background.correct> -c<compute.present.absent.calls> -n<normalization.method> -l<libdir> -f<clm.file> -v<value.to.scale.to> -e<cdf.file> -a<annotate.probes>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

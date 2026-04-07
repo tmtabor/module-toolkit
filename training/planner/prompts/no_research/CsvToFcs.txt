@@ -1,0 +1,66 @@
+Create a comprehensive structured plan for the GenePattern module for 'CsvToFcs'.
+            
+            Tool Information:
+            - Name: CsvToFcs
+            - Version: Fix for parsing empty keyword values
+            - Language: Java
+            - Description: Converts a Comma separated values (CSV) file to a Flow Cytometry Standard (FCS) file.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "CsvToFcs",
+  "parameters": [
+    {
+      "name": "Input.CSV.data.file",
+      "type": "FILE",
+      "description": "A CSV file to be converted to FCS.",
+      "required": true,
+      "default_value": "",
+      "file_format": "csv",
+      "prefix": "-InputFile\\:"
+    },
+    {
+      "name": "Output.FCS.file.name",
+      "type": "java.lang.String",
+      "description": "The name of the output FCS file.",
+      "required": false,
+      "default_value": "<Input.CSV.data.file_basename>.fcs",
+      "prefix": "-OutputFile\\:"
+    },
+    {
+      "name": "Range",
+      "type": "java.lang.String",
+      "description": "Value of the $PnR keyword for all parameters. By default, this tool will try to set the best settings based on the data in the file; use \"auto\", \"auto-exact\", \"BD\", or an integer value.",
+      "required": true,
+      "default_value": "auto",
+      "prefix": "-Range\\:"
+    },
+    {
+      "name": "Data.type",
+      "type": "java.lang.String",
+      "description": "Value of the $DATATYPE keyword. By default, this tool will try to set the best settings based on the data in the input CSV file.",
+      "required": false,
+      "default_value": "auto",
+      "choices": "auto\\=auto, default;int\\=integer;float\\=floating point",
+      "prefix": "-DataType\\:"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Data Format Conversion",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "command_line": "<java> <java_flags> -jar <libdir>csv2fcs.jar <Input.CSV.data.file> <Output.FCS.file.name> <Range> <Data.type>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

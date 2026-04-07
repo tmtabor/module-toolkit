@@ -1,0 +1,166 @@
+{
+  "module_name": "SparseHierarchicalClustering",
+  "description": "Cluster the samples in a data matrix using an adaptively-chosen subset of the features.",
+  "author": "Daniela Witten, Stanford University",
+  "input_file_formats": [
+    "gct"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:55000:1",
+  "plan": "## SparseHierarchicalClustering GenePattern Module — Implementation Plan\n\n### 1. Overview\nSparseHierarchicalClustering is a GenePattern module that Cluster the samples in a data matrix using an adaptively-chosen subset of the features.\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: input.filename, method, wbound, maxnumgenes, cluster.features, method.features, standardize.arrays\n- Optional: none\n\n### 3. Command Line\n```\n<R2.5> <libdir>HSC2.R sparsecluster <libdir> <input.filename> <method> <wbound>  <cluster.features> <method.features> <maxnumgenes> <standardize.arrays>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "HSC2.R",
+  "command_line": "<R2.5> <libdir>HSC2.R sparsecluster <libdir> <input.filename> <method> <wbound>  <cluster.features> <method.features> <maxnumgenes> <standardize.arrays>",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "description": "A GCT file containing data to cluster",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "method",
+      "description": "The type of linkage to use in the hierarchical clustering - \"single\", \"complete\", \"centroid\", or \"average.\"",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "average",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "average",
+          "value": "average"
+        },
+        {
+          "display": "complete",
+          "value": "complete"
+        },
+        {
+          "display": "single",
+          "value": "single"
+        },
+        {
+          "display": "centroid",
+          "value": "centroid"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "wbound",
+      "description": "The sum of gene weights; this is the tuning parameter for sparse hierarchical clustering. If a non-negative number is given, then this tuning parameter is used. Otherwise, a tuning parameter is selected via a permutation approach. Note\\: The program runs much more quickly if wbound is specified rather than left at -1.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "-1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--wbound",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "maxnumgenes",
+      "description": "By default, only the 5000 genes with highest variance will be used (for computational reasons). To use all the genes, set to -1. Warning\\: using all genes will be slow if there are many genes in the data set.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "5000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--maxnumgenes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cluster.features",
+      "description": "If a clustering of the genes with non-zero weights is desired, set to TRUE.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "true",
+          "value": "true"
+        },
+        {
+          "display": "false",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--cluster.features",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "method.features",
+      "description": "The type of linkage used to cluster the features (if desired) - \"single\", \"complete\", \"centroid\", or \"average\". Used only if cluster features is set to \"TRUE\"",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "average",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "average",
+          "value": "average"
+        },
+        {
+          "display": "complete",
+          "value": "complete"
+        },
+        {
+          "display": "single",
+          "value": "single"
+        },
+        {
+          "display": "centroid",
+          "value": "centroid"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--method.features",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "standardize.arrays",
+      "description": "Whether or not the arrays should be standardized to have mean zero and standard deviation one before clustering is performed.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "true",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "true",
+          "value": "true"
+        },
+        {
+          "display": "false",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--standardize.arrays",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

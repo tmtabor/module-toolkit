@@ -1,0 +1,96 @@
+Create a comprehensive structured plan for the GenePattern module for 'CummeRbund.QcReport'.
+            
+            Tool Information:
+            - Name: CummeRbund.QcReport
+            - Version: Updated to make use of the R package installer.
+            - Language: unknown
+            - Description: [Beta Release** Contact gp-help with any issues. Check stdout.txt and stderr.txt for errors] Cuffdiff visualization package providing plots and tables related to QC and Global Stats.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "CummeRbund.QcReport",
+  "parameters": [
+    {
+      "name": "cuffdiff.input",
+      "type": "FILE",
+      "description": "A Cuffdiff job, a previous CummeRbund job, or a cuffData.db file from a previous CummeRbund job.",
+      "required": true,
+      "default_value": "",
+      "file_format": "directory;db"
+    },
+    {
+      "name": "output.format",
+      "type": "java.lang.String",
+      "description": "The output file format.",
+      "required": true,
+      "default_value": "pdf",
+      "choices": "pdf;svg;png"
+    },
+    {
+      "name": "feature.level",
+      "type": "java.lang.String",
+      "description": "Feature level for the report",
+      "required": true,
+      "default_value": "genes",
+      "choices": "genes\\=genes;isoforms\\=isoforms;TSS\\=transcription start site (TSS);CDS\\=coding sequence (CDS)"
+    },
+    {
+      "name": "report.as.aggregate",
+      "type": "java.lang.String",
+      "description": "Controls whether reporting should be done for individual replicates or aggregate condition/sample values.  The default is to use aggregate sample values.  Controls whether reporting should be done for individual replicates or aggregate condition/sample values.  The default is to use aggregate sample values.  Note that the Dispersion, FPKM.SCV, and MA plots always show aggregate samples.",
+      "required": true,
+      "default_value": "yes",
+      "choices": "yes;no"
+    },
+    {
+      "name": "log.transform",
+      "type": "java.lang.String",
+      "description": "Whether or not to log transform FPKM values.  Note that the FPKM values are always log transformed for the FPKM.SCV plot.  Log transformation does not apply to the Dispersion, MDS, and PCA plots.",
+      "required": true,
+      "default_value": "yes",
+      "choices": "yes;no"
+    },
+    {
+      "name": "pca.x",
+      "type": "java.lang.String",
+      "description": "Indicates which principal component is to be presented on the x-axis of the PCA plot.  Must differ from pca.y.",
+      "required": true,
+      "default_value": "PC2",
+      "choices": "PC1\\=first principal component;PC2\\=second principal component;PC3\\=third principal component;PC4\\=fourth principal component;PC5\\=fifth principal component;PC6\\=sixth principal component"
+    },
+    {
+      "name": "pca.y",
+      "type": "java.lang.String",
+      "description": "Indicates which principal component is to be presented on the y-axis of the PCA plot.  Must differ from pca.x.",
+      "required": true,
+      "default_value": "PC3",
+      "choices": "PC1\\=first principal component;PC2\\=second principal component;PC3\\=third principal component;PC4\\=fourth principal component;PC5\\=fifth principal component;PC6\\=sixth principal component"
+    },
+    {
+      "name": "attempt.to.merge.names",
+      "type": "java.lang.String",
+      "description": "Should the module attempt to merge gene names into the text reports?  Depending on the GTF file used in the Cuffdiff run, the text reports may instead contain tracking ID references, particularly if a Cuffmerge merged.gtf file was used.",
+      "required": true,
+      "default_value": "no",
+      "choices": "yes;no"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "RNA-seq",
+  "author": "Loyal Goff, MIT Computer Science and Artificial Intelligence Lab; David Eby, Broad Institute",
+  "command_line": "<R2.15_Rscript> --no-save --quiet --slave --no-restore <libdir>run_gp_cummerbund_qc_report.R <libdir> --cuffdiff.input\\=<cuffdiff.input> --output.format\\=<output.format> --feature.level\\=<feature.level> --report.as.aggregate\\=<report.as.aggregate> --log.transform\\=<log.transform> --pca.x\\=<pca.x> --pca.y\\=<pca.y> --attempt.to.merge.names\\=<attempt.to.merge.names>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

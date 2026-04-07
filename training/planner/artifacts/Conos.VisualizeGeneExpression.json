@@ -1,0 +1,93 @@
+{
+  "module_name": "Conos.VisualizeGeneExpression",
+  "description": "This is a minimalistic implementation of visualization options for Conos. This module is intended to be used after <a href\\=\"https\\://cloud.genepattern.org/gp/pages/index.jsf?lsid\\=urn\\:lsid\\:broad.mit.edu\\:cancer.software.genepattern.module.analysis\\:00410\\:0.1\">Conos.Cluster</a> has been ran.",
+  "author": "Edwin F. Juarez;UCSD - Mesirov Lab",
+  "input_file_formats": [
+    "rds"
+  ],
+  "language": "R",
+  "categories": [
+    "single-cell",
+    "singlecell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:63158:1",
+  "plan": "## Conos.VisualizeGeneExpression GenePattern Module — Implementation Plan\n\n### 1. Overview\nConos.VisualizeGeneExpression is a GenePattern module that This is a minimalistic implementation of visualization options for Conos. This module is intended to be used after <a href\\=\"https\\://cloud.genepattern.org/gp/pages/index.jsf?lsid\\=urn\\:lsid\\:broad.mit.edu\\:cancer.software.genepattern.module.analysis\\:00410\\:0.1\">Conos.Cluster</a> has been ran.\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: conos_object, genesofinterest, clustering, output_file_name\n- Optional: none\n\n### 3. Command Line\n```\nRscript --no-save --quiet --slave --no-restore <libdir>run_conos_visualizegeneexpression.R --conos_object <conos_object> --genesofinterest <genesofinterest> --clustering <clustering> --output_file_name <output_file_name>\n```\n\n### 4. Docker Image\nDocker image: genepattern/conos\\:2.1\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_conos_visualizegeneexpression.R",
+  "command_line": "Rscript --no-save --quiet --slave --no-restore <libdir>run_conos_visualizegeneexpression.R --conos_object <conos_object> --genesofinterest <genesofinterest> --clustering <clustering> --output_file_name <output_file_name>",
+  "parameters": [
+    {
+      "name": "conos_object",
+      "description": "RDS file created by Conos.Cluster",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "rds"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--conos_object",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "genesofinterest",
+      "description": "A list of gene identifiers. The expression of these genes will be plotted on the embedded map. Gene names need to be separated by a coma and a space (e.g. MS4A1, CD74, LYZ, CD14) and match the identifiers used in the original input data (Gene Symbols, Ensembl IDs, etc).",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--genesofinterest",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "clustering",
+      "description": "Option to show clustering information besides gene expression (none, leiden, walktrap, both)",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "none",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "none",
+          "value": "none"
+        },
+        {
+          "display": "leiden",
+          "value": "leiden"
+        },
+        {
+          "display": "walktrap",
+          "value": "walktrap"
+        },
+        {
+          "display": "both",
+          "value": "both"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--clustering",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output_file_name",
+      "description": "Basename of the file to be saved",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "ConosMarkers",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output_file_name",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/conos:2.1"
+}

@@ -1,0 +1,269 @@
+{
+  "module_name": "tfsites.VisualizeTFSitesOnSequences",
+  "description": "Annotates transcription factor binding sites across a DNA sequence with optional motif database generation. Multiple transcription factors can be analyzed. Each binding site is labeled with a unique binding site ID and its start and end position. If reference data is provided for a transcription factor, the affinity/score of this site will be labeled and the intensity of the binding site's color will be proportional. At least one of affinity information and files or batch motif files (or both) must be provided. If motif database parameters are provided, it will first generate a motif database and use it for visualization.",
+  "author": "Joe Salvasson, modified into a GenePattern module as Ted Liefeld",
+  "input_file_formats": [
+    "tsv",
+    "txt"
+  ],
+  "language": "Python",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:62098:1",
+  "plan": "## tfsites.VisualizeTFSitesOnSequences GenePattern Module — Implementation Plan\n\n### 1. Overview\ntfsites.VisualizeTFSitesOnSequences is a GenePattern module that Annotates transcription factor binding sites across a DNA sequence with optional motif database generation. Multiple transcription factors can be analyzed. Each binding site is labeled with a unique binding site ID and its start and end position. If reference data is provided for a transcription factor, the affinity/score of this site will be labeled and the intensity of the binding site's color will be proportional. At least one of affinity information and files or batch motif files (or both) must be provided. If motif database parameters are provided, it will first generate a motif database and use it for visualization.\n\n### 2. Parameters\nThe module exposes 16 parameters:\n- Required: DNA.sequences.to.annotate, output.image.as.svg, PWM.binding.site.color, plot.resolution, output.filename\n- Optional: motif.input.file, motif.input.format, motif.filter.keywords, motif.use.pseudocounts, motif.background.frequencies, motif.output.name, TF.affinity.information, batch.motif.input.file, TF.affinity.files, zoom.range, PWM.minimum.score\n\n### 3. Command Line\n```\npython /build/tfsites-webportal/03-visualizeTfSitesOnSequences/03-combined-generateMotifDatabase-and-visualizeTfSitesOnSequences.py <motif.input.file> <motif.input.format> <motif.filter.keywords> <motif.use.pseudocounts> <motif.background.frequencies> <motif.output.name> -d <DNA.sequences.to.annotate> <TF.affinity.information> <TF.affinity.files> <batch.motif.input.file> -m <PWM.minimum.score> -c <PWM.binding.site.color> -s <output.image.as.svg> -r <plot.resolution> <zoom.range> -o <output.filename>\n```\n\n### 4. Docker Image\nDocker image: genepattern/tfsites\\:17.0.19\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "03-combined-generateMotifDatabase-and-visualizeTfSitesOnSequences.py",
+  "command_line": "python /build/tfsites-webportal/03-visualizeTfSitesOnSequences/03-combined-generateMotifDatabase-and-visualizeTfSitesOnSequences.py <motif.input.file> <motif.input.format> <motif.filter.keywords> <motif.use.pseudocounts> <motif.background.frequencies> <motif.output.name> -d <DNA.sequences.to.annotate> <TF.affinity.information> <TF.affinity.files> <batch.motif.input.file> -m <PWM.minimum.score> -c <PWM.binding.site.color> -s <output.image.as.svg> -r <plot.resolution> <zoom.range> -o <output.filename>",
+  "parameters": [
+    {
+      "name": "motif.input.file",
+      "description": "File containing matrix data for motif database generation (JASPAR format). If provided, motif database will be generated first.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_input_file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.input.format",
+      "description": "Specify whether input file contains PFMs or PWMs. Required if motif input file is provided.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "pfm",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "PFM",
+          "value": "pfm"
+        },
+        {
+          "display": "PWM",
+          "value": "pwm"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--motif_input_format",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.filter.keywords",
+      "description": "File containing keywords to filter motifs during database generation.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_filter_keywords",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.use.pseudocounts",
+      "description": "Whether to use pseudocounts when generating motif database.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--motif_use_pseudocounts",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.background.frequencies",
+      "description": "Background frequency for each nucleotide (comma-separated string in order of ATCG).",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.25,0.25,0.25,0.25",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_background_frequencies",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "motif.output.name",
+      "description": "Name of motif database output file. If not specified, temporary file will be created.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "generated_motif_database.txt",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_output_name",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "DNA.sequences.to.annotate",
+      "description": "File containing one or more DNA sequences to be annotated.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--DNA.sequences.to.annotate",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "TF.affinity.information",
+      "description": "File containing all the information for the transcription factors being analyzed. This includes the TF name, color, binding site definition, affinity reference data (optional), and minimum affinity (optional).",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-t",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "batch.motif.input.file",
+      "description": "File containing PWMs to predict and score binding sites. This file can be obtained using GenerateMotifDatabase or will be generated automatically if motif generation parameters are provided.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-p",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "TF.affinity.files",
+      "description": "File containing a list of affinity data referenced in the TF affinity information file.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-R",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.image.as.svg",
+      "description": "Option to output images as .svg in addition to .png. For manuscript preparation, .svg format is preferable.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        },
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.image.as.svg",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "PWM.binding.site.color",
+      "description": "Color of sites scored by PWMs on the output visualization. Find color options here.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "grey",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--PWM.binding.site.color",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "plot.resolution",
+      "description": "Resolution of the plot, in dots (pixels) per inch. Manuscripts require 300 DPI. The DPI does not affect the resolution of .svg files.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "200",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--plot.resolution",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "zoom.range",
+      "description": "Given a start position and an end position, zoom into a portion of the sequence. The numbers in the range are inclusive and 1-indexed. For example, the first 200 nucleotides of the sequence would be specified as\\: 1-200.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-z",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "PWM.minimum.score",
+      "description": "PWM score required to predict a binding site.",
+      "required": false,
+      "type": "float",
+      "value_count": "0..1",
+      "default_value": "0.7",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--PWM.minimum.score",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.filename",
+      "description": "Base name of the output files.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "output",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/tfsites:17.0.19"
+}

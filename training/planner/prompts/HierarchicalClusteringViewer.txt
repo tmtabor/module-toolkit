@@ -1,0 +1,494 @@
+Create a comprehensive structured plan for the GenePattern module for 'HierarchicalClusteringViewer'.
+            
+            Tool Information:
+            - Name: HierarchicalClusteringViewer
+            - Version: Bug fix for S3 files
+            - Language: HTML,jQuery
+            - Description: Views results of hierarchical clustering.
+            
+            Research Results:
+            Now I have all the information needed to compile a thorough, expert-level research report. Here it is:
+
+---
+
+# 🧬 Comprehensive Research Report: HierarchicalClusteringViewer
+
+> **GenePattern Module | Visualizer Type | HTML/jQuery | Version: Bug fix for S3 files (v12+)**
+
+---
+
+## 1. 🔬 Tool Purpose and Scientific Applications
+
+### Core Purpose
+`HierarchicalClusteringViewer` is a **browser-based interactive visualization module** within the GenePattern ecosystem that renders the output of hierarchical clustering algorithms. It serves as the dedicated downstream viewer for the `HierarchicalClustering` module, producing simultaneous **dendrogram** (cluster tree) and **heat map** representations of high-dimensional genomic data.
+
+### Scientific Rationale
+Hierarchical clustering is one of the oldest and most widely adopted unsupervised learning methods in genomics. It groups genes (rows) and/or samples (columns) by similarity, building a nested binary tree (dendrogram) whose structure reveals:
+
+| Biological Insight | Visualization Feature |
+|---|---|
+| Sample subtype discovery (e.g., AML vs ALL) | Column dendrogram (ATR-driven) |
+| Co-expressed gene modules / gene programs | Row dendrogram (GTR-driven) |
+| Expression level trends across groups | Color gradient heat map |
+| Cluster distances and cohesion | Dendrogram branch lengths |
+| Outlier samples or genes | Long-branch nodes, isolated clusters |
+
+### Primary Scientific Applications
+1. **Cancer subtype discovery** — Identifying transcriptomic subtypes of tumors from microarray or RNA-seq data (historically used with the AML/ALL Golub et al. 1999 dataset as the canonical example)
+2. **Differential expression visualization** — Displaying co-regulated gene sets across experimental conditions
+3. **Quality control** — Visual inspection of replicate clustering, batch effects, or outlier samples
+4. **Biomarker discovery** — Identifying gene signatures that distinguish clinical groups
+5. **Pathway-level expression analysis** — Clustering genes within or across pathways
+6. **Multi-omics data exploration** — Any tabular matrix data that has been hierarchically clustered
+
+### Disciplinary Context
+The tool is principally applied in:
+- **Transcriptomics** (microarray, RNA-seq)
+- **Proteomics / Metabolomics** (any expression matrix)
+- **Epigenomics** (methylation or chromatin accessibility matrices)
+- **Single-cell analysis** (when used with pre-clustered matrices)
+
+---
+
+## 2. 📂 Input/Output Formats and Requirements
+
+### Input Files
+
+The module consumes **three specialized Stanford-format cluster files**, all produced by the upstream `HierarchicalClustering` GenePattern module:
+
+#### 🗂️ CDT File (Clustered Data Table) — **REQUIRED**
+| Property | Details |
+|---|---|
+| Extension | `.cdt` |
+| Format origin | Stanford Hierarchical Clustering program |
+| Structure | Tab-delimited text; original expression data reordered to reflect clustering |
+| Special columns | `GID` column added if genes were clustered (links to GTR) |
+| Special rows | `AID` row added if arrays were clustered (links to ATR) |
+| Content | Original numeric expression values in cluster-sorted order |
+| Compatibility | **Cannot** be directly used as input to other GenePattern modules (must be converted to GCT first) |
+
+**CDT Header Structure:**
+```
+GID    YORF    NAME    GWEIGHT    ARRAY1    ARRAY2    ...
+AID                              AID1      AID2      ...
+EWEIGHT                          1.0       1.0       ...
+GENE1  YAL001  TFC3    1.0       0.83      -0.21     ...
+GENE2  YAL002  VPS8    1.0       -1.12     0.44      ...
+```
+
+#### 🌿 GTR File (Gene Tree) — **Optional**
+| Property | Details |
+|---|---|
+| Extension | `.gtr` |
+| Description | Gene Tree — records the order in which **rows (genes)** were joined during hierarchical clustering |
+| Content | Node identifiers and pairwise distance measures between gene clusters |
+| When present | Created when clustering was performed on genes/rows |
+| Drives | Row-side dendrogram in the viewer |
+
+#### 🌿 ATR File (Array Tree) — **Optional**
+| Property | Details |
+|---|---|
+| Extension | `.atr` |
+| Description | Array Tree — records the order in which **columns (samples/arrays)** were joined during hierarchical clustering |
+| Content | Node identifiers and pairwise distance measures between sample clusters |
+| When present | Created when clustering was performed on samples/columns |
+| Drives | Column-side dendrogram in the viewer |
+
+### Input Flexibility Rules
+```
+Valid Input Combinations:
+  [1] CDT + GTR          → Gene dendrogram + heatmap (no sample dendrogram)
+  [2] CDT + ATR          → Sample dendrogram + heatmap (no gene dendrogram)
+  [3] CDT + GTR + ATR    → Full bidirectional dendrogram + heatmap (most common)
+  [4] CDT only           → Heatmap only (no dendrograms displayed)
+```
+
+### Output
+As a **Visualizer-type module**, `HierarchicalClusteringViewer` produces **no computational output files**. It is a pure rendering engine:
+- Renders an interactive visual in the user's web browser
+- No result files are written to the GenePattern job results directory
+- Export functionality (if any) is handled client-side via browser mechanisms
+
+---
+
+## 3. ⚙️ Parameter Analysis and Usage Patterns
+
+### Module Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `cdt.file` | File (`.cdt`) | ✅ Required | Clustered Data Table from HierarchicalClustering |
+| `gtr.file` | File (`.gtr`) | ⬜ Optional | Gene Tree file (row dendrogram data) |
+| `atr.file` | File (`.atr`) | ⬜ Optional | Array Tree file (column dendrogram data) |
+
+### Interactive UI Parameters (Post-Launch Controls)
+
+Once the viewer launches in the browser, users can interact with these controls:
+
+| Control | Type | Behavior |
+|---|---|---|
+| **Color Scheme** | Radio button | Toggle between **Row Relative** and **Global** color mapping |
+| **Row Relative** mode | Color algorithm | Uses per-row mean, min, max to assign colors — highlights intra-gene variation |
+| **Global** mode | Color algorithm | Uses dataset-wide min/max — allows cross-gene intensity comparison |
+| **Feature Labels** | Button | `Add/Edit Labels` → `Edit > Feature Labels` — assign colors to gene sets |
+| **Dendrogram interaction** | Mouse events | Click and inspect cluster nodes (exact behavior depends on version) |
+
+### Color Scheme Analysis
+
+```
+ROW RELATIVE (default):
+  Each row independently normalized → color = f(row_mean, row_min, row_max)
+  ✓ Best for: Comparing patterns across genes with different expression scales
+  ✗ Limitation: Cannot compare absolute intensities between genes
+
+GLOBAL:
+  Single scale across entire matrix → color = f(dataset_min, dataset_max)
+  ✓ Best for: Comparing absolute expression levels across the entire heatmap
+  ✗ Limitation: Low-variance genes may appear uniform if high-variance genes dominate
+```
+
+### Usage Pattern: Launching from HierarchicalClustering Output
+
+```
+Typical Workflow:
+1. Complete HierarchicalClustering job
+2. In Recent Jobs list, click icon next to .atr, .cdt, or .gtr result file
+3. From context menu → select "HierarchicalClusteringViewer"
+4. GenePattern auto-populates all matching input file parameters
+5. Click "Run" to launch viewer in browser
+```
+
+---
+
+## 4. 🛠️ Installation and Dependency Requirements
+
+### Runtime Architecture
+Since `HierarchicalClusteringViewer` is a **Visualizer-type module** implemented in HTML/jQuery, it has a fundamentally different deployment model from computational modules:
+
+| Component | Requirement |
+|---|---|
+| **Server-side** | GenePattern Server (hosts static HTML/JS files) |
+| **Client-side** | Modern web browser (Chrome, Firefox, Edge, Safari) |
+| **JavaScript Runtime** | jQuery (bundled with module) |
+| **Java** | Not required (unlike legacy Java-applet visualizers) |
+| **Docker** | Not applicable (no server-side computation) |
+| **Python/R** | Not required |
+| **Network** | Required — browser fetches files from GenePattern server or S3 |
+
+### GenePattern Module Infrastructure
+
+```
+Module Package Contents (typical):
+├── index.html          ← Main entry point / viewer UI
+├── js/
+│   ├── jquery.min.js   ← jQuery library
+│   ├── viewer.js       ← Core visualization logic
+│   └── [other libs]    ← Additional JS dependencies
+├── css/
+│   └── styles.css      ← Visual styling
+├── manifest            ← GenePattern module manifest (LSID, parameters, etc.)
+└── [optional]
+    └── lib/            ← Supporting libraries (D3, canvas APIs, etc.)
+```
+
+### LSID (Life Science Identifier)
+```
+urn:lsid:broad.mit.edu:cancer.software.genepattern.module.visualizer:00031
+```
+- **Module Number**: 00031
+- **Type**: `visualizer` (not `analysis`)
+- **Namespace**: `broad.mit.edu:cancer.software.genepattern`
+
+### S3 Cloud Storage Support
+The **current version specifically includes a bug fix for S3 files**, meaning:
+- Input CDT/GTR/ATR files hosted on **Amazon S3** can now be correctly loaded
+- This is critical for the GenePattern cloud deployment at `cloud.genepattern.org`
+- The fix likely involves proper CORS handling or URL signing for S3 file access via XHR/Fetch requests
+
+### Dependency Stack
+```
+Browser Requirements:
+  ✓ ES5+ JavaScript engine
+  ✓ Canvas API (for heatmap rendering)
+  ✓ XMLHttpRequest or Fetch API (for file loading, including S3)
+  ✓ DOM manipulation support (jQuery-compatible)
+
+Network Requirements:
+  ✓ HTTP/HTTPS access to GenePattern server
+  ✓ CORS headers for cross-origin file requests (S3)
+  ✓ Sufficient bandwidth for large CDT files
+```
+
+---
+
+## 5. 🔄 Common Workflows and Use Cases
+
+### Primary Workflow: Gene Expression Class Discovery
+
+```
+STANDARD CLASS DISCOVERY PIPELINE:
+══════════════════════════════════════════════════════════════
+
+Step 1: Data Preparation
+  Input: Raw gene expression matrix
+  Format: GCT or RES file
+  Example: all_aml_test.gct (Golub leukemia dataset)
+
+Step 2: Preprocessing (Optional)
+  Module: PreprocessDataset
+  Operations: Threshold, floor, fold-change, log transform, normalization
+
+Step 3: Hierarchical Clustering
+  Module: HierarchicalClustering
+  Parameters:
+    - column.distance.measure: Pearson correlation, cosine, Euclidean
+    - row.distance.measure: same options
+    - clustering.method: complete, average, single linkage
+    - normalize.gene.rows: row-normalize expression values
+  Outputs: .cdt + .atr (if columns clustered) + .gtr (if rows clustered)
+
+Step 4: Visualization ← HierarchicalClusteringViewer
+  Module: HierarchicalClusteringViewer
+  Inputs: .cdt + .atr + .gtr
+  Result: Interactive browser-based heatmap with dendrograms
+
+Step 5: Interpretation
+  - Identify sample clusters (e.g., AML vs ALL separation)
+  - Identify co-regulated gene modules
+  - Export/annotate findings
+```
+
+### Workflow 2: Comparative Subtype Analysis
+```
+Multi-class tumor samples → HierarchicalClustering (with Pearson + complete linkage)
+→ HierarchicalClusteringViewer → Visual confirmation of molecular subtypes
+→ Compare with known clinical annotations (color-code with feature labels)
+```
+
+### Workflow 3: Quality Control
+```
+RNA-seq count matrix → normalize → HierarchicalClustering (columns only)
+→ HierarchicalClusteringViewer (CDT + ATR only)
+→ Verify: technical replicates cluster together, biological groups separate
+→ Detect: batch effects (unexpected sample clustering by batch)
+```
+
+### Workflow 4: Gene Module Discovery
+```
+Filtered expression matrix → HierarchicalClustering (rows only, Pearson correlation)
+→ HierarchicalClusteringViewer (CDT + GTR only)
+→ Inspect gene dendrogram for co-expression modules
+→ Cut tree at desired level to define gene sets
+```
+
+### Canonical Example Dataset
+```
+Dataset: all_aml_train.preprocessed (Leukemia AML/ALL)
+Source: Golub et al., Science 1999
+Demonstration: Perfect separation of 25 AML and 47 ALL samples in column dendrogram
+Reference: Used in PMC3893799 GenePattern tutorial workflow
+```
+
+---
+
+## 6. 🔗 GenePattern Integration Considerations
+
+### Module Classification
+| Property | Value |
+|---|---|
+| **Module Type** | `Visualizer` (not `Analysis`) |
+| **Execution Model** | Client-side (browser), not server-side |
+| **Job Queue** | Typically bypasses computational job queue |
+| **License** | GenePattern Software License |
+| **Server Compatibility** | GenePattern Server 3.x+, cloud.genepattern.org |
+| **Category Tag** | Clustering, Visualization, Gene Expression |
+
+### Parameter Manifest Configuration
+For the GenePattern module manifest, the following structure applies:
+
+```ini
+[manifest]
+name=HierarchicalClusteringViewer
+description=Views results of hierarchical clustering
+version=<current>
+author=Marc-Danie Nazaire, Broad Institute
+language=HTML
+taskType=Visualizer
+LSID=urn:lsid:broad.mit.edu:cancer.software.genepattern.module.visualizer:00031
+
+[parameter: cdt.file]
+name=cdt.file
+description=CDT file from HierarchicalClustering module
+type=java.io.File
+fileFormat=cdt
+optional=
+default_value=
+
+[parameter: gtr.file]
+name=gtr.file
+description=GTR (Gene Tree) file from HierarchicalClustering (optional)
+type=java.io.File
+fileFormat=gtr
+optional=on
+default_value=
+
+[parameter: atr.file]
+name=atr.file
+description=ATR (Array Tree) file from HierarchicalClustering (optional)
+type=java.io.File
+fileFormat=atr
+optional=on
+default_value=
+```
+
+### Upstream/Downstream Module Relationships
+```
+UPSTREAM (produces inputs):
+  → HierarchicalClustering (v6, v7, v8+)
+    Produces: .cdt, .atr, .gtr
+
+DOWNSTREAM (consumes outputs):
+  → None (terminal visualization module — no computational outputs)
+
+RELATED MODULES:
+  → HeatMapViewer (for non-clustered expression visualization, GCT/RES input)
+  → CDTtoGCT (converts CDT back to GCT for further analysis)
+  → ConsensusClustering (alternative clustering approach)
+```
+
+### Key GenePattern Integration Points
+
+1. **Auto-population of Parameters**: When launched from the job result context menu, GenePattern automatically matches `.cdt`, `.atr`, and `.gtr` files as parameter values — this makes seamless chaining with `HierarchicalClustering` essential.
+
+2. **Visualizer Launcher Compatibility**: Must be compatible with the `VisualizerLauncher` desktop tool (`genepattern.github.io/VisualizerLauncher`) for offline/desktop usage scenarios.
+
+3. **S3 File Access (Bug Fix Target)**: The stated version fix addresses S3 file URL handling — implementation must correctly resolve GenePattern cloud job output URLs pointing to AWS S3, including proper authentication token passing or presigned URL management.
+
+4. **File Format Exclusivity**: `.cdt`, `.gtr`, `.atr` formats are exclusively consumed by this viewer within GenePattern — no other standard module accepts them directly.
+
+5. **No Docker Container Required**: Unlike analysis modules, this visualizer does not need containerization. The module files (HTML/JS/CSS) are served directly from the GenePattern module store to the client browser.
+
+6. **Browser Security Considerations**:
+   - Cross-origin requests to S3 require correct CORS headers on S3 buckets
+   - Modern browsers block mixed content (HTTPS page + HTTP S3) — S3 URLs must be HTTPS
+   - Large CDT files (hundreds of MB for large datasets) may cause browser memory limits to be reached
+
+---
+
+## 7. 🆚 Comparative Analysis
+
+| Feature | HierarchicalClusteringViewer | Java TreeView | HeatMapViewer (GP) | NG-CHM | Morpheus |
+|---|---|---|---|---|---|
+| **Interface** | Browser (HTML/jQuery) | Desktop Java | Browser (HTML/jQuery) | Browser (HTML5) | Browser |
+| **Dendrogram** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes | ✅ Yes |
+| **Input format** | CDT/GTR/ATR | CDT/GTR/ATR | GCT/RES | .ngchm | GCT/TXT |
+| **GenePattern integration** | ✅ Native | ❌ External | ✅ Native | ⚠️ Partial | ❌ External |
+| **Zero installation** | ✅ Yes | ❌ Java required | ✅ Yes | ✅ Yes | ✅ Yes |
+| **S3 cloud support** | ✅ Yes (fixed) | ❌ No | ✅ Yes | ❌ No | ❌ No |
+| **Export output** | ⚠️ Limited | ✅ Image export | ⚠️ Limited | ✅ Rich export | ✅ Rich export |
+| **Scalability** | ⚠️ Browser-limited | ⚠️ Memory-bound | ⚠️ Browser-limited | ✅ High | ✅ Moderate |
+| **Feature annotation** | ✅ Color labels | ✅ Annotations | ✅ Color bar | ✅ Rich | ✅ Rich |
+
+### Unique Value Proposition
+`HierarchicalClusteringViewer` occupies a **critical niche as the native GenePattern dendrogram viewer**:
+- 🔗 **Tight pipeline integration** — seamlessly chains with `HierarchicalClustering` output
+- 🌐 **Zero client installation** — pure browser execution vs. Java TreeView's desktop requirement
+- ☁️ **Cloud-native** — S3 support enables operation on `cloud.genepattern.org`
+- 🎯 **Format fidelity** — sole GenePattern module consuming CDT/ATR/GTR natively
+
+---
+
+## 8. 📚 Literature and Community Context
+
+### Key References
+| Reference | Relevance |
+|---|---|
+| Golub et al., *Science* 1999 | Canonical AML/ALL dataset used in demonstrations |
+| Reich et al., *Nature Genetics* 2006 | GenePattern platform publication |
+| Mesirov, *Science* 2010 | Accessible reproducible research via GenePattern |
+| PMC3893799 (Curr Protoc Bioinformatics) | Step-by-step GenePattern workflow tutorial featuring this module |
+| Eisen et al., *PNAS* 1998 | Original hierarchical clustering for gene expression (CDT/ATR/GTR format origin) |
+
+### Adoption Indicators
+- Listed as standard module on the GenePattern public server (`cloud.genepattern.org`)
+- Featured in the canonical **GenePattern 10-minute tutorial** and class discovery protocols
+- Consistently used in peer-reviewed GenePattern methodology papers since ~2003
+- LSID `00031` reflects early assignment — one of the original core GenePattern modules
+
+---
+
+## 9. ⚠️ Known Limitations and Caveats
+
+1. **Browser Memory Constraints**: Very large CDT files (thousands of genes × hundreds of samples) may cause rendering slowdowns or browser crashes
+2. **No Output Files**: Being a visualizer, it produces no downloadable result files from clustering trees — users cannot programmatically extract cluster assignments from within this module
+3. **Format Lock-in**: Exclusively accepts Stanford CDT/GTR/ATR format — external clustering results must be converted to this format
+4. **Static Interaction Model**: jQuery-based UI is less interactive than modern D3.js-based alternatives (limited zoom, pan, or export capabilities compared to NG-CHM or Clustergrammer)
+5. **S3 Bug (Now Fixed)**: Prior versions could not correctly load files hosted on Amazon S3 — this was the critical bug motivating the current version
+6. **No Standalone Execution**: Cannot be run independently — requires a GenePattern server for file parameter resolution and module hosting
+7. **Limited Customization**: Color scheme options are binary (Row Relative vs Global); no continuous gradient customization, no custom color palette support in base version
+
+---
+
+## 10. ✅ GenePattern Module Development Recommendations
+
+### Priority Implementation Tasks
+
+| Priority | Task | Rationale |
+|---|---|---|
+| 🔴 Critical | Verify S3 CORS/presigned URL handling in JavaScript | Core bug fix of current version |
+| 🔴 Critical | Validate CDT/GTR/ATR parser handles edge cases | Empty files, single-cluster cases, missing AID/GID rows |
+| 🟡 High | Test with large-scale datasets (>5,000 genes × 200 samples) | Browser memory stability |
+| 🟡 High | Ensure jQuery version is current and not deprecated | Security and compatibility |
+| 🟢 Medium | Add color scheme documentation to module help page | User onboarding |
+| 🟢 Medium | Document auto-chaining behavior from HierarchicalClustering | Workflow clarity |
+| 🟢 Medium | Test across Chrome, Firefox, Safari, Edge | Cross-browser compatibility |
+| ⬜ Low | Consider adding PNG/SVG export | Feature parity with Java TreeView |
+
+### Module Manifest Key Fields
+```
+taskType       = Visualizer
+language       = HTML
+fileFormat     = cdt;gtr;atr
+cpuType        = any
+os             = any
+minMemory      = (not applicable — client-side)
+category       = Clustering;Visualization;Gene Expression
+```
+
+### Testing Protocol
+```
+Test Case 1: Full bidirectional clustering (CDT + GTR + ATR)
+  → all_aml_train.preprocessed.cdt/gtr/atr
+  → Expect: Dual dendrograms + heatmap
+
+Test Case 2: Column clustering only (CDT + ATR)
+  → Expect: Top dendrogram only
+
+Test Case 3: Row clustering only (CDT + GTR)
+  → Expect: Side dendrogram only
+
+Test Case 4: CDT only (no tree files)
+  → Expect: Heatmap only, no dendrograms
+
+Test Case 5: S3-hosted files (post bug-fix validation)
+  → Expect: Successful file load and rendering from S3 URLs
+```
+
+---
+
+## 📋 Summary
+
+`HierarchicalClusteringViewer` is a **mature, purpose-built browser-based visualizer** that serves as the essential visual endpoint in GenePattern's hierarchical clustering workflow. As an HTML/jQuery module with LSID `00031`, it is one of the platform's foundational tools, directly consuming the Stanford-format CDT/GTR/ATR files produced by the `HierarchicalClustering` module to render interactive dendrograms and heatmaps.
+
+The current version's primary advance is a **bug fix for Amazon S3 file loading**, making it fully compatible with GenePattern's cloud infrastructure. Its architectural simplicity (zero server-side computation, zero client installation) and tight pipeline integration make it the natural choice for hierarchical clustering visualization within the GenePattern ecosystem, despite being less feature-rich than standalone alternatives like NG-CHM or Java TreeView.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

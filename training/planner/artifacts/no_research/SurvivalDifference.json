@@ -1,0 +1,139 @@
+{
+  "module_name": "SurvivalDifference",
+  "description": "Tests for survival difference based on cls file",
+  "author": "Yujin Hoshida (Broad Institute)",
+  "input_file_formats": [
+    "cls",
+    "txt"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:77201:1",
+  "plan": "## SurvivalDifference GenePattern Module — Implementation Plan\n\n### 1. Overview\nSurvivalDifference is a GenePattern module that Tests for survival difference based on cls file\n\n### 2. Parameters\nThe module exposes 8 parameters:\n- Required: input.surv.data.file, time.field, censor.field, test.type, output.filename\n- Optional: input.cls.file, cls.field, subgroup\n\n### 3. Command Line\n```\n<R2.5> <libdir>SurvivalDifference.R SurvivalDifference <input.surv.data.file> -c<input.cls.file> <time.field> <censor.field> -f<cls.field> <test.type> -gr<subgroup> <output.filename>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "SurvivalDifference.R",
+  "command_line": "<R2.5> <libdir>SurvivalDifference.R SurvivalDifference <input.surv.data.file> -c<input.cls.file> <time.field> <censor.field> -f<cls.field> <test.type> -gr<subgroup> <output.filename>",
+  "parameters": [
+    {
+      "name": "input.surv.data.file",
+      "description": "input clinical data including survival time & censor status  -.txt",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.surv.data.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "input.cls.file",
+      "description": "class information file (.cls format)",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.cls.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "time.field",
+      "description": "Name of survival time field",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "time",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--time.field",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "censor.field",
+      "description": "Name of censor field (value should be \"event\\:1, no event\\: 0\")",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "status",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--censor.field",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cls.field",
+      "description": "Name of class field in survival data file (optional)",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cls.field",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "test.type",
+      "description": "Type of test",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "log-rank test",
+          "value": "0"
+        },
+        {
+          "display": "generalized Wilcoxon test",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--test.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "subgroup",
+      "description": "Suggroups (classes) to be compared (e.g., A, C as in 3rd line of cls file)",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--subgroup",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "Output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.surv.data.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

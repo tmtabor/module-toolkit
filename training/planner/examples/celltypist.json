@@ -1,0 +1,310 @@
+{
+  "module_name": "CellTypist",
+  "description": "CellTypist is an automated cell type annotation tool for single-cell RNA sequencing (scRNA-seq) datasets. Using logistic regression classifiers optimized by the Stochastic Gradient Descent (SGD) algorithm, CellTypist rapidly assigns precise cell type identities to individual cells. It supports 12+ curated pre-trained models spanning immune cells, lung, gut, brain, and fetal tissues (human and mouse), as well as custom user-trained models. Key features include majority voting for cluster-level noise reduction, multi-label classification for transitional cell states, and compatibility with the AnnData/scanpy ecosystem. Originally developed by the Teichmann Lab at the Wellcome Sanger Institute to support the Human Cell Atlas project.",
+  "author": "GenePattern Team",
+  "input_file_formats": [
+    "h5ad",
+    "csv",
+    "tsv",
+    "txt",
+    "mtx"
+  ],
+  "language": "Python",
+  "categories": [
+    "SingleCellAnalysis",
+    "CellTypeAnnotation"
+  ],
+  "cpu_cores": 4,
+  "memory": "16GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:51071:1",
+  "plan": "\n## CellTypist GenePattern Module — Implementation Plan\n\n### 1. Overview\nCellTypist wraps the celltypist Python package (v1.7.1) as a GenePattern module for automated\ncell type annotation of single-cell RNA-seq datasets. The module exposes the `celltypist.annotate()`\nfunction through a user-friendly parameter interface with 12+ built-in pre-trained models and\nsupport for custom user models.\n\n### 2. Module Architecture\n\n#### 2.1 Wrapper Script: celltypist_wrapper.py\nThe Python wrapper script accepts all parameters via argparse and:\n1. Validates input file existence and format\n2. Loads the expression matrix (h5ad via scanpy, CSV/TSV via scanpy.read_csv,\n   MTX via scanpy.read_10x_mtx)\n3. For CSV/TSV/MTX inputs: applies normalize_total(target_sum=1e4) + log1p\n4. For h5ad inputs: trusts data is pre-normalized (optionally validates with check_expression)\n5. Resolves the model: named built-in → download if absent; custom.model.file → use path\n6. Calls celltypist.annotate() with all user parameters\n7. Exports: predicted_labels.csv, probability_matrix.csv, decision_matrix.csv,\n   annotated.h5ad, UMAP PDF, and optionally per-cell-type probability plots\n\n#### 2.2 Parameter Groups\n- **Input Data** (Critical): input.file, transpose.input, check.expression\n- **Model Selection** (Critical): model.name, custom.model.file\n- **Classification Settings** (High Priority): mode, p.threshold\n- **Majority Voting** (High Priority): majority.voting, min.prop, over.clustering\n- **Output Options** (Medium): output.prefix, output.format, plot.probability\n\n### 3. Docker Container Strategy\nBase image: genepattern/celltypist:1\n- Python 3.10 + pip install celltypist==1.7.1\n- Pre-bundled core models (Immune_All_Low.pkl, Immune_All_High.pkl) to avoid internet dependency\n- All optional dependencies pre-installed: leidenalg, python-igraph, matplotlib, seaborn\n- Models stored in /opt/celltypist_models/ with symlink to ~/.celltypist/data/models/\n\n### 4. Model Handling Logic\n- If model.name is a named built-in string and not 'custom': check container path,\n  download if missing from celltypist model server\n- If model.name is 'custom': use the uploaded custom.model.file path\n- If custom.model.file is provided regardless of model.name: custom.model.file takes priority\n- Validation: check .pkl file is a valid CellTypist Model object\n\n### 5. Input Preprocessing Logic\n```\nif file_extension in ['.csv', '.tsv', '.txt']:\n    adata = sc.read_csv(input_file).T\n    sc.pp.normalize_total(adata, target_sum=1e4)\n    sc.pp.log1p(adata)\nelif file_extension == '.mtx':\n    adata = sc.read_10x_mtx(mtx_dir)\n    sc.pp.normalize_total(adata, target_sum=1e4)\n    sc.pp.log1p(adata)\nelif file_extension == '.h5ad':\n    adata = sc.read_h5ad(input_file)\n    # Assume pre-normalized; check_expression will warn if suspicious\n```\n\n### 6. Output Strategy\nAll outputs are placed in the current working directory with the output.prefix:\n- {prefix}_predicted_labels.csv: Per-cell label + confidence\n- {prefix}_probability_matrix.csv: Full probability scores (cells × cell types)\n- {prefix}_decision_matrix.csv: Raw decision scores\n- {prefix}_annotated.h5ad: Annotated AnnData\n- {prefix}_umap.pdf or .png: UMAP visualization\n- {prefix}_dotplot.pdf or .png: Marker gene dotplot\n- {prefix}_prob_{cell_type}.pdf or .png: Per-cell-type probability plots (if plot.probability=true)\n\n### 7. Error Handling\n- Missing input file: raise FileNotFoundError with clear message\n- Unsupported format: print supported formats and exit with code 1\n- Model not found: retry download, then raise with instructions\n- Gene name mismatch: report percentage matched, warn if < 10% match\n- Unnormalized data: check_expression warning propagated to user log\n- Missing leidenalg for majority_voting: graceful error with install instructions\n\n### 8. Testing Plan\n1. Unit test with demo_2000_cells.h5ad + Immune_All_Low.pkl (standard workflow)\n2. Test majority_voting=true with min_prop=0.1\n3. Test mode='prob match' with p_thres=0.5\n4. Test with CSV input (raw counts → auto-normalization)\n5. Test with custom model upload (.pkl)\n6. Test plot generation (both pdf and png)\n7. Boundary test: p.threshold=0.0 and 1.0, min.prop=0.0 and 1.0\n8. Error test: invalid file format, missing model file\n9. Large dataset: test with ~50K cell dataset for performance benchmarking\n\n### 9. GenePattern Integration Notes\n- Module category: SingleCellAnalysis\n- Tags: scRNA-seq, cell-type, annotation, single-cell, immunology, Human Cell Atlas\n- Example data: demo_2000_cells.h5ad from CellTypist tutorial\n- Documentation: link to ReadTheDocs, primary Science 2022 paper\n- Requires GenePattern job executor with Docker support\n- Recommended job memory: 16GB (standard datasets up to 100K cells)\n\n### 10. Implementation Roadmap\nPhase 1 (Core): Wrapper script + Docker image + basic annotation with built-in models\nPhase 2 (Features): Majority voting, multi-label mode, custom model support\nPhase 3 (Outputs): Full output suite (plots, annotated h5ad, all CSV exports)\nPhase 4 (Polish): Error handling, documentation, example data integration, testing\nPhase 5 (Validation): Benchmark against reference annotations, community review\n",
+  "wrapper_script": "celltypist_wrapper.py",
+  "command_line": "python <libdir>celltypist_wrapper.py --input.file <input.file> --model.name <model.name> <custom.model.file> --mode <mode> --majority.voting <majority.voting> --min.prop <min.prop> <over.clustering> --p.threshold <p.threshold> --transpose.input <transpose.input> --check.expression <check.expression> --output.prefix <output.prefix> --output.format <output.format> --plot.probability <plot.probability>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "Input single-cell RNA-seq expression data. Supported formats: AnnData (.h5ad, recommended), comma-separated matrix (.csv), tab-separated matrix (.tsv/.txt), or 10x sparse matrix (.mtx). For .h5ad files, the data should already be log-normalized (normalized to 10,000 counts per cell + log1p). For .csv/.tsv/.txt files, raw counts are accepted and will be automatically normalized. Example: demo_2000_cells.h5ad.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "h5ad",
+        "csv",
+        "tsv",
+        "txt",
+        "mtx"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "model.name",
+      "description": "Pre-trained CellTypist model to use for cell type annotation. Select from 12 built-in curated models covering immune cells, lung, gut, brain, and fetal tissues in human and mouse. Choose 'custom' if you wish to supply your own .pkl model file via the custom.model.file parameter. Default: Immune_All_Low.pkl (36 broad immune cell types, recommended starting point for general immune profiling).",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "Immune_All_Low.pkl",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Immune_All_Low (36 pan-tissue immune types) [Human]",
+          "value": "Immune_All_Low.pkl"
+        },
+        {
+          "display": "Immune_All_High (98 pan-tissue immune subtypes) [Human]",
+          "value": "Immune_All_High.pkl"
+        },
+        {
+          "display": "COVID19_Immune_Landscape [Human]",
+          "value": "COVID19_Immune_Landscape.pkl"
+        },
+        {
+          "display": "Healthy_COVID19_PBMC [Human]",
+          "value": "Healthy_COVID19_PBMC.pkl"
+        },
+        {
+          "display": "Human_Lung_Atlas [Human]",
+          "value": "Human_Lung_Atlas.pkl"
+        },
+        {
+          "display": "Cells_Lung_Airway [Human]",
+          "value": "Cells_Lung_Airway.pkl"
+        },
+        {
+          "display": "Nuclei_Lung_Airway - for snRNA-seq [Human]",
+          "value": "Nuclei_Lung_Airway.pkl"
+        },
+        {
+          "display": "Cells_Intestinal_Tract [Human]",
+          "value": "Cells_Intestinal_Tract.pkl"
+        },
+        {
+          "display": "Cells_Fetal_Lung [Human]",
+          "value": "Cells_Fetal_Lung.pkl"
+        },
+        {
+          "display": "Pan_Fetal_Human [Human]",
+          "value": "Pan_Fetal_Human.pkl"
+        },
+        {
+          "display": "Adult_Mouse_Gut [Mouse]",
+          "value": "Adult_Mouse_Gut.pkl"
+        },
+        {
+          "display": "Developing_Mouse_Brain [Mouse]",
+          "value": "Developing_Mouse_Brain.pkl"
+        },
+        {
+          "display": "Custom (provide .pkl file below)",
+          "value": "custom"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--model.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "custom.model.file",
+      "description": "Custom CellTypist model file (.pkl) to use for annotation. Only required when model.name is set to 'custom'. This should be a model trained with celltypist.train() and saved as a .pkl file. When provided, this model takes priority over the model.name selection.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "pkl"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--custom.model.file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "mode",
+      "description": "Classification mode for cell type assignment. 'best match' assigns each cell to the single most probable cell type (recommended for most analyses). 'prob match' assigns multiple labels to cells where more than one cell type exceeds the probability threshold (useful for identifying transitional or hybrid cell states). Default: best match.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "best match",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "best match (single label per cell)",
+          "value": "best match"
+        },
+        {
+          "display": "prob match (multi-label for transitional states)",
+          "value": "prob match"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--mode",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "majority.voting",
+      "description": "Enable majority voting to refine per-cell predictions using over-clustering. When enabled, CellTypist performs Leiden over-clustering and assigns the majority cell type label within each cluster, reducing noise from individual cell misclassifications. Strongly recommended for production analyses. Requires leidenalg and python-igraph (pre-installed in Docker image). Default: false.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "false (per-cell prediction only)",
+          "value": "false"
+        },
+        {
+          "display": "true (refine with majority voting)",
+          "value": "true"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--majority.voting",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.prop",
+      "description": "Minimum proportion of cells within a cluster that must agree on a label for majority voting to assign that label. If no label reaches this threshold, the cluster is labeled 'Heterogeneous'. Only applicable when majority.voting is true. Value must be between 0.0 (no minimum, always assign majority) and 1.0 (all cells must agree). Default: 0.0.",
+      "required": false,
+      "type": "float",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.prop",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "over.clustering",
+      "description": "Controls over-clustering behavior during majority voting. Can be: (1) a column name already present in the input AnnData .obs (e.g., 'leiden') to use existing cluster assignments, or (2) a floating-point Leiden resolution value (e.g., '5.0') to trigger new over-clustering at that resolution. If left empty, CellTypist automatically determines the resolution. Only applicable when majority.voting is true.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--over.clustering",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "p.threshold",
+      "description": "Probability threshold for multi-label classification. A cell type is assigned to a cell if its predicted probability exceeds this threshold. Only applicable when mode is set to 'prob match'. Lower values assign more labels; higher values are more stringent. Valid range: 0.0–1.0. Default: 0.5.",
+      "required": false,
+      "type": "float",
+      "value_count": "0..1",
+      "default_value": "0.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--p.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "transpose.input",
+      "description": "Transpose the input matrix before processing. Set to 'true' if the input data matrix is organized as genes-by-cells (rows=genes, columns=cells), which is the opposite of the standard CellTypist expectation (rows=cells, columns=genes). Most h5ad files from scanpy workflows will NOT need transposing. Default: false.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "false (standard: rows=cells, columns=genes)",
+          "value": "false"
+        },
+        {
+          "display": "true (transpose: rows=genes, columns=cells)",
+          "value": "true"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--transpose.input",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "check.expression",
+      "description": "Validate that the input expression matrix appears to be log-normalized before running annotation. If the data does not appear log-normalized (e.g., raw counts were supplied in an h5ad file), a warning is issued. Set to 'false' to suppress this check. Default: true.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "true",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "true (validate log-normalization)",
+          "value": "true"
+        },
+        {
+          "display": "false (skip validation check)",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--check.expression",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "Prefix string to use for all output file names. For example, a prefix of 'immune_run1' would produce files named 'immune_run1_predicted_labels.csv', 'immune_run1_annotated.h5ad', 'immune_run1_umap.pdf', etc. Use descriptive prefixes to organize multiple analysis runs. Default: celltypist_output.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "celltypist_output",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.format",
+      "description": "File format for output visualization plots (UMAP, dotplot, and optionally probability plots). 'pdf' produces vector graphics suitable for publication. 'png' produces raster images at 150 DPI suitable for web display or quick inspection. Default: pdf.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "pdf",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "pdf (vector, publication-quality)",
+          "value": "pdf"
+        },
+        {
+          "display": "png (raster, 150 DPI)",
+          "value": "png"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "plot.probability",
+      "description": "Generate per-cell-type probability distribution plots in addition to the standard UMAP and dotplot outputs. Each plot shows the distribution of predicted probabilities across all cells for a single cell type. This can produce a large number of files (one per cell type in the model). Recommended for detailed model exploration but may be slow for high-resolution models (e.g., Immune_All_High with 98 cell types). Default: false.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "false (standard plots only)",
+          "value": "false"
+        },
+        {
+          "display": "true (generate per-cell-type probability plots)",
+          "value": "true"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--plot.probability",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/celltypist:1"
+}

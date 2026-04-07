@@ -1,0 +1,132 @@
+{
+  "module_name": "AddNoiseToFCS",
+  "description": "Add noise to specified parameters in an FCS data file.",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "input_file_formats": [
+    "fcs"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:11148:1",
+  "plan": "## AddNoiseToFCS GenePattern Module — Implementation Plan\n\n### 1. Overview\nAddNoiseToFCS is a GenePattern module that Add noise to specified parameters in an FCS data file.\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: Input.FCS.data.file, Output.FCS.file.name, Noise.level, Noise, Saturated.events\n- Optional: Parameters.to.add.noise.to, Random.Seed\n\n### 3. Command Line\n```\n<java> <java_flags> -jar <libdir>addnoisetofcs.jar <Input.FCS.data.file> <Output.FCS.file.name> <Parameters.to.add.noise.to> <Noise.level> <Noise> <Saturated.events> <Random.Seed>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "addnoisetofcs.jar",
+  "command_line": "<java> <java_flags> -jar <libdir>addnoisetofcs.jar <Input.FCS.data.file> <Output.FCS.file.name> <Parameters.to.add.noise.to> <Noise.level> <Noise> <Saturated.events> <Random.Seed>",
+  "parameters": [
+    {
+      "name": "Input.FCS.data.file",
+      "description": "An FCS data file to add noise to.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fcs"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-InputFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.FCS.file.name",
+      "description": "The output FCS file name.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<Input.FCS.data.file_basename>.with_noise.fcs",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-OutputFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Parameters.to.add.noise.to",
+      "description": "List of parameters to which the module will add noise. The list may be provided as a list of indexes (e.g., \"1-3,5,7\") or as a list of parameter names (i.e., values of the $PnN keyword, such as \"FSC-H,FL1-H,FL2-A\"). By default, the noise will be added to all parameters but the Time parameter.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-Parameters\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Noise.level",
+      "description": "Noise level in percent. This is the maximum noise that will be added to an event based on the current event parameter value or on the maximum range of the appropriate parameter. The latter option will be effective if the Uniform noise option is selected.",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-NoiseLevel\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Noise",
+      "description": "How to add the noise\\: Proportional (The maximum amount of noise added to each value will be based on the value itself, e.g., low values will get lower amount of noise.) or Uniform (The maximum amount of noise added to each value is only dependent on the range of the particular parameter).",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "Proportional",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Proportional, default",
+          "value": "Proportional"
+        },
+        {
+          "display": "Uniform",
+          "value": "Uniform"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Saturated.events",
+      "description": "Whether to remove saturated events. An event is considered saturated if one or more of its parameter values are closer than 0.1 percent from the maximum range for that parameter (i.e., value of the appropriate $PnR keyword).",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "RemoveSaturated",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Remove saturated events, default",
+          "value": "RemoveSaturated"
+        },
+        {
+          "display": "Keep saturated events",
+          "value": "KeepSaturated"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Random.Seed",
+      "description": "The seed to use for the random generator. Leave this blank if want to use a randomly selected seed.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1234567",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-Seed\\:",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

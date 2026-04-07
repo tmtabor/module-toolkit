@@ -1,0 +1,106 @@
+{
+  "module_name": "MapChipFeaturesGeneral",
+  "description": "Change (map) the features (genes) of a dataset",
+  "author": "Justin Lamb gp-help@broad.mit.edu and Pablo Tamayo gp-help@broad.mit.edu",
+  "input_file_formats": [
+    "res"
+  ],
+  "language": "Perl",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:95893:1",
+  "plan": "## MapChipFeaturesGeneral GenePattern Module — Implementation Plan\n\n### 1. Overview\nMapChipFeaturesGeneral is a GenePattern module that Change (map) the features (genes) of a dataset\n\n### 2. Parameters\nThe module exposes 5 parameters:\n- Required: input.filename, lookup.table.filename, table.format, direction, output.prefix\n- Optional: none\n\n### 3. Command Line\n```\n<perl> <libdir>MapChipFeaturesGeneral.pl -F <input.filename> -T <lookup.table.filename> -d <direction> -f <table.format> -o <output.prefix>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "MapChipFeaturesGeneral.pl",
+  "command_line": "<perl> <libdir>MapChipFeaturesGeneral.pl -F <input.filename> -T <lookup.table.filename> -d <direction> -f <table.format> -o <output.prefix>",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "description": "Input filename - .res",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "res"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "lookup.table.filename",
+      "description": "Name of the look up table file with the feature mapping",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--lookup.table.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "table.format",
+      "description": "Table format",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "2 column",
+          "value": "0"
+        },
+        {
+          "display": "4-column",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--table.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "direction",
+      "description": "Direction of look up",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "direct",
+          "value": "1"
+        },
+        {
+          "display": "reverse",
+          "value": "0"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--direction",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "prefix for output file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.filename_basename>.fea",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

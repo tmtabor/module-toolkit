@@ -1,0 +1,90 @@
+{
+  "module_name": "txt2odf",
+  "description": "This module turns a TXT file into an ODF file which can be used with other GenePattern Modules.",
+  "author": "Edwin Juarez;GenePattern - Mesirov Lab",
+  "input_file_formats": [
+    "cls",
+    "gct",
+    "txt"
+  ],
+  "language": "Python",
+  "categories": [
+    "Data Format Conversion"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:89288:1",
+  "plan": "## txt2odf GenePattern Module — Implementation Plan\n\n### 1. Overview\ntxt2odf is a GenePattern module that This module turns a TXT file into an ODF file which can be used with other GenePattern Modules.\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: txt_file, prune_gct\n- Optional: gct, cls\n\n### 3. Command Line\n```\n<python_3.6> <libdir>txt2odf.py <txt_file> <prune_gct> <gct> <cls>\n```\n\n### 4. Docker Image\nDocker image: genepattern/docker-python36\\:0.5\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "txt2odf.py",
+  "command_line": "<python_3.6> <libdir>txt2odf.py <txt_file> <prune_gct> <gct> <cls>",
+  "parameters": [
+    {
+      "name": "txt_file",
+      "description": "The text file to be reformatted.",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--txt_file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "prune_gct",
+      "description": "Whether or not to prune the GCT file to match the TXT file.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--prune_gct",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gct",
+      "description": "This is the GCT file which was originally used. *Set prune_gct to True if you want this file pruned*",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gct",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "cls",
+      "description": "This is the CLS file which was originally used.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cls",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/docker-python36:0.5"
+}

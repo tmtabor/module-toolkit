@@ -1,0 +1,152 @@
+Create a comprehensive structured plan for the GenePattern module for 'spatialGE.STdiff'.
+            
+            Tool Information:
+            - Name: spatialGE.STdiff
+            - Version: latest
+            - Language: any
+            - Description: STdiff function for differential expression analysis in spatial transcriptomics data.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "spatialGE.STdiff",
+  "parameters": [
+    {
+      "name": "x",
+      "type": "FILE",
+      "description": "STList object in .RDS file format to cluster on.",
+      "required": true,
+      "default_value": "",
+      "num_values": "0..1"
+    },
+    {
+      "name": "samples",
+      "type": "java.lang.String",
+      "description": "Comma-separated list of sample indices or names to include in DE tests",
+      "required": false,
+      "default_value": "",
+      "prefix": "--samples"
+    },
+    {
+      "name": "annot",
+      "type": "java.lang.String",
+      "description": "Column name in x@spatial_meta containing groups/clusters to be tested",
+      "required": false,
+      "default_value": "",
+      "prefix": "--annot"
+    },
+    {
+      "name": "w",
+      "type": "Floating Point",
+      "description": "Spatial weight used in STclust. Required if annot is empty",
+      "required": false,
+      "default_value": "",
+      "prefix": "--w"
+    },
+    {
+      "name": "k",
+      "type": "java.lang.String",
+      "description": "k value used in STclust, or 'dtc' for dynamicTreeCut clusters. Required if annot is empty",
+      "required": false,
+      "default_value": "",
+      "prefix": "--k"
+    },
+    {
+      "name": "deepSplit",
+      "type": "CHOICE",
+      "description": "deepSplit value if used in STclust. Required if k\\='dtc'",
+      "required": false,
+      "default_value": "",
+      "prefix": "--deepSplit"
+    },
+    {
+      "name": "topgenes",
+      "type": "Integer",
+      "description": "Number of top variable genes to select from each sample based on variance",
+      "required": false,
+      "default_value": "5000",
+      "prefix": "--topgenes"
+    },
+    {
+      "name": "pval_thr",
+      "type": "Floating Point",
+      "description": "Cut-off of adjusted p-values to define differentially expressed genes",
+      "required": false,
+      "default_value": "0.05",
+      "prefix": "--pval_thr"
+    },
+    {
+      "name": "pval_adj",
+      "type": "java.lang.String",
+      "description": "Method to adjust p-values. Defaults to 'FDR'",
+      "required": false,
+      "default_value": "fdr",
+      "prefix": "--pval_adj"
+    },
+    {
+      "name": "sp_topgenes",
+      "type": "Floating Point",
+      "description": "Proportion of DE genes from non-spatial models to use in spatial models",
+      "required": false,
+      "default_value": "0.2",
+      "prefix": "--sp_topgenes"
+    },
+    {
+      "name": "clusters",
+      "type": "java.lang.String",
+      "description": "Comma-separated list of cluster names to test DE genes",
+      "required": false,
+      "default_value": "",
+      "prefix": "--clusters"
+    },
+    {
+      "name": "pairwise",
+      "type": "CHOICE",
+      "description": "Whether to carry tests on a pairwise manner",
+      "required": false,
+      "default_value": "FALSE",
+      "prefix": "--pairwise"
+    },
+    {
+      "name": "verbose",
+      "type": "Integer",
+      "description": "Output progress indicators. 0 for no text, 1 for basic, 2 for detailed",
+      "required": false,
+      "default_value": "1",
+      "prefix": "--verbose"
+    },
+    {
+      "name": "cores",
+      "type": "Integer",
+      "description": "Number of cores to use in parallelization",
+      "required": false,
+      "default_value": "",
+      "prefix": "--cores"
+    },
+    {
+      "name": "plot",
+      "type": "CHOICE",
+      "description": "Option to plot intermediate results",
+      "required": false,
+      "default_value": "FALSE",
+      "prefix": "--plot"
+    }
+  ],
+  "docker_image_tag": "genepattern/spatialgp.preprocessing\\:0.4",
+  "categories": "differential expression;spatial transcriptomics",
+  "task_type": "spatial transcriptomics",
+  "author": "GenePattern Team + ChatGPT",
+  "command_line": "Rscript <libdir>stdiff_wrapper_ai.R --x <x> <samples> <annot> <w> <k> <deepSplit> <topgenes> <pval_thr> <pval_adj> <sp_topgenes> <clusters> <pairwise> <verbose> <cores> <plot>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

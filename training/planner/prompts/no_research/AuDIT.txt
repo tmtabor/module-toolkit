@@ -1,0 +1,85 @@
+Create a comprehensive structured plan for the GenePattern module for 'AuDIT'.
+            
+            Tool Information:
+            - Name: AuDIT
+            - Version: Dockerized for cloud
+            - Language: any
+            - Description: Automated Detection of Inaccurate and Imprecise Transitions in MRM Mass Spectrometry
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "AuDIT",
+  "parameters": [
+    {
+      "name": "data.file",
+      "type": "FILE",
+      "description": "input file with pre-processed MRM data in csv format",
+      "required": true,
+      "default_value": "",
+      "file_format": "csv"
+    },
+    {
+      "name": "skyline.export",
+      "type": "java.lang.Float",
+      "description": "if \"yes\", data file is a Skyline csv export including following columns\\: Sample (usually derived from SampleName, having identical value for all its replicates), PeptideSequence, ReplicateName, FragmentIon, PrecursorCharge, ProductCharge, light Area, heavy Area. When \"no\", input must contain sample, replicate, peptide, transition.id, area, IS.area in that order.",
+      "required": true,
+      "default_value": "TRUE",
+      "choices": "TRUE\\=yes;FALSE\\=no"
+    },
+    {
+      "name": "pvalue.threshold",
+      "type": "java.lang.Float",
+      "description": "p-value threshold above which transition is quantification-worthy. Must be a value between 0 and 1 inclusive.",
+      "required": true,
+      "default_value": "0.00001"
+    },
+    {
+      "name": "cv.threshold",
+      "type": "java.lang.Float",
+      "description": "threshold for coefficient of variation below which transition is quantification-worthy",
+      "required": true,
+      "default_value": "0.2"
+    },
+    {
+      "name": "all.pairs",
+      "type": "java.lang.String",
+      "description": "calculate all possible pairs of relative ratios for a transition",
+      "required": true,
+      "default_value": "FALSE",
+      "choices": "FALSE\\=no;TRUE\\=yes"
+    },
+    {
+      "name": "output.intermediate.results",
+      "type": "java.lang.String",
+      "description": "create files with intermediate results",
+      "required": true,
+      "default_value": "FALSE",
+      "choices": "FALSE\\=no;TRUE\\=yes"
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.lang.String",
+      "description": "file name prefix used for output file(s)",
+      "required": true,
+      "default_value": "<data.file_basename>-results"
+    }
+  ],
+  "docker_image_tag": "genepattern/audit\\:0.4",
+  "categories": "",
+  "task_type": "Proteomics",
+  "author": "D. R. Mani, The Broad Institute",
+  "command_line": "/build/audit/run_audit.sh <data.file> <output.prefix> <pvalue.threshold> <cv.threshold> <all.pairs> <skyline.export> <output.intermediate.results>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

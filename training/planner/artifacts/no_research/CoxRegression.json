@@ -1,0 +1,181 @@
+{
+  "module_name": "CoxRegression",
+  "description": "Cox regression using clinical data and .cls file",
+  "author": "Yujin Hoshida (Broad Institute)",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "R",
+  "categories": [
+    "Survival Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:42114:1",
+  "plan": "## CoxRegression GenePattern Module — Implementation Plan\n\n### 1. Overview\nCoxRegression is a GenePattern module that Cox regression using clinical data and .cls file\n\n### 2. Parameters\nThe module exposes 11 parameters:\n- Required: input.surv.data.filename, output.file, time, status, variable.continuous, variable.category, variable.interaction.terms, strata, input.subgroup, variable.selection\n- Optional: input.cls.filename\n\n### 3. Command Line\n```\n<R> <libdir>CoxRegression.GP.ez.R parseCmdLine -inp<input.surv.data.filename> -cls<input.cls.filename> -out<output.file> -tim<time> -sta<status> -con<variable.continuous> -cat<variable.category> -int<variable.interaction.terms> -str<strata> -sub<input.subgroup> -sel<variable.selection>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "CoxRegression.GP.ez.R",
+  "command_line": "<R> <libdir>CoxRegression.GP.ez.R parseCmdLine -inp<input.surv.data.filename> -cls<input.cls.filename> -out<output.file> -tim<time> -sta<status> -con<variable.continuous> -cat<variable.category> -int<variable.interaction.terms> -str<strata> -sub<input.subgroup> -sel<variable.selection>",
+  "parameters": [
+    {
+      "name": "input.surv.data.filename",
+      "description": "input clinical data. Case ID in 1st column (.txt file)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.surv.data.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "input.cls.filename",
+      "description": "input class information (.cls file)",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.cls.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "CoxRegression_result",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "time",
+      "description": "Column name for survival time",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "time",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--time",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "status",
+      "description": "Column name for censor (0\\: censored/alive, 1\\: event/death)",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "status",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--status",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "variable.continuous",
+      "description": "(e.g. age,labdata1,...)",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "NA",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--variable.continuous",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "variable.category",
+      "description": "(e.g. sex,cls,grade,...)",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "NA",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--variable.category",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "variable.interaction.terms",
+      "description": "(e.g. sex\\:cls,sex\\:grade,...)",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "NA",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--variable.interaction.terms",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "strata",
+      "description": "Fit is done for each strata",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "NA",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--strata",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "input.subgroup",
+      "description": "(e.g. cls\\:2) *only one subgroup can be specified",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "NA",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.subgroup",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "variable.selection",
+      "description": "",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "none",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": "none"
+        },
+        {
+          "display": "Stepwise selection",
+          "value": "both"
+        },
+        {
+          "display": "Forward selection",
+          "value": "forward"
+        },
+        {
+          "display": "Backward selection",
+          "value": "backward"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--variable.selection",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

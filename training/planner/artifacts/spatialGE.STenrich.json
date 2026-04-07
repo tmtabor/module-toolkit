@@ -1,0 +1,147 @@
+{
+  "module_name": "spatialGE.STenrich",
+  "description": "Detect genes showing spatial expression patterns (e.g., hotspots). Tests if spots/cells with high average expression of a gene set shows evidence of spatial aggregation.",
+  "author": "Thorin Tabor;UCSD - Mesirov Lab",
+  "input_file_formats": [
+    "gmt",
+    "gmx",
+    "grp",
+    "rds"
+  ],
+  "language": "R",
+  "categories": [
+    "spatial transcriptomics"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:78905:1",
+  "plan": "## spatialGE.STenrich GenePattern Module — Implementation Plan\n\n### 1. Overview\nspatialGE.STenrich is a GenePattern module that Detect genes showing spatial expression patterns (e.g., hotspots). Tests if spots/cells with high average expression of a gene set shows evidence of spatial aggregation.\n\n### 2. Parameters\nThe module exposes 9 parameters:\n- Required: input.file, gene.sets.database, permutations, random.seed, minimum.spots, minimum.genes, standard.deviations, filter.p.values, filter.gene.proportion\n- Optional: none\n\n### 3. Command Line\n```\nRscript /spatialGE/wrapper.R -f <input.file> -g <gene.sets.database> -p <permutations> -r <random.seed> -s <minimum.spots> -m <minimum.genes> -d <standard.deviations> -w <filter.p.values> -i <filter.gene.proportion>\n```\n\n### 4. Docker Image\nDocker image: genepattern/spatialge-stenrich\\:0.5\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.R",
+  "command_line": "Rscript /spatialGE/wrapper.R -f <input.file> -g <gene.sets.database> -p <permutations> -r <random.seed> -s <minimum.spots> -m <minimum.genes> -d <standard.deviations> -w <filter.p.values> -i <filter.gene.proportion>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "Normalized spatial transcriptomics data coming from the spatialGE.Preprocessing module.",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "rds"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gene.sets.database",
+      "description": "Select a gene set database to test for spatial enrichment. Upload a gene set if your gene set is not listed as a choice from MSigDB.",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gmt",
+        "gmx",
+        "grp"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gene.sets.database",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "permutations",
+      "description": "The number of permutations to estimate the null distribution (no-spatial pattern). The more permutations, the longer STenrich takes to complete, but p-values may be more accurate.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--permutations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "random.seed",
+      "description": "A seed number to replicate results. It is advisable to run STenrich with different seed values to check for consistency. Different seed values could yield slightly different p-values.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "12345",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--random.seed",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "minimum.spots",
+      "description": "The minimum number of high expression ROIs/spots/cells required for a gene set to be tested. If a sample has less than this number of high expression ROIs/spots/cells, the gene set is not tested in that sample.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--minimum.spots",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "minimum.genes",
+      "description": "The minimum number of genes of a set required to be present in a sample, for that gene set to be tested in that sample. If a sample has less genes of a set than this number, the gene set is ignored in that sample.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--minimum.genes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "standard.deviations",
+      "description": "The number of standard deviations to define the high expression threshold. If an ROI/spot/cell has average gene set expression larger than the entire sample average plus this many standard deviations, it will be considered a high-expression ROI/spot/cell.",
+      "required": true,
+      "type": "float",
+      "value_count": "0..1",
+      "default_value": "1.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--standard.deviations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "filter.p.values",
+      "description": "Plot only gene sets whose multiple test adjusted p-value is less than this threshold.",
+      "required": true,
+      "type": "float",
+      "value_count": "0..1",
+      "default_value": "0.05",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--filter.p.values",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "filter.gene.proportion",
+      "description": "Plot only gene sets where the proportional number genes in the set present in the field of view equals or exceeds this threshold.",
+      "required": true,
+      "type": "float",
+      "value_count": "0..1",
+      "default_value": "0.3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--filter.gene.proportion",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/spatialge-stenrich:0.5"
+}

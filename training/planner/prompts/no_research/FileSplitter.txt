@@ -1,0 +1,56 @@
+Create a comprehensive structured plan for the GenePattern module for 'FileSplitter'.
+            
+            Tool Information:
+            - Name: FileSplitter
+            - Version: latest
+            - Language: Java
+            - Description: Splits a file into equal-sized chunks, given the number of lines per output file
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "FileSplitter",
+  "parameters": [
+    {
+      "name": "inputFile",
+      "type": "FILE",
+      "description": "The input file, to be split into chunks",
+      "required": true,
+      "default_value": "",
+      "prefix": "--inputFile\\="
+    },
+    {
+      "name": "numFiles",
+      "type": "java.lang.String",
+      "description": "[Integer, >\\=1], The maximum number of output files to split the file into. When both 'numFiles' and 'numLines' are set, treat this as the maximum number of output files to create, even if the files have more than the requested number of lines",
+      "required": false,
+      "default_value": "",
+      "prefix": "--numFiles\\="
+    },
+    {
+      "name": "numLines",
+      "type": "java.lang.String",
+      "description": "[Integer, >\\=1], The number of lines in each output file.",
+      "required": false,
+      "default_value": "",
+      "prefix": "--numLines\\="
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Peter Carr, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>FileSplitter.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar org.genepattern.module.filesplitter.FileSplitter <inputFile> <numFiles> <numLines>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

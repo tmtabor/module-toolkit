@@ -1,0 +1,571 @@
+Create a comprehensive structured plan for the GenePattern module for 'Seurat.Clustering'.
+            
+            Tool Information:
+            - Name: Seurat.Clustering
+            - Version: Updating to run Seurat 4.0.3
+            - Language: any
+            - Description: Companion module for the <a href="https://notebook.genepattern.org/services/sharing/notebooks/376/preview/">Seurat notebook</a>. Performs clustering and marker identification on single cell data.
+            
+            Research Results:
+            All research has been collected and analyzed. Here is the complete, comprehensive research report:
+
+---
+
+# 🔬 Comprehensive Research Report: Seurat.Clustering (GenePattern Module)
+
+## Executive Summary
+
+**Seurat.Clustering** is a GenePattern module wrapping the Seurat v4.0.3 R package to perform **graph-based clustering, dimensionality reduction, and differential marker identification** on preprocessed single-cell RNA-seq (scRNA-seq) data. It occupies a critical position in the GenePattern Seurat Suite pipeline and provides a GUI-accessible entry point to one of the most widely adopted single-cell analysis frameworks in modern genomics (~10,000+ citations across Seurat publications).
+
+---
+
+## 1. 🎯 Tool Purpose & Scientific Applications
+
+### Primary Purpose
+Seurat.Clustering takes a preprocessed Seurat object (`.rds`) and executes the downstream analytical steps:
+1. **KNN/SNN graph construction** — embeds cells in a shared nearest-neighbor graph
+2. **Community detection (clustering)** — partitions the graph using Louvain or Leiden algorithms
+3. **Dimensionality reduction for visualization** — UMAP and/or t-SNE
+4. **Differential expression for marker genes** — identifies genes characterizing each cluster
+
+### Scientific Applications
+
+| Application Domain | Description |
+|--------------------|-------------|
+| **Cell Type Discovery** | Unsupervised identification of transcriptionally distinct cell populations |
+| **Tumor Microenvironment Analysis** | Characterizing immune and stromal cell populations in cancer |
+| **Developmental Biology** | Identifying progenitor and differentiated cell states |
+| **Immunology** | Profiling T-cell, B-cell, NK cell, and myeloid subpopulations |
+| **Drug Response Profiling** | Identifying treatment-responsive cell subpopulations |
+| **Atlas Construction** | Building cell type references for organs/tissues |
+| **Multi-modal Integration** | Clustering after CITE-seq, multiome, or batch-corrected data |
+
+### Algorithmic Foundation
+The clustering approach in Seurat is grounded in two landmark single-cell methodologies:
+- **SNN-Cliq** (Xu & Su, *Bioinformatics*, 2015) — shared nearest-neighbor graph clustering
+- **PhenoGraph** (Levine et al., *Cell*, 2015) — KNN graph partitioning for cytometry data
+
+The graph-based strategy overcomes single-gene expression noise by using **PCA metafeatures** (each PC summarizes a correlated gene program) as the distance metric.
+
+---
+
+## 2. 📥📤 Input/Output Formats & Requirements
+
+### Input Files
+
+| File | Format | Source | Description |
+|------|--------|--------|-------------|
+| **Seurat Object** | `.rds` (R serialized) | `Seurat.Preprocessing` or `Seurat.IntegrateData` | **Required.** Must contain normalized data, scaled data, and PCA reduction. The `preserve.scale.data=TRUE` flag must have been set in Seurat.Preprocessing. |
+
+#### Critical Input Requirements:
+- ✅ `@reductions$pca` — PCA embeddings must be computed upstream
+- ✅ `@assays$RNA@data` — Normalized expression matrix
+- ✅ `@assays$RNA@scale.data` — Scaled data (required for PCA-based neighbor finding)
+- ✅ `@meta.data` — Cell-level metadata (batch, sample, QC metrics)
+
+### Output Files
+
+| File | Format | Description |
+|------|--------|-------------|
+| `<output_base>_clustered.rds` | `.rds` | Updated Seurat object with cluster assignments, UMAP/tSNE, and all metadata |
+| `<output_base>_markers.csv` | `.csv` | Differential marker genes per cluster (columns: gene, p_val, avg_log2FC, pct.1, pct.2, p_val_adj, cluster) |
+| `<output_base>_umap.pdf/png` | PDF/PNG | UMAP colored by cluster identity |
+| `<output_base>_tsne.pdf/png` | PDF/PNG | t-SNE plot colored by cluster identity |
+| `<output_base>_violin.pdf/png` | PDF/PNG | Violin plots for top cluster markers |
+| `<output_base>_feature.pdf/png` | PDF/PNG | Feature plots of top marker genes on UMAP |
+| `<output_base>_dotplot.pdf/png` | PDF/PNG | Dot plot showing marker expression per cluster |
+
+### Seurat Object Internal Structure (Post-Clustering)
+```
+SeuratObject v4.0:
+├── @assays
+│   ├── RNA
+│   │   ├── @counts       (raw counts matrix)
+│   │   ├── @data         (normalized expression)
+│   │   └── @scale.data   (scaled/centered)
+├── @reductions
+│   ├── pca               (input; from preprocessing)
+│   ├── umap              (NEW: added by RunUMAP)
+│   └── tsne              (NEW: added by RunTSNE)
+├── @graphs
+│   ├── RNA_nn            (NEW: KNN graph)
+│   └── RNA_snn           (NEW: SNN graph)
+└── @meta.data
+    ├── seurat_clusters   (NEW: cluster assignments)
+    └── [prior metadata]
+```
+
+---
+
+## 3. ⚙️ Parameter Analysis & Usage Patterns
+
+### Parameter Groups for GenePattern Module
+
+#### Group A: I/O Parameters
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `input.file` | File (.rds) | — | **Required.** Preprocessed Seurat object |
+| `output.file.base` | String | `"seurat_clustered"` | Basename for all output files |
+
+---
+
+#### Group B: Graph Construction Parameters (`FindNeighbors`)
+| Parameter | Type | Default | Range | Biological Significance |
+|-----------|------|---------|-------|------------------------|
+| `dims.use` | Integer range | `1:10` | `1:5`–`1:50` | PCA dimensions used for neighbor graph. Use ElbowPlot to guide selection; typically 10–30 PCs |
+| `k.param` | Integer | `20` | 5–50 | Number of nearest neighbors. Higher k → coarser clusters; lower k → finer resolution |
+| `prune.snn` | Numeric | `0.0667` (1/15) | 0–1 | Edge weight cutoff for SNN graph pruning. Lower = denser graph |
+| `reduction` | String | `"pca"` | `"pca"`, `"harmony"`, `"integrated"` | Which reduction to use for graph; use `"harmony"` after Harmony batch correction |
+| `nn.method` | String | `"rann"` | `"rann"`, `"annoy"` | KNN algorithm; `annoy` faster for large datasets |
+
+---
+
+#### Group C: Clustering Parameters (`FindClusters`)
+| Parameter | Type | Default | Range | Biological Significance |
+|-----------|------|---------|-------|------------------------|
+| `resolution` | Numeric | `0.8` | `0.1`–`3.0` | **Most critical parameter.** Controls number of clusters. `0.4–1.2` for ~3K cells; scale up for larger datasets |
+| `algorithm` | Integer | `1` | `1`–`4` | Clustering algorithm: 1=Louvain (default), 2=Louvain+multilevel, 3=SLM, 4=Leiden (requires `leiden` package) |
+| `n.start` | Integer | `10` | 1–100 | Random starts for modularity optimization. Higher = more reproducible but slower |
+| `n.iter` | Integer | `10` | 1–100 | Iterations per random start |
+| `random.seed` | Integer | `0` | any | Reproducibility seed |
+| `group.singletons` | Boolean | `TRUE` | — | Whether singleton cells join nearest cluster |
+
+**Resolution Guidance:**
+```
+Dataset Size    Recommended Resolution
+~1K cells       0.2 – 0.5
+~3K cells       0.4 – 1.2   ← standard PBMC benchmark
+~10K cells      0.5 – 1.5
+~50K+ cells     0.8 – 2.5
+```
+
+---
+
+#### Group D: UMAP Parameters (`RunUMAP`)
+| Parameter | Type | Default | Range | Description |
+|-----------|------|---------|-------|-------------|
+| `umap.dims` | Integer range | `1:10` | matches `dims.use` | PCA dimensions for UMAP embedding |
+| `n.neighbors` | Integer | `30` | 5–100 | Local neighborhood size. Lower=local structure; higher=global structure |
+| `min.dist` | Numeric | `0.3` | 0.001–1.0 | Minimum distance between points. Lower=tighter clusters; higher=uniform spread |
+| `umap.metric` | String | `"cosine"` | `"cosine"`, `"euclidean"`, `"manhattan"` | Distance metric for UMAP |
+| `n.epochs` | Integer | `NULL` (auto) | 100–500 | Training iterations; more = smoother embedding |
+| `umap.seed` | Integer | `42` | any | Reproducibility seed |
+| `run.tsne` | Boolean | `TRUE` | — | Whether to also run t-SNE |
+
+---
+
+#### Group E: Marker Identification Parameters (`FindAllMarkers`)
+| Parameter | Type | Default | Range | Description |
+|-----------|------|---------|-------|-------------|
+| `logfc.threshold` | Numeric | `0.25` | `0.0`–`5.0` | Minimum average log2 fold change threshold. Higher = fewer but stronger markers. `0.25` standard; `1.0` for strict markers |
+| `min.pct` | Numeric | `0.10` | `0.0`–`1.0` | Minimum fraction of cells expressing the gene. Pre-filters non-expressed genes. `0.1` standard |
+| `test.use` | String | `"wilcox"` | many options | Statistical test for DE. See table below |
+| `only.pos` | Boolean | `FALSE` | — | Report only upregulated (positive) markers per cluster |
+| `max.cells.per.ident` | Integer | `Inf` | 100–Inf | Downsample clusters to speed computation; `200` recommended for >10K cells |
+| `min.diff.pct` | Numeric | `-Inf` | 0–1 | Minimum difference in % expressing between compared groups |
+| `random.seed` | Integer | `1` | any | Seed for downsampling |
+
+**Statistical Test Comparison for `test.use`:**
+| Test | Best Use Case | Speed | Notes |
+|------|--------------|-------|-------|
+| `"wilcox"` | General purpose (default) | ⚡⚡⚡ | Non-parametric; robust to outliers |
+| `"bimod"` | Bimodally distributed data | ⚡⚡ | McDavid et al. 2013; scRNA-specific |
+| `"roc"` | Effect size estimation | ⚡ | Returns AUC; no p-values |
+| `"t"` | Approximately normal data | ⚡⚡⚡ | Fast parametric test |
+| `"negbinom"` | Count data with overdispersion | ⚡ | Requires `latent.vars` for batch |
+| `"LR"` | Multi-variable models | ⚡ | Logistic regression; supports covariates |
+| `"MAST"` | Complex experimental designs | ⚡ | Requires `MAST` package |
+| `"DESeq2"` | Pseudo-bulk analysis | ⚡ | Requires `DESeq2` package; for bulk-like comparisons |
+
+---
+
+### 4. 🏗️ Installation & Dependency Requirements
+
+#### R Version Requirements
+- **Minimum:** R ≥ 4.0.0 (required for Seurat 4.x)
+- **Recommended:** R 4.1.x or 4.2.x for full Seurat 4.0.3 compatibility
+
+#### Core R Package Dependencies
+
+```r
+# Core Seurat packages
+install.packages("Seurat")        # 4.0.3
+install.packages("SeuratObject")  # 4.0.x
+
+# Required dependencies (auto-installed)
+install.packages(c(
+  "ggplot2",    # Visualization
+  "patchwork",  # Plot composition
+  "dplyr",      # Data manipulation
+  "Matrix",     # Sparse matrices
+  "RANN",       # Fast KNN (rann method)
+  "uwot",       # UMAP implementation
+  "igraph",     # Graph algorithms
+  "irlba",      # Truncated SVD for PCA
+  "Rtsne",      # t-SNE implementation
+  "scales",     # Color scales
+  "RColorBrewer" # Color palettes
+))
+
+# Optional: For Leiden algorithm (algorithm=4)
+install.packages("leiden")
+
+# Optional: For advanced DE testing
+BiocManager::install("MAST")
+BiocManager::install("DESeq2")
+BiocManager::install("limma")
+
+# Optional: For faster KNN on large datasets
+install.packages("RcppAnnoy")  # annoy method in FindNeighbors
+```
+
+#### Docker Container Specification (GenePattern)
+```dockerfile
+FROM r-base:4.1.3
+
+# System dependencies
+RUN apt-get update && apt-get install -y \
+    libhdf5-dev \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    libgfortran5 \
+    python3-pip
+
+# Python UMAP (optional umap-learn method)
+RUN pip3 install umap-learn
+
+# R packages
+RUN Rscript -e "install.packages(c('Seurat', 'SeuratObject', 'ggplot2', \
+    'patchwork', 'dplyr', 'Matrix', 'RANN', 'uwot', 'igraph', 'leiden'))"
+```
+
+#### Computational Resource Requirements
+
+| Dataset Scale | Cells | RAM Required | CPU Time (clustering) | Storage |
+|--------------|-------|-------------|----------------------|---------|
+| Small | ~3K | 4 GB | ~2 min | ~500 MB |
+| Medium | ~10K | 8 GB | ~5 min | ~1 GB |
+| Large | ~50K | 16–32 GB | ~20 min | ~5 GB |
+| Very Large | ~100K+ | 64+ GB | ~60+ min | ~10 GB |
+
+---
+
+### 5. 🔄 Common Workflows & Use Cases
+
+#### Complete GenePattern Seurat Suite Pipeline
+
+```
+┌─────────────────────┐
+│   Raw scRNA-seq      │
+│   Data (10X, etc.)  │
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  Seurat.QC          │  → QC metrics, filtering thresholds
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│ Seurat.Preprocessing│  → Normalized, scaled, PCA Seurat RDS
+│ (preserve.scale.data│    [KEY: preserve.scale.data=TRUE]
+│  = TRUE)            │
+└──────────┬──────────┘
+           │
+     ┌─────┴─────┐
+     │ (optional) │
+     ▼            ▼
+┌─────────┐  ┌────────────────┐
+│ single  │  │Seurat.Integrate│ → Batch-corrected RDS
+│ sample  │  │Data / Batch    │
+└────┬────┘  └───────┬────────┘
+     └────────┬──────┘
+              ▼
+┌─────────────────────┐
+│  Seurat.Clustering  │  → Clustered RDS + markers.csv + plots
+│  [THIS MODULE]      │
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  Cell Type          │  → Annotation, downstream analyses
+│  Annotation         │    (manual or automated)
+└─────────────────────┘
+```
+
+#### Workflow 1: Standard PBMC Analysis (~3K cells)
+```r
+# Typical parameters for standard dataset
+dims.use = 1:10
+resolution = 0.5
+algorithm = 1          # Louvain
+n.neighbors = 30
+min.dist = 0.3
+logfc.threshold = 0.25
+min.pct = 0.1
+test.use = "wilcox"
+```
+
+#### Workflow 2: Large Atlas Dataset (~50K+ cells)
+```r
+# Parameters optimized for large datasets
+dims.use = 1:30
+resolution = 1.2
+algorithm = 4          # Leiden (better for large graphs)
+k.param = 20
+n.neighbors = 30
+min.dist = 0.3
+max.cells.per.ident = 500  # Downsample for marker finding
+test.use = "wilcox"
+nn.method = "annoy"    # Faster for large datasets
+```
+
+#### Workflow 3: Post-Batch Correction (after Seurat.IntegrateData)
+```r
+# After CCA integration
+reduction = "integrated"   # or "harmony"
+dims.use = 1:30
+resolution = 0.8
+# Use integrated graph for clustering
+graph.name = "integrated_snn"
+```
+
+#### Workflow 4: High-Resolution Sub-clustering
+```r
+# For detailed subpopulation analysis
+resolution = 2.0
+algorithm = 1
+dims.use = 1:20
+logfc.threshold = 0.1   # More sensitive
+min.pct = 0.05          # More inclusive
+only.pos = TRUE
+```
+
+---
+
+### 6. 🔗 Integration Considerations for GenePattern
+
+#### 6.1 Module Manifest Structure (`module.yaml`)
+```yaml
+name: Seurat.Clustering
+version: 4.0.3
+description: >
+  Performs graph-based clustering, UMAP/t-SNE visualization, and 
+  marker gene identification on preprocessed single-cell RNA-seq data 
+  using Seurat v4.0.3. Companion to the Seurat GenePattern Notebook.
+author: GenePattern Team
+categories: [single cell, RNA-seq, clustering]
+privacy: public
+quality: production
+language: R
+cpuType: any
+os: any
+fileFormat: [rds]
+
+parameters:
+  - name: input.file
+    description: Preprocessed Seurat object (.rds) from Seurat.Preprocessing
+    type: FILE
+    required: true
+    fileFormat: rds
+
+  - name: output.file.base
+    description: Base name for output files
+    type: TEXT
+    default: seurat_clustered
+
+  - name: dims.use
+    description: PCA dimensions for neighbor graph construction (e.g., 1:10)
+    type: TEXT
+    default: "1:10"
+
+  - name: resolution
+    description: >
+      Clustering resolution. Higher values produce more clusters.
+      Recommended range 0.4-1.2 for ~3K cells.
+    type: FLOAT
+    default: 0.8
+    min: 0.1
+    max: 3.0
+
+  - name: algorithm
+    description: Community detection algorithm (1=Louvain, 2=Louvain+multilevel, 3=SLM, 4=Leiden)
+    type: INTEGER
+    default: 1
+    choices: [1, 2, 3, 4]
+
+  - name: logfc.threshold
+    description: Minimum log2 fold change for marker identification
+    type: FLOAT
+    default: 0.25
+
+  - name: min.pct
+    description: Minimum fraction of cells expressing a gene for marker testing
+    type: FLOAT
+    default: 0.1
+    min: 0.0
+    max: 1.0
+
+  - name: test.use
+    description: Statistical test for differential expression
+    type: TEXT
+    default: wilcox
+    choices: [wilcox, bimod, roc, t, negbinom, poisson, LR, MAST, DESeq2]
+
+  - name: only.pos
+    description: Report only positive (upregulated) markers
+    type: BOOLEAN
+    default: false
+
+  - name: n.neighbors.umap
+    description: UMAP neighborhood size (local vs global structure tradeoff)
+    type: INTEGER
+    default: 30
+
+  - name: min.dist.umap
+    description: UMAP minimum distance (0=tight clusters, 1=uniform spread)
+    type: FLOAT
+    default: 0.3
+
+  - name: run.tsne
+    description: Also generate t-SNE visualization
+    type: BOOLEAN
+    default: true
+
+  - name: random.seed
+    description: Random seed for reproducibility
+    type: INTEGER
+    default: 42
+```
+
+#### 6.2 GenePattern-Specific Considerations
+
+| Concern | Solution |
+|---------|----------|
+| **RDS File Transfer** | GenePattern handles binary file upload/download natively |
+| **Memory Limits** | Set container memory limit to ≥16GB for typical datasets; expose `max.cells.per.ident` to control FindMarkers memory |
+| **Run Time** | Expose `max.cells.per.ident` parameter; Leiden algorithm (4) faster than Louvain on large graphs |
+| **Reproducibility** | Always set `random.seed` in FindClusters, RunUMAP, RunTSNE |
+| **Output File Count** | Bundle plots into a single PDF for easier download; provide zip archive option |
+| **Notebook Integration** | Module outputs compatible with Notebook #376 for interactive visualization |
+| **Version Pinning** | Pin Seurat to exactly `4.0.3` in Docker image to avoid API changes |
+| **Error Messaging** | Check for presence of PCA in Seurat object; throw informative error if scale.data missing |
+
+#### 6.3 Suggested GenePattern Parameter Groupings
+
+```
+┌─ Input/Output ─────────────────────────────────────┐
+│  input.file, output.file.base                       │
+└─────────────────────────────────────────────────────┘
+
+┌─ Graph Construction (FindNeighbors) ───────────────┐
+│  dims.use, k.param, reduction                       │
+└─────────────────────────────────────────────────────┘
+
+┌─ Clustering (FindClusters) ────────────────────────┐
+│  resolution, algorithm, random.seed                 │
+└─────────────────────────────────────────────────────┘
+
+┌─ Visualization (UMAP/t-SNE) ──────────────────────┐
+│  n.neighbors.umap, min.dist.umap, umap.metric,     │
+│  run.tsne                                           │
+└─────────────────────────────────────────────────────┘
+
+┌─ Marker Identification (FindAllMarkers) ───────────┐
+│  logfc.threshold, min.pct, test.use,                │
+│  only.pos, max.cells.per.ident                      │
+└─────────────────────────────────────────────────────┘
+```
+
+#### 6.4 Companion Module Compatibility
+
+| Module | Role | Handoff |
+|--------|------|---------|
+| `Seurat.QC` | Step 1: Quality control | Produces filtered count matrix |
+| `Seurat.Preprocessing` | Step 2: Normalize/Scale/PCA | Produces `.rds` input for this module |
+| `Seurat.IntegrateData` | Step 2b (optional): Batch correction | Produces batch-corrected `.rds` input |
+| **`Seurat.Clustering`** | **Step 3: Clustering + Markers** | **Produces clustered `.rds` + markers** |
+
+---
+
+## 7. 📚 Scientific Literature & Validation
+
+### Key Publications
+
+| Version | Citation | Key Contribution |
+|---------|----------|-----------------|
+| **Seurat v1** | Satija* et al., *Nature Biotechnology* 2015 | Spatial reconstruction via scRNA-seq |
+| **Seurat v2** | Butler et al., *Nature Biotechnology* 2018 | Integrating droplet-based scRNA-seq datasets |
+| **Seurat v3** | Stuart*, Butler* et al., *Cell* 2019 | Comprehensive single-cell data integration |
+| **Seurat v4** | Hao*, Hao* et al., *Cell* 2021 | Multimodal reference mapping & WNN |
+| **Seurat v5** | Hao et al., *Nature Biotechnology* 2023 | Scale to millions of cells |
+| **SNN-Cliq** | Xu & Su, *Bioinformatics* 2015 | Graph clustering foundation |
+| **PhenoGraph** | Levine et al., *Cell* 2015 | KNN-based clustering for high-dim data |
+
+### Community Adoption
+- Seurat is the **most widely used scRNA-seq analysis framework** in R
+- Used in >10,000 publications as of 2024
+- Standard benchmark dataset: **PBMC 3K** (10X Genomics) — universally used for validation
+- Adopted by major consortia: Human Cell Atlas, Allen Brain Atlas, ENCODE
+
+---
+
+## 8. ⚠️ Known Limitations & Caveats
+
+| Limitation | Impact | Mitigation |
+|------------|--------|------------|
+| **Resolution sensitivity** | Cluster number highly dependent on `resolution` | Provide guidance; suggest running multiple resolutions |
+| **No ground truth** | Clustering is unsupervised; "correct" clusters subjective | Document that biological validation is required |
+| **Memory scaling** | Large datasets (>100K cells) require substantial RAM | Expose `max.cells.per.ident`; recommend Seurat v5 for very large data |
+| **Marker test assumptions** | Different tests assume different data distributions | Document test.use options clearly |
+| **UMAP non-determinism** | UMAP with seed still has minor run-to-run variation | Set seed; note visualization is stochastic |
+| **Leiden requirement** | `algorithm=4` requires separate `leiden` Python/R package | Include in Docker; note in docs |
+| **API changes v4→v5** | Some parameter names changed in Seurat v5 | Pin to v4.0.3 in container |
+| **scale.data dependency** | Fails if upstream `preserve.scale.data=FALSE` | Validate input; provide clear error message |
+
+---
+
+## 9. 📋 Summary & GenePattern Module Recommendations
+
+### Critical Implementation Checklist
+
+- [x] **Docker image** pinned to `Seurat 4.0.3` + `R 4.1.x`
+- [x] **Input validation**: Check for PCA reduction in `.rds` object
+- [x] **Output bundle**: RDS + CSV + PDF plots
+- [x] **Parameter defaults** aligned with Seurat best practices
+- [x] **`random.seed`** exposed for reproducibility
+- [x] **`max.cells.per.ident`** exposed for large dataset performance
+- [x] **Multiple resolution testing**: Consider supporting a resolution vector
+- [x] **Notebook compatibility**: Outputs must be compatible with GenePattern Notebook #376
+- [x] **Informative error messages** for missing scale.data or PCA embeddings
+- [x] **Documentation** of `test.use` options and their appropriate use cases
+
+### Recommended Default Parameters (Production-Ready)
+```
+dims.use              = 1:10
+resolution            = 0.8
+algorithm             = 1       (Louvain)
+n.neighbors           = 30
+min.dist              = 0.3
+umap.metric           = cosine
+run.tsne              = TRUE
+logfc.threshold       = 0.25
+min.pct               = 0.10
+test.use              = wilcox
+only.pos              = FALSE
+max.cells.per.ident   = Inf
+random.seed           = 42
+```
+
+---
+
+*Report compiled from: GitHub (genepattern/Seurat.Clustering), Seurat Official Documentation (satijalab.org), GenePattern Seurat Suite companion modules, peer-reviewed literature (Cell, Nature Biotechnology, Bioinformatics), and community best practices from NCI BTEP, Broad Institute, and major scRNA-seq training resources.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

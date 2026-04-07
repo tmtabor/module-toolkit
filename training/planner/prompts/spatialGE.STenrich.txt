@@ -1,0 +1,527 @@
+Create a comprehensive structured plan for the GenePattern module for 'spatialGE.STenrich'.
+            
+            Tool Information:
+            - Name: spatialGE.STenrich
+            - Version: Write stlist rds to disk
+            - Language: R
+            - Description: Detect genes showing spatial expression patterns (e.g., hotspots). Tests if spots/cells with high average expression of a gene set shows evidence of spatial aggregation.
+            
+            Research Results:
+            I now have all the information needed to produce the comprehensive research report. Let me compile it into a complete, structured document:
+
+---
+
+# 🧬 Comprehensive Research Report: `spatialGE.STenrich`
+
+**GenePattern Module Research | PhD Bioinformatics Analysis**
+**Report Date:** Current | **Tool Version:** 1.2.2 (CRAN) / 1.2.0 (FridleyLab GitHub)
+
+---
+
+## 1. 🔬 TOOL PURPOSE & SCIENTIFIC APPLICATIONS
+
+### 1.1 Core Scientific Function
+
+`spatialGE.STenrich` implements **spatial gene set enrichment analysis (Spatial GSEA)** — a method for identifying whether functionally related genes (pathways, gene sets) exhibit spatially restricted expression patterns (i.e., **hotspots**) within spatially-resolved transcriptomics data. Rather than asking *which genes* vary spatially, STenrich asks *which biological pathways or gene programs* are spatially concentrated in tissue.
+
+**Key Biological Question Answered:**
+> *"Are spots/cells that highly express a gene set (e.g., the Hallmark Hypoxia pathway) clustered together in tissue space, or is their expression randomly distributed across the tissue section?"*
+
+### 1.2 Algorithm Summary
+
+The STenrich algorithm operates in 5 steps:
+
+```
+Step 1: Score Computation
+   → For each gene set, compute a per-spot/cell score
+     (default: arithmetic mean of normalized expression across
+     detected genes in the set)
+
+Step 2: High-Expression Spot Identification
+   → Spots with score > (mean + num_sds × SD) are labeled
+     "high-expressing" for that gene set
+
+Step 3: Observed Spatial Statistic
+   → Compute the average pairwise Euclidean distance among
+     all high-expression spots (small distance = spatial clustering)
+
+Step 4: Permutation Test (null distribution)
+   → Randomly sample the same number of spots 'reps' times
+   → Compute average pairwise distance for each permutation
+   → Empirical p-value = proportion of permuted distances ≤ observed
+
+Step 5: Multiple Testing Correction
+   → Adjust p-values across all gene sets tested
+     (default: Benjamini-Hochberg FDR)
+```
+
+**Biological Interpretation:** A statistically significant result means the high-expressing spots are more spatially clustered than expected by chance — evidence of a spatial "hotspot" for that biological pathway.
+
+### 1.3 Scientific Applications
+
+| Application Domain | Use Case |
+|---|---|
+| **Tumor Microenvironment** | Detect spatially restricted immune infiltration, tumor hypoxia zones, or stromal activation regions |
+| **Tissue Architecture** | Map biological pathway activity onto tissue morphology (e.g., cortex layers, crypt-villus axis) |
+| **Cancer Biology** | Identify spatially restricted oncogenic pathway activation (e.g., EMT, proliferation hotspots) |
+| **Immune Biology** | Map immune checkpoint pathways, T-cell exhaustion, or cytokine signaling to spatial tissue regions |
+| **Developmental Biology** | Detect spatially patterned developmental programs in embryonic tissue sections |
+| **Pathology** | Correlate histological features with spatial pathway activity |
+
+### 1.4 Validated Published Applications
+
+Based on peer-reviewed literature (PMC11873723, PMC11244876):
+
+- ✅ **Melanoma metastasis cohort** — 10X Visium spatial transcriptomics; Hallmark gene sets from MSigDB analyzed for spatial enrichment in tumor sections
+- ✅ **Merkel cell carcinoma (MCC)** — NanoString CosMx SMI single-cell spatial data; identified Hallmark gene sets with spatially restricted enrichment (p < 0.05); results visualized with median p-value heatmaps
+- ✅ **TNBC (Triple-Negative Breast Cancer)** — Bassiouni et al. Visium dataset used in vignettes
+
+---
+
+## 2. 📁 INPUT/OUTPUT FORMATS & REQUIREMENTS
+
+### 2.1 Primary Input: STlist Object (`.rds`)
+
+The **STlist (Spatial Transcriptomics List)** is an S4 R object defined by the spatialGE package. It is the universal data container for all spatialGE analyses.
+
+```
+STlist Structure:
+├── @counts          # Normalized gene expression matrices (sparse, genes × spots)
+├── @spatial_meta    # Spot/cell metadata (x/y coordinates, tissue annotations, domains)
+├── @sample_meta     # Sample-level metadata (patient ID, condition, etc.)
+├── @misc            # Auxiliary data (images, histology, etc.)
+└── @enrich          # POPULATED BY STenrich: enrichment results per sample
+```
+
+**How STlist Files Are Created (Upstream - spatialGE.Preprocessing):**
+
+| Source Technology | Input Files |
+|---|---|
+| **10X Visium** | SpaceRanger output folder (`filtered_feature_bc_matrix/` + `spatial/`) |
+| **NanoString CosMx SMI** | Cell × gene count matrix + X/Y coordinate file |
+| **Generic CSV/TSV** | Gene expression matrix (genes as rows) + spot coordinate file |
+| **GeoMx DSP** | Count matrix + metadata |
+| **Seurat object** | Via conversion function |
+
+### 2.2 Gene Sets Input
+
+```
+Format 1: Named R list (embedded in script or passed as RDS)
+  gene_sets = list(
+    "HALLMARK_HYPOXIA" = c("VEGFA", "LDHA", "HK1", ...),
+    "HALLMARK_INFLAMMATORY_RESPONSE" = c("IL1B", "TNF", ...)
+  )
+
+Format 2: GMT file path (MSigDB Gene Matrix Transposed format)
+  gene_sets = "/path/to/h.all.v2023.1.Hs.symbols.gmt"
+
+Format 3: msigdbr R package (programmatic access to MSigDB)
+  msigdbr(species="Homo sapiens", category="H")  # Hallmark gene sets
+```
+
+### 2.3 Outputs
+
+| Output | Format | Description |
+|---|---|---|
+| **Updated STlist** | `.rds` | STlist with enrichment results in `@enrich` slot |
+| **Results Table** | `.csv` / `.tsv` | Per-sample data frames with columns: `gene_set`, `n_genes_detected`, `obs_avg_distance`, `exp_avg_distance`, `pval`, `pval_adj` |
+| **Visualizations** | `.png` / `.pdf` | Heatmaps of p-values across gene sets and samples; spatial maps of gene set scores (via STplot) |
+
+---
+
+## 3. 📊 PARAMETER ANALYSIS & USAGE PATTERNS
+
+### 3.1 Complete Parameter Reference
+
+| Parameter | Type | Default | Required | Category |
+|---|---|---|---|---|
+| `x` | STlist (S4 object) | `NULL` | ✅ YES | Primary Input |
+| `gene_sets` | Named list / GMT path | `NULL` | ✅ YES | Primary Input |
+| `samples` | Character vector | `NULL` (all) | ❌ No | Sample Selection |
+| `score_type` | Character | `"avg"` | ❌ No | Algorithm |
+| `reps` | Integer | `1000` | ❌ No | Algorithm |
+| `num_sds` | Numeric | `1` | ❌ No | Algorithm |
+| `min_units` | Integer | `20` | ❌ No | Quality Filter |
+| `min_genes` | Integer | `5` | ❌ No | Quality Filter |
+| `domain` | Character | `NULL` | ❌ No | Subsetting |
+| `annot` | Character / df | `NULL` | ❌ No | Metadata |
+| `pval_adj_method` | Character | `"BH"` | ❌ No | Statistics |
+| `seed` | Integer | `12345` | ❌ No | Reproducibility |
+| `cores` | Integer / NULL | `NULL` (auto) | ❌ No | Compute |
+| `verbose` | Logical | `TRUE` | ❌ No | Output |
+
+### 3.2 Detailed Parameter Descriptions & Guidance
+
+#### `x` — STlist Object *(REQUIRED)*
+- The S4 STlist object containing preprocessed spatial transcriptomics data
+- **GenePattern note:** Passed as a serialized `.rds` file path; the module reads it with `readRDS()`
+- Must have been processed through `spatialGE.Preprocessing` (normalization essential)
+
+#### `gene_sets` — Gene Set Collection *(REQUIRED)*
+- Named list where each element is a character vector of gene symbols
+- **Recommended sources:** MSigDB Hallmark (H), C2 (KEGG, Reactome), C5 (GO), custom lists
+- **Important:** Gene names must match the gene names in the STlist count matrices
+- Gene sets with fewer than `min_genes` detected genes are automatically skipped
+
+#### `score_type` — Gene Set Scoring Method
+- `"avg"`: Arithmetic mean of normalized expression across detected genes in the set *(default, recommended)*
+- Defines how pathway-level activity is quantified per spot/cell before spatial analysis
+
+#### `reps` — Permutation Iterations
+- Controls statistical precision of empirical p-values
+- **Minimum detectable p-value = 1/reps** (e.g., 1000 reps → min p-value = 0.001)
+- **Trade-off:** 1000 reps is standard; 2000+ for publication; 500 for exploratory analysis
+- **Compute impact:** Linear scaling — 2000 reps takes ~2× longer than 1000
+
+#### `num_sds` — High-Expression Threshold
+- Defines the cutoff for "high-expressing" spots: `score > mean(score) + num_sds × SD(score)`
+- **Default `1`:** ~16% of spots classified as high-expressing (assuming normality)
+- **Increasing to 2:** ~2.5% of spots classified; more stringent, fewer spots but more specific clustering signal
+- **Biological guidance:** Use `1` for broad pathway screening; `2` for highly specific hotspots
+
+#### `min_units` — Minimum Spot/Cell Count
+- Prevents analysis on samples too small to yield reliable spatial statistics
+- Default `20` is conservative; samples with fewer spots/cells are skipped
+
+#### `min_genes` — Minimum Gene Set Coverage
+- Ensures gene sets are adequately represented in the data
+- Gene sets with < `min_genes` detected genes are excluded from testing
+- Important for smaller targeted panels (e.g., CosMx 1000-gene panels vs. Visium whole transcriptome)
+
+#### `domain` — Tissue Domain Restriction
+- Restricts analysis to spots/cells annotated to a specific tissue domain or cell type
+- Requires prior domain annotation in the STlist (from `STclust` or external annotation)
+- **Use case:** Test for pathway hotspots specifically within the "tumor" domain, ignoring stromal regions
+
+#### `pval_adj_method` — Multiple Testing Correction
+- Options: `"BH"` (FDR, default), `"bonferroni"`, `"holm"`, `"hochberg"`, `"hommel"`, `"BY"`, `"fdr"`, `"none"`
+- **Recommendation:** `"BH"` (Benjamini-Hochberg) is standard for gene set analyses; `"bonferroni"` for stringent control
+
+#### `seed` — Random Seed
+- **Critical for reproducibility** — always set explicitly in production analyses
+- Default `12345` is sufficient; any integer works
+
+#### `cores` — Parallel Processing
+- `NULL`: Auto-detects available cores
+- Set explicitly (e.g., `cores = 4`) for controlled resource usage in server environments
+- **GenePattern note:** Set based on available module compute resources
+
+### 3.3 Parameter Groupings for GenePattern UI
+
+```
+Group 1: REQUIRED INPUTS
+  └── Input STlist File (x)       [FILE: .rds]
+  └── Gene Sets File (gene_sets)  [FILE: .gmt or .rds]
+
+Group 2: SAMPLE SELECTION
+  └── Samples (samples)           [TEXT: comma-separated, optional]
+  └── Domain (domain)             [TEXT: optional]
+
+Group 3: ALGORITHM SETTINGS
+  └── Score Type (score_type)     [DROPDOWN: avg]
+  └── Permutations (reps)         [INTEGER: 1000, range 100-10000]
+  └── SDs Threshold (num_sds)     [FLOAT: 1.0, range 0.5-3.0]
+  └── Random Seed (seed)          [INTEGER: 12345]
+
+Group 4: QUALITY FILTERS
+  └── Min Units (min_units)       [INTEGER: 20, range 5-100]
+  └── Min Genes (min_genes)       [INTEGER: 5, range 1-20]
+
+Group 5: STATISTICS
+  └── P-value Adjustment (pval_adj_method) [DROPDOWN: BH, bonferroni, holm, none, ...]
+
+Group 6: COMPUTE RESOURCES
+  └── Cores (cores)               [INTEGER: NULL/auto or 1-16]
+  └── Verbose (verbose)           [BOOLEAN: TRUE]
+```
+
+---
+
+## 4. ⚙️ INSTALLATION & DEPENDENCY REQUIREMENTS
+
+### 4.1 R Environment
+
+```r
+# R version requirement
+R >= 4.0.0 (recommended: R >= 4.2.0)
+
+# Install from CRAN (stable release)
+install.packages("spatialGE")
+
+# Install development version from GitHub
+options(timeout = 9999999)  # Prevent timeout on large download
+devtools::install_github("fridleylab/spatialGE")
+```
+
+### 4.2 Core Dependencies
+
+| Package | Role | Repository |
+|---|---|---|
+| `spatialGE` | Core analysis package (STenrich function) | CRAN / GitHub (FridleyLab) |
+| `ggplot2` | Visualization of results | CRAN |
+| `dplyr` | Data manipulation and filtering | CRAN |
+| `Matrix` | Sparse matrix operations for large count matrices | CRAN |
+| `parallel` | Multi-core permutation computation | Base R |
+| `tidyr` | Data reshaping | CRAN |
+| `stringr` | String manipulation | CRAN |
+| `methods` | S4 class system for STlist | Base R |
+
+### 4.3 Recommended Additional Packages
+
+```r
+# For accessing MSigDB gene sets programmatically
+install.packages("msigdbr")
+
+# For spatial distance calculations (may be used internally)
+# BiocManager::install("BiocNeighbors")
+
+# For gene set file I/O
+install.packages("GSA")  # Read .gmt files
+# Or: BiocManager::install("GSEABase")
+```
+
+### 4.4 Docker/Container Configuration
+
+For GenePattern module deployment:
+
+```dockerfile
+FROM r-base:4.3.0
+
+# System dependencies
+RUN apt-get update && apt-get install -y \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    libhdf5-dev \
+    libgeos-dev
+
+# Install R packages
+RUN R -e "install.packages(c('spatialGE', 'ggplot2', 'dplyr', 'Matrix', 'tidyr', 'stringr', 'msigdbr', 'optparse'), repos='https://cloud.r-project.org')"
+```
+
+---
+
+## 5. 🔄 COMMON WORKFLOWS & USE CASES
+
+### 5.1 Standard GenePattern Workflow
+
+```
+[Raw Data: 10X Visium / CosMx / CSV]
+         ↓
+[spatialGE.Preprocessing]
+  • Data ingestion (STlist creation)
+  • Quality control filtering
+  • Normalization (log, SCT, etc.)
+  • Optional: STclust domain detection
+         ↓
+[spatialGE.STenrich]  ← THIS MODULE
+  • Input: processed STlist .rds
+  • Input: gene sets (.gmt / .rds)
+  • Run spatial enrichment analysis
+  • Output: updated STlist .rds + CSV results
+         ↓
+[spatialGE.STplot.Launcher]
+  • Visualize spatial enrichment results
+  • Heatmaps of p-values
+  • Spatial maps of gene set scores
+```
+
+### 5.2 Common Analytical Workflows
+
+**Workflow A: Cancer TME Pathway Mapping**
+```r
+# 1. Load MSigDB Hallmark gene sets
+library(msigdbr)
+hallmark <- msigdbr(species="Homo sapiens", category="H") |>
+  split(x = .$gene_symbol, f = .$gs_name)
+
+# 2. Run STenrich
+stlist <- STenrich(
+  x = stlist,
+  gene_sets = hallmark,
+  reps = 1000,
+  num_sds = 1,
+  pval_adj_method = "BH",
+  seed = 12345
+)
+# → Identifies which Hallmark pathways form spatial hotspots in tumor tissue
+```
+
+**Workflow B: Domain-Specific Analysis**
+```r
+# After STclust domain detection, test pathways within tumor domain only
+stlist <- STenrich(
+  x = stlist,
+  gene_sets = immune_gene_sets,
+  domain = "tumor",  # Only analyze spots assigned to tumor domain
+  reps = 1000,
+  num_sds = 1.5
+)
+# → Finds immune pathway hotspots restricted to the tumor region
+```
+
+**Workflow C: Targeted Panel Analysis (CosMx)**
+```r
+# For smaller gene panels (e.g., CosMx 1000-gene), reduce min_genes threshold
+stlist <- STenrich(
+  x = cosmx_stlist,
+  gene_sets = custom_pathways,
+  min_genes = 3,      # Reduced for smaller panels
+  min_units = 20,
+  reps = 1000
+)
+```
+
+**Workflow D: Multi-Sample Cohort Analysis**
+```r
+# Analyze specific samples in a cohort
+stlist <- STenrich(
+  x = stlist,            # Contains 10+ tissue samples
+  samples = c("Patient_01_T1", "Patient_01_T2"),  # Select specific samples
+  gene_sets = hallmark,
+  cores = 8,             # Parallelize across samples
+  verbose = TRUE
+)
+```
+
+---
+
+## 6. 🔗 GENEPATTERN INTEGRATION CONSIDERATIONS
+
+### 6.1 Module Architecture
+
+```
+Module Name: spatialGE.STenrich
+Language: R
+Version Tag: "Write stlist rds to disk" (current version descriptor)
+Docker Image: Required (R + spatialGE dependencies)
+
+Input Files:
+  1. input.stlist.rds    → Preprocessed STlist from spatialGE.Preprocessing
+  2. gene.sets.file      → GMT file or RDS named list of gene sets
+
+Output Files:
+  1. output.stlist.rds   → Updated STlist with enrichment results (primary output)
+  2. enrichment_results_[sample].csv → Per-sample enrichment tables
+  3. [optional] enrichment_heatmap.png → Summary visualization
+
+Script Entry Point: run_STenrich.R
+  └── Reads STlist from RDS
+  └── Parses gene sets from GMT/RDS
+  └── Runs STenrich()
+  └── Writes updated STlist to disk (version tag: "Write stlist rds to disk")
+  └── Exports CSV result tables
+```
+
+### 6.2 Module Manifest (module.yaml) Key Fields
+
+```yaml
+name: spatialGE.STenrich
+description: >
+  Detect genes showing spatial expression patterns (e.g., hotspots).
+  Tests if spots/cells with high average expression of a gene set shows
+  evidence of spatial aggregation using a permutation-based approach.
+version: 1.0.0
+language: R
+categories:
+  - Spatial Transcriptomics
+  - Gene Set Analysis
+  - RNA-seq
+upstream_modules:
+  - spatialGE.Preprocessing
+downstream_modules:
+  - spatialGE.STplot.Launcher
+```
+
+### 6.3 Integration Considerations
+
+| Consideration | Detail |
+|---|---|
+| **Input compatibility** | STlist `.rds` file must be produced by `spatialGE.Preprocessing` or compatible spatialGE workflow |
+| **Gene set formats** | Support both GMT files (MSigDB-compatible) and R named list RDS files |
+| **Memory requirements** | Large datasets (Visium: ~3,000 spots × 33,000 genes) + many gene sets (e.g., 50 Hallmarks × 1000 reps) may require 8–16 GB RAM |
+| **Runtime** | 1000 reps × 50 gene sets × 1 sample ≈ 2–10 minutes (depends on spot count and gene set size) |
+| **Parallelization** | `cores` parameter allows utilization of multi-core GenePattern server resources |
+| **Reproducibility** | `seed` parameter must be set; results are deterministic given same seed |
+| **Error handling** | Graceful handling when gene sets have < `min_genes` detected genes; skip with warning |
+| **Output chain** | Output STlist RDS must be directly consumable by `spatialGE.STplot.Launcher` |
+
+### 6.4 Known Limitations for GenePattern Context
+
+1. **Minimum p-value resolution** is `1/reps` (0.001 at default 1000 reps) — communicate this to users
+2. **Large gene set collections** (e.g., full MSigDB C2 with 6,000+ gene sets) can be very slow; recommend Hallmark (50) or curated subsets
+3. **Gene name matching** — gene names in gene sets must exactly match gene names in the STlist; case-sensitive
+4. **Spatial coordinate system** — analysis requires accurate spatial coordinates in the STlist; these should be validated upstream
+5. **Single-cell resolution** (CosMx, Xenium) datasets with millions of cells may require sampling or subsetting for practical runtimes
+
+---
+
+## 7. 📚 LITERATURE & CITATIONS
+
+### Primary Citations
+
+1. **Ospina OE, Wilson CM, Soupir AC, Berglund A, Smalley I, Tsai KY, Fridley BL.** (2022). *spatialGE: quantification and visualization of the tumor microenvironment heterogeneity using spatial transcriptomics.* **Bioinformatics**, 38(9), 2645–2647. [doi:10.1093/bioinformatics/btac145](https://doi.org/10.1093/bioinformatics/btac145). PMID: 35258565.
+   > *Primary spatialGE package paper — describes STlist, SThet, and core functionality*
+
+2. **spatialGE Is a User-Friendly Web Application That Facilitates Spatial Transcriptomics Data Analysis.** (2025). PMC11873723. PMID: 39636739. *Journal of Investigative Dermatology.*
+   > *Introduces STenrich, STgradient, STdiff; demonstrates on melanoma Visium + Merkel cell carcinoma CosMx data*
+
+3. **spatialGE: A user-friendly web application to democratize spatial transcriptomics analysis.** PMC11244876. (bioRxiv preprint / peer-reviewed).
+   > *Web app and updated module descriptions; detailed algorithm descriptions*
+
+### Software Resources
+
+| Resource | URL |
+|---|---|
+| GenePattern Module Repository | https://github.com/genepattern/spatialGE.STenrich |
+| FridleyLab Core Package | https://github.com/FridleyLab/spatialGE |
+| CRAN Package | https://cran.r-project.org/web/packages/spatialGE/ |
+| Function Documentation (rdrr.io) | https://rdrr.io/github/FridleyLab/spatialGE/man/STenrich.html |
+| Function Documentation (RDocumentation) | https://www.rdocumentation.org/packages/spatialGE/versions/1.2.2/topics/STenrich |
+| Package Website | https://fridleylab.github.io/spatialGE/ |
+| GenePattern Spatial Transcriptomics | https://www.genepattern.org/spatial-transcriptomics/ |
+
+---
+
+## 8. 🆚 COMPARATIVE POSITIONING
+
+| Feature | STenrich | GSVA | SpatialDE | SPARK-X | Squidpy |
+|---|---|---|---|---|---|
+| **Gene set / pathway level** | ✅ Yes | ✅ Yes | ❌ Gene-level only | ❌ Gene-level only | ⚠️ Partial |
+| **Spatially-aware test** | ✅ Yes | ❌ No | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Permutation statistics** | ✅ Yes | ❌ No | ❌ GP regression | ❌ Score-based | ❌ |
+| **R ecosystem** | ✅ Native R | ✅ Bioconductor | ✅ R | ✅ R | ❌ Python |
+| **No-code platform** | ✅ GenePattern | ❌ | ❌ | ❌ | ❌ |
+| **Multi-sample STlist** | ✅ Yes | ❌ | ❌ | ❌ | ⚠️ |
+| **Domain restriction** | ✅ Yes | ❌ | ❌ | ❌ | ⚠️ |
+
+**Unique Value Proposition of STenrich:**
+STenrich occupies a **unique niche** as the only R-native tool that performs **pathway-level spatial aggregation testing** using permutation statistics, with native support for multi-sample STlist containers, tissue domain restriction, and seamless integration with the complete spatialGE analytical ecosystem. Its GenePattern implementation makes it accessible to wet-lab biologists without R programming expertise.
+
+---
+
+## 9. ✅ SUMMARY FOR GENEPATTERN MODULE DEVELOPMENT
+
+| Aspect | Status / Recommendation |
+|---|---|
+| **Scientific validity** | ✅ Peer-reviewed, published in Bioinformatics + JID |
+| **Implementation language** | R (spatialGE package, CRAN-stable) |
+| **Input format** | STlist `.rds` (from spatialGE.Preprocessing) + GMT/RDS gene sets |
+| **Output format** | Updated STlist `.rds` + CSV enrichment tables |
+| **Key parameters for UI** | gene_sets, reps, num_sds, min_genes, min_units, pval_adj_method, seed, domain, cores |
+| **Upstream module dependency** | `spatialGE.Preprocessing` (mandatory) |
+| **Downstream module** | `spatialGE.STplot.Launcher` (optional visualization) |
+| **Compute requirements** | 4–16 GB RAM; 2–30 min runtime; benefits from multi-core |
+| **Docker feasibility** | ✅ Standard R container with CRAN dependencies |
+| **Version stability** | ✅ CRAN-released (v1.2.2), actively maintained by FridleyLab/Moffitt Cancer Center |
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,105 @@
+{
+  "module_name": "MergeHTSeqCounts",
+  "description": "Merges HTSeq read count data files into one file",
+  "author": "Broad Institute & Univeristy of California San Diego",
+  "input_file_formats": [
+    "counts",
+    "txt"
+  ],
+  "language": "Python",
+  "categories": [
+    "RNA-seq"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:38187:1",
+  "plan": "## MergeHTSeqCounts GenePattern Module — Implementation Plan\n\n### 1. Overview\nMergeHTSeqCounts is a GenePattern module that Merges HTSeq read count data files into one file\n\n### 2. Parameters\nThe module exposes 6 parameters:\n- Required: input.files, output.prefix\n- Optional: sampleinfo.file, filenames.column, class.division.column, sample.name.column\n\n### 3. Command Line\n```\n<python_2.6> <libdir>mergeHTSeqCounts.py --input\\=<input.files> --output\\=<output.prefix> --sampleInfoFile\\=<sampleinfo.file> --filenamesColumn\\=<filenames.column> --classDivisionColumn\\=<class.division.column> --sampleNameColumn\\=<sample.name.column>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "mergeHTSeqCounts.py",
+  "command_line": "<python_2.6> <libdir>mergeHTSeqCounts.py --input=<input.files> --output=<output.prefix> --sampleInfoFile=<sampleinfo.file> --filenamesColumn=<filenames.column> --classDivisionColumn=<class.division.column> --sampleNameColumn=<sample.name.column>",
+  "parameters": [
+    {
+      "name": "input.files",
+      "description": "A directory or one or more text files containing HTSeq read counts",
+      "required": true,
+      "type": "file",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": [
+        "txt",
+        "counts"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.files",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "The base name of the output file. File extensions will be added automatically.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.files_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sampleinfo.file",
+      "description": "A sample info file containing HTSeq filenames and a column to base a cls file on",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sampleinfo.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "filenames.column",
+      "description": "The column in the sample info file that contains the filenames.  This is used to match up the class division column up to the appropriate input file. This can be either a column index (starting at 0) or a string matching the header of a column in the sample info file.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--filenames.column",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "class.division.column",
+      "description": "The column in the sample info file that specifies a phenotype to use to assign classes and create a class file for the input samples. This is only relevant if a sample info file is provided.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--class.division.column",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.name.column",
+      "description": "The column in the sample info file that specifies a sample name to use in the generated gct file.  If no sample info file is provided or no value is specified the columns in the gct file will match the file names of the input files.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sample.name.column",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

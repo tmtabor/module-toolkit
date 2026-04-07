@@ -1,0 +1,305 @@
+{
+  "module_name": "SubMap",
+  "description": "Maps subclasses between two data sets",
+  "author": "Yujin Hoshida, Broad Institute",
+  "input_file_formats": [
+    "cls",
+    "gct"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:96349:1",
+  "plan": "## SubMap GenePattern Module — Implementation Plan\n\n### 1. Overview\nSubMap is a GenePattern module that Maps subclasses between two data sets\n\n### 2. Parameters\nThe module exposes 16 parameters:\n- Required: datasetA.file, datasetB.file, classA.file, classB.file, num.marker.genes, num.perm, num.perm.fisher, weighted.score.type, null.distribution, p.value.correction, cluster.rows, cluster.columns, nominal.p.value.matrix, create.legend, random.seed, output.filename\n- Optional: none\n\n### 3. Command Line\n```\nRscript /submap/run_submap.R --input.data.A\\=<datasetA.file> --input.data.B\\=<datasetB.file> --input.cls.A\\=<classA.file> --input.cls.B\\=<classB.file> --output.filename\\=<output.filename> --num.marker.genes\\=<num.marker.genes> --num.perm\\=<num.perm> --num.perm.fisher\\=<num.perm.fisher> --weighted.score.type\\=<weighted.score.type> --null.distribution\\=<null.distribution> --p.value.correction\\=<p.value.correction> --cluster.rows\\=<cluster.rows> --cluster.columns\\=<cluster.columns> --nominal.p.value.matrix\\=<nominal.p.value.matrix> --create.legend\\=<create.legend> --random.seed\\=<random.seed>\n```\n\n### 4. Docker Image\nDocker image: genepattern/submap\\:0.1\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_submap.R",
+  "command_line": "Rscript /submap/run_submap.R --input.data.A=<datasetA.file> --input.data.B=<datasetB.file> --input.cls.A=<classA.file> --input.cls.B=<classB.file> --output.filename=<output.filename> --num.marker.genes=<num.marker.genes> --num.perm=<num.perm> --num.perm.fisher=<num.perm.fisher> --weighted.score.type=<weighted.score.type> --null.distribution=<null.distribution> --p.value.correction=<p.value.correction> --cluster.rows=<cluster.rows> --cluster.columns=<cluster.columns> --nominal.p.value.matrix=<nominal.p.value.matrix> --create.legend=<create.legend> --random.seed=<random.seed>",
+  "parameters": [
+    {
+      "name": "datasetA.file",
+      "description": "Input dataset A - .gct, should have common gene ID with dataset B",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--datasetA.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "datasetB.file",
+      "description": "Input dataset B - .gct,  should have common gene ID with dataset A",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--datasetB.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "classA.file",
+      "description": "Input class label A - .cls, 3rd line should be numeric, +1 if starts from \"0\"",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--classA.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "classB.file",
+      "description": "Input class label B - .cls, 3rd line should be numeric, +1 if starts from \"0\"",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--classB.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.marker.genes",
+      "description": "Number of marker genes to be mapped",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.marker.genes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.perm",
+      "description": "Number of random permutations for ES in each cell of SA matrix",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.perm",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.perm.fisher",
+      "description": "Number of random permutations for Fisher's statistics",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.perm.fisher",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "weighted.score.type",
+      "description": "Weight enrichment by correlation vector (SNR)",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "1"
+        },
+        {
+          "display": "no",
+          "value": "0"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--weighted.score.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "null.distribution",
+      "description": "Choice of null distribution",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "pool",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "pool",
+          "value": "pool"
+        },
+        {
+          "display": "each",
+          "value": "each"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--null.distribution",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "p.value.correction",
+      "description": "p-value correction method",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "Bonferroni",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FDR",
+          "value": "FDR"
+        },
+        {
+          "display": "Bonferroni",
+          "value": "Bonferroni"
+        },
+        {
+          "display": "both",
+          "value": "both"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--p.value.correction",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cluster.rows",
+      "description": "Cluster dataset A's subclass in heatmap of SA matrix",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "1"
+        },
+        {
+          "display": "no",
+          "value": "NA"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--cluster.rows",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cluster.columns",
+      "description": "Cluster dataset B's subclass in heatmap of SA matrix",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "1"
+        },
+        {
+          "display": "no",
+          "value": "NA"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--cluster.columns",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "nominal.p.value.matrix",
+      "description": "Create heatmap of each nominal-p matrix",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "T",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "T"
+        },
+        {
+          "display": "no",
+          "value": "F"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--nominal.p.value.matrix",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "create.legend",
+      "description": "Create legend for heatmap",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "T",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "T"
+        },
+        {
+          "display": "no",
+          "value": "F"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--create.legend",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "random.seed",
+      "description": "Random seed",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "47365321",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--random.seed",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "Name of output files containing heatmap of SA matrices, summary of ES matrix, nominal p-values, and corrected p-values",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "SubMap",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/submap:0.1"
+}

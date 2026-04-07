@@ -1,0 +1,130 @@
+Create a comprehensive structured plan for the GenePattern module for 'STREAM.DetectTransitionGenes'.
+            
+            Tool Information:
+            - Name: STREAM.DetectTransitionGenes
+            - Version: inital revision
+            - Language: any
+            - Description: Detects the transition genes for each branch of a STREAM trajectory.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "STREAM.DetectTransitionGenes",
+  "parameters": [
+    {
+      "name": "data.file",
+      "type": "FILE",
+      "description": "A STREAM pkl file containing gene expression data",
+      "required": true,
+      "default_value": "",
+      "file_format": "pkl",
+      "num_values": "1..1"
+    },
+    {
+      "name": "figure.width",
+      "type": "TEXT",
+      "description": "figure width",
+      "required": false,
+      "default_value": "8",
+      "prefix": "-fig_width",
+      "num_values": "0..1"
+    },
+    {
+      "name": "use.precomputed",
+      "type": "TEXT",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "\\=Off;-flag_use_precomputed \\=Use precomputed gene list",
+      "num_values": "0..1"
+    },
+    {
+      "name": "figure.height",
+      "type": "TEXT",
+      "description": "figure height",
+      "required": false,
+      "default_value": "8",
+      "prefix": "-fig_height",
+      "num_values": "0..1"
+    },
+    {
+      "name": "output.filename",
+      "type": "TEXT",
+      "description": "output file name prefix",
+      "required": true,
+      "default_value": "<data.file_basename>",
+      "num_values": "1..1"
+    },
+    {
+      "name": "num.genes",
+      "type": "TEXT",
+      "description": "",
+      "required": true,
+      "default_value": "15",
+      "prefix": "-num_genes",
+      "num_values": "1..1"
+    },
+    {
+      "name": "root",
+      "type": "TEXT",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "prefix": "-root",
+      "num_values": "0..1"
+    },
+    {
+      "name": "preference",
+      "type": "TEXT",
+      "description": "comma delimited eg S3,S4",
+      "required": false,
+      "default_value": "",
+      "prefix": "-preference",
+      "num_values": "0..1"
+    },
+    {
+      "name": "percentile.expr",
+      "type": "TEXT",
+      "description": "",
+      "required": true,
+      "default_value": "95",
+      "prefix": "-percentile_expr",
+      "num_values": "1..1"
+    },
+    {
+      "name": "cutoff.spearman",
+      "type": "TEXT",
+      "description": "",
+      "required": true,
+      "default_value": "0.4",
+      "prefix": "-cutoff_spearman",
+      "num_values": "1..1"
+    },
+    {
+      "name": "cutoff.logfc",
+      "type": "TEXT",
+      "description": "",
+      "required": true,
+      "default_value": "0.25",
+      "prefix": "-cutoff_logfc",
+      "num_values": "1..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/stream_detecttransitiongenes\\:0.2",
+  "categories": "Single-Cell",
+  "task_type": "Single-cell",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "command_line": "python /stream/transition_command_line.py -m <data.file> -of <output.filename> <figure.width> <figure.height> <root> <preference>  <percentile.expr> <use.precomputed> <cutoff.spearman> <cutoff.logfc> <num.genes> -n_jobs <job.cpuCount>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

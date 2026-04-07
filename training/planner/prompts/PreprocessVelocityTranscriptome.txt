@@ -1,0 +1,457 @@
+Create a comprehensive structured plan for the GenePattern module for 'PreprocessVelocityTranscriptome'.
+            
+            Tool Information:
+            - Name: PreprocessVelocityTranscriptome
+            - Version: initial release
+            - Language: any
+            - Description: Extract transcript and intron sequences from the genome sequence using the eisaR package in order to quantify both intronic (unprocessed) and exonic (processed) RNA abundances in each cell with alevin.<br>A necessary preprocessing step to enable RNA velocity analysis.
+            
+            Research Results:
+            I now have all the information needed to compile the comprehensive final report. Let me present it:
+
+---
+
+# 🔬 Comprehensive Research Report: `PreprocessVelocityTranscriptome`
+### GenePattern Module Development — Full Technical Analysis
+
+---
+
+## 1. 📌 Tool Purpose and Scientific Applications
+
+### 1.1 Core Scientific Role
+
+`PreprocessVelocityTranscriptome` is the **critical first step** in an RNA velocity analysis pipeline. It automates the extraction of **spliced (exonic)** and **unspliced (intronic)** transcript reference sequences from a genome assembly and its annotation, producing the index files required by `alevin` (part of Salmon) to quantify both RNA species simultaneously from droplet-based single-cell RNA-seq data.
+
+### 1.2 The Biological Rationale: RNA Velocity
+
+**RNA Velocity** (La Manno et al., *Nature*, 2018; Bergen et al., *Nature Biotechnology*, 2020) predicts the **future transcriptional state of individual cells** by modeling the kinetic relationship between:
+
+| RNA Species | Biological Meaning | Sequencing Signal |
+|---|---|---|
+| **Unspliced / Intronic** | Nascent/pre-mRNA; newly transcribed | Reads in intron regions |
+| **Spliced / Exonic** | Mature processed mRNA | Reads in exon regions |
+
+The ratio of unspliced-to-spliced counts, modeled with degradation rate (γ), splicing rate (β), and transcription rate (α), forms a velocity vector that indicates whether a gene is being **upregulated (positive velocity)** or **downregulated (negative velocity)** in each cell.
+
+**From a quantification standpoint**, RNA velocity requires:
+1. A reference FASTA containing **both** spliced transcript sequences AND intronic sequences
+2. A **transcript-to-gene mapping** (t2g) that knows which features are spliced vs. unspliced
+3. A **Salmon index** built from this combined FASTA (optionally with a genome decoy)
+
+This module handles steps 1–3 before any read quantification occurs.
+
+### 1.3 The `eisaR` Core Engine
+
+The module wraps the **eisaR** (Exon-Intron Split Analysis in R) Bioconductor package, developed by **Charlotte Soneson** (Friedrich Miescher Institute / Biozentrum Basel), which is the methodologically validated gold-standard tool for this task. The package was validated in the landmark paper:
+
+> Soneson C, Srivastava A, Patro R, Stadler MB. **"Preprocessing choices affect RNA velocity results for droplet scRNA-seq data."** *PLOS Computational Biology*, 17(1): e1008585, 2021. DOI: [10.1371/journal.pcbi.1008585](https://doi.org/10.1371/journal.pcbi.1008585)
+
+---
+
+## 2. 📂 Input/Output Formats and Requirements
+
+### 2.1 Inputs
+
+| Parameter | Format | Description | Requirements |
+|---|---|---|---|
+| **Genome FASTA** | `.fa` / `.fasta` / `.fa.gz` | Primary assembly genome sequence | Must match the GTF assembly version (e.g., GRCh38) |
+| **Annotation GTF** | `.gtf` / `.gtf.gz` | Gene annotation with exon/intron coordinates | Compatible sources: GENCODE, Ensembl, RefSeq |
+
+**Important Compatibility Notes:**
+- The genome FASTA and GTF **must** be from the **same reference assembly version** (e.g., both GRCh38.p13)
+- Chromosome naming conventions must match (`chr1` vs `1`) — GENCODE uses `chr` prefix, Ensembl does not
+- **GENCODE** annotations are strongly recommended (have `--gencode` flag support in Salmon)
+- For decoy-aware indexing, the full primary assembly genome (not just chromosomes) should be provided
+
+**Common Reference Sources:**
+- Human (GRCh38): [GENCODE](https://www.gencodegenes.org/human/), [Ensembl](https://ftp.ensembl.org/pub/release-104/fasta/homo_sapiens/)
+- Mouse (GRCm38/mm10): [GENCODE](https://www.gencodegenes.org/mouse/), [Ensembl](https://ftp.ensembl.org/pub/release-104/fasta/mus_musculus/)
+
+### 2.2 Outputs
+
+| Output File | Format | Description | Downstream Use |
+|---|---|---|---|
+| `spliced_unspliced.fa` (or `splici.fa`) | FASTA | Combined spliced transcript + flanked intron sequences | `salmon index` input |
+| `t2g_3col.tsv` | TSV (3-column) | Transcript ID → Gene ID mapping with spliced/unspliced annotation | `alevin --tgMap` |
+| `t2g_spliced.tsv` | TSV (2-column) | Spliced-only transcript-to-gene mapping | Standard expression quantification reference |
+| `chrnames.txt` | TXT | Chromosome/contig name list | `salmon index -d` (decoy parameter) |
+| `salmon_index/` | Directory | Built Salmon index | `salmon alevin -i` |
+
+**t2g_3col.tsv Format (critical for downstream):**
+```
+ENST00000456328.2       ENSG00000223972.5       S
+ENST00000456328.2-I     ENSG00000223972.5       U
+ENST00000450305.2       ENSG00000223972.5       S
+ENST00000450305.2-I     ENSG00000223972.5       U
+...
+```
+*Columns: transcript_id, gene_id, S (spliced) or U (unspliced)*
+
+---
+
+## 3. 🔧 Parameter Analysis and Usage Patterns
+
+### 3.1 Core eisaR Parameters (via `getFeatureRanges()`)
+
+| Parameter | Type | Default | Biological Impact | Recommendation |
+|---|---|---|---|---|
+| `featureType` | `character[]` | `c("spliced","intron")` | Which RNA species to extract | Always include both "spliced" and "intron" for velocity |
+| `intronType` | `string` | `"separate"` | Per-transcript vs. per-gene intron definition | Use **`"separate"`** — more biologically precise |
+| `flankLength` | `integer` | `90L` | Flanking nt added to each intron end for exon-intron boundary reads | Set to **`read_length - 1`** (e.g., 90 for 10x v3 reads) |
+| `joinOverlappingIntrons` | `logical` | `FALSE` | Merges overlapping introns across different transcripts | Keep `FALSE` for per-transcript resolution |
+| `collapseIntronsByGene` | `logical` | `FALSE` | Single intron entry per gene | Keep `FALSE` unless memory is severely limited |
+| `verbose` | `logical` | `TRUE` | Progress reporting | Keep `TRUE` for GenePattern logging |
+
+### 3.2 Parameter Deep Dive: The Critical Parameters
+
+#### `intronType` — "separate" vs "collapse"
+
+```
+"separate" (RECOMMENDED):
+  - Extracts introns individually for each transcript
+  - Gene ENSG00000001 with 3 transcripts → 3 independent intron sets
+  - More specific; allows detection of transcript-specific splicing dynamics
+  - Produces more FASTA entries but better precision
+  - Validated as more accurate by Soneson et al. 2021
+
+"collapse":
+  - Merges/reduces introns across all transcripts per gene
+  - Less redundancy, smaller reference
+  - May miss transcript-isoform-specific splicing signals
+  - Use when: very large genomes, memory constraints
+```
+
+#### `flankLength` — The Boundary-Spanning Read Problem
+
+```
+WHY IT MATTERS:
+  Reads that span exon-intron junctions would NOT map to either:
+  - Pure exon sequences (spliced reference) → missed exonic read
+  - Pure intron sequences (intron reference) → missed intronic read
+  
+  Adding flanking sequence EXTENDS each intron by N nucleotides on both sides,
+  capturing reads that straddle the boundary.
+
+RECOMMENDED VALUE:
+  flankLength = read_length - 1
+  
+  For 10x Genomics v3 (98bp R2): flankLength = 97 ≈ 90L (typical value used)
+  For 10x Genomics v2 (98bp R2): flankLength = 90L
+  For older data (75bp reads): flankLength = 50L
+  
+  The Soneson et al. 2021 paper recommends:
+  flankLength such that (read_length - flankLength - 1) ≥ minimum_seed_length
+```
+
+### 3.3 Salmon Index-Building Parameters
+
+```bash
+# Full command used after eisaR extraction:
+salmon index \
+  -t spliced_unspliced.fa \            # Combined FASTA from eisaR
+  -i salmon_velocity_index \           # Output index directory
+  --gencode \                          # If using GENCODE annotation
+  -d chrnames.txt \                    # Genome decoy file (recommended)
+  -p 8                                 # Number of threads
+```
+
+### 3.4 Suggested GenePattern Module Parameters
+
+| GP Parameter Name | Type | Default | Choices / Range | Group |
+|---|---|---|---|---|
+| `genome.fasta` | File | — | `.fa`, `.fasta`, `.fa.gz` | **Required Inputs** |
+| `annotation.gtf` | File | — | `.gtf`, `.gtf.gz` | **Required Inputs** |
+| `intron.type` | String | `separate` | `separate`, `collapse` | **eisaR Parameters** |
+| `flank.length` | Integer | `90` | 1–200 | **eisaR Parameters** |
+| `join.overlapping.introns` | Boolean | `false` | `true`/`false` | **eisaR Parameters** |
+| `output.prefix` | String | `velocity_ref` | Any string | **Output Options** |
+| `build.salmon.index` | Boolean | `true` | `true`/`false` | **Output Options** |
+| `use.genome.decoy` | Boolean | `true` | `true`/`false` | **Salmon Index** |
+| `num.threads` | Integer | `4` | 1–64 | **Performance** |
+| `annotation.source` | String | `GENCODE` | `GENCODE`, `Ensembl`, `UCSC`, `Other` | **Annotation** |
+| `verbose` | Boolean | `true` | `true`/`false` | **Logging** |
+
+---
+
+## 4. ⚙️ Installation and Dependency Requirements
+
+### 4.1 Full Dependency Stack
+
+```
+TIER 1 - R Runtime:
+  ├── R >= 4.0.0
+  └── Bioconductor >= 3.12
+
+TIER 2 - Core R Packages (Bioconductor):
+  ├── eisaR (>= 1.2.0)
+  ├── GenomicFeatures
+  ├── BSgenome
+  ├── Biostrings
+  ├── GenomicRanges
+  ├── AnnotationDbi
+  ├── S4Vectors
+  └── BiocGenerics
+
+TIER 3 - System Tools:
+  └── Salmon (>= 1.5.0)  [for index building]
+      URL: https://github.com/COMBINE-lab/salmon
+
+TIER 4 - System Libraries:
+  ├── libcurl4-openssl-dev
+  ├── libssl-dev
+  ├── libxml2-dev
+  └── zlib1g-dev
+```
+
+### 4.2 Docker Container Recommendation
+
+For GenePattern deployment, a Docker container should be used:
+
+```dockerfile
+FROM bioconductor/bioconductor_docker:RELEASE_3_18
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libcurl4-openssl-dev libssl-dev libxml2-dev \
+    zlib1g-dev wget tar && rm -rf /var/lib/apt/lists/*
+
+# Install Salmon
+RUN wget https://github.com/COMBINE-lab/salmon/releases/download/v1.10.0/salmon-1.10.0_linux_x86_64.tar.gz \
+    && tar xzf salmon-*.tar.gz -C /usr/local/ --strip-components=1
+
+# Install R packages
+RUN Rscript -e "BiocManager::install(c('eisaR','GenomicFeatures','BSgenome','Biostrings'))"
+```
+
+### 4.3 Computational Resource Requirements
+
+| Resource | Minimum | Recommended | Notes |
+|---|---|---|---|
+| **RAM** | 8 GB | 32 GB | Human genome requires ~20 GB for BSgenome loading |
+| **CPU** | 2 cores | 8 cores | eisaR is single-threaded; Salmon index uses multiple cores |
+| **Storage** | 10 GB | 30 GB | Genome FASTA (~3 GB) + outputs (~10 GB) + index (~15 GB) |
+| **Time** | ~30 min | ~60 min | Depends on genome size and thread count |
+
+---
+
+## 5. 🔄 Common Workflows and Use Cases
+
+### 5.1 Complete RNA Velocity Pipeline Context
+
+```
+                    ┌─────────────────────────────────────┐
+                    │  PreprocessVelocityTranscriptome     │ ← THIS MODULE
+                    │                                      │
+ [Genome FASTA] ──► │  eisaR::getFeatureRanges()           │
+ [Annotation GTF]──► │  eisaR::exportToFile()               │ ──► [spliced_unspliced.fa]
+                    │  eisaR::getTx2Gene()                 │ ──► [t2g_3col.tsv]
+                    │  salmon index (optional)             │ ──► [salmon_index/]
+                    └─────────────────────────────────────┘
+                                      │
+                                      ▼
+                    ┌─────────────────────────────────────┐
+                    │  AlevinQuantify (next module)        │
+                    │                                      │
+ [scRNA-seq FASTQs]──►│  salmon alevin                       │ ──► [spliced counts]
+                    │    --tgMap t2g_3col.tsv              │ ──► [unspliced counts]
+                    │    --chromiumV3                      │
+                    └─────────────────────────────────────┘
+                                      │
+                                      ▼
+                    ┌─────────────────────────────────────┐
+                    │  scVeloAnalysis (downstream)         │
+                    │  adata.layers['spliced']             │ ──► [velocity vectors]
+                    │  adata.layers['unspliced']           │ ──► [trajectory plots]
+                    └─────────────────────────────────────┘
+```
+
+### 5.2 Typical Use Cases
+
+1. **10x Chromium v3 (most common):** Human PBMC or tumor single-cell data; use `flankLength=90`, `intronType="separate"`
+2. **10x Chromium v2:** Similar to v3 but older chemistry; same flank length recommended
+3. **Single-nucleus RNA-seq (snRNA-seq):** Pre-mRNA quantification especially important; nuclei contain primarily unspliced RNA
+4. **Developmental trajectory studies:** E.g., hematopoiesis, neurogenesis, embryogenesis where cellular state transitions are of interest
+5. **Non-human model organisms:** Mouse (mm10/GRCm38), zebrafish (GRCz11), *Drosophila* (dm6) — any organism with genome + GTF
+
+### 5.3 Full Reproducible Workflow Example
+
+```r
+# R Script: preprocess_velocity_transcriptome.R
+
+library(eisaR)
+library(Biostrings)
+
+# Parameters (injected by GenePattern)
+gtf_file       <- "Homo_sapiens.GRCh38.104.gtf"
+genome_fa      <- "GRCh38.primary_assembly.genome.fa"
+output_prefix  <- "velocity_ref"
+intron_type    <- "separate"
+flank_length   <- 90L
+join_overlapping <- FALSE
+
+# Step 1: Extract genomic feature ranges
+grl <- getFeatureRanges(
+  gtf            = gtf_file,
+  featureType    = c("spliced", "intron"),
+  intronType     = intron_type,
+  flankLength    = flank_length,
+  joinOverlappingIntrons = join_overlapping,
+  verbose        = TRUE
+)
+
+# Step 2: Load genome and export combined FASTA
+genome <- readDNAStringSet(genome_fa)
+names(genome) <- sapply(strsplit(names(genome), " "), `[`, 1)  # Normalize chr names
+exportToFile(grl, 
+             filepath = paste0(output_prefix, "_spliced_unspliced.fa"), 
+             genome = genome)
+
+# Step 3: Generate transcript-to-gene mapping (3-column)
+getTx2Gene(grl, filepath = paste0(output_prefix, "_t2g_3col.tsv"))
+
+# Step 4: Get chromosome names for decoy-aware Salmon index
+writeLines(names(genome), 
+           con = paste0(output_prefix, "_chrnames.txt"))
+
+cat("eisaR preprocessing complete.\n")
+cat("Output files:\n")
+cat(" - FASTA:", paste0(output_prefix, "_spliced_unspliced.fa"), "\n")
+cat(" - t2g:  ", paste0(output_prefix, "_t2g_3col.tsv"), "\n")
+```
+
+```bash
+# Build Salmon index (shell step after R script)
+salmon index \
+  -t velocity_ref_spliced_unspliced.fa \
+  -i velocity_salmon_index \
+  --gencode \
+  -d velocity_ref_chrnames.txt \
+  -p ${num_threads} \
+  2>&1 | tee salmon_index.log
+```
+
+---
+
+## 6. 🔗 Comparative Analysis: Similar Tools
+
+| Tool | Approach | Accuracy | Speed | Ease of Use | Actively Maintained | Recommended? |
+|---|---|---|---|---|---|---|
+| **eisaR (this module)** | R, genome + GTF | ✅ Highest | Moderate | Good | ✅ Yes (Bioconductor) | ✅ **YES** |
+| BUSpaRse `get_velocity_files` | R, kallisto-integrated | ⚠️ Strand bugs in v1.0 | Fast | Good | Partial | For kallisto only |
+| velocyto | Python, BAM-based | Good | Slow | Medium | Partially | Post-alignment only |
+| STARsolo `--soloFeatures Velocyto` | STAR-integrated | Good | Fast | Medium | ✅ Yes | Good alternative |
+| Alevin-fry / simpleaf | splici index, USA mode | ✅ High | ✅ Fastest | Medium | ✅ Active | Modern alternative |
+| kb-python (lamanno mode) | kallisto, pseudoalign | Good | Fast | Easy | ✅ Yes | For kallisto users |
+| CellRanger | 10x proprietary | Good | Fast | Easy | ✅ Commercial | Proprietary/costly |
+
+**Why eisaR is the correct choice for this GenePattern module:**
+- ✅ **Scientifically validated** — Soneson et al. 2021 demonstrated it produces correct sequences (unlike BUSpaRse v1.0 which had negative-strand bugs)
+- ✅ **Bioconductor ecosystem** — Stable, peer-reviewed, long-term maintained
+- ✅ **Flexible intron definitions** — Both `separate` and `collapse` modes
+- ✅ **alevin compatible** — Designed specifically for the Salmon/alevin velocity workflow
+- ✅ **Well-documented** — Comprehensive vignette, cited in >100 publications
+
+---
+
+## 7. 🧩 GenePattern Integration Considerations
+
+### 7.1 Module Architecture
+
+```
+PreprocessVelocityTranscriptome/
+├── manifest                    # GenePattern module manifest
+├── preprocess_velocity.R       # Core R script (eisaR wrapper)
+├── run_module.sh               # Shell wrapper + salmon index call
+├── Dockerfile                  # Container specification
+└── test_data/
+    ├── small_genome.fa         # Test genome (subset)
+    ├── small_annotation.gtf    # Test annotation (subset)
+    └── expected_outputs/       # For validation testing
+```
+
+### 7.2 Parameter Groups for GenePattern UI
+
+```
+GROUP 1: Required Input Files
+  - genome.fasta [File, required]
+  - annotation.gtf [File, required]
+
+GROUP 2: Intron Extraction Settings (eisaR)
+  - intron.type [dropdown: separate|collapse, default: separate]
+  - flank.length [integer, 1-200, default: 90]
+  - join.overlapping.introns [boolean, default: false]
+
+GROUP 3: Output Options  
+  - output.prefix [string, default: velocity_ref]
+  - build.salmon.index [boolean, default: true]
+  - use.genome.decoy [boolean, default: true]
+
+GROUP 4: Performance
+  - num.threads [integer, 1-64, default: 4]
+
+GROUP 5: Annotation Metadata
+  - annotation.source [dropdown: GENCODE|Ensembl|UCSC|Other, default: GENCODE]
+```
+
+### 7.3 Output Files for GenePattern Chaining
+
+The outputs of this module **must be exposed** for piping into downstream modules:
+
+| Output | GenePattern Output Name | Used By |
+|---|---|---|
+| `*_spliced_unspliced.fa` | `velocity.reference.fasta` | AlevinVelocity (index input) |
+| `*_t2g_3col.tsv` | `transcript.to.gene.map` | AlevinVelocity (`--tgMap`) |
+| `salmon_index/` | `salmon.index.directory` | AlevinVelocity (`-i`) |
+| `*_t2g_spliced.tsv` | `spliced.t2g.map` | Optional reference |
+| `*.log` | `preprocessing.log` | QC review |
+
+### 7.4 Known Limitations and Caveats
+
+1. **Memory constraint:** Loading full human genome into R via `readDNAStringSet()` requires ~20 GB RAM. Consider BSgenome packages as an alternative for common organisms.
+2. **Chromosome name matching:** Users must ensure chromosome names are consistent between genome FASTA and GTF (e.g., GENCODE uses `chr1`, Ensembl uses `1`). Automated detection and warning is recommended.
+3. **No genome FASTA compression support (direct):** `Biostrings::readDNAStringSet()` supports `.gz` but may be slow; recommend uncompressed for large genomes.
+4. **Salmon `--gencode` flag:** Must be set when using GENCODE annotations (handles version suffixes in gene IDs like `.5`); autodetect based on `annotation.source` parameter.
+5. **Run time:** This is a long-running job (30–90 minutes for human genome); GenePattern job timeout settings should be adjusted accordingly.
+6. **Reference genome size:** The module is NOT appropriate for metagenomics or very large polyploid genomes without modification.
+
+---
+
+## 8. 📚 Key Literature Citations
+
+| Reference | Relevance |
+|---|---|
+| La Manno G et al. (2018) *Nature* 560:494–498. DOI: 10.1038/s41586-018-0414-6 | Original RNA velocity concept |
+| Bergen V et al. (2020) *Nature Biotechnology* 38:1408–1414. DOI: 10.1038/s41587-020-0591-3 | scVelo generalized model |
+| **Soneson C et al. (2021) *PLOS Comput Biol* 17(1):e1008585. DOI: 10.1371/journal.pcbi.1008585** | **Direct validation of eisaR for velocity preprocessing** |
+| Srivastava A et al. (2019) *Genome Biology* 20:65. DOI: 10.1186/s13059-019-1670-y | Alevin single-cell quantification |
+| Gaidatzis D et al. (2015) *Nature Biotechnology* 33:722–729. DOI: 10.1038/nbt.3269 | Original EISA concept underlying eisaR |
+| He D et al. (2022) *Nature Methods* 19:316–322. DOI: 10.1038/s41592-022-01408-3 | Alevin-fry (modern successor) |
+
+---
+
+## 9. ✅ Summary Recommendations for GenePattern Module Development
+
+| Priority | Action Item |
+|---|---|
+| 🔴 **Critical** | Build Docker container with R 4.x + Bioconductor 3.18+ + eisaR + Salmon 1.10+ |
+| 🔴 **Critical** | Expose `intron.type` and `flank.length` as primary user-facing parameters |
+| 🔴 **Critical** | Output the `t2g_3col.tsv` and `salmon_index/` as named module outputs for pipeline chaining |
+| 🟡 **High** | Auto-detect GENCODE vs Ensembl annotation format and set `--gencode` flag accordingly |
+| 🟡 **High** | Validate chromosome name consistency between FASTA and GTF before running |
+| 🟡 **High** | Include warning when `flank.length` seems inconsistent with expected read lengths |
+| 🟢 **Medium** | Provide small test dataset (mouse chr19 subset) for fast validation testing |
+| 🟢 **Medium** | Document relationship to downstream `AlevinVelocity` / `QuantifyVelocity` module |
+| 🟢 **Medium** | Add parameter to optionally skip Salmon index build (output FASTA only) |
+| 🔵 **Low** | Support BSgenome packages as an alternative to genome FASTA for common organisms |
+| 🔵 **Low** | Consider adding support for the newer `Alevin-fry` (splici) mode as an alternative quantification pathway |
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

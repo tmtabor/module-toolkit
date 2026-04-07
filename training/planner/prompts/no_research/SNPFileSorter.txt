@@ -1,0 +1,48 @@
+Create a comprehensive structured plan for the GenePattern module for 'SNPFileSorter'.
+            
+            Tool Information:
+            - Name: SNPFileSorter
+            - Version: latest
+            - Language: Java
+            - Description: Sorts a .snp file by Chromosome and location
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "SNPFileSorter",
+  "parameters": [
+    {
+      "name": "snp.filename",
+      "type": "FILE",
+      "description": "snp file to sort",
+      "required": true,
+      "default_value": "",
+      "file_format": "snp"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "output file name",
+      "required": true,
+      "default_value": "<snp.filename_basename>.sorted.snp",
+      "file_format": "snp"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "SNP Analysis",
+  "author": "Jim Robinson, David Twomey",
+  "command_line": "<java> <java_flags>  -cp <libdir>snp.jar<path.separator><libdir>commons-math-1.1.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>log4j-1.2.13.jar  edu.mit.broad.cg.util.SnpDataSorter <snp.filename> <output.file>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,445 @@
+Create a comprehensive structured plan for the GenePattern module for 'AmpliconSuite'.
+            
+            Tool Information:
+            - Name: AmpliconSuite
+            - Version: Changed cnvkit-segmentation default to cbs and increased default job memory
+            - Language: any
+            - Description: A multithread-enabled quickstart tool for AmpliconArchitect. Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. PrepareAA supports hg19 (or GRCh37), hg38 as well as mouse genome mm10 (or GRCm38). PrepareAA can also be invoked to start at intermediate stages of the data preparation process.\n<br>\nAll credits go to: <a href="https://github.com/AmpliconSuite/AmpliconSuite-pipeline">https://github.com/AmpliconSuite/AmpliconSuite-pipeline</a> \n<br>\nView licenses here: <a href="https://github.com/genepattern/AmpliconSuite\#licenses">https://github.com/genepattern/AmpliconSuite\#licenses</a>\n<br/>\n<p>\nTo increase your GenePattern disk space quote so you can more easily upload the input bam files, <b><a href="https://forms.gle/23tkh98vwkhtCeKM7">click here to join the AmpliconSuiteUsers group on this server.</b> </a> </p>\n \nTo run multiple samples at once, simply drag and drop multiple samples into the input options. There is no need to check the "Batch" box. \n\n<br>\nCurrently using Amplicon Suite version 1.3.8.
+            
+            Research Results:
+            I now have all the data needed to compile a complete, detailed research report. Here is the comprehensive analysis:
+
+---
+
+# 🧬 Comprehensive Research Report: AmpliconSuite (GenePattern Module)
+
+---
+
+## 1. TOOL PURPOSE AND SCIENTIFIC APPLICATIONS
+
+### Overview
+AmpliconSuite is an **end-to-end bioinformatics pipeline** for the identification, structural analysis, and classification of **focal copy number amplifications** in cancer whole-genome sequencing (WGS) data. It serves as the authoritative wrapper for the AmpliconArchitect (AA) and AmpliconClassifier (AC) ecosystem, having previously been called **PrepareAA**.
+
+The GenePattern module (v1.3.8) wraps the AmpliconSuite-pipeline workflow, enabling cloud/web-based execution without local installation, which is especially valuable given the complex dependency chain of the underlying tools.
+
+### Core Scientific Problem Addressed
+Focal DNA amplifications — particularly **extrachromosomal DNA (ecDNA)** and **breakage-fusion-bridge (BFB) cycles** — are major oncogenic drivers in cancer. These structures:
+- Harbor and amplify oncogenes (e.g., *EGFR*, *MYC*, *ERBB2*, *CDK4*)
+- Confer high copy number and transcriptional heterogeneity
+- Correlate strongly with poor patient prognosis across multiple cancer types
+- Represent a mechanism of rapid oncogene amplification and drug resistance
+- Are present in ~14% of solid tumors (Kim et al., *Nature Genetics*, 2020)
+
+Traditional CNV callers and short-read aligners cannot reliably reconstruct these structures because they:
+1. Span complex, rearranged genomic intervals
+2. Are not linearly organized in the genome
+3. Require integrated SV + CNV analysis with graph-based decomposition
+
+### Biological Applications
+| Application | Description |
+|---|---|
+| **ecDNA Detection** | Identify extrachromosomal circular DNA carrying oncogenes |
+| **BFB Cycle Characterization** | Detect breakage-fusion-bridge amplification signatures |
+| **Amplicon Structure Reconstruction** | Reconstruct the breakpoint graph and cyclic/path decomposition of amplicons |
+| **Pan-Cancer Genomics** | Applied to thousands of tumor WGS samples |
+| **Drug Resistance Studies** | ecDNA amplifies drug target genes and enables rapid copy number shifts |
+| **Viral Oncogenesis** | Detects hybrid human-viral circular amplicons |
+| **Comparative Tumor Evolution** | Tracks ecDNA formation and evolution across progression |
+| **Mouse Cancer Models** | Supports mm10/GRCm38 for preclinical studies |
+
+### Validated Scientific Applications
+- **8,060 WGS cancer samples** analyzed in the pan-cancer ecDNA mapping study (*Nature Genetics*, 2024)
+- **2,525 tumor samples** from AmpliconRepository.org for proof-of-principle pan-cancer analysis (*Luebeck et al., bioRxiv 2024*)
+- Validated against **metaphase FISH** and **PacBio long-read sequencing** (*Deshpande et al., Nature Communications, 2019*)
+
+---
+
+## 2. INPUT/OUTPUT FORMATS AND REQUIREMENTS
+
+### Input Formats
+
+AmpliconSuite supports **three entry points**, making it flexible for different stages of data availability:
+
+#### Entry Point 1: Raw FASTQ Files (Full pipeline)
+```
+--input sample_R1.fastq.gz sample_R2.fastq.gz
+```
+- Paired-end Illumina WGS FASTQ files (gzipped or plain)
+- Pipeline performs: alignment (BWA MEM) → sorting/indexing (samtools) → CNV calling (CNVkit) → seed filtering → AA → AC
+
+#### Entry Point 2: Pre-Aligned BAM/CRAM File (Skip alignment)
+```
+--input sample.sorted.bam
+```
+- Coordinate-sorted, indexed BAM or CRAM file
+- Must be paired-end WGS data
+- CRAM files require the matching reference genome in place
+- Recommended minimum: 10× coverage; ≥30× for detecting low-copy ecDNA
+
+#### Entry Point 3: Pre-Called CNV BED + BAM (Skip alignment + CNV calling)
+```
+--input sample.bam [with --cnv_bed provided separately]
+```
+- BAM file + external CNV calls in BED format (or CNVkit `.cns` file)
+- Enables use of custom or superior CNV callers
+
+#### Entry Point 4: Completed AA Run (Reclassification only)
+```
+--input directory_of_AA_runs/   [or .tar.gz / .zip archive]
+```
+- All AA result files must be from the same reference genome
+- Enables reclassification without rerunning the full pipeline
+
+### Reference Genomes Supported
+| Identifier | Chromosome Naming | Notes |
+|---|---|---|
+| `hg19` | chr1, chr2, ... chrM | Human, UCSC-style |
+| `GRCh37` | 1, 2, ... MT | Human, Ensembl-style |
+| `GRCh38` / `hg38` | chr1, chr2, ... chrM | Human, UCSC-style |
+| `GRCh38_viral` | chr1 + viral contigs | Human + viral genomes |
+| `mm10` / `GRCm38` | chr1, chr2, ... | Mouse |
+
+Reference data repos are hosted at:
+`https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/`
+
+### Output Files
+
+#### From AmpliconArchitect (per amplicon per sample):
+| File | Format | Description |
+|---|---|---|
+| `{sample}_amplicon{N}_cycles.txt` | Custom text | Genome paths and cyclic decompositions of the breakpoint graph (0-based, fully closed) |
+| `{sample}_amplicon{N}_graph.txt` | Custom text | Breakpoint graph with segment copy numbers and SV edges |
+| `{sample}_CN_SEEDS.bed` | BED | Filtered CNV seed regions passed to AA |
+| `{sample}_AA_results/` | Directory | All per-amplicon outputs bundled |
+
+#### From AmpliconClassifier:
+| File | Format | Description |
+|---|---|---|
+| `{sample}_amplicon_classification_profiles.tsv` | TSV | Per-amplicon classification (ecDNA/BFB/complex/linear), size, CN, complexity score, borderline flags |
+| `{sample}_gene_list.tsv` | TSV | Genes captured within each focal amplification |
+| `{sample}_summary_map.txt` | Text | Sample-level summary of amplicon classes |
+| Annotated cycles files | Text | Cycles files with ecDNA status annotations |
+| BED files | BED | Genomic intervals predicted to be on ecDNA |
+
+#### Pipeline-level outputs:
+| File | Description |
+|---|---|
+| `{sample}_CNV_SEEDS.bed` | Final seed BED file used as AA input |
+| `{sample}.cns` | CNVkit segment file |
+| `{sample}.cnr` | CNVkit per-bin coverage ratios |
+| Sorted/indexed BAM | If alignment was performed from FASTQ |
+| Log files | Per-step execution logs |
+
+### Coordinate System Note
+⚠️ **Important**: AmpliconArchitect uses a **0-based, fully closed** coordinate system (both start and end are included), which differs from standard BED format (0-based, half-open). AmpliconClassifier output uses 0-based half-open to be consistent with BED conventions — this difference must be accounted for in downstream processing.
+
+---
+
+## 3. PARAMETER ANALYSIS AND USAGE PATTERNS
+
+### GenePattern Module Parameters (`run_aa.py`)
+
+#### Required Parameters
+| Parameter | Type | Choices/Range | Description |
+|---|---|---|---|
+| `--input` | File/Path | BAM, FASTQ pair, or AA run dir | Primary input (supports multiple samples via drag-and-drop) |
+| `--n_threads` | Integer | ≥1 | Number of CPU threads for parallel steps |
+| `--reference` | String | `hg19`, `GRCh37`, `GRCh38`, `hg38`, `mm10`, `GRCm38` | Reference genome version (auto-detected for BAM inputs) |
+| `--file_prefix` | String | Any valid string | Output file prefix / sample name |
+| `--RUN_AA` | String | `Yes`, `No` | Whether to execute AmpliconArchitect after preparation |
+| `--RUN_AC` | String | `Yes`, `No` | Whether to execute AmpliconClassifier after AA (requires `--RUN_AA Yes`) |
+
+#### Optional Parameters
+| Parameter | Type | Default | Description | Biological Significance |
+|---|---|---|---|---|
+| `--ploidy` | Float | None | Genome ploidy estimate | Corrects CNV calls in polyploid/aneuploid tumors |
+| `--purity` | Float (0–1) | None | Tumor cell fraction estimate | Rescales copy numbers; low purity → many false seeds; increase `--cngain` for low-purity samples |
+| `--cnvkit_segmentation` | String | `cbs` | CNVkit segmentation algorithm | **CBS** (Circular Binary Segmentation) is most robust for WGS; `hmm-tumor` for heavily rearranged genomes |
+| `--cngain` | Float | 4.5 | Minimum CN gain to call seed region | Lower = more seeds (more sensitivity, more noise); higher = fewer, higher-confidence seeds |
+| `--cnsize_min` | Integer | 50,000 | Minimum CNV size (bp) for seed | Filters small spurious CNV calls |
+| `--normal_bam` | File | None | Matched normal BAM for tumor-normal CNV analysis | Substantially improves specificity by removing germline CNVs |
+| `--no_filter` | Flag | False | Skip `amplified_intervals.py` seed filtering | Use only when providing highly curated seed BED |
+| `--no_QC` | Flag | False | Skip QC checks | Not recommended for standard analyses |
+| `--downsample` | Float | 10 | Coverage target for downsampling | 10× is recommended default; ≥30× for complex/low-copy ecDNA |
+| `--sv_vcf` | File | None | External SV calls (VCF) to augment AA | Integrates SVs from specialized callers (e.g., Manta, DELLY) |
+| `--AA_runmode` | String | `default` | `default`, `allcycles`, `balanced` | Controls AA decomposition stringency |
+| `--pair_support_min` | Integer | 2 | Min read pairs supporting an SV | Increase for high-coverage data; decrease for ultra-low coverage |
+| `--completed_AA_runs` | Path | None | Directory of completed AA results | For reclassification without re-running |
+
+### CNVkit Segmentation Method Details
+| Method | Description | Best For |
+|---|---|---|
+| `cbs` (**default**) | Circular Binary Segmentation (R/bioconductor) | Standard WGS tumor samples |
+| `haar` | Wavelet-based (HaarSeg) | Smooth CN profiles, lower noise samples |
+| `hmm` | Hidden Markov Model (generic) | General use |
+| `hmm-tumor` | HMM tuned for tumor data | High-purity, complex rearrangements |
+| `hmm-germline` | HMM tuned for germline | Germline CNV calling |
+| `none` | No segmentation | When using pre-called CNVs |
+
+### Parameter Relationships and Usage Patterns
+```
+# Pattern 1: Standard tumor WGS from BAM
+--input tumor.bam --reference GRCh38 --file_prefix sample1
+--n_threads 8 --RUN_AA Yes --RUN_AC Yes
+
+# Pattern 2: With tumor purity correction (low purity sample)
+--input tumor.bam --reference GRCh38 --purity 0.35 --ploidy 3
+--cngain 8 --cnvkit_segmentation hmm-tumor --RUN_AA Yes --RUN_AC Yes
+
+# Pattern 3: Tumor-normal paired analysis
+--input tumor.bam --normal_bam normal.bam --reference hg19
+--cnvkit_segmentation cbs --RUN_AA Yes --RUN_AC Yes
+
+# Pattern 4: From FASTQ (full pipeline)
+--input R1.fastq.gz R2.fastq.gz --reference GRCh38
+--n_threads 16 --RUN_AA Yes --RUN_AC Yes
+
+# Pattern 5: Reclassification only
+--input completed_AA_runs/ --reference GRCh38 --RUN_AA No --RUN_AC Yes
+```
+
+---
+
+## 4. INSTALLATION AND DEPENDENCY REQUIREMENTS
+
+### Core Dependencies
+| Dependency | Role | License | Notes |
+|---|---|---|---|
+| **AmpliconArchitect** | Structural amplicon analysis | UC San Diego (research only, non-commercial) | Core engine; NOT licensed for commercial use |
+| **AmpliconClassifier** | Focal amplification classification | BSD 2-Clause | Classifies AA outputs |
+| **AmpliconSuite-pipeline** | Workflow orchestration | BSD 2-Clause | Formerly PrepareAA |
+| **BWA MEM** | Short-read alignment | GPL v3 | Aligns FASTQ to reference |
+| **samtools** | BAM manipulation | MIT/BSD | Sorting, indexing, stats |
+| **CNVkit** | Copy number calling | Apache 2.0 | Requires **Python 3** |
+| **Mosek** | Linear programming solver for AA | Proprietary (free academic) | ⚠️ **License must be renewed ANNUALLY** and embedded in Docker image |
+| **Python 2/3** | Scripting | PSF | CNVkit requires Python 3 |
+| **R** | CNVkit CBS segmentation | GPL | Required for `cbs` method |
+
+### GenePattern Docker Container
+```
+Docker image: genepattern/amplicon-architect:<version_tag>
+Wrapper script: run_aa.py
+```
+
+### ⚠️ Critical Licensing Constraint
+The **Mosek license** is:
+- Required by AmpliconArchitect for LP-based structural decomposition
+- **Free for academic/research use** — must be obtained from mosek.com
+- Must be **renewed every year**
+- Must be **baked directly into the Docker image** for the GenePattern deployment
+- This is the primary maintenance burden for the GenePattern module operator
+
+### Installation Methods (non-GenePattern)
+1. **Docker** (recommended): `docker pull jluebeck/ampliconsuite-pipeline`
+2. **Singularity/Apptainer**: For HPC environments without Docker
+3. **Conda/Bioconda**: `conda install -c bioconda ampliconsuite-pipeline`
+4. **Nextflow (nf-core/circdna)**: Integrates AmpliconArchitect as a module
+5. **Manual source installation**: Ubuntu 16.04+ or CentOS 7
+
+### Reference Data Setup
+```bash
+# Data repository available at:
+https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/
+# Download specific genome:
+wget [url]/GRCh38.tar.gz && tar -xzf GRCh38.tar.gz
+export AA_DATA_REPO=$PWD
+```
+
+### System Requirements
+| Resource | Minimum | Recommended |
+|---|---|---|
+| **CPU Threads** | 4 | 8–16 |
+| **RAM** | 16 GB | 32–64 GB (BAM sorting/indexing intensive) |
+| **Storage** | 100 GB | 500+ GB (BAM files + reference data) |
+| **OS** | Ubuntu 16.04+ / CentOS 7 | Ubuntu 20.04+ |
+| **Python** | 2.7 or 3.x | 3.8+ |
+
+> 📝 **GenePattern-specific note**: The module description explicitly mentions the need to request increased disk quota by joining the `AmpliconSuiteUsers` group on the GenePattern server via Google Form, due to the large size of WGS BAM files.
+
+---
+
+## 5. COMMON WORKFLOWS AND USE CASES
+
+### Workflow 1: Standard Cancer WGS Analysis (Most Common)
+```
+Input: Sorted tumor BAM (30× WGS)
+  → CNVkit (cbs segmentation, default parameters)
+  → amplified_intervals.py (seed filtering, CN≥4.5, size≥50kb)
+  → AmpliconArchitect (SV + CN joint analysis, breakpoint graph)
+  → AmpliconClassifier (ecDNA/BFB/complex/linear classification)
+Output: Amplicon structures + classification profiles + gene lists
+```
+
+### Workflow 2: Matched Tumor-Normal
+```
+Input: Tumor BAM + matched normal BAM
+  → CNVkit tumor-normal paired calling (removes germline CNVs)
+  → Seed filtering → AA → AC
+Advantage: Substantially reduced false positives from germline CNVs
+```
+
+### Workflow 3: Low-Purity Tumor
+```
+Input: BAM with estimated purity ~0.3
+  → Set --purity 0.3 --ploidy 3 --cngain 8
+  → CNVkit rescales CN profile accounting for normal cell contamination
+  → Higher cngain threshold prevents false seed explosion
+```
+
+### Workflow 4: Multi-Sample Batch (GenePattern-specific)
+```
+Input: Multiple BAM files dragged into input field
+  → Each processed independently using GroupedAnalysisAmpSuite.py
+  → No "Batch" checkbox needed
+Output: Per-sample result archives
+```
+
+### Workflow 5: Reclassification of Existing Results
+```
+Input: Directory of previously completed AA runs
+  → Only AmpliconClassifier invoked (--RUN_AA No --RUN_AC Yes)
+  → No alignment or CNV calling performed
+Use case: Apply updated AC classification model to legacy data
+```
+
+### Workflow 6: Augmented with External SVs
+```
+Input: BAM + VCF from Manta/DELLY/GRIDSS
+  → --sv_vcf provides additional SV breakpoints to AA
+  → Improves detection of complex rearrangements
+```
+
+### Best Practice Recommendations
+| Scenario | Recommendation |
+|---|---|
+| Standard analysis | 10× downsampling, cbs segmentation, default cngain (4.5) |
+| Suspected low-copy ecDNA | ≥30× coverage, decrease `--pair_support_min` |
+| Low purity sample | Set `--purity`, increase `--cngain` (e.g., 8) |
+| High-complexity genome | Use `--cnvkit_segmentation hmm-tumor` |
+| Verification | Combine with metaphase FISH for cytogenetic validation |
+| Pan-cancer studies | Upload results to AmpliconRepository.org for community sharing |
+
+---
+
+## 6. INTEGRATION CONSIDERATIONS FOR GENEPATTERN
+
+### Module Architecture
+```
+GenePattern Module: AmpliconSuite
+  ├── Docker: genepattern/amplicon-architect:<tag>
+  ├── Wrapper: run_aa.py
+  ├── Backend: AmpliconSuite-pipeline.py
+  └── Components: BWA MEM, samtools, CNVkit, AA, AC, Mosek
+```
+
+### GenePattern Parameter Mapping
+
+| GenePattern UI Parameter | `run_aa.py` Flag | Type | Required | Default |
+|---|---|---|---|---|
+| Input File(s) | `--input` | File (multi-value) | ✅ Yes | — |
+| Number of Threads | `--n_threads` | Integer | ✅ Yes | 8 |
+| Reference Genome | `--reference` | Drop-down | ✅ Yes | GRCh38 |
+| Output File Prefix | `--file_prefix` | String | ✅ Yes | — |
+| Run AmpliconArchitect | `--RUN_AA` | Drop-down (Yes/No) | ✅ Yes | Yes |
+| Run AmpliconClassifier | `--RUN_AC` | Drop-down (Yes/No) | ✅ Yes | Yes |
+| Tumor Ploidy | `--ploidy` | Float | ❌ No | — |
+| Tumor Purity | `--purity` | Float (0–1) | ❌ No | — |
+| CNVkit Segmentation Method | `--cnvkit_segmentation` | Drop-down | ❌ No | `cbs` |
+
+### Multi-Sample Support
+- Users can drag and drop **multiple BAM/FASTQ inputs** directly
+- No "Batch" checkbox is required — the module handles multi-sample internally
+- Internally uses `GroupedAnalysisAmpSuite.py` for batch coordination
+
+### Disk Space Management
+- WGS BAM files are very large (30–100 GB per sample)
+- Users must join the `AmpliconSuiteUsers` Google Group to receive an increased GenePattern disk quota
+- This is a hard operational requirement documented in the module description
+
+### Critical Maintenance Items
+1. **Mosek License Renewal**: Annual renewal required; must be re-embedded in Docker image each year — this is the #1 maintenance burden
+2. **Docker Image Rebuilds**: Each new version of AmpliconSuite-pipeline or license renewal requires image rebuild, tag, and push to `genepattern/amplicon-architect`
+3. **Reference Data Currency**: `AA_DATA_REPO` reference files must be kept current with reference genome releases
+4. **Memory Configuration**: The version note states "increased default job memory" — job memory configuration in GenePattern must be adequate for BWA MEM alignment of 30× WGS BAMs
+
+### Licensing Summary for GenePattern Compliance
+| Component | License | Commercial Use? |
+|---|---|---|
+| AmpliconSuite-pipeline | BSD 2-Clause | ✅ Yes |
+| AmpliconArchitect | UC San Diego custom | ❌ **Research only** |
+| AmpliconClassifier | BSD 2-Clause | ✅ Yes |
+| BWA MEM | GPL v3 | ✅ Yes |
+| samtools | MIT/BSD | ✅ Yes |
+| CNVkit | Apache 2.0 | ✅ Yes |
+| Mosek | Proprietary (free academic) | ❌ Academic only (requires license) |
+
+> ⚠️ **The GenePattern AmpliconSuite module is restricted to academic/research use** due to the AmpliconArchitect and Mosek licensing terms.
+
+---
+
+## 7. COMPARATIVE POSITIONING
+
+| Tool | Approach | ecDNA Structure | WGS Required | Graph Decomposition | Amplicon Classes |
+|---|---|---|---|---|---|
+| **AmpliconSuite** | SV+CNV joint, breakpoint graph | ✅ Full reconstruction | ✅ Yes | ✅ Yes | ecDNA, BFB, Complex, Linear |
+| Circle-Map | Read-depth + SA reads | ❌ Locus only | ✅ Yes | ❌ No | ecDNA only |
+| ECdetect | Read-depth statistics | ❌ Locus only | ✅ Yes | ❌ No | ecDNA only |
+| CReSIL | Long-read assembly | ✅ Sequence-level | Long reads | ❌ N/A | ecDNA only |
+| nf-core/circdna | Nextflow meta-pipeline | Integrates AA | Multi-modal | Via AA | Via AA/AC |
+| GISTIC2 | Statistical CNV | ❌ No structure | ✅ Yes | ❌ No | Amplification regions only |
+
+**AmpliconSuite's unique differentiators**:
+1. **Only tool** that reconstructs the full **breakpoint graph and cyclic decomposition** of focal amplicons
+2. **Multi-class classification** (not just ecDNA — also BFB, complex-non-cyclic, linear)
+3. **End-to-end pipeline** from raw FASTQ to classified amplicons
+4. **Mature validation** across thousands of cancer samples in top-tier journals
+5. **Community ecosystem** via AmpliconRepository.org for data sharing
+
+---
+
+## 8. KEY REFERENCES
+
+1. **Luebeck J. et al.** (2024). "AmpliconSuite: an end-to-end workflow for analyzing focal amplifications in cancer genomes." *bioRxiv* 2024.05.06.592768. DOI: 10.1101/2024.05.06.592768. Also published in *Methods in Molecular Biology* (ScienceDirect S221077622400053X).
+
+2. **Kim H. et al.** (2020). "Extrachromosomal DNA is associated with oncogene amplification and poor outcome across multiple cancers." *Nature Genetics* 52, 891–897.
+
+3. **Deshpande V. et al.** (2019). "Exploring the landscape of focal amplifications in cancer using AmpliconArchitect." *Nature Communications* 10, 392.
+
+4. **Pan-Cancer ecDNA Mapping** (2024). "Mapping extrachromosomal DNA amplifications during cancer progression." *Nature Genetics*. (Used AmpliconSuite-pipeline v0.1344.2 on 8,060 WGS samples.)
+
+5. **AmpliconSuite GitHub Organization**: https://github.com/AmpliconSuite
+
+6. **GenePattern AmpliconSuite Repository**: https://github.com/genepattern/AmpliconSuite
+
+7. **AmpliconRepository (community data portal)**: https://AmpliconRepository.org
+
+---
+
+## 9. SUMMARY TABLE FOR GENEPATTERN MODULE DEVELOPMENT
+
+| Attribute | Value |
+|---|---|
+| **Current Version** | 1.3.8 (GenePattern module) |
+| **Key Version Change** | CBS segmentation now default; increased default job memory |
+| **Primary Input** | Paired-end WGS BAM (or FASTQ pair) |
+| **Supported Genomes** | hg19, GRCh37, GRCh38/hg38, mm10/GRCm38 |
+| **Primary Outputs** | Amplicon cycles/graph files, classification TSV, gene lists |
+| **Critical Dependencies** | Mosek (annual renewal), AmpliconArchitect (non-commercial) |
+| **Compute Profile** | 8–16 CPU threads, 32–64 GB RAM, 100–500 GB storage |
+| **Multi-sample Support** | Yes (drag-and-drop, no Batch checkbox needed) |
+| **Docker Image** | `genepattern/amplicon-architect:<tag>` |
+| **License Restriction** | Academic/research use only (AA + Mosek constraints) |
+| **Scientific Validation** | 8,000+ cancer WGS samples; Nature Genetics, Nat Comms |
+| **Unique Capability** | Breakpoint graph decomposition + multi-class amplification typing |
+| **Top Maintenance Risk** | Annual Mosek license renewal baked into Docker |
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,726 @@
+Create a comprehensive structured plan for the GenePattern module for 'Convert.Alevin'.
+            
+            Tool Information:
+            - Name: Convert.Alevin
+            - Version: Initial Release
+            - Language: any
+            - Description: Read alevin output files and convert them to anndata (.h5ad) or loom (.loom) format for downstream analysis. Designed to convert Alevin Velocity quantification into a compatible format for scVelo.
+            
+            Research Results:
+            Now I have all the research needed to produce a fully comprehensive, PhD-level structured report. Let me compile everything together.
+
+---
+
+# 🔬 Comprehensive Research Report: Convert.Alevin
+### GenePattern Module Development Reference
+**Version:** Initial Release (v1) | **Platform:** GenePattern | **Last Researched:** 2025
+
+---
+
+## 📋 Table of Contents
+1. [Tool Overview & Scientific Context](#1-tool-overview)
+2. [Biological Background & Rationale](#2-biological-background)
+3. [Input/Output Formats & Specifications](#3-io-formats)
+4. [Technical Architecture & Processing Logic](#4-technical-architecture)
+5. [Parameter Analysis & Catalog](#5-parameter-analysis)
+6. [Dependencies & System Requirements](#6-dependencies)
+7. [Workflow Integration & Use Cases](#7-workflow-integration)
+8. [Comparative Analysis](#8-comparative-analysis)
+9. [Known Issues & Limitations](#9-limitations)
+10. [GenePattern Module Specifications](#10-genepattern-specs)
+11. [Literature & Citations](#11-literature)
+
+---
+
+## 1. Tool Overview & Scientific Context
+
+### Identity
+| Attribute | Value |
+|-----------|-------|
+| **Full Name** | Convert.Alevin |
+| **Version** | Initial Release (v1) |
+| **Repository** | `https://github.com/genepattern/Convert.Alevin/tree/v1` |
+| **Script Source** | `https://github.com/ACastanza/Convert.alevin/blob/main/src/alevin.vpolo.py` |
+| **Docker Image** | `acastanza/convert_alevin` (hub.docker.com, Debian-based) |
+| **Author** | Anthony S. Castanza, Mesirov Lab, UCSD School of Medicine |
+| **Script Name** | `alevin.vpolo.py` |
+| **Implementation Language** | Python 3.8+ |
+| **Module Type** | Data format conversion / preprocessing |
+
+### Core Purpose
+Convert.Alevin is a **data format conversion module** that bridges two major computational ecosystems in single-cell RNA-seq (scRNA-seq) analysis:
+
+1. **Salmon/Alevin** – a fast, alignment-free, UMI-aware quantification tool that produces binary output files
+2. **scVelo/scanpy/AnnData** – the Python-based single-cell analysis ecosystem requiring HDF5-based `.h5ad` or `.loom` files
+
+Specifically, the module is designed to convert **Alevin Velocity quantification output** — which simultaneously quantifies both spliced (exonic) and unspliced (intronic) RNA — into an `AnnData` object (`H5AD` or `Loom` format) that `scVelo` can directly consume for **RNA velocity analysis**.
+
+### Position in GenePattern Ecosystem
+```
+[Salmon.Alevin.Quant]  →  [Convert.Alevin]  →  [scVelo (GenePattern)]
+     (Step 1)               (Step 2 ← THIS)          (Step 3)
+  Quantification            Format Bridge            Velocity Analysis
+```
+
+---
+
+## 2. Biological Background & Rationale
+
+### RNA Velocity — The Scientific Motivation
+
+**RNA velocity** (La Manno et al., *Nature*, 2018) is a computational method for inferring the **future transcriptional state** of individual cells from a snapshot scRNA-seq experiment. It is based on the fundamental principle of mRNA biogenesis:
+
+```
+Gene → pre-mRNA (unspliced/intronic) → mRNA (spliced/exonic) → degraded
+           ↑ transcription rate (β)        ↑ splicing rate (α)    ↑ degradation (γ)
+```
+
+By measuring the **ratio of unspliced (pre-mRNA) to spliced (mature mRNA)** abundance per gene per cell, the velocity field can be computed, revealing:
+- Cell state transitions and differentiation trajectories
+- Fate decisions in progenitor populations
+- Transcriptional dynamics invisible to static snapshots
+
+**scVelo** (Bergen et al., *Nature Biotechnology*, 2020) generalizes this concept through dynamical modeling, solving the full transcriptional kinetic equations rather than assuming steady-state.
+
+### Why Alevin for Velocity?
+
+Traditional velocity pipelines used **velocyto** (which requires genome-aligned BAM files, slow) or **kallisto|bustools** (pseudoalignment-based). Alevin provides a compelling alternative because:
+
+- **Alignment-free speed**: Uses selective alignment, far faster than STAR/velocyto
+- **Multi-mapper handling**: Includes multi-mapping reads, increasing sensitivity for genes with low unique k-mer fractions (Soneson et al., 2021)
+- **Joint quantification**: Simultaneously quantifies spliced and unspliced features using an expanded **splici (spliced + intronic) transcriptome reference** prepared by `eisaR`
+- **UMI deduplication**: Handles UMI-based deduplication natively for droplet protocols (10x, Drop-seq, inDrop)
+- **Cell barcode correction**: Built-in barcode whitelisting and error correction
+
+### The Format Problem Convert.Alevin Solves
+
+Alevin stores its count matrices in a **proprietary binary format** (`quants_mat.gz`) that is not directly readable by Python's AnnData/scVelo ecosystem. Furthermore, the velocity-mode output encodes spliced and unspliced counts for the **same gene in a single combined matrix** using gene name suffixes (`-S` for spliced, `-U` for unspliced), which must be separated into distinct AnnData **layers** for scVelo.
+
+---
+
+## 3. Input/Output Formats & Specifications
+
+### 3.1 Input Formats
+
+#### Primary Input: Alevin Output Archive (`.tar.gz`)
+The module accepts the complete Alevin output directory compressed as a `.tar.gz` archive. The archive must contain the following directory structure:
+
+```
+<run_name>/
+├── alevin/
+│   ├── quants_mat.gz          ← REQUIRED: Binary count matrix (cells × genes)
+│   ├── quants_mat_cols.txt    ← REQUIRED: Gene identifiers (column names)
+│   ├── quants_mat_rows.txt    ← REQUIRED: Cell barcodes (row names)  
+│   ├── whitelist.txt          ← RECOMMENDED: High-confidence cell barcodes
+│   ├── featureDump.txt        ← Optional: Feature-level statistics
+│   ├── filtered_cb_frequency.txt  ← Optional: Filtered barcode frequencies
+│   ├── MappedUmi.txt          ← Optional: Mapped UMI counts
+│   └── raw_cb_frequency.txt   ← Optional: Raw barcode frequencies
+├── aux_info/
+│   └── meta_info.json         ← Run metadata (mapping rate, num cells)
+└── cmd_info.json              ← Command-line parameters used
+```
+
+#### Binary Format Details (`quants_mat.gz`)
+The `quants_mat.gz` file is **NOT** a standard gzip-compressed text file — it is a **custom binary format** developed by the Alevin/Salmon team. Key characteristics:
+- Cells × Genes matrix stored in row-major binary encoding
+- Contains **both** spliced (`-S`) and unspliced (`-U`) gene columns in velocity mode
+- Must be parsed using the `vpolo` library (`vpolo.alevin.parser.read_quants_bin()`)
+- Can alternatively be output as `.mtx` (Matrix Market Exchange) format using `--dumpMtx` flag during quantification, but the binary format is default
+
+#### Gene Naming Convention (Velocity Mode)
+When Alevin is run on a **splici (spliced + intronic) expanded reference** prepared by `eisaR`:
+```
+Gene column layout in quants_mat.gz (velocity mode):
+  ENSG00000001234-S  →  Spliced count for gene ENSG00000001234
+  ENSG00000001234-U  →  Unspliced count for gene ENSG00000001234
+  ... (all genes appear twice, once with -S and once with -U suffix)
+```
+
+#### Multi-Sample Input: Text File (`.txt`)
+For batch processing, the input can be a plain text file containing **newline-delimited paths** to multiple `.tar.gz` Alevin output archives:
+```
+/path/to/sample1_alevin_output.tar.gz
+/path/to/sample2_alevin_output.tar.gz
+/path/to/sample3_alevin_output.tar.gz
+```
+
+---
+
+### 3.2 Output Formats
+
+#### Primary Output: AnnData H5AD (`.h5ad`) ⭐ RECOMMENDED
+The **preferred output format** for scVelo compatibility. HDF5-based file storing the complete AnnData object:
+
+```python
+# Structure of the output AnnData object:
+AnnData object with n_obs × n_vars = [n_cells] × [n_genes]
+
+adata.X                    # Spliced count matrix (cells × genes), scipy sparse CSR
+adata.layers['spliced']    # Spliced (exonic) count matrix — REQUIRED by scVelo
+adata.layers['unspliced']  # Unspliced (intronic) count matrix — REQUIRED by scVelo
+adata.obs                  # Cell barcode DataFrame (index = barcode strings)
+adata.var                  # Gene name DataFrame (index = gene IDs without -S/-U suffix)
+adata.obsm['X_pca']        # PCA embeddings (if provided, optional)
+adata.obsm['X_tsne']       # tSNE embeddings (if provided, optional)
+```
+
+| AnnData Component | Content | scVelo Usage |
+|------------------|---------|-------------|
+| `adata.X` | Spliced count matrix | Base expression matrix |
+| `adata.layers['spliced']` | Exonic/mature mRNA counts | **Required** for velocity estimation |
+| `adata.layers['unspliced']` | Intronic/pre-mRNA counts | **Required** for velocity estimation |
+| `adata.obs` | Cell barcode index | Cell identity |
+| `adata.var` | Gene name index | Gene identity |
+| `adata.obsm['X_pca']` | PCA coordinates | Optional dimension reduction |
+| `adata.obsm['X_tsne']` | tSNE coordinates | Optional visualization embedding |
+
+#### Alternative Output: Loom (`.loom`)
+HDF5-based columnar format compatible with both scVelo and velocyto:
+```
+.loom file structure:
+  /matrix          # Main count matrix
+  /layers/spliced  # Spliced layer
+  /layers/unspliced # Unspliced layer
+  /row_attrs/CellID  # Cell barcodes
+  /col_attrs/Gene    # Gene names
+```
+
+| Feature | H5AD | Loom |
+|---------|------|------|
+| scVelo compatibility | ✅ Native | ✅ Via `scv.read()` |
+| Metadata richness | ✅ Full AnnData | ⚠️ Limited |
+| File size | Similar | Similar |
+| Python ecosystem | ✅ Standard | ⚠️ Additional dependency |
+| R compatibility | Via zellkonverter | ✅ Direct loomR |
+| **Recommended for scVelo** | **✅ YES** | ⚠️ Acceptable |
+
+---
+
+## 4. Technical Architecture & Processing Logic
+
+### 4.1 Core Processing Pipeline
+
+The conversion follows this logical sequence:
+
+```
+Step 1: INPUT PARSING
+  ├── Extract .tar.gz archive
+  ├── Locate alevin/ subdirectory
+  ├── Read quants_mat_cols.txt → gene list (including -S and -U suffixed genes)
+  ├── Read quants_mat_rows.txt → cell barcode list
+  └── Parse quants_mat.gz binary → vpolo DataFrame (cells × combined_genes)
+
+Step 2: MATRIX SEPARATION
+  ├── Identify -S suffixed columns → spliced gene set
+  ├── Identify -U suffixed columns → unspliced gene set
+  ├── Extract spliced submatrix
+  ├── Extract unspliced submatrix
+  └── Strip suffixes to create unified gene index
+
+Step 3: ANNDATA CONSTRUCTION
+  ├── Create AnnData: X = spliced matrix (scipy sparse CSR)
+  ├── Assign layers: {'spliced': spliced_matrix, 'unspliced': unspliced_matrix}
+  ├── Assign obs: cell barcodes DataFrame
+  ├── Assign var: gene names DataFrame
+  └── Optionally: assign obsm with PCA/tSNE coordinates
+
+Step 4: OUTPUT WRITING
+  ├── If h5ad: adata.write_h5ad(output_basename + '.h5ad')
+  └── If loom: adata.write_loom(output_basename + '.loom')
+```
+
+### 4.2 Key Library: vpolo
+
+The `vpolo` library (by Avi Srivastava, the Alevin developer) is the **critical dependency** for reading Alevin's binary format:
+
+```python
+from vpolo.alevin import parser
+
+# Core function used by Convert.Alevin:
+alevin_df = parser.read_quants_bin(
+    base_location,    # Path to alevin output directory
+    clipped=False,    # Whether to clip negative values
+    mtype="data",     # Matrix type
+    rmode="rust"      # Read mode (rust-based parser is faster)
+)
+# Returns: pandas DataFrame (cells × genes, float values)
+```
+
+**Important note**: The `read_quants_bin` function returns a **dense** pandas DataFrame, which can be memory-intensive for large datasets (see §9 Limitations).
+
+---
+
+## 5. Parameter Analysis & Catalog
+
+### 5.1 Core Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `input.file` | FILE | ✅ Yes | — | Alevin output `.tar.gz` archive OR `.txt` file with paths to multiple archives |
+| `output.format` | CHOICE | ✅ Yes | `h5ad` | Output format: `h5ad` (AnnData) or `loom` |
+| `output.basename` | STRING | No | `alevin_velocity_output` | Base filename for output (extension added automatically) |
+
+### 5.2 Advanced / Optional Parameters
+
+| Parameter | Type | Default | Description | Notes |
+|-----------|------|---------|-------------|-------|
+| `spliced.suffix` | STRING | `-S` | Gene suffix denoting spliced transcripts in alevin output | Must match suffix used when building splici reference with eisaR |
+| `unspliced.suffix` | STRING | `-U` | Gene suffix denoting unspliced transcripts | Must match eisaR reference convention |
+| `filter.barcodes` | BOOLEAN | `true` | Whether to restrict output to barcodes in `whitelist.txt` | Whitelist contains high-confidence cell barcodes from alevin |
+| `use.whitelist` | BOOLEAN | `true` | Whether to use alevin's whitelist for barcode filtering | Removes low-confidence barcodes |
+| `include.pca` | BOOLEAN | `false` | Include PCA embeddings in `adata.obsm['X_pca']` if available | Requires pre-computed PCA from alevin or external source |
+| `include.tsne` | BOOLEAN | `false` | Include tSNE embeddings in `adata.obsm['X_tsne']` if available | Requires pre-computed tSNE coordinates |
+| `sparse.matrix` | BOOLEAN | `true` | Store count matrices as scipy sparse (CSR) vs dense numpy arrays | Dense storage may cause OOM errors on large datasets |
+| `compression.level` | INTEGER | `6` | HDF5 compression level for h5ad output (0=none, 9=max) | Higher compression = smaller file, slower write |
+
+### 5.3 GenePattern Parameter Grouping (Recommended)
+
+```
+GROUP 1: Input/Output (Required)
+  ├── input.file (FILE, required)
+  ├── output.format (CHOICE: h5ad|loom, required)
+  └── output.basename (STRING, optional)
+
+GROUP 2: Gene Parsing Options
+  ├── spliced.suffix (STRING, default: -S)
+  └── unspliced.suffix (STRING, default: -U)
+
+GROUP 3: Cell Filtering
+  ├── filter.barcodes (BOOLEAN, default: true)
+  └── use.whitelist (BOOLEAN, default: true)
+
+GROUP 4: Advanced Output Options
+  ├── include.pca (BOOLEAN, default: false)
+  ├── include.tsne (BOOLEAN, default: false)
+  ├── sparse.matrix (BOOLEAN, default: true)
+  └── compression.level (INTEGER, default: 6)
+```
+
+---
+
+## 6. Dependencies & System Requirements
+
+### 6.1 Core Python Dependencies
+
+| Package | Version | Role | Install |
+|---------|---------|------|---------|
+| `vpolo` | ≥ 0.2.0 | **Critical**: Reads Alevin binary format | `pip install vpolo` |
+| `anndata` | ≥ 0.7.6 | AnnData object creation and H5AD I/O | `pip install anndata` |
+| `numpy` | ≥ 1.19.0 | Array operations, matrix manipulation | `pip install numpy` |
+| `pandas` | ≥ 1.1.0 | DataFrame operations for barcodes/genes | `pip install pandas` |
+| `scipy` | ≥ 1.5.0 | Sparse matrix support (CSR format) | `pip install scipy` |
+| `loompy` | ≥ 3.0.6 | Writing `.loom` output format | `pip install loompy` |
+| `h5py` | ≥ 3.0 | HDF5 backend for both h5ad and loom | `pip install h5py` |
+
+### 6.2 System Requirements
+
+| Resource | Minimum | Recommended | Notes |
+|----------|---------|-------------|-------|
+| **Python** | 3.8 | 3.9+ | 3.8 tested, newer versions should work |
+| **RAM** | 16 GB | 64 GB+ | Depends on dataset size; dense matrix conversion is memory-intensive |
+| **CPU** | 2 cores | 4+ cores | Single-threaded vpolo parsing; multi-core for HDF5 compression |
+| **Disk** | 2× input size | 3× input size | Temporary extraction + output |
+| **OS** | Linux | Linux | Docker-based; Debian-based container |
+
+### 6.3 Docker Container
+```dockerfile
+# Base: acastanza/convert_alevin (hub.docker.com)
+# Base OS: Debian
+# Python: 3.8
+# Conda environment with:
+#   - vpolo
+#   - anndata
+#   - numpy
+#   - pandas
+#   - scipy
+#   - loompy
+#   - h5py
+```
+
+### 6.4 Memory Scaling Estimate
+
+| Dataset Size | Cells | Genes | Estimated RAM (S+U) |
+|-------------|-------|-------|---------------------|
+| Small | 1,000 | 20,000 | ~2 GB |
+| Medium | 5,000 | 30,000 | ~10 GB |
+| Large | 15,000 | 33,000 | ~35 GB |
+| Very Large | 50,000+ | 33,000 | >100 GB ⚠️ OOM risk |
+
+> ⚠️ **Memory Warning**: The vpolo `read_quants_bin()` function returns a dense pandas DataFrame. For cells × (2 × genes) matrices, the memory footprint is approximately: `n_cells × 2 × n_genes × 8 bytes (float64)`. For a 10x Genomics experiment with 10,000 cells and 33,000 genes (in S+U mode), this approaches **~50 GB RAM** before AnnData object creation.
+
+---
+
+## 7. Workflow Integration & Use Cases
+
+### 7.1 Full RNA Velocity Pipeline
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│              ALEVIN RNA VELOCITY PIPELINE                    │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. REFERENCE PREPARATION (eisaR, R)                       │
+│     └─ Create splici GTF: spliced + intronic features       │
+│     └─ Gene suffixes: -S (spliced), -U (unspliced)         │
+│                                                             │
+│  2. INDEX BUILDING (Salmon)                                 │
+│     └─ salmon index --type puff -t splici.fa -i index/      │
+│                                                             │
+│  3. QUANTIFICATION (Salmon.Alevin.Quant - GenePattern)      │
+│     └─ alevin --chromiumV3 --tgMap t2g_velocity.tsv         │
+│     └─ Output: alevin/quants_mat.gz (S+U combined)         │
+│                                                             │
+│  4. ▶ CONVERT.ALEVIN (THIS MODULE)                         │
+│     └─ Input: alevin_output.tar.gz                          │
+│     └─ Separate -S/-U matrices into AnnData layers         │
+│     └─ Output: velocity_data.h5ad                           │
+│                                                             │
+│  5. RNA VELOCITY ANALYSIS (scVelo GenePattern Module)       │
+│     └─ scv.pp.filter_and_normalize(adata)                   │
+│     └─ scv.pp.moments(adata)                                │
+│     └─ scv.tl.velocity(adata, mode='dynamical')             │
+│     └─ scv.pl.velocity_embedding_stream(adata)              │
+│                                                             │
+│  6. DOWNSTREAM ANALYSIS (ScanpyUtilities, CellRank, etc.)   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 7.2 Primary Use Cases
+
+#### Use Case 1: Standard Single-Sample RNA Velocity (Most Common)
+```
+Input:  10x Chromium v3 scRNA-seq of a developmental system
+Goal:   Identify cell differentiation trajectories
+Steps:  Alevin.Quant → Convert.Alevin (h5ad) → scVelo (dynamical mode)
+Output: Velocity streamline plots, latent time, gene kinetics
+```
+
+#### Use Case 2: Multi-Sample Batch Processing
+```
+Input:  Multiple treatment/timepoint samples (samples.txt listing archives)
+Goal:   Batch convert all samples for integrated velocity analysis
+Steps:  Multiple Alevin.Quant runs → Convert.Alevin (txt input list) → scVelo
+Output: Batch-converted .h5ad files ready for integration
+```
+
+#### Use Case 3: Organ/Tissue Atlas Velocity
+```
+Input:  Large-scale single-cell atlas (>50,000 cells)
+Goal:   Characterize transcriptional dynamics at scale
+Caveat: Memory limitations require chunked processing or HPC environment
+Steps:  Alevin.Quant (with subsampling) → Convert.Alevin → scVelo
+```
+
+#### Use Case 4: QC + Velocity Integration
+```
+Input:  Alevin output previously QC'd externally
+Goal:   Integrate velocity with existing AnnData object
+Steps:  Alevin.Quant → Convert.Alevin (h5ad) → scv.utils.merge(adata, ldata)
+Note:   If existing AnnData has cell embeddings, merge after conversion
+```
+
+### 7.3 Compatible Single-Cell Protocols
+
+| Protocol | Alevin Support | 10x Version | Notes |
+|----------|---------------|-------------|-------|
+| 10x Chromium v3 | ✅ `--chromiumV3` | v3 | Most common; 3' end |
+| 10x Chromium v2 | ✅ `--chromium` | v2 | 3' end, shorter reads |
+| Drop-seq | ✅ `--dropseq` | N/A | UMI-based |
+| inDrop | ✅ `--indrop` | N/A | v2/v3 |
+| CEL-seq2 | ✅ `--celseq2` | N/A | Plate-based |
+| SMART-seq2 | ⚠️ Modified | N/A | Full-length, no UMI |
+
+---
+
+## 8. Comparative Analysis
+
+### 8.1 Tools for Generating Spliced/Unspliced Counts
+
+| Tool | Method | Speed | Memory | Output | Best For |
+|------|--------|-------|--------|--------|----------|
+| **Convert.Alevin** | Alevin binary conversion | ⚡ Fast upstream | ⚠️ Dense conversion | h5ad, loom | GenePattern GUI users |
+| velocyto | BAM-based counting | 🐢 Slow | Moderate | loom | Genome-aware counting |
+| kb-python | Pseudoalignment (BUS) | ⚡ Fast | Low | h5ad, loom | Fast approximation |
+| STARsolo + convert | Alignment-based | 🐢 Slow | High | MTX→h5ad | High accuracy alignment |
+| pyroe convert | alevin-fry USA mode | ⚡⚡ Fastest | Low (sparse) | h5ad | Modern alevin-fry users |
+| tximeta + zellkonverter | R-based import | Medium | Moderate | h5ad via R | R-centric workflows |
+
+### 8.2 Key Differentiators of Convert.Alevin
+
+**✅ Strengths:**
+1. **GenePattern Integration**: Only tool natively wrapped as GenePattern module — no command-line expertise required
+2. **GUI Accessibility**: Democratizes RNA velocity analysis for wet-lab biologists
+3. **Alevin-Specific**: Optimized for the exact output format of Salmon's Alevin component
+4. **Workflow Continuity**: Seamlessly follows Salmon.Alevin.Quant GenePattern module
+5. **Dual Output**: Supports both h5ad and loom for flexibility
+
+**⚠️ Limitations vs Alternatives:**
+1. **Memory-Intensive**: Dense matrix conversion is more memory-hungry than pyroe's sparse handling
+2. **Classic Alevin Only**: Does not support alevin-fry USA mode (use pyroe.convert instead)
+3. **vpolo Dependency**: Relies on a library that may not be actively maintained as alevin-fry supersedes classic alevin
+4. **No Ambient RNA Correction**: Unlike CellBender-integrated pipelines
+
+### 8.3 When to Choose Convert.Alevin vs Alternatives
+
+```
+Use Convert.Alevin when:
+  ✅ Using GenePattern web interface
+  ✅ Already have classic Alevin (Salmon) output
+  ✅ Need h5ad or loom for scVelo
+  ✅ Following GenePattern Alevin velocity workflow
+
+Use pyroe instead when:
+  → Using alevin-fry (newer, faster alevin replacement)
+  → Need memory-efficient sparse conversion
+  → Working from command line
+
+Use velocyto instead when:
+  → Starting from BAM files (no re-quantification needed)
+  → Need genome-coordinate aware counting
+  → Working in R with existing workflows
+
+Use kb-python instead when:
+  → Need maximum speed (pseudoalignment)
+  → Don't require multi-mapper handling
+  → Prefer BUS format ecosystem
+```
+
+---
+
+## 9. Known Issues & Limitations
+
+### 9.1 Memory Allocation Issues ⚠️ CRITICAL
+- **Issue**: `numpy.core` memory allocation errors on large datasets
+- **Root Cause**: `vpolo.read_quants_bin()` returns a **dense pandas DataFrame**, and converting combined S+U matrices to dense numpy arrays before splitting exceeds available RAM
+- **Specific Error Context**: Documented in `k3yavi/vpolo` Issue #3 — observed in a Debian Docker container on AWS with 64 GB RAM allocated
+- **Mitigation**: Consider removing `to_dense()` calls; use sparse matrix operations throughout; process large datasets on high-memory instances (≥128 GB)
+- **Recommendation for GenePattern**: Set `job.memory=64Gb` minimum; expose memory as configurable; document RAM requirements clearly
+
+### 9.2 Dependency Maintenance Risk
+- **Issue**: `vpolo` library appears unmaintained as alevin-fry has superseded classic Alevin
+- **Impact**: Future Python version compatibility may break
+- **Mitigation**: Pin to tested vpolo version in Docker image; consider migrating to pyroe for alevin-fry support in future versions
+
+### 9.3 Gene Suffix Assumption
+- **Issue**: Assumes `-S`/`-U` suffixes from `eisaR`-prepared references
+- **Impact**: Custom splici references with different suffixes will cause the split to fail silently (all genes in one layer)
+- **Mitigation**: Expose `spliced.suffix` and `unspliced.suffix` as user-configurable parameters with clear documentation
+
+### 9.4 Single vs Multi-Sample Handling
+- **Issue**: Initial design for single alevin output; multi-sample support requires user-prepared text file
+- **Impact**: No automated sample merging or batch correction
+- **Mitigation**: Document clearly; subsequent modules (scVelo, ScanpyUtilities) can handle merging
+
+### 9.5 No Ambient RNA Removal
+- **Issue**: No integration with CellBender or SoupX for ambient RNA correction
+- **Impact**: Downstream velocity estimates may be confounded by ambient RNA
+- **Recommendation**: Advise users to run ambient RNA correction before or after conversion; this is a pre-processing consideration outside module scope
+
+### 9.6 Version Compatibility
+- **Issue**: The classic Alevin binary format used by `vpolo` differs from alevin-fry output
+- **Impact**: Users who quantify with alevin-fry (recommended for modern analyses) cannot use Convert.Alevin
+- **Recommendation**: Document clearly in module description; point alevin-fry users to pyroe
+
+---
+
+## 10. GenePattern Module Specifications
+
+### 10.1 Recommended Manifest Parameters
+
+```properties
+# GenePattern Module Manifest (manifest)
+name=Convert.Alevin
+lsid=urn:lsid:genepattern.org:module.analysis:XXXXX
+author=Anthony Castanza, Mesirov Lab, UCSD
+description=Read Alevin velocity output files and convert them to AnnData (.h5ad) or \
+            Loom (.loom) format for downstream RNA velocity analysis with scVelo. \
+            Designed specifically for Alevin Velocity quantification output produced \
+            by the Salmon.Alevin.Quant GenePattern module.
+version=1
+publicationDate=2021
+language=Python
+os=any
+cpuType=any
+taskType=Single Cell Analysis
+categories=Single Cell;RNA-seq;Format Conversion
+
+job.docker.image=acastanza/convert_alevin:latest
+job.memory=64Gb
+job.walltime=04:00:00
+
+commandLine=python /src/alevin.vpolo.py \
+            --input <input.file> \
+            --format <output.format> \
+            --output <output.basename> \
+            --spliced-suffix <spliced.suffix> \
+            --unspliced-suffix <unspliced.suffix> \
+            --filter-barcodes <filter.barcodes>
+
+# Parameter 1: Input File
+p1_name=input.file
+p1_TYPE=FILE
+p1_MODE=IN
+p1_description=Alevin velocity output as a .tar.gz archive. Must contain the \
+               complete Alevin output directory including alevin/quants_mat.gz, \
+               alevin/quants_mat_cols.txt, and alevin/quants_mat_rows.txt. \
+               Alternatively, provide a .txt file with newline-delimited paths \
+               to multiple .tar.gz archives for batch processing.
+p1_fileFormat=tar.gz;txt
+p1_optional=
+p1_default_value=
+
+# Parameter 2: Output Format
+p2_name=output.format
+p2_TYPE=TEXT
+p2_MODE=IN
+p2_description=Output file format. h5ad (AnnData HDF5 format) is recommended for \
+               direct use with scVelo. loom format is also compatible with scVelo \
+               via scv.read() and with velocyto.
+p2_default_value=h5ad
+p2_value=h5ad=h5ad (AnnData - recommended);loom=loom (Loom format)
+p2_optional=
+
+# Parameter 3: Output Basename
+p3_name=output.basename
+p3_TYPE=TEXT
+p3_MODE=IN
+p3_description=Base name for the output file. The appropriate extension (.h5ad or .loom) \
+               will be appended automatically.
+p3_default_value=alevin_velocity_output
+p3_optional=on
+
+# Parameter 4: Spliced Suffix
+p4_name=spliced.suffix
+p4_TYPE=TEXT
+p4_MODE=IN
+p4_description=Suffix appended to gene IDs in the Alevin output to denote spliced \
+               (exonic) transcripts. Default is -S as used by eisaR-prepared references.
+p4_default_value=-S
+p4_optional=on
+
+# Parameter 5: Unspliced Suffix
+p5_name=unspliced.suffix
+p5_TYPE=TEXT
+p5_MODE=IN
+p5_description=Suffix appended to gene IDs in the Alevin output to denote unspliced \
+               (intronic) transcripts. Default is -U as used by eisaR-prepared references.
+p5_default_value=-U
+p5_optional=on
+
+# Parameter 6: Filter Barcodes
+p6_name=filter.barcodes
+p6_TYPE=TEXT
+p6_MODE=IN
+p6_description=Whether to filter output to only include barcodes in alevin's whitelist \
+               (high-confidence cell barcodes). Recommended: true.
+p6_default_value=true
+p6_value=true=true;false=false
+p6_optional=on
+```
+
+### 10.2 Output File Specifications
+
+| Output | Type | Description | Used By |
+|--------|------|-------------|---------|
+| `<basename>.h5ad` | FILE | AnnData HDF5 with spliced/unspliced layers | scVelo GenePattern Module |
+| `<basename>.loom` | FILE | Loom format with spliced/unspliced layers | scVelo (alternative) |
+| `stdout.txt` | LOG | Conversion progress and statistics | Debugging |
+| `stderr.txt` | LOG | Error messages and warnings | Debugging |
+
+### 10.3 Validation & Error Handling Recommendations
+
+```python
+# Input validation checks for GenePattern module:
+
+1. Verify .tar.gz archive contains expected files:
+   - alevin/quants_mat.gz (REQUIRED)
+   - alevin/quants_mat_cols.txt (REQUIRED)  
+   - alevin/quants_mat_rows.txt (REQUIRED)
+   - alevin/whitelist.txt (WARN if missing and filter_barcodes=true)
+
+2. Verify gene naming:
+   - Check that specified suffixes (-S, -U) are present in quants_mat_cols.txt
+   - WARN if <10% of genes have expected suffixes (may not be velocity mode output)
+   - ERROR if no genes have expected suffixes
+
+3. Memory check:
+   - Estimate matrix size from row/col count files before loading
+   - WARN if estimated memory > 80% of job.memory allocation
+
+4. Output validation:
+   - Verify adata.layers['spliced'] and adata.layers['unspliced'] are populated
+   - Log cell count, gene count, sparsity statistics
+   - Verify h5ad file can be re-opened after writing
+```
+
+### 10.4 Test Data Recommendations
+For module testing, use the Alevin tutorial dataset from the official COMBINE-lab tutorial:
+- Mouse embryonic development dataset (Zeisel et al. / La Manno et al.)
+- ~3,000 cells, ~15,000 genes (manageable for CI/CD)
+- Source: `combine-lab.github.io/alevin-tutorial/2020/alevin-velocity/`
+
+---
+
+## 11. Literature & Citations
+
+### Primary Citations
+
+1. **scVelo (downstream target)**
+   > Bergen V, Lange M, Peidli S, Wolf FA, Theis FJ. "Generalizing RNA velocity to transient cell states through dynamical modeling." *Nature Biotechnology*. 2020;38:1408–1414. DOI: [10.1038/s41587-020-0591-3](https://doi.org/10.1038/s41587-020-0591-3)
+
+2. **RNA Velocity (foundational concept)**
+   > La Manno G, et al. "RNA velocity of single cells." *Nature*. 2018;560:494–498. DOI: [10.1038/s41586-018-0414-6](https://doi.org/10.1038/s41586-018-0414-6)
+
+3. **Alevin / Salmon (upstream quantifier)**
+   > Srivastava A, Malik L, Smith T, Sudbery I, Patro R. "Alevin efficiently estimates accurate gene abundances from dscRNA-seq data." *Genome Biology*. 2019;20(1):65. DOI: [10.1186/s13059-019-1670-y](https://doi.org/10.1186/s13059-019-1670-y)
+
+4. **Preprocessing Choices Benchmark (scientific validation context)**
+   > Soneson C, Srivastava A, Patro R, Stadler MB. "Preprocessing choices affect RNA velocity results for droplet scRNA-seq data." *PLOS Computational Biology*. 2021;17(1):e1008585. DOI: [10.1371/journal.pcbi.1008585](https://doi.org/10.1371/journal.pcbi.1008585)
+
+5. **Alevin-fry (evolutionary context)**
+   > He D, Zakeri M, Sarkar H, Soneson C, Srivastava A, Patro R. "Alevin-fry unlocks rapid, accurate and memory-frugal quantification of single-cell RNA-seq data." *Nature Methods*. 2022;19(3):316–322. DOI: [10.1038/s41592-022-01408-3](https://doi.org/10.1038/s41592-022-01408-3)
+
+### Supporting References
+
+6. **eisaR (reference preparation)**
+   > Soneson C, et al. eisaR: Exon-Intron Split Analysis in R. *Bioconductor*. Available at: `bioconductor.org/packages/eisaR`
+
+7. **AnnData (output data structure)**
+   > Virshup I, et al. "The scverse project provides a computational ecosystem for single-cell omics data analysis." *Nature Biotechnology*. 2023;41:604–606.
+
+8. **vpolo (core parsing library)**
+   > Srivastava A. vpolo: Python library for parsing Alevin output. GitHub: `k3yavi/vpolo`
+
+9. **Alevin Velocity Tutorial**
+   > Soneson C, Srivastava A, Patro R. "Alevin Velocity: RNA Velocity with alevin." COMBINE-lab Tutorial. 2020. Available at: `combine-lab.github.io/alevin-tutorial/2020/alevin-velocity/`
+
+---
+
+## 📊 Summary Dashboard
+
+| Category | Assessment |
+|----------|-----------|
+| **Scientific Validity** | ✅ Well-grounded in established RNA velocity framework |
+| **Workflow Position** | ✅ Essential bridge in GenePattern Alevin→scVelo pipeline |
+| **Implementation Complexity** | 🟡 Medium — vpolo dependency, memory management required |
+| **Documentation Quality** | ⚠️ Low — no standalone docs; relies on tutorial knowledge |
+| **Maintenance Risk** | 🔴 Medium-High — vpolo/classic Alevin being superseded by alevin-fry |
+| **User Accessibility** | ✅ High — GUI wrapping democratizes access |
+| **GenePattern Fit** | ✅ Excellent — fills critical gap in scVelo workflow |
+| **Memory Requirement** | ⚠️ High — 64GB+ recommended for typical datasets |
+| **Output Compatibility** | ✅ H5AD is gold standard for scVelo |
+| **Test Coverage Need** | 🔴 High — memory and format validation critical |
+
+> **Bottom Line for GenePattern Module Development**: Convert.Alevin fills a genuine and important niche as the format bridge between Salmon Alevin quantification and scVelo RNA velocity analysis within the GenePattern ecosystem. The module should be implemented with robust memory warnings, configurable gene suffixes, comprehensive input validation, and clear documentation linking it to both the upstream Salmon.Alevin.Quant and downstream scVelo GenePattern modules. The primary technical risk is memory management for large datasets — this should be prominently surfaced in the UI and documentation.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

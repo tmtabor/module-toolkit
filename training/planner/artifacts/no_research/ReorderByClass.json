@@ -1,0 +1,82 @@
+{
+  "module_name": "ReorderByClass",
+  "description": "Reorder the samples in an expression dataset and class file by class",
+  "author": "Joshua Gould, Broad Institute",
+  "input_file_formats": [
+    "Dataset",
+    "cls",
+    "gct",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:58667:1",
+  "plan": "## ReorderByClass GenePattern Module — Implementation Plan\n\n### 1. Overview\nReorderByClass is a GenePattern module that Reorder the samples in an expression dataset and class file by class\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: expression.data.filename, class.filename, expression.data.file.output.name, class.file.output.name\n- Optional: none\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>ReorderByClass.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.reorderbyclass.ReorderByClass <expression.data.filename> <class.filename> <expression.data.file.output.name> <class.file.output.name>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "ReorderByClass.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>gp-modules.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>ReorderByClass.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.reorderbyclass.ReorderByClass <expression.data.filename> <class.filename> <expression.data.file.output.name> <class.file.output.name>",
+  "parameters": [
+    {
+      "name": "expression.data.filename",
+      "description": "Expression data - .res, .gct, .odf",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "res",
+        "gct",
+        "Dataset"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--expression.data.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "class.filename",
+      "description": "Class file - .cls",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--class.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "expression.data.file.output.name",
+      "description": "Name of expression data output file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<expression.data.filename_basename>_reordered",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--expression.data.file.output.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "class.file.output.name",
+      "description": "Name of class output file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<class.filename_basename>_reordered",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--class.file.output.name",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

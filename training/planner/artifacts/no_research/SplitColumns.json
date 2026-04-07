@@ -1,0 +1,83 @@
+{
+  "module_name": "SplitColumns",
+  "description": "Creates a separate file for each column specified from the input file",
+  "author": "GenePattern Team",
+  "input_file_formats": [
+    "cn",
+    "seg",
+    "seg.txt",
+    "txt",
+    "xcn"
+  ],
+  "language": "Perl",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:71725:1",
+  "plan": "## SplitColumns GenePattern Module — Implementation Plan\n\n### 1. Overview\nSplitColumns is a GenePattern module that Creates a separate file for each column specified from the input file\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: input.file, split.columns, output.prefix\n- Optional: additional.columns\n\n### 3. Command Line\n```\n<perl> <libdir>splitcolumns.pl -i <input.file> <split.columns> <additional.columns> -o <output.prefix>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "splitcolumns.pl",
+  "command_line": "<perl> <libdir>splitcolumns.pl -i <input.file> <split.columns> <additional.columns> -o <output.prefix>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "A tab delimited file",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cn",
+        "seg",
+        "seg.txt",
+        "xcn",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "split.columns",
+      "description": "Specify columns to extract (i.e. 2,4, 5-, 11-17,). Leave blank to split all columns.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-c",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "additional.columns",
+      "description": "Specify subset of additional columns to include in each (i.e. 2,4, 5-, 11-17) output file.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-a",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "The prefix to use for the output file name.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

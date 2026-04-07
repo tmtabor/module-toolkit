@@ -1,0 +1,203 @@
+{
+  "module_name": "Picard.FastqToSam",
+  "description": "Extracts read sequences and qualities from the input fastq file and writes them into the output file in unaligned SAM or BAM format",
+  "author": "GenePattern",
+  "input_file_formats": [
+    "fastq"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:82799:1",
+  "plan": "## Picard.FastqToSam GenePattern Module — Implementation Plan\n\n### 1. Overview\nPicard.FastqToSam is a GenePattern module that Extracts read sequences and qualities from the input fastq file and writes them into the output file in unaligned SAM or BAM format\n\n### 2. Parameters\nThe module exposes 11 parameters:\n- Required: fastq.file, quality.format, sample.name, sort.order, output.format, output.prefix\n- Optional: fastq.file.2, read.group.name, library.name, platform.unit, platform\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>jargs.jar<path.separator><libdir>FastqToSam.jar<path.separator><libdir>gp-fastqToSam.jar org.genepattern.sam.FastqToSamWrapper -i<fastq.file> -f<fastq.file.2> -q<quality.format> -n<sample.name>  -r<read.group.name> -l<library.name> -u<platform.unit> -p<platform> -s<sort.order> -o<output.prefix>.<output.format>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "jargs.jar<path.separator><libdir>FastqToSam.jar<path.separator><libdir>gp-fastqToSam.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>jargs.jar<path.separator><libdir>FastqToSam.jar<path.separator><libdir>gp-fastqToSam.jar org.genepattern.sam.FastqToSamWrapper -i<fastq.file> -f<fastq.file.2> -q<quality.format> -n<sample.name>  -r<read.group.name> -l<library.name> -u<platform.unit> -p<platform> -s<sort.order> -o<output.prefix>.<output.format>",
+  "parameters": [
+    {
+      "name": "fastq.file",
+      "description": "Input fastq file (optionally gzipped) for single end data, or first read in paired end data",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fastq"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--fastq.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "fastq.file.2",
+      "description": "The fastq file (optionally gzipped) for second read in paired end data",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fastq"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--fastq.file.2",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "quality.format",
+      "description": "A value describing how the quality values are encoded in the fastq",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "Standard",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Solexa",
+          "value": "Solexa"
+        },
+        {
+          "display": "Illumina",
+          "value": "Illumina"
+        },
+        {
+          "display": "Standard",
+          "value": "Standard"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--quality.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "read.group.name",
+      "description": "Read group name",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--read.group.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.name",
+      "description": "Sample name to insert into the read group header",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sample.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "library.name",
+      "description": "The library name to insert into the LB attribute in the read group header",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--library.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "platform.unit",
+      "description": "The platform unit (often run_barcode.lane) to insert into the read group header",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--platform.unit",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "platform",
+      "description": "The platform type (e.g., Illumina, SOLiD) to insert into the read group header",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--platform",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sort.order",
+      "description": "",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "coordinate",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "unsorted",
+          "value": "unsorted"
+        },
+        {
+          "display": "queryname",
+          "value": "queryname"
+        },
+        {
+          "display": "coordinate",
+          "value": "coordinate"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--sort.order",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.format",
+      "description": "Whether the file output format should be SAM or BAM",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "bam",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "SAM",
+          "value": "sam"
+        },
+        {
+          "display": "BAM",
+          "value": "bam"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "The prefix to use for the output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<fastq.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

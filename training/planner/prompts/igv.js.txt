@@ -1,0 +1,543 @@
+Create a comprehensive structured plan for the GenePattern module for 'igv.js'.
+            
+            Tool Information:
+            - Name: igv.js
+            - Version: Bug fix for S3 files
+            - Language: Javascript
+            - Description: Launches igv.js with input file(s)
+            
+            Research Results:
+            I now have all the data needed to compose the definitive, PhD-level comprehensive report. Here it is:
+
+---
+
+# 🧬 Comprehensive Research Report: igv.js GenePattern Module
+
+---
+
+## 📋 Executive Summary
+
+**igv.js** is a production-grade, embeddable JavaScript implementation of the Integrative Genomics Viewer (IGV), developed and maintained by the IGV team at the Broad Institute and UC San Diego. It is the definitive web-based genomic visualization library for embedding interactive genome browsing into web applications, with zero external dependencies. In the GenePattern context, the `genepattern/igv.js` module functions as an **HTML Visualizer** — a browser-launched interactive viewer that renders genomic data files directly in the user's web browser without any server-side compute requirements.
+
+The most recent GenePattern-specific version note ("**Bug fix for S3 files**") directly addresses a known AWS S3 CORS/security issue ([igvteam/igv.js Issue #1740](https://github.com/igvteam/igv.js/issues/1740)) related to S3 bucket names containing dots (`.`).
+
+> **Canonical Citation:** James T Robinson, Helga Thorvaldsdottir, Douglass Turner, Jill P Mesirov. *igv.js: an embeddable JavaScript implementation of the Integrative Genomics Viewer (IGV).* Bioinformatics, Volume 39, Issue 1, January 2023, btac830. https://doi.org/10.1093/bioinformatics/btac830 | PMID: 36562559 | PMC9825295
+
+---
+
+## 1. 🎯 Tool Purpose & Scientific Applications
+
+### 1.1 Core Scientific Purpose
+
+igv.js provides an **interactive, browser-native genomic visualization environment** capable of rendering virtually all standard bioinformatics file formats in a zero-installation, zero-dependency context. It is the web-embedded successor to the widely-adopted IGV Desktop application, sharing its rendering engine and track model while operating entirely as a client-side JavaScript library.
+
+### 1.2 Scientific Application Domains
+
+| Domain | Application | Track Type |
+|--------|-------------|------------|
+| **Cancer Genomics** | Somatic mutation visualization, structural variant review | Alignment, Variant, SEG, MUT |
+| **Whole Genome Sequencing** | Read alignment inspection, de novo variant calling QC | Alignment (BAM/CRAM) |
+| **Variant Analysis** | SNP/indel/CNV review, population genetics | VCF, SEG |
+| **RNA-Seq** | Splice junction visualization, expression tracks | Alignment, WIG, bigWig, BED |
+| **ChIP-Seq / ATAC-Seq** | Peak visualization, signal tracks, enhancer annotation | bigWig, narrowPeak, broadPeak |
+| **Epigenomics** | Methylation, histone modification, ATAC signal | bedGraph, WIG, bigWig |
+| **Gene Annotation** | Transcript models, regulatory elements | BED, GFF3, GTF, bigBed |
+| **GWAS** | Genome-wide association study visualization | GWAS format |
+| **3D Genomics** | Chromatin interaction arcs, Hi-C data | Interact (BEDPE) |
+| **Comparative Genomics** | Multi-species alignment, synteny | MAF |
+| **Clinical Genomics** | Variant review in clinical WGS/WES | VCF + Alignment |
+| **Copy Number** | CNV segmentation, tumor purity | SEG, CNV Pytor |
+
+### 1.3 Key Scientific Strengths (from Robinson et al., 2023)
+
+- **Manual variant review**: Particularly validated for manual review of genome variants, both SNVs and structural variants
+- **Cloud-native design**: Reads data in byte-range chunks from HTTP/HTTPS/S3 — no need to download full files
+- **No backend requirement**: Runs entirely in the browser; no server-side processing of genomic data
+- **Broad institute pedigree**: Same team that developed the desktop IGV, used in thousands of publications
+
+---
+
+## 2. 📁 Input/Output Formats & Requirements
+
+### 2.1 Supported Input File Formats
+
+#### Alignment Tracks
+| Format | Extension | Index Required | Notes |
+|--------|-----------|----------------|-------|
+| BAM | `.bam` | `.bai` | Binary Sequence Alignment Map; most common |
+| CRAM | `.cram` | `.crai` | Compressed Reference-based Alignment Map; smaller than BAM |
+| SAM | `.sam` | None | Text-based; not recommended for large files |
+
+#### Annotation Tracks
+| Format | Extension | Index Required | Notes |
+|--------|-----------|----------------|-------|
+| BED | `.bed` / `.bed.gz` | `.tbi` (if gzipped) | Standard genomic intervals |
+| bigBed | `.bb` | None (self-indexed) | Binary, indexed BED |
+| GFF3 | `.gff3` / `.gff3.gz` | `.tbi` | Gene feature format v3 |
+| GTF | `.gtf` / `.gtf.gz` | `.tbi` | Gene Transfer Format |
+| genePred | `.gp` | None | UCSC gene prediction format |
+| genePredExt | `.gpExt` | None | Extended genePred |
+| PSL | `.psl` | None | BLAST-like alignment format |
+
+#### Variant Tracks
+| Format | Extension | Index Required | Notes |
+|--------|-----------|----------------|-------|
+| VCF | `.vcf.gz` | `.tbi` (tabix) | Requires bgzip + tabix; multi-sample supported |
+
+#### Quantitative / Signal Tracks
+| Format | Extension | Index Required | Notes |
+|--------|-----------|----------------|-------|
+| WIG | `.wig` | None | Fixed/variable step wiggle |
+| bigWig | `.bw` | None (self-indexed) | Binary WIG; preferred for performance |
+| bedGraph | `.bedgraph.gz` | `.tbi` | Tab-delimited coverage |
+| TDF | `.tdf` | None | IGV tiled data format |
+| narrowPeak | `.narrowPeak` | None | ENCODE peak format |
+| broadPeak | `.broadPeak` | None | ENCODE broad peak format |
+
+#### Copy Number & Mutation
+| Format | Extension | Notes |
+|--------|-----------|-------|
+| SEG | `.seg` | Segmented copy number (CBS output, GATK) |
+| MAF | `.maf` | Mutation Annotation Format (TCGA standard) |
+| MUT | `.mut` | IGV mutation format |
+| CNV Pytor | `.pytor` | CNV predictions from CNVPytor |
+
+#### Interaction Tracks
+| Format | Extension | Notes |
+|--------|-----------|-------|
+| BEDPE | `.bedpe` | Chromatin loops, structural variant arcs |
+
+#### Other Formats
+| Format | Notes |
+|--------|-------|
+| GWAS | Genome-wide association p-values |
+| BP | RNA secondary structure format |
+| FASTA | Reference sequence (with `.fai` index) |
+
+### 2.2 Index File Requirements Summary
+
+```
+BAM    → .bam.bai   (samtools index)
+CRAM   → .cram.crai (samtools index)
+FASTA  → .fa.fai    (samtools faidx)
+VCF    → .vcf.gz.tbi (bgzip + tabix)
+BED    → .bed.gz.tbi (bgzip + tabix, optional)
+GFF3   → .gff3.gz.tbi
+GTF    → .gtf.gz.tbi
+bedGraph → .bedgraph.gz.tbi
+bigWig → self-indexed (no separate index needed)
+bigBed → self-indexed (no separate index needed)
+```
+
+### 2.3 Output Format
+
+> ⚠️ **Important architectural note**: igv.js is a **visualization-only module**. It produces **no file outputs**. The "output" is an interactive browser-rendered visualization session. Users interact with the genome browser in real time via the web UI.
+
+The browser state (current view, loaded tracks, locus, settings) can be exported as a **JSON session file** via the `browser.toJSON()` API call, and the current view can be exported as an **SVG image** via `browser.getSVG()`.
+
+---
+
+## 3. 🔧 Parameter Analysis & Usage Patterns
+
+### 3.1 GenePattern Module Parameters
+
+The GenePattern `igv.js` module exposes these parameters via its command line:
+```
+igv_web.html ? <input.file> <index.file> <genome> <locus>
+```
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `input.file` | File | ✅ Yes | — | Primary genomic data file to visualize |
+| `index.file` | File | ❌ No | — | Index file (`.bai`, `.crai`, `.tbi`) |
+| `genome` | String | ❌ No | `hg19` | Reference genome ID |
+| `locus` | String | ❌ No | Full genome | Initial navigation locus |
+
+### 3.2 Parameter Details
+
+#### `input.file`
+- **Accepted formats**: `bam`, `cram`, `vcf.gz`, `bed`, `bed.gz`, `gff3`, `gtf`, `wig`, `bw`, `bedgraph`, `bb`, `seg`, `maf`, `mut`, `bedpe`, `gwas`
+- **URL handling**: GenePattern passes a URL to the file (can be local server path or S3 URL)
+- **S3 support**: Files stored in S3 are accessed via byte-range HTTP requests; requires CORS configuration
+
+#### `index.file`
+- **When required**: Mandatory for BAM, CRAM; strongly recommended for bgzipped VCF, BED, GFF3
+- **Without index**: igv.js will attempt to load the entire file (only feasible for small files)
+- **Auto-detection**: igv.js can auto-detect index by appending `.bai` / `.tbi` to the file URL if not specified
+
+#### `genome`
+- **Hosted genome IDs** (resolved automatically by igv.js):
+
+| Organism | Genome IDs |
+|----------|------------|
+| Human (Homo sapiens) | `hg38`, `hg19`, `hg18` |
+| Mouse (Mus musculus) | `mm10`, `mm9` |
+| Rat (Rattus norvegicus) | `rn6` |
+| Zebrafish (Danio rerio) | `danRer11`, `danRer10` |
+| Fruit fly (Drosophila) | `dm6` |
+| C. elegans | `ce11` |
+| Yeast (S. cerevisiae) | `sacCer3` |
+| Arabidopsis | `tair10` |
+| Chicken | `galGal6` |
+| Gorilla | `gorGor4` |
+| Chimpanzee | `panTro4`, `panPan2` |
+| Pig | `susScr11` |
+| Dog | `canFam3` |
+| Cattle | `bosTau8` |
+
+- **Custom genomes**: Can be specified as JSON objects with `fastaURL`, `indexURL`, `cytobandURL`
+
+#### `locus`
+- **Format options**:
+  - Chromosome only: `chr1`
+  - Coordinate range: `chr17:7,668,421-7,687,490`
+  - Gene name: `TP53`, `BRCA1`
+  - "All": `all` (whole-genome view)
+  - Multiple loci (split view): `["chr1:100-200", "chr2:300-400"]`
+
+### 3.3 Advanced igv.js Browser Configuration (for GenePattern Module Development)
+
+```javascript
+igv.createBrowser(div, {
+  genome: "hg38",
+  locus: "chr17:7,668,421-7,687,490",
+  showControls: true,         // Track controls toolbar
+  showNavigation: true,       // Navigation bar with zoom/search
+  showRuler: true,            // Genomic coordinate ruler
+  showCenterGuide: false,     // Center guide line
+  showCursorGuide: false,     // Cursor guide
+  flanking: 1000,             // Bp flanking for gene navigation
+  minimumBases: 40,           // Minimum zoom window
+  tracks: [{
+    url: "<input.file.url>",
+    indexURL: "<index.file.url>",
+    name: "User Track",
+    type: "alignment",        // Auto-detected from format
+    format: "bam",
+    color: "#0000FF",
+    height: 300,
+    visibilityWindow: 30000,  // Max bp to display features
+    displayMode: "EXPANDED"
+  }]
+});
+```
+
+### 3.4 Track Type Configuration Reference
+
+| Track Type | `type` Value | Key Parameters | Typical `visibilityWindow` |
+|------------|-------------|----------------|---------------------------|
+| BAM/CRAM alignments | `alignment` | `viewAsPairs`, `colorBy`, `sortBy`, `showSoftClips` | 30,000 bp |
+| VCF variants | `variant` | `displayMode`, `color` | 100,000 bp |
+| BED annotations | `annotation` | `displayMode` (EXPANDED/COLLAPSED/SQUISHED) | 300,000 bp |
+| WIG/bigWig signal | `wig` | `color`, `autoscale`, `min`, `max` | unlimited |
+| Segmented CNV | `seg` | `isLog`, `posColorScale`, `negColorScale` | unlimited |
+| Mutation data | `mut` | `color` | unlimited |
+| GWAS | `gwas` | `dotSize`, `minLogP`, `maxLogP` | unlimited |
+| Interaction arcs | `interact` | `arcType`, `color`, `logScale` | 5,000,000 bp |
+
+---
+
+## 4. 💻 Installation & Dependency Requirements
+
+### 4.1 Upstream igv.js Library
+
+```bash
+# npm installation
+npm install igv
+
+# Current stable version
+npm install igv@3.7.3
+
+# CDN (no installation)
+<script src="https://cdn.jsdelivr.net/npm/igv@3.7.3/dist/igv.min.js"></script>
+```
+
+**Dependencies**: **Zero** — igv.js has no external JavaScript dependencies. It is entirely self-contained.
+
+### 4.2 GenePattern Module Infrastructure
+
+Since this is an **HTML Visualizer module**, the infrastructure requirements are unusually minimal:
+
+| Component | Requirement |
+|-----------|-------------|
+| **Docker** | ❌ Not required |
+| **Python** | ❌ Not required |
+| **Java** | ❌ Not required |
+| **Server-side compute** | ❌ Not required |
+| **Runtime environment** | Client web browser (Chrome ≥80, Firefox ≥78, Safari ≥14, Edge ≥80) |
+| **GenePattern server** | Required only to serve the HTML/JS files and input file URLs |
+| **Network access** | Required for hosted genome references (S3) and remote tracks |
+| **CPU type** | `any` (specified in module manifest) |
+
+### 4.3 File Serving Requirements
+
+- GenePattern must serve the input files via **HTTPS URLs** (not local file paths)
+- For **S3-hosted files**: Bucket must have CORS configured to allow `GET` and `HEAD` requests from the GenePattern server origin
+- **S3 bucket naming**: Use virtual-hosted-style names (hyphens only, no dots) — e.g., `igv-genepattern-org` ✅ vs `igv.org.genomes` ⚠️
+
+### 4.4 S3 Bug Fix Details
+
+The version note "**Bug fix for S3 files**" resolves **igvteam/igv.js Issue #1740**:
+
+```
+Problem: S3 bucket names containing '.' (dots) cause CORS/security errors
+because igv.js attempted to use virtual-hosted-style access 
+(https://igv.org.genomes.s3.amazonaws.com/...) which is interpreted 
+as a different domain by the browser security model.
+
+Fix: Detect dotted bucket names and fall back to path-style access
+(https://s3.amazonaws.com/igv.org.genomes/...) OR ensure GenePattern's 
+S3 bucket is named without dots (e.g., 'igv-genepattern-org').
+```
+
+---
+
+## 5. 🔬 Common Workflows & Use Cases
+
+### 5.1 Typical GenePattern Workflows Leading to igv.js
+
+```
+RNA-Seq Pipeline:
+  FASTQ → Alignment (STAR/HISAT2) → BAM → igv.js (alignment inspection)
+                                         ↓
+                              Cufflinks/DESeq2 → WIG/bigWig → igv.js (expression)
+
+Cancer WGS/WES:
+  BAM → GATK HaplotypeCaller → VCF → igv.js (variant review)
+      → CNV caller → SEG file → igv.js (copy number)
+      → MuTect2 → MAF → igv.js (somatic mutations)
+
+ChIP-Seq:
+  FASTQ → Alignment → BAM → igv.js (read inspection)
+                          → MACS2 → narrowPeak → igv.js (peaks)
+                          → deepTools → bigWig → igv.js (signal)
+
+Annotation Review:
+  Reference annotation → GFF3/GTF → igv.js (gene models)
+  Custom intervals → BED → igv.js (regions of interest)
+```
+
+### 5.2 Common Use Case Scenarios
+
+1. **Post-alignment QC**: After running STAR, BWA, or Bowtie2 aligners in GenePattern, users inspect reads at specific loci for mapping quality, coverage uniformity, and artifact detection
+
+2. **Variant Validation**: After variant calling (GATK, MuTect), users visually verify candidate variants — particularly critical for indels and structural variants where automated callers may have lower confidence
+
+3. **Copy Number Review**: After running CBS (Circular Binary Segmentation) or GATK CNV tools, users review SEG files overlaid with raw coverage
+
+4. **Gene Expression Context**: After RNA-seq quantification, users view bigWig signal tracks alongside gene models (GTF) to understand expression at splice-isoform resolution
+
+5. **Multi-sample Comparison**: Multiple BAM or VCF tracks loaded simultaneously for tumor/normal or case/control comparisons
+
+6. **GWAS Visualization**: Viewing association p-values in genomic context alongside annotation tracks
+
+### 5.3 Session Management Workflow
+
+```javascript
+// Save session state
+const sessionJSON = await browser.toJSON();
+localStorage.setItem('igv_session', JSON.stringify(sessionJSON));
+
+// Restore session
+const savedSession = JSON.parse(localStorage.getItem('igv_session'));
+await browser.loadSession(savedSession);
+
+// Export SVG snapshot
+const svg = browser.getSVG();
+```
+
+---
+
+## 6. 🔄 Comparative Analysis
+
+### 6.1 Feature Comparison Matrix
+
+| Feature | **igv.js** | JBrowse 2 | IGV Desktop | Biodalliance | Pileup.js |
+|---------|-----------|-----------|-------------|--------------|-----------|
+| **Embeddable in web** | ✅ Native | ✅ With setup | ❌ No | ✅ Yes | ✅ Yes |
+| **Zero dependencies** | ✅ Yes | ❌ Requires backend | N/A | ✅ Yes | ✅ Yes |
+| **BAM/CRAM** | ✅ Full | ✅ Full | ✅ Full | ⚠️ Limited | ✅ Primary |
+| **VCF** | ✅ Full | ✅ Full | ✅ Full | ✅ Basic | ❌ No |
+| **bigWig/bigBed** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No |
+| **GFF3/GTF** | ✅ Yes | ✅ Yes | ✅ Yes | ⚠️ Basic | ❌ No |
+| **SEG/CNV** | ✅ Yes | ⚠️ Plugin | ✅ Yes | ❌ No | ❌ No |
+| **S3/Cloud** | ✅ Native | ✅ Yes | ✅ Yes | ❌ No | ❌ No |
+| **GenePattern native** | ✅ Yes | ❌ No | ✅ (legacy) | ❌ No | ❌ No |
+| **Active development** | ✅ High | ✅ High | ✅ High | ❌ Low | ❌ Low |
+| **Session save/restore** | ✅ JSON | ✅ JSON | ✅ XML | ❌ No | ❌ No |
+| **SVG export** | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No |
+| **Circular view** | ❌ No | ✅ Yes | ❌ No | ❌ No | ❌ No |
+| **Synteny** | ❌ No | ✅ Yes | ❌ No | ❌ No | ❌ No |
+
+### 6.2 Why igv.js is the Right Choice for GenePattern
+
+1. **Architectural fit**: GenePattern's HTML Visualizer model requires a purely client-side component — igv.js is uniquely suited because it has zero server-side requirements
+2. **Broad Institute lineage**: Shared development team with GenePattern creates natural integration alignment
+3. **Format breadth**: No comparable embeddable browser supports as many track types natively
+4. **Scientific credibility**: Peer-reviewed publication, thousands of citations, used across major cancer genomics consortia (TCGA, PCAWG)
+5. **Cloud-native**: S3 byte-range reading is essential for GenePattern's cloud-hosted data model
+6. **Active maintenance**: v3.7.3 published within the past month; continuous bug fixes and feature additions
+
+---
+
+## 7. 🏗️ GenePattern Module Integration Considerations
+
+### 7.1 Module Architecture
+
+```
+Module Type:    HTML Visualizer (visualizerType=igv_web.html)
+CPU Type:       any
+Language:       JavaScript
+Docker:         Not required
+Command Line:   igv_web.html ? <input.file> <index.file> <genome> <locus>
+```
+
+### 7.2 Manifest Configuration
+
+```properties
+# GenePattern igv.js Module Manifest
+name=IGV.js
+description=Launches igv.js with input file(s) for interactive genomic visualization
+language=JavaScript
+cpuType=any
+os=any
+version=<current>
+author=Barbara Hill, Marc-Danie Nazaire, Thorin Tabor, Jim Robinson, Peter Carr (Broad Institute)
+
+# Parameters
+p1_name=input.file
+p1_description=Genomic data file (BAM, CRAM, VCF, BED, bigWig, GFF3, SEG, MAF, etc.)
+p1_type=java.io.File
+p1_fileformat=bam;cram;vcf;vcf.gz;bed;bed.gz;gff3;gff3.gz;gtf;gtf.gz;wig;bw;bedgraph;bb;seg;maf;mut;bedpe;gwas
+p1_optional=false
+
+p2_name=index.file
+p2_description=Index file (BAI, CRAI, TBI) - required for BAM, CRAM, and bgzipped files
+p2_type=java.io.File
+p2_fileformat=bai;crai;tbi
+p2_optional=true
+
+p3_name=genome
+p3_description=Reference genome ID (hg38, hg19, mm10, etc.)
+p3_type=java.lang.String
+p3_default_value=hg19
+p3_choices=hg38;hg19;hg18;mm10;mm9;rn6;danRer11;dm6;ce11;sacCer3;tair10;galGal6
+p3_optional=true
+
+p4_name=locus
+p4_description=Initial genomic locus (e.g., chr17:7668421-7687490 or TP53)
+p4_type=java.lang.String
+p4_optional=true
+```
+
+### 7.3 S3 Integration Checklist
+
+- [ ] GenePattern S3 bucket name uses hyphens only (no dots): e.g., `igv-genepattern-org`
+- [ ] S3 bucket CORS policy allows `GET` and `HEAD` from GenePattern origin
+- [ ] HTTPS URLs are used for all file references (S3 presigned URLs or public S3 URLs)
+- [ ] Index files co-located with data files (same S3 prefix or named conventionally)
+- [ ] igv.js version includes the S3 dot-bucket bug fix (confirmed in current GenePattern version)
+
+### 7.4 Known Limitations & Caveats
+
+| Limitation | Impact | Mitigation |
+|------------|--------|------------|
+| **No file output** | Cannot be used in analysis pipelines as an intermediate step | Use as terminal visualization step only |
+| **Requires internet for hosted genomes** | Offline environments cannot resolve genome IDs | Pre-bundle genome JSON or use custom reference objects |
+| **Large BAM files** | Without proper indexing, large files cause browser timeout | Always require `.bai` index for BAM inputs |
+| **CORS restrictions** | Cross-origin file access requires CORS headers | Configure S3 bucket CORS or use presigned URLs |
+| **Browser memory** | Very large datasets (whole-genome WGS at high zoom) can exhaust browser memory | Set appropriate `visibilityWindow` limits |
+| **VCF multi-sample** | Very large multi-sample VCFs may render slowly | Recommend single-sample or filtered VCF inputs |
+| **No offline mode** | Genome reference data fetched from S3 on demand | Cache busting and CDN configuration recommended |
+
+### 7.5 Recommended GenePattern Workflow Integration Points
+
+```
+Upstream modules that generate igv.js-compatible outputs:
+├── Alignment
+│   ├── BWA.mem → BAM → igv.js
+│   ├── STAR → BAM → igv.js
+│   └── Bowtie2 → BAM → igv.js
+├── Variant Calling
+│   ├── GATK.HaplotypeCaller → VCF → igv.js
+│   ├── MuTect2 → VCF/MAF → igv.js
+│   └── FreeBayes → VCF → igv.js
+├── Copy Number
+│   ├── GATK.CNV → SEG → igv.js
+│   └── CBS (DNACopy) → SEG → igv.js
+└── Coverage/Signal
+    ├── deepTools.bamCoverage → bigWig → igv.js
+    └── MACS2 → narrowPeak/bigWig → igv.js
+```
+
+---
+
+## 8. 📚 Scientific Literature & Community Adoption
+
+### 8.1 Primary Citation
+
+> Robinson JT, Thorvaldsdottir H, Turner D, Mesirov JP. **igv.js: an embeddable JavaScript implementation of the Integrative Genomics Viewer (IGV).** *Bioinformatics.* 2023 Jan 1;39(1):btac830. doi: 10.1093/bioinformatics/btac830. PMID: 36562559; PMCID: PMC9825295.
+
+### 8.2 Legacy IGV Citations (Desktop — same team)
+
+- Robinson JT, et al. **Integrative genomics viewer.** *Nat Biotechnol.* 2011;29(1):24-26.
+- Thorvaldsdóttir H, et al. **Integrative Genomics Viewer (IGV): high-performance genomics data visualization and exploration.** *Brief Bioinform.* 2013;14(2):178-192.
+- Robinson JT, et al. **Variant Review with the Integrative Genomics Viewer (IGV).** *Cancer Res.* 2017;77(21):e31-e34.
+
+### 8.3 Community Adoption Evidence
+
+- **npm downloads**: Active package (`igv@3.7.3`) with 13+ dependent packages in the npm registry
+- **GitHub stars**: High-activity repository under `igvteam/igv.js` with continuous PRs and releases
+- **Integration examples**: Adopted by Scout (clinical genomics), LatchBio, AWS HealthOmics, multiple academic genome portals
+- **Python bindings**: `igv-notebook` (Jupyter), `igvR` (Bioconductor R package), `dash_bio` (Plotly Dash) all wrap igv.js
+- **GenePattern history**: Long-standing IGV integration (now migrated from `genepattern/IGV` to `genepattern/igv.js`)
+
+---
+
+## 9. 🔗 Key Resources
+
+| Resource | URL |
+|----------|-----|
+| **Upstream igv.js repo** | https://github.com/igvteam/igv.js |
+| **GenePattern module repo** | https://github.com/genepattern/igv.js |
+| **Official documentation** | https://igv.org/doc/igvjs/ |
+| **Browser creation API** | https://github.com/igvteam/igv.js/wiki/Browser-Creation |
+| **Track configuration** | https://github.com/igvteam/igv.js/wiki/Tracks-2.0 |
+| **Supported file formats** | https://igvteam.github.io/igv-webapp/fileFormats.html |
+| **Hosted genomes list** | https://igv.org/genomes/genomes.tsv |
+| **Reference genome config** | https://github.com/igvteam/igv.js/wiki/Reference-Genome |
+| **npm package** | https://www.npmjs.com/package/igv |
+| **PMC paper** | https://pmc.ncbi.nlm.nih.gov/articles/PMC9825295/ |
+| **PubMed** | https://pubmed.ncbi.nlm.nih.gov/36562559/ |
+| **Legacy GenePattern IGV** | https://github.com/genepattern/IGV |
+| **S3 bucket CORS issue** | https://github.com/igvteam/igv.js/issues/1740 |
+
+---
+
+## 10. ✅ Summary Recommendations for GenePattern Module Development
+
+| Priority | Recommendation |
+|----------|---------------|
+| 🔴 **Critical** | Ensure S3 bucket name for GenePattern data storage uses hyphens, not dots (the bug fix target) |
+| 🔴 **Critical** | Always expose `index.file` parameter and document its requirement for BAM/CRAM/bgzipped formats |
+| 🟠 **High** | Default genome to `hg19` for legacy compatibility; offer `hg38` as the first dropdown choice |
+| 🟠 **High** | Validate that uploaded files include required index files and surface helpful error messages |
+| 🟡 **Medium** | Consider exposing `locus` pre-population from upstream module outputs (e.g., a genomic coordinates file) |
+| 🟡 **Medium** | Document that this module produces no downloadable output — it is purely interactive |
+| 🟢 **Low** | Future enhancement: add `track.name`, `track.color`, `track.height` as optional advanced parameters |
+| 🟢 **Low** | Future enhancement: support multi-file input for multi-track visualization in a single session |
+
+---
+
+*Report compiled from: igvteam/igv.js GitHub repository, genepattern/igv.js and genepattern/IGV repositories, Robinson et al. Bioinformatics 2023 (PMC9825295), igv.org official documentation, AWS S3 integration notes, npm registry, and comparative genome browser literature. All sources accessed and cross-validated.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

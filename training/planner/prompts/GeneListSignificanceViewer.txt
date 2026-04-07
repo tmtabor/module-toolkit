@@ -1,0 +1,454 @@
+Create a comprehensive structured plan for the GenePattern module for 'GeneListSignificanceViewer'.
+            
+            Tool Information:
+            - Name: GeneListSignificanceViewer
+            - Version: Rewrite as javascript
+            - Language: Javascript
+            - Description: Views the results of marker analysis
+            
+            Research Results:
+            Now I have everything needed to compile the comprehensive, authoritative final report. Here it is:
+
+---
+
+# 🧬 Comprehensive Research Report: GeneListSignificanceViewer
+
+---
+
+## 📋 Executive Summary
+
+**GeneListSignificanceViewer** is a GenePattern visualization module designed to display and interactively explore the ranked, statistically-scored output of marker analysis — primarily from the `ComparativeMarkerSelection` module. Originally implemented as a Java applet, it is now being rewritten in JavaScript (the repository at `https://github.com/genepattern/GeneListSignificanceViewer.git` represents this modern rewrite) following the permanent deprecation of all Java applet-based visualizers in all browsers (March 2017). It is a member of the **Comparative Marker Selection Suite** described in the landmark 2006 Bioinformatics publication by Gould *et al.*
+
+---
+
+## 1. 🔬 Tool Purpose & Scientific Applications
+
+### 1.1 Core Scientific Function
+GeneListSignificanceViewer serves as the **interactive significance inspection layer** in the GenePattern marker analysis pipeline. It visualizes ranked gene lists produced by differential expression analyses comparing exactly two biological classes (e.g., tumor vs. normal, treated vs. untreated), displaying the statistical evidence supporting each gene's designation as a class discriminator.
+
+### 1.2 Scientific Context
+In genomics, comparing two biological phenotypes across expression profiles of 10,000–50,000 genes creates an acute **multiple testing problem**. GeneListSignificanceViewer presents the full suite of corrected significance metrics, enabling researchers to:
+
+- **Assess statistical robustness** of candidate biomarkers using multiple correction frameworks simultaneously
+- **Apply biologically informed significance thresholds** (FDR, FWER, Bonferroni, raw p-value) interactively without re-running computation
+- **Distinguish directionality** — genes up-regulated in Class 0 vs. Class 1 (positive vs. negative score values)
+- **Explore the score–rank relationship** to assess score distribution and identify natural significance cutoffs
+
+### 1.3 Suite Membership
+The tool is the second of three modules in the **Comparative Gene Marker Selection Suite** (Gould *et al.*, 2006):
+
+| Suite Position | Module | Role |
+|:-:|---|---|
+| **1** | `ComparativeMarkerSelection` | Compute ranked significance scores for all genes |
+| **2** | **`GeneListSignificanceViewer`** | **Interactive visual inspection of results** |
+| **3** | `ExtractComparativeMarkerResults` | Extract filtered gene sets/datasets for downstream use |
+
+### 1.4 Primary Scientific Applications
+| Application | Description |
+|---|---|
+| **Biomarker Discovery** | Identify candidate diagnostic or prognostic marker genes |
+| **Class Prediction Feature Selection** | Select informative genes for classifier construction |
+| **Differential Expression Review** | Validate and explore two-class expression differences |
+| **Cancer Subtype Characterization** | Distinguish molecular subtypes (e.g., AML vs. ALL) |
+| **Drug Response Signatures** | Find genes correlated with treatment response |
+| **Two-Class Phenotype Association** | Any categorical phenotype linked to transcriptomic data |
+
+---
+
+## 2. 📁 Input/Output Formats & Requirements
+
+### 2.1 Primary Input: ODF File (Output Description Format)
+
+The primary input is a **GenePattern-specific ODF file** (`.odf` or `.comp.marker.odf`) produced by the `ComparativeMarkerSelection` module. This is **not** the OASIS Open Document Format.
+
+#### ODF File Structure:
+```
+ODF 1.0
+HeaderLines=N
+Model=ComparativeMarkerSelection
+DataLines=<number_of_genes>
+COLUMN_NAMES=Rank	Feature	Description	Score (SNR)	Feature P Value	BH FDR	Q Value	FWER	Bonferroni	maxT p-value
+<data rows...>
+```
+
+#### ODF Column Schema:
+| Column Name | Data Type | Description |
+|---|---|---|
+| `Rank` | Integer | Gene rank by test statistic (1 = most significant) |
+| `Feature` | String | Gene/probe identifier (e.g., Affymetrix probe ID) |
+| `Description` | String | Gene annotation/description |
+| `Score (SNR)` | Float | Test statistic value (positive = Class 1 marker, negative = Class 0 marker) |
+| `Feature P Value` | Float [0,1] | Raw (nominal) p-value from permutation testing |
+| `BH FDR` | Float [0,1] | Benjamini-Hochberg False Discovery Rate |
+| `Q Value` | Float [0,1] | Storey's q-value (alternative FDR estimate) |
+| `FWER` | Float [0,1] | Family-Wise Error Rate (permutation-based) |
+| `Bonferroni` | Float [0,1] | Bonferroni-corrected p-value |
+| `maxT p-value` | Float [0,1] | Westfall-Young maxT permutation statistic |
+
+### 2.2 Optional Secondary Input: Expression Dataset
+An optional expression dataset file (`.gct` or `.res`) may be provided to display expression profiles for individual selected genes alongside significance statistics.
+
+#### GCT Format Reminder:
+```
+#1.2
+<num_genes>   <num_samples>
+Name    Description    Sample1    Sample2    ...
+GeneID  Gene Desc      1.23       4.56       ...
+```
+
+### 2.3 Outputs
+| Output Type | Format | Description |
+|---|---|---|
+| **Interactive Display** | Browser-rendered HTML/JS | Primary visualization in GenePattern UI |
+| **Filtered Gene List** | `.grp` or `.txt` | Exportable list of genes passing significance filter |
+| **Significance Table** | Tabular (sortable/filterable) | All genes with statistics |
+| **(Optional) Expression Subset** | `.gct` | Expression data subset for significant genes |
+
+---
+
+## 3. ⚙️ Parameter Analysis & Usage Patterns
+
+### 3.1 Complete Parameter Catalog
+
+#### 🔴 Required Parameters
+| Parameter | Type | Format | Description |
+|---|---|---|---|
+| `comparative.marker.selection.filename` | File | `.odf` | Output file from `ComparativeMarkerSelection` — the ranked, scored gene list |
+
+#### 🟡 Core Optional Parameters
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `dataset.filename` | File | *(none)* | Original expression dataset (`.gct`/`.res`) for expression profile display |
+| `significance.threshold` | Float [0,1] | `0.05` | Cutoff applied to selected significance method |
+| `number.of.features` | Integer (≥1) | `50`–`100` | Top N features to display; limits rendering of large gene lists |
+| `statistic.column` | Enum | `Score (SNR)` | Primary statistic used for ranking/highlighting |
+
+#### 🟢 Filtering Parameters (Boolean Flags)
+| Parameter | Type | Default | Biological Rationale |
+|---|---|---|---|
+| `filter.by.fdr` | Boolean | `true` | BH-FDR is the standard genomics filter (controls expected false discovery proportion) |
+| `filter.by.fwer` | Boolean | `false` | Conservative; controls probability of *any* false positive |
+| `filter.by.pvalue` | Boolean | `false` | Raw p-value (no correction; not recommended for genome-wide studies) |
+| `filter.by.bonferroni` | Boolean | `false` | Most conservative correction; suitable for confirmatory settings |
+
+#### 🔵 Display & Directionality Parameters
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `sort.by` | Enum | `score` | Column to sort gene list by (`score`, `p-value`, `fdr`, `rank`) |
+| `show.class0.color` | Color | Blue | Color coding for Class 0 (down-regulated) genes |
+| `show.class1.color` | Color | Red | Color coding for Class 1 (up-regulated) genes |
+| `up.regulated.only` | Boolean | `false` | Restrict display to genes positively correlated with Class 1 |
+| `down.regulated.only` | Boolean | `false` | Restrict display to genes negatively correlated with Class 1 |
+
+### 3.2 Parameter Groupings for GenePattern Module UI
+
+```
+┌─────────────────────────────────────────────────────┐
+│ GROUP 1: INPUT FILES                                │
+│   • comparative.marker.selection.filename [REQUIRED]│
+│   • dataset.filename [OPTIONAL]                     │
+├─────────────────────────────────────────────────────┤
+│ GROUP 2: SIGNIFICANCE FILTERING                     │
+│   • significance.threshold                          │
+│   • filter.by.fdr  • filter.by.fwer                │
+│   • filter.by.pvalue  • filter.by.bonferroni        │
+├─────────────────────────────────────────────────────┤
+│ GROUP 3: DISPLAY OPTIONS                            │
+│   • number.of.features  • statistic.column          │
+│   • sort.by                                         │
+│   • up.regulated.only  • down.regulated.only        │
+├─────────────────────────────────────────────────────┤
+│ GROUP 4: VISUAL STYLING                             │
+│   • show.class0.color  • show.class1.color          │
+└─────────────────────────────────────────────────────┘
+```
+
+### 3.3 Statistical Background for Parameters
+
+The significance methods form a **stringency spectrum**:
+
+```
+MOST LENIENT ◄─────────────────────────────────► MOST CONSERVATIVE
+   Raw p-value → BH FDR → Q-Value → FWER → Bonferroni → maxT
+```
+
+**SNR Score Interpretation:**
+```
+SNR = (μ₁ - μ₀) / (σ₁ + σ₀)
+
+  Score > 0  →  Gene is a marker for Class 1 (higher expression in Class 1)
+  Score < 0  →  Gene is a marker for Class 0 (higher expression in Class 0)
+  |Score|    →  Magnitude of discriminating power
+```
+
+---
+
+## 4. 🏗️ Installation & Dependency Requirements
+
+### 4.1 JavaScript Module Architecture (New Version)
+
+```
+GeneListSignificanceViewer/
+├── manifest                  # GenePattern module manifest file
+├── GeneListSignificanceViewer.html   # Entry-point HTML
+├── js/
+│   ├── main.js               # Core application logic
+│   ├── odf-parser.js         # ODF file format parser
+│   ├── significance-table.js # Sortable/filterable data table
+│   └── genepattern.js        # GenePattern API integration
+├── css/
+│   └── styles.css            # Module styling
+├── lib/                      # Third-party libraries
+│   ├── jquery.min.js         # DOM manipulation
+│   ├── datatables.min.js     # Interactive table rendering
+│   └── d3.min.js             # (Optional) Chart visualizations
+└── documentation.html        # Module documentation
+```
+
+### 4.2 Module Manifest Template
+```properties
+#Fri Oct 01 12:00:00 EDT 2024
+JVMLevel=
+LSID=urn:lsid:broad.mit.edu:cancer.software.genepattern.module.visualizer:00XXX:1
+author=Broad Institute
+categories=Visualizer\;Gene Expression\;Marker Selection
+commandLine=<libdir>run_visualizer.sh
+cpuType=any
+description=Views the results of marker analysis
+documentationUrl=
+fileFormat=odf
+language=JavaScript
+languageLevel=
+minGPVersion=3.9.8
+name=GeneListSignificanceViewer
+os=any
+privacy=public
+quality=production
+taskType=Visualizer
+userid=GenePattern
+version=1
+```
+
+### 4.3 Runtime Dependencies
+| Dependency | Version | Purpose | Required? |
+|---|---|---|---|
+| Modern Web Browser | Chrome 60+, Firefox 55+, Safari 11+, Edge 16+ | Execution environment | ✅ Yes |
+| GenePattern Server | ≥ 3.9.8 | JavaScript visualizer support | ✅ Yes |
+| jQuery | ≥ 1.11 | DOM manipulation and AJAX | ✅ Yes |
+| DataTables.js | ≥ 1.10 | Sortable, filterable table | Recommended |
+| D3.js | ≥ 4.0 | Significance plots/charts | Optional |
+| GenePattern JS Library | Latest | Server API communication | ✅ Yes |
+
+### 4.4 No Server-Side Computation
+As a JavaScript visualizer, **GeneListSignificanceViewer requires zero server-side computation**. All parsing, filtering, sorting, and rendering occurs in the client browser. This means:
+- No Docker container needed (unlike analysis modules)
+- No Python/R/Java runtime dependencies
+- No HPC or memory constraints beyond the user's browser
+- Files are streamed from the GenePattern server to the browser
+
+---
+
+## 5. 🔄 Common Workflows & Use Cases
+
+### 5.1 Standard Differential Expression Workflow
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                   TYPICAL GENEPATTERN WORKFLOW                   │
+└──────────────────────────────────────────────────────────────────┘
+
+Step 1: DATA PREPARATION
+  Input: Raw microarray (.CEL) or RNA-seq count data
+  Module: ExpressionFileCreator / PreprocessDataset
+  Output: all_aml_train.gct + all_aml_train.cls
+          │
+          ▼
+Step 2: MARKER ANALYSIS
+  Module: ComparativeMarkerSelection
+  Parameters: test=SNR, permutations=1000, class_file=.cls
+  Output: all_aml_train.comp.marker.odf   ◄── PRIMARY INPUT
+          │
+          ▼
+Step 3: SIGNIFICANCE VISUALIZATION  ← GeneListSignificanceViewer HERE
+  Module: GeneListSignificanceViewer
+  Input: all_aml_train.comp.marker.odf
+  Purpose: Interactive significance table, filter & explore genes
+          │
+          ├──► (Optional) ComparativeMarkerSelectionViewer
+          │    Purpose: Full heatmap + expression profiles view
+          │
+          ▼
+Step 4: EXTRACTION
+  Module: ExtractComparativeMarkerResults
+  Input: .comp.marker.odf + significance thresholds
+  Output: Filtered .gct dataset + .grp feature list
+          │
+          ▼
+Step 5: DOWNSTREAM ANALYSIS
+  Modules: HeatMapViewer / GSEA / PathwayCommons / ssGSEA
+  Input: Extracted marker gene list or dataset
+```
+
+### 5.2 Canonical Use Case: AML vs. ALL Leukemia Classification
+The Golub *et al.* AML/ALL dataset is the canonical GenePattern tutorial dataset:
+```
+Files: all_aml_train.gct (38 samples, 7129 genes)
+       all_aml_train.cls (27 AML, 11 ALL)
+Workflow: CMS → GeneListSignificanceViewer → View top marker genes
+           discriminating acute myeloid vs. lymphoblastic leukemia
+Expected: ~200+ genes significant at FDR < 0.05
+```
+
+### 5.3 Use Case Scenarios
+
+| Scenario | Significance Filter | Number of Features | Sort By |
+|---|---|---|---|
+| Discovery/Hypothesis Generation | BH FDR < 0.05 | Top 200 | Score |
+| Confirmatory biomarker validation | Bonferroni < 0.01 | Top 50 | Bonferroni |
+| Class predictor feature selection | FWER < 0.05 | Top 20–100 | Score |
+| Exploratory data analysis | Raw p < 0.01 | Top 500 | p-value |
+| Publication-quality gene list | BH FDR < 0.05 | All significant | Rank |
+
+---
+
+## 6. 🔗 GenePattern Integration Considerations
+
+### 6.1 Module Type & Categorization
+```
+taskType   = Visualizer
+categories = Visualizer; Gene Expression; Marker Selection; 
+             Differential Expression
+fileFormat = odf
+```
+
+### 6.2 GenePattern File Type Associations
+The module should register a **file type association** in GenePattern so that clicking on any `.odf` (ComparativeMarkerSelection output) offers `GeneListSignificanceViewer` as a "Send to Module" option — matching the behavior of `ComparativeMarkerSelectionViewer`.
+
+```xml
+<!-- module_context.xml association -->
+<fileformat name="comp.marker.odf">
+  <suggestedmodule>GeneListSignificanceViewer</suggestedmodule>
+  <suggestedmodule>ComparativeMarkerSelectionViewer</suggestedmodule>
+  <suggestedmodule>ExtractComparativeMarkerResults</suggestedmodule>
+</fileformat>
+```
+
+### 6.3 JavaScript Visualizer Implementation Pattern
+Following GenePattern's JavaScript visualizer convention (as used by HeatMapViewer JS rewrite):
+```javascript
+// Standard GP JavaScript Visualizer bootstrap
+window.onload = function() {
+    // 1. Retrieve input file URL from GP job context
+    var odfFileUrl = GP.jobResults['comparative.marker.selection.filename'];
+    
+    // 2. Fetch and parse ODF file
+    fetchAndParseODF(odfFileUrl, function(data) {
+        // 3. Render interactive significance table
+        renderSignificanceTable(data, getFilterParameters());
+        
+        // 4. Attach event handlers for filtering/sorting
+        attachInteractiveHandlers();
+    });
+};
+
+function parseODF(text) {
+    // Parse GenePattern ODF format
+    // Extract header metadata and data rows
+    // Return structured gene list with all statistics
+}
+```
+
+### 6.4 Relationship to Legacy Java Applet Version
+| Aspect | Legacy Java Applet | New JavaScript Version |
+|---|---|---|
+| **Browser Compatibility** | ❌ Broken since 2017 | ✅ All modern browsers |
+| **Plugin Required** | Java plugin | None |
+| **GeneCruiser** | Deprecated (removed 2016) | Not applicable |
+| **Performance** | Applet startup lag | Fast JS rendering |
+| **Maintenance** | No longer maintained | Active development |
+| **Mobile Support** | No | Yes (responsive) |
+| **GenePattern Version** | ≤ 3.9.x | ≥ 3.9.8 |
+
+### 6.5 Key Integration Notes
+
+1. **ODF Parser**: Must implement a robust GenePattern ODF parser in JavaScript. This is the most critical technical component. The ODF format uses a fixed header structure followed by tab-delimited data.
+
+2. **Column Flexibility**: The columns present in the ODF may vary depending on which significance tests were run in `ComparativeMarkerSelection`. The JavaScript parser must handle optional columns gracefully.
+
+3. **Large Dataset Handling**: For genome-wide datasets (~20,000–50,000 features), client-side rendering must use virtualization or pagination (e.g., DataTables with server-side pagination) to remain responsive.
+
+4. **Bidirectional Ranking**: Genes ranked positively favor Class 1; genes ranked negatively favor Class 0. The viewer must clearly present both directions, potentially splitting the display into "Class 1 markers" and "Class 0 markers" sections.
+
+5. **No GeneCruiser**: The JavaScript rewrite should explicitly **not** include GeneCruiser functionality (deprecated March 2016). The recommended path for probe annotation is the `CollapseDataset` module, which can be suggested via a "Send to Module" action.
+
+6. **Export Functionality**: Should provide ability to export filtered gene list as a `.grp` file (GenePattern gene list format) for use with GSEA, ssGSEA, and other downstream modules.
+
+---
+
+## 7. 📚 Literature & Provenance
+
+### 7.1 Primary Citation
+> **Gould J, Getz G, Monti S, Reich M, Mesirov JP.** "Comparative gene marker selection suite." *Bioinformatics.* 2006 Aug 1;22(15):1924–5. DOI: [10.1093/bioinformatics/btl196](https://doi.org/10.1093/bioinformatics/btl196). PMID: 16709585.
+
+### 7.2 GenePattern Platform Citation
+> **Reich M, Liefeld T, Gould J, Lerner J, Tamayo P, Mesirov JP.** "GenePattern 2.0." *Nature Genetics.* 2006 May;38(5):500–1. DOI: [10.1038/ng0506-500](https://doi.org/10.1038/ng0506-500). PMID: 16642009.
+
+### 7.3 Protocol Citation
+> **Kuehn H, Liberzon A, Reich M, Mesirov JP.** "Using GenePattern for Gene Expression Analysis." *Current Protocols in Bioinformatics.* 2008. PMC: [PMC3893799](https://pmc.ncbi.nlm.nih.gov/articles/PMC3893799/).
+
+### 7.4 Historical Java Applet Deprecation Context
+- [March 2016 — GeneCruiser deprecated](https://www.genepattern.org/blog/2016/03/15/genecruiser-is-now-deprecated/): GeneCruiser functionality removed from all Java applet visualizers including GeneListSignificanceViewer
+- [March 2017 — Java applets deprecated](https://www.genepattern.org/blog/2017/03/16/java-applet-based-visualizers-no-longer-function-in-any-browser): Java applet visualizers ceased to function in all browsers; JavaScript rewrites initiated
+
+---
+
+## 8. ⚠️ Known Issues, Limitations & Caveats
+
+| Issue | Description | Recommendation |
+|---|---|---|
+| **Java Applet Legacy** | Original version completely non-functional in modern browsers | JavaScript rewrite is the correct path |
+| **GeneCruiser Removed** | Affymetrix probe annotation via GeneCruiser is deprecated | Direct users to `CollapseDataset` module |
+| **ODF Column Variability** | Column set varies by test type; parser must be flexible | Implement defensive column detection |
+| **Two-Class Only** | ComparativeMarkerSelection (and this viewer) is limited to exactly two-class comparisons | Multi-class users should use other modules |
+| **Large Dataset Performance** | 50,000+ gene tables may be slow to render in browser without virtualization | Implement pagination or virtual scrolling |
+| **Permutation Dependency** | Statistical validity depends on adequate permutation count in upstream CMS run | Document recommended permutation counts (≥1000) |
+| **Score Sign Convention** | Positive score = Class 1 up-regulated; negative = Class 0 up-regulated — must be clearly labelled | Add clear class labels from ODF header |
+
+---
+
+## 9. 🎯 Summary Recommendations for GenePattern Module Creation
+
+### Critical Implementation Priorities:
+1. ✅ **Implement robust ODF parser** — handles variable column sets, reads class labels from ODF header
+2. ✅ **Interactive sortable/filterable table** — DataTables.js or equivalent for large gene lists
+3. ✅ **Bidirectional significance display** — clearly show Class 0 and Class 1 markers separately
+4. ✅ **Multiple significance filter support** — FDR, FWER, Bonferroni, p-value as toggle options
+5. ✅ **Gene list export** — `.grp` format output for downstream GSEA/pathway analysis
+6. ✅ **File type association** — register as a handler for `.comp.marker.odf` files
+7. ✅ **Responsive layout** — minimum GenePattern server version 3.9.8
+
+### Module Manifest Essentials:
+```
+name=GeneListSignificanceViewer
+taskType=Visualizer
+categories=Visualizer;Gene Expression;Marker Selection
+language=JavaScript
+os=any
+fileFormat=odf
+minGPVersion=3.9.8
+```
+
+---
+
+*Research conducted using GenePattern official documentation, the GenePattern GitHub organization, peer-reviewed literature (Gould et al. 2006; Reich et al. 2006), PMC protocol papers, and GenePattern blog historical records. All sources verified as of research date.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

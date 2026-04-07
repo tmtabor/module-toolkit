@@ -1,0 +1,40 @@
+{
+  "module_name": "PredictionResultsViewer",
+  "description": "Visualizes prediction results in JavaScript",
+  "author": "Thorin Tabor (UC San Diego, Broad Institute)",
+  "input_file_formats": [
+    "Prediction Results",
+    "odf",
+    "pred.odf"
+  ],
+  "language": "Javascript",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:27340:1",
+  "plan": "## PredictionResultsViewer GenePattern Module — Implementation Plan\n\n### 1. Overview\nPredictionResultsViewer is a GenePattern module that Visualizes prediction results in JavaScript\n\n### 2. Parameters\nThe module exposes 1 parameters:\n- Required: prediction.results.file\n- Optional: none\n\n### 3. Command Line\n```\nprediction_results_viewer.html ? <prediction.results.file>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.py",
+  "command_line": "prediction_results_viewer.html ? <prediction.results.file>",
+  "parameters": [
+    {
+      "name": "prediction.results.file",
+      "description": "Prediction results - .odf",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "odf",
+        "pred.odf",
+        "Prediction Results"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--prediction.results.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

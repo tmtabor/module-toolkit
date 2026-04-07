@@ -1,0 +1,87 @@
+Create a comprehensive structured plan for the GenePattern module for 'PCAViewer'.
+            
+            Tool Information:
+            - Name: PCAViewer
+            - Version: Fixed bug with 3D plot with legend not properly saved on non-Windows machines
+            - Language: Java
+            - Description: Principal Component Analysis Visualizer (adapted from MeV, http\://www.tigr.org/software/tm4/mev.html)
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "PCAViewer",
+  "parameters": [
+    {
+      "name": "dataset.file",
+      "type": "FILE",
+      "description": "The dataset - .res, .gct",
+      "required": true,
+      "default_value": "",
+      "file_format": "res;gct"
+    },
+    {
+      "name": "s.matrix.file",
+      "type": "FILE",
+      "description": "The s matrix - .odf",
+      "required": true,
+      "default_value": "",
+      "file_format": "Matrix"
+    },
+    {
+      "name": "t.matrix.file",
+      "type": "FILE",
+      "description": "The t matrix - .odf",
+      "required": true,
+      "default_value": "",
+      "file_format": "Matrix"
+    },
+    {
+      "name": "u.matrix.file",
+      "type": "FILE",
+      "description": "The u matrix - .odf",
+      "required": true,
+      "default_value": "",
+      "file_format": "Matrix"
+    },
+    {
+      "name": "cls.or.sample.info.file",
+      "type": "FILE",
+      "description": "A cls or sample info file - .cls, .txt",
+      "required": false,
+      "default_value": "",
+      "file_format": "cls"
+    },
+    {
+      "name": "sample.info.class",
+      "type": "unknown",
+      "description": "The name of the class column to use in the sample info file (required if sample info file provided)",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "featureset.file",
+      "type": "FILE",
+      "description": "The feature set file - .gmt, .gmx, .grp",
+      "required": false,
+      "default_value": "",
+      "file_format": "gmt;gmx;grp"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Visualizer",
+  "author": "TIGR, http\\://www.tigr.org/software/tm4/mev.html, mev@tigr.org",
+  "command_line": "<java> <java_flags> -jar <libdir>pcaviewer.jar <dataset.file> <s.matrix.file> <t.matrix.file> <u.matrix.file> -c<cls.or.sample.info.file> -k<sample.info.class> -f<featureset.file>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

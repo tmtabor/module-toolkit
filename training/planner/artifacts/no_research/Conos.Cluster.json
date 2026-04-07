@@ -1,0 +1,133 @@
+{
+  "module_name": "Conos.Cluster",
+  "description": "GenePattern Module which implements the clustering and embedding steps of Conos",
+  "author": "Edwin F. Juarez & Anthony Castanza;UCSD -- Mesirov Lab",
+  "input_file_formats": [
+    "rds"
+  ],
+  "language": "R",
+  "categories": [
+    "clustering",
+    "singlecell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:18464:1",
+  "plan": "## Conos.Cluster GenePattern Module — Implementation Plan\n\n### 1. Overview\nConos.Cluster is a GenePattern module that GenePattern Module which implements the clustering and embedding steps of Conos\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: conos_object, runleiden, leiden_resolution, runwalktrap, walktrap_steps, umap_distance, umap_spread\n- Optional: none\n\n### 3. Command Line\n```\nRscript /module/run_conos_cluster.R --conos_object <conos_object> --runleiden <runleiden> --leiden_resolution <leiden_resolution> --runwalktrap <runwalktrap> --walktrap_steps <walktrap_steps> --umap_distance <umap_distance> --umap_spread <umap_spread>\n```\n\n### 4. Docker Image\nDocker image: genepattern/conos\\:v3\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_conos_cluster.R",
+  "command_line": "Rscript /module/run_conos_cluster.R --conos_object <conos_object> --runleiden <runleiden> --leiden_resolution <leiden_resolution> --runwalktrap <runwalktrap> --walktrap_steps <walktrap_steps> --umap_distance <umap_distance> --umap_spread <umap_spread>",
+  "parameters": [
+    {
+      "name": "conos_object",
+      "description": "Conos object created by Conos.Preprocess (.rds).",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "rds"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--conos_object",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "runleiden",
+      "description": "Whether or not to run Leiden community clustering",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "True",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--runleiden",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "leiden_resolution",
+      "description": "Resolution for Leiden Community Clustering (default\\:1). Generally best performance is achieved  with a resolution between 1 and 2",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "1.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--leiden_resolution",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "runwalktrap",
+      "description": "Whether or not to perform runwalktrap community clustering",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "True",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--runwalktrap",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "walktrap_steps",
+      "description": "Steps to be taken for the walktrap algorithm (default\\:10)",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--walktrap_steps",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "umap_distance",
+      "description": "UMAP Minimum Distance (default\\: 0.05)",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.05",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--umap_distance",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "umap_spread",
+      "description": "UMAP Spread (default\\: 5.0)",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--umap_spread",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/conos:v3"
+}

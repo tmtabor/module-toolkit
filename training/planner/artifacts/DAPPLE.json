@@ -1,0 +1,157 @@
+{
+  "module_name": "DAPPLE",
+  "description": "DAPPLE (Disease Association Protein-Protein Link Evaluator) looks for significant physical connectivity among proteins encoded for by genes in loci associated to disease according to protein-protein interactions reported in the literature.",
+  "author": "Lizzy Rossin, Heiko Horn",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "Python",
+  "categories": [
+    "Proteomics",
+    "Statistical Methods"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:59401:1",
+  "plan": "## DAPPLE GenePattern Module — Implementation Plan\n\n### 1. Overview\nDAPPLE is a GenePattern module that DAPPLE (Disease Association Protein-Protein Link Evaluator) looks for significant physical connectivity among proteins encoded for by genes in loci associated to disease according to protein-protein interactions reported in the literature.\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: Input.File, Permute.Length, genome.build, Keyword\n- Optional: Plot, nearest.gene, Seed\n\n### 3. Command Line\n```\npython /code/BuildNetwork_slowTMP.py <Input.File> keyword\\=<Keyword> permute\\=<Permute.Length> plot\\=<Plot> genome\\=<genome.build> nearestgene\\=<nearest.gene>\n```\n\n### 4. Docker Image\nDocker image: genepattern/dapple\\:v0.19-pre.4\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "BuildNetwork_slowTMP.py",
+  "command_line": "python /code/BuildNetwork_slowTMP.py <Input.File> keyword=<Keyword> permute=<Permute.Length> plot=<Plot> genome=<genome.build> nearestgene=<nearest.gene>",
+  "parameters": [
+    {
+      "name": "Input.File",
+      "description": "File containing a list of SNPs, genes or regions. Each input should be on a new line.",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Input.File",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Permute.Length",
+      "description": "To increase speed, this is adaptive permutation (see README)",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "0",
+          "value": "0"
+        },
+        {
+          "display": "50",
+          "value": "50"
+        },
+        {
+          "display": "1000",
+          "value": "1000"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Permute.Length",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Plot",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "true",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "true",
+          "value": "true"
+        },
+        {
+          "display": "false",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Plot",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "nearest.gene",
+      "description": "Do you want to use the gene nearest to the SNP (rather than grabbing all genes in the LD wingspan)? Only relevant for SNP inputs.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "true"
+        },
+        {
+          "display": "no, use LD",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--nearest.gene",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "genome.build",
+      "description": "Which set of SNPs should we use? hg18, hg19, 1KG?",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "18",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "hg18",
+          "value": "18"
+        },
+        {
+          "display": "hg19",
+          "value": "19"
+        },
+        {
+          "display": "1KG",
+          "value": "1kg"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--genome.build",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Keyword",
+      "description": "",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Keyword",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Seed",
+      "description": "For reproducible runs, please specify a seed [integer] for randomization",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "seed\\=",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/dapple:v0.19-pre.4"
+}

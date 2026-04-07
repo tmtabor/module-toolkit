@@ -1,0 +1,142 @@
+{
+  "module_name": "Picard.AddOrReplaceReadGroups",
+  "description": "Replaces all read groups in the input file with a new read group and assigns all reads to this read group in the output",
+  "author": "Picard Tools",
+  "input_file_formats": [
+    "bam",
+    "sam"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:57602:1",
+  "plan": "## Picard.AddOrReplaceReadGroups GenePattern Module — Implementation Plan\n\n### 1. Overview\nPicard.AddOrReplaceReadGroups is a GenePattern module that Replaces all read groups in the input file with a new read group and assigns all reads to this read group in the output\n\n### 2. Parameters\nThe module exposes 9 parameters:\n- Required: input.file, read.group.id, read.group.library, read.group.platform, read.group.platform.unit, read.group.sample.name, output.prefix\n- Optional: read.group.sequencing.center.name, read.group.description\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>AddOrReplaceReadGroups.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>gp-AddOrReplaceReadGroups.jar org.genepattern.sam.AddOrReplaceReadGroupsWrapper -inputFileName <input.file> -groupId <read.group.id> -lib <read.group.library> -platform <read.group.platform> -pUnit <read.group.platform.unit> -sample <read.group.sample.name> -center <read.group.sequencing.center.name> -desc <read.group.description> -outputFileName <output.prefix>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "AddOrReplaceReadGroups.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>gp-AddOrReplaceReadGroups.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>AddOrReplaceReadGroups.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>gp-AddOrReplaceReadGroups.jar org.genepattern.sam.AddOrReplaceReadGroupsWrapper -inputFileName <input.file> -groupId <read.group.id> -lib <read.group.library> -platform <read.group.platform> -pUnit <read.group.platform.unit> -sample <read.group.sample.name> -center <read.group.sequencing.center.name> -desc <read.group.description> -outputFileName <output.prefix>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "Input file (BAM or SAM).",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "sam",
+        "bam"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "read.group.id",
+      "description": "Read Group ID",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--read.group.id",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "read.group.library",
+      "description": "DNA preparation library. Note that this field is required by the module Picard.MarkDuplicates. It is used to determine which read groups may contain molecular duplicates, in the case where the same DNA library was sequenced on multiple lanes.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--read.group.library",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "read.group.platform",
+      "description": "Read Group platform (e.g., Illumina, SOLID).",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--read.group.platform",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "read.group.platform.unit",
+      "description": "Read Group platform unit (e.g., run barcode).",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--read.group.platform.unit",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "read.group.sample.name",
+      "description": "Read Group sample name.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--read.group.sample.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "read.group.sequencing.center.name",
+      "description": "Read Group sequencing center name.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--read.group.sequencing.center.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "read.group.description",
+      "description": "Read Group description.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--read.group.description",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "A label used to name the output file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

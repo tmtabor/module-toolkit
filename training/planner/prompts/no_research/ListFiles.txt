@@ -1,0 +1,89 @@
+Create a comprehensive structured plan for the GenePattern module for 'ListFiles'.
+            
+            Tool Information:
+            - Name: ListFiles
+            - Version: Updated source code to use FindCommand and FileVisitor pattern
+            - Language: any
+            - Description: a helper module which outputs a filelist, the list of all files in the input directory, similar to the unix 'ls' command
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ListFiles",
+  "parameters": [
+    {
+      "name": "dir",
+      "type": "DIRECTORY",
+      "description": "a directory",
+      "required": true,
+      "default_value": "",
+      "prefix": "--dir\\="
+    },
+    {
+      "name": "recursive",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "\\=no, default;-R\\=yes"
+    },
+    {
+      "name": "includePattern",
+      "type": "java.lang.String",
+      "description": "an optional list of filename patterns, e.g. *.cls,*.gct",
+      "required": false,
+      "default_value": "",
+      "prefix": "--include-file\\="
+    },
+    {
+      "name": "pruneDir",
+      "type": "java.lang.String",
+      "description": "an optional list of directory name patterns to ignore, e.g. *.svn",
+      "required": false,
+      "default_value": "",
+      "prefix": "--prune-dir\\="
+    },
+    {
+      "name": "order.by",
+      "type": "java.lang.String",
+      "description": "an optional flag for how to order the files",
+      "required": false,
+      "default_value": "",
+      "choices": "\\=alphabetical, default;-t\\=timestamp"
+    },
+    {
+      "name": "type",
+      "type": "java.lang.String",
+      "description": "",
+      "required": false,
+      "default_value": "",
+      "choices": "\\=all, default;f\\=file;d\\=dir",
+      "prefix": "--type\\="
+    },
+    {
+      "name": "output.filename",
+      "type": "java.lang.String",
+      "description": "the name of the output file, if none specified, write to stdout",
+      "required": false,
+      "default_value": "",
+      "prefix": "--o\\="
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Peter Carr, Broad Institute",
+  "command_line": "<java> -cp <libdir>ListFiles.jar<path.separator><libdir>jopt-simple-3.3.jar<path.separator><libdir>jakarta-oro-2.0.8.jar org.genepattern.module.find.FindCommand <dir> <recursive> <includePattern> <pruneDir> <type> <order.by> <output.filename>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

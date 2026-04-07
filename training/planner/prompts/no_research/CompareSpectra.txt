@@ -1,0 +1,69 @@
+Create a comprehensive structured plan for the GenePattern module for 'CompareSpectra'.
+            
+            Tool Information:
+            - Name: CompareSpectra
+            - Version: Fixed parsing of input files, changed default value of output file, and suppressed package startup messages
+            - Language: R
+            - Description: Compares two spectra to determine similarity
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "CompareSpectra",
+  "parameters": [
+    {
+      "name": "spectrum1.filename",
+      "type": "FILE",
+      "description": "Spectrum file -.csv",
+      "required": true,
+      "default_value": "",
+      "file_format": "csv"
+    },
+    {
+      "name": "spectrum2.filename",
+      "type": "FILE",
+      "description": "Spectrum file - .csv",
+      "required": true,
+      "default_value": "",
+      "file_format": "csv"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "Output file name - .odf",
+      "required": true,
+      "default_value": "<spectrum1.filename_basename>_<spectrum2.filename_basename>_compare.odf"
+    },
+    {
+      "name": "low.Da",
+      "type": "java.lang.String",
+      "description": "Minimum M/Z to include",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "high.Da",
+      "type": "java.lang.String",
+      "description": "Maximum M/Z to include",
+      "required": false,
+      "default_value": ""
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Proteomics",
+  "author": "D.R. Mani, Broad Institute",
+  "command_line": "<R2.5> <libdir>pipeline.wrapper.R spectra.compare.wrapper <spectrum1.filename> <spectrum2.filename> <output.file> <libdir> -l<low.Da> -h<high.Da>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

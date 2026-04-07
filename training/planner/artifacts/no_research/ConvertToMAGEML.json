@@ -1,0 +1,69 @@
+{
+  "module_name": "ConvertToMAGEML",
+  "description": "Converts a gct, res, or odf dataset file to a MAGE-ML file",
+  "author": "Joshua Gould",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:83784:1",
+  "plan": "## ConvertToMAGEML GenePattern Module — Implementation Plan\n\n### 1. Overview\nConvertToMAGEML is a GenePattern module that Converts a gct, res, or odf dataset file to a MAGE-ML file\n\n### 2. Parameters\nThe module exposes 3 parameters:\n- Required: input.filename, output.file.base.name, create.zip.file\n- Optional: none\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>MAGEstk-2003-10-24-v1.1-compatible.jar<path.separator><libdir>ConvertToMAGE.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar edu.mit.broad.modules.mage.MAGECreator <input.filename> <output.file.base.name> <create.zip.file>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "MAGEstk-2003-10-24-v1.1-compatible.jar<path.separator><libdir>ConvertToMAGE.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>MAGEstk-2003-10-24-v1.1-compatible.jar<path.separator><libdir>ConvertToMAGE.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar edu.mit.broad.modules.mage.MAGECreator <input.filename> <output.file.base.name> <create.zip.file>",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "description": "The gct, res, or odf file to convert",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file.base.name",
+      "description": "The base name of the zip output file or the MAGE-ML file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.filename_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file.base.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "create.zip.file",
+      "description": "Whether to zip the MAGE-ML files",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--create.zip.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

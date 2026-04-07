@@ -1,0 +1,587 @@
+Create a comprehensive structured plan for the GenePattern module for 'Mutect2'.
+            
+            Tool Information:
+            - Name: Mutect2
+            - Version: Initial module revision
+            - Language: any
+            - Description: Runs Gatk Mutect2
+            
+            Research Results:
+            All research data has been gathered and analyzed. Now let me compose the full, authoritative research report.
+
+---
+
+# 🧬 Comprehensive Research Report: Mutect2
+## GenePattern Module Development Reference
+
+---
+
+## 📋 Executive Summary
+
+**Mutect2** is the **industry-standard somatic short variant caller** developed and maintained by the Broad Institute as part of the **GATK4 toolkit**. It detects somatic single nucleotide variants (SNVs) and insertion/deletion variants (indels) in tumor samples through local de-novo haplotype assembly combined with a sophisticated Bayesian somatic genotyping model. It is the **primary somatic variant caller** recommended by GATK Best Practices, adopted by TCGA, GDC, and PCAWG consortia, and validated extensively in peer-reviewed literature (Benjamin et al., 2019, bioRxiv doi:10.1101/861054).
+
+---
+
+## 1. 🔬 Tool Purpose & Scientific Applications
+
+### 1.1 Core Function
+Mutect2 calls somatic short mutations by:
+1. **Identifying active regions** — genomic windows with evidence of non-reference variation
+2. **Local de-novo haplotype assembly** — reconstructing candidate haplotypes from reads using a De Bruijn graph
+3. **PairHMM likelihood computation** — scoring each read against candidate haplotypes
+4. **Bayesian somatic genotyping** — computing posterior probabilities that a variant is somatic (not germline or artifact), incorporating tumor/normal evidence, population allele frequencies, and panel-of-normals signal
+
+### 1.2 Supported Variant Types
+| Variant Type | Support Level |
+|---|---|
+| SNVs (Single Nucleotide Variants) | ✅ Full support |
+| Small Indels (<50 bp) | ✅ Full support |
+| MNPs (Multi-Nucleotide Polymorphisms) | ✅ With `--max-mnp-distance > 0` |
+| Complex variants | ✅ Via local assembly |
+| Structural variants | ❌ Not supported (use GATK-SV) |
+| Copy number variants | ❌ Not supported (use GATK CNV) |
+
+### 1.3 Operating Modes
+| Mode | Flag | Use Case | AF Prior |
+|---|---|---|---|
+| **Tumor-Normal** | `-normal <name>` | Paired tumor + matched normal | `1e-6` (dynamic) |
+| **Tumor-Only** | *(no -normal flag)* | No matched normal available | `5e-8` (dynamic) |
+| **Mitochondrial** | `--mitochondria-mode` | High-depth mito variant calling | `4e-3` (dynamic) |
+
+### 1.4 Scientific Applications
+- **Cancer genomics**: Somatic mutation profiling in solid tumors and hematologic malignancies
+- **TCGA/GDC pipelines**: Used in Cancer Genome Atlas somatic calling workflows
+- **Tumor evolution studies**: Tracking mutational trajectories across tumor samples
+- **ctDNA / liquid biopsy**: Ultra-low allele fraction detection in cell-free DNA
+- **Mitochondrial heteroplasmy**: Detecting low-frequency mitochondrial variants
+- **Somatic mosaicism**: Identifying post-zygotic mutations in non-cancer tissues
+- **Clinical oncology**: FDA-recognized variant calling approach for clinical sequencing
+
+---
+
+## 2. 📁 Input/Output Formats & Requirements
+
+### 2.1 Required Inputs
+
+| Parameter | Format | Notes |
+|---|---|---|
+| `-R` Reference FASTA | `.fa` / `.fasta` | Must have `.fai` index and `.dict` dictionary |
+| `-I` Tumor BAM/CRAM | `.bam` / `.cram` | Coordinate-sorted, indexed (`.bai`/`.crai`), with read groups (SM tag) |
+| `-I` Normal BAM/CRAM | `.bam` / `.cram` | Same requirements; optional but strongly recommended |
+| `-O` Output VCF | `.vcf.gz` recommended | Unfiltered somatic calls in VCF 4.2 format |
+
+### 2.2 Strongly Recommended Inputs
+
+| Parameter | Format | Source / Notes |
+|---|---|---|
+| `--germline-resource` | `.vcf.gz` (indexed) | AF-only gnomAD VCF (Broad-provided); enables germline filtering |
+| `--panel-of-normals` | `.vcf.gz` (indexed) | Created with `CreateSomaticPanelOfNormals`; filters recurrent technical artifacts |
+| `-L` Intervals | `.bed`, `.interval_list`, `.vcf`, `chr:start-end` | Limits analysis to target regions (required for WES/panel) |
+| `--f1r2-tar-gz` | `.tar.gz` | F1R2 counts output; input to `LearnReadOrientationModel` for orientation-bias filtering |
+
+### 2.3 Outputs
+
+| Output | Format | Description |
+|---|---|---|
+| Main VCF | VCF 4.2 (`.vcf.gz`) | Raw unfiltered calls; `TLOD` INFO field drives filtering |
+| VCF Stats | `.vcf.gz.stats` | Auto-generated; **required** for `FilterMutectCalls` ≥ GATK 4.1.1 |
+| F1R2 Counts | `.tar.gz` | Per-sample orientation-bias artifact counts |
+| Assembly BAM | `.bam` | Optional; assembled haplotypes for debugging (`--bam-output`) |
+
+### 2.4 Key VCF Fields Produced
+
+**INFO fields (selected):**
+| Field | Description |
+|---|---|
+| `TLOD` | Tumor log-odds score (primary somatic evidence metric) |
+| `NLOD` | Normal log-odds score (germline evidence) |
+| `POPAF` | Population allele frequency from germline resource |
+| `GERMQ` | Phred-scaled posterior probability of germline event |
+| `CONTQ` | Phred-scaled contamination confidence |
+| `ECNT` | Events in haplotype count |
+| `PON` | Site in Panel of Normals flag |
+| `STR` | Tandem repeat indicator |
+
+**FORMAT fields (selected):**
+| Field | Description |
+|---|---|
+| `GT` | Genotype |
+| `AD` | Allelic depths (ref, alt) |
+| `AF` | Allele fraction |
+| `DP` | Total depth |
+| `F1R2` | Count of reads in F1R2 pair orientation |
+| `F2R1` | Count of reads in F2R1 pair orientation |
+| `SB` | Per-sample strand bias |
+
+### 2.5 BAM Pre-processing Requirements
+Mutect2 requires **GATK Best Practices pre-processed BAMs**:
+1. **Alignment**: BWA-MEM to reference genome (GRCh38 / hg19 / hg38)
+2. **Sorting**: `Picard SortSam` (coordinate sort)
+3. **Duplicate Marking**: `Picard MarkDuplicates`
+4. **Base Quality Score Recalibration (BQSR)**: `GATK BaseRecalibrator` + `ApplyBQSR`
+5. **Indexing**: `samtools index` or `Picard BuildBamIndex`
+
+---
+
+## 3. 🔧 Parameter Analysis & Usage Patterns
+
+### 3.1 Required Parameters (GenePattern Module Core)
+
+| Parameter | GATK Flag | Type | Default | Description |
+|---|---|---|---|---|
+| `tumor_bam` | `-I` | File | — | Tumor BAM/CRAM input |
+| `reference_fasta` | `-R` | File | — | Reference genome FASTA |
+| `output_vcf` | `-O` | File | — | Output VCF path |
+
+### 3.2 Commonly Used Optional Parameters
+
+| Parameter | GATK Flag | Type | Default | Scientific Significance |
+|---|---|---|---|---|
+| `normal_bam` | `-I` | File | null | Enables tumor-normal calling; critical for germline discrimination |
+| `normal_sample_name` | `--normal-sample` | String | null | Must match SM tag in normal BAM read group |
+| `tumor_sample_name` | `--tumor-sample` | String | auto | Must match SM tag in tumor BAM read group |
+| `germline_resource` | `--germline-resource` | File | null | gnomAD AF-only VCF; greatly reduces germline FP rate |
+| `panel_of_normals` | `--panel-of-normals` | File | null | Site-level artifact filter; ≥40-50 normals recommended |
+| `intervals` | `-L` | String/File | genome | Restrict to target regions; required for WES/targeted panels |
+| `f1r2_tar_gz` | `--f1r2-tar-gz` | File | null | Enables orientation-bias filtering in post-processing |
+| `mitochondria_mode` | `--mitochondria-mode` | Boolean | false | Adjusts LOD thresholds and AF priors for high-depth mito calling |
+
+### 3.3 Advanced Tunable Parameters
+
+| Parameter | GATK Flag | Type | Default | Notes |
+|---|---|---|---|---|
+| `af_of_alleles_not_in_resource` | `--af-of-alleles-not-in-resource` | Double | dynamic | Mode-dependent; rarely needs manual override |
+| `initial_tumor_lod` | `--initial-tumor-lod` | Double | 2.0 | Lower → more sensitive, more FP |
+| `tumor_lod_to_emit` | `--tumor-lod-to-emit` | Double | 3.0 | Minimum LOD to write to VCF |
+| `max_mnp_distance` | `--max-mnp-distance` | Integer | 1 | Set to 0 when creating PoN |
+| `callable_depth` | `--callable-depth` | Integer | 10 | Minimum depth per site |
+| `pcr_indel_model` | `--pcr-indel-model` | Enum | CONSERVATIVE | NONE/HOSTILE/AGGRESSIVE/CONSERVATIVE |
+| `minimum_allele_fraction` | `--minimum-allele-fraction` | Double | 0.0 | Useful for ctDNA and low-purity tumors |
+| `max_reads_per_alignment_start` | `--max-reads-per-alignment-start` | Integer | 50 | Downsampling; increase for high-depth sequencing |
+| `genotype_germline_sites` | `--genotype-germline-sites` | Boolean | false | Output all sites including germline |
+| `genotype_pon_sites` | `--genotype-pon-sites` | Boolean | false | Output PoN flagged sites |
+| `assembly_region_padding` | `--assembly-region-padding` | Integer | 100 | Padding around active regions |
+| `pruning_lod_threshold` | `--pruning-lod-threshold` | Double | 2.302585 | Assembly graph pruning |
+| `java_options` | `--java-options` | String | `-Xmx4g` | JVM heap memory (e.g., `-Xmx8g`) |
+| `extra_args` | *(passthrough)* | String | null | Free-text field for advanced/unlisted arguments |
+
+### 3.4 Parameter Usage Pattern Groups
+
+```
+GROUP 1: REQUIRED (always present)
+  -R  -I (tumor)  -O
+
+GROUP 2: STANDARD TUMOR-NORMAL (recommended)
+  -I (normal)  --normal-sample  --germline-resource  --panel-of-normals  --f1r2-tar-gz
+
+GROUP 3: INTERVAL/TARGET SPECIFICATION
+  -L  --interval-padding
+
+GROUP 4: LOD SENSITIVITY TUNING
+  --initial-tumor-lod  --tumor-lod-to-emit  --minimum-allele-fraction
+
+GROUP 5: SPECIALIZED MODES
+  --mitochondria-mode  --pcr-indel-model  --genotype-germline-sites
+
+GROUP 6: PERFORMANCE/RESOURCE
+  --java-options  --max-reads-per-alignment-start  --downsampling-stride
+
+GROUP 7: ADVANCED/DEBUGGING
+  --bam-output  --genotype-pon-sites  --pruning-lod-threshold  --force-active
+```
+
+---
+
+## 4. ⚙️ Installation & Dependency Requirements
+
+### 4.1 Core Dependencies
+
+| Component | Requirement | Notes |
+|---|---|---|
+| **Operating System** | Linux / macOS (POSIX) | Windows **not supported** |
+| **Java** | JDK 1.8 for GATK ≤4.3.x; Java 11+ for GATK 4.4+ | Version mismatch causes immediate failure |
+| **GATK4** | ≥4.1.1 recommended (for .stats file support) | Latest stable: 4.5.x series |
+| **Samtools** | ≥1.9 | For BAM indexing pre-processing |
+| **R** | ≥3.x | Optional; used by some auxiliary GATK scripts |
+| **Python 3** | ≥3.6 | Optional; used by some GATK utilities |
+
+### 4.2 Hardware Recommendations
+
+| Resource | Minimum | Recommended (WES) | Recommended (WGS) |
+|---|---|---|---|
+| **RAM** | 4 GB | 8 GB | 16–32 GB |
+| **CPU** | 1 core | 4–8 cores (via scattering) | 8–32 cores (via scattering) |
+| **Storage** | 50 GB | 200 GB | 1–5 TB |
+| **Temp Space** | 10 GB | 50 GB | 200 GB |
+
+### 4.3 Installation Methods
+
+```bash
+# Method 1: Direct download
+wget https://github.com/broadinstitute/gatk/releases/download/4.5.0.0/gatk-4.5.0.0.zip
+unzip gatk-4.5.0.0.zip && export PATH=$PATH:gatk-4.5.0.0/
+
+# Method 2: Bioconda (recommended for environments)
+conda install -c bioconda gatk4
+
+# Method 3: Docker (recommended for GenePattern)
+docker pull broadinstitute/gatk:4.5.0.0
+docker run --rm broadinstitute/gatk:4.5.0.0 gatk Mutect2 --help
+
+# Method 4: Singularity (HPC environments)
+singularity pull docker://broadinstitute/gatk:4.5.0.0
+```
+
+### 4.4 Reference Data Resources (Broad-Provided)
+
+| Resource | Purpose | Location |
+|---|---|---|
+| `af-only-gnomad.hg38.vcf.gz` | Germline resource | gs://gatk-best-practices/somatic-hg38/ |
+| `somatic-hg38_1000g_pon.vcf.gz` | Panel of Normals (1000G) | gs://gatk-best-practices/somatic-hg38/ |
+| `Homo_sapiens_assembly38.fasta` | Reference genome | gs://genomics-public-data/resources/broad/ |
+| `small_exac_common_3.hg38.vcf.gz` | Contamination estimation | gs://gatk-best-practices/somatic-hg38/ |
+
+---
+
+## 5. 🔄 Common Workflows & Use Cases
+
+### 5.1 GATK Somatic Short Variant Best Practices Pipeline (Full)
+
+```
+STAGE 1: PRE-PROCESSING
+  FastQ → BWA-MEM → SortSam → MarkDuplicates → BQSR → Indexed BAM
+
+STAGE 2: PoN CREATION (once per project/cohort)
+  for each normal:
+    Mutect2 (tumor-only, --max-mnp-distance 0) → normal.vcf.gz
+  GenomicsDBImport → CreateSomaticPanelOfNormals → PoN.vcf.gz
+
+STAGE 3: SOMATIC CALLING
+  Mutect2 (tumor + normal + PoN + germline-resource + f1r2) → raw.vcf.gz + f1r2.tar.gz + .stats
+
+STAGE 4: CONTAMINATION ESTIMATION
+  GetPileupSummaries (tumor) + GetPileupSummaries (normal)
+  CalculateContamination → contamination.table + segments.tsv
+
+STAGE 5: ORIENTATION BIAS MODELING
+  LearnReadOrientationModel (f1r2.tar.gz) → artifact_priors.tar.gz
+
+STAGE 6: FILTERING
+  FilterMutectCalls (raw.vcf.gz + contamination.table + artifact_priors) → filtered.vcf.gz
+
+STAGE 7: ANNOTATION (Optional)
+  Funcotator / VEP / ANNOVAR → annotated.vcf / MAF
+```
+
+### 5.2 Key Command Examples
+
+**Tumor-Normal Mode (Gold Standard):**
+```bash
+gatk --java-options "-Xmx8g" Mutect2 \
+  -R /ref/hg38.fasta \
+  -I tumor.bam \
+  -I normal.bam \
+  --normal-sample NORMAL_SAMPLE_NAME \
+  --germline-resource af-only-gnomad.hg38.vcf.gz \
+  --panel-of-normals somatic-hg38_1000g_pon.vcf.gz \
+  -L exome_capture.interval_list \
+  --f1r2-tar-gz f1r2.tar.gz \
+  -O somatic_unfiltered.vcf.gz
+```
+
+**Tumor-Only Mode:**
+```bash
+gatk --java-options "-Xmx8g" Mutect2 \
+  -R /ref/hg38.fasta \
+  -I tumor.bam \
+  --germline-resource af-only-gnomad.hg38.vcf.gz \
+  --panel-of-normals somatic-hg38_1000g_pon.vcf.gz \
+  -O tumor_only_unfiltered.vcf.gz
+```
+
+**Mitochondrial Mode:**
+```bash
+gatk --java-options "-Xmx4g" Mutect2 \
+  -R /ref/hg38.fasta \
+  -L chrM \
+  --mitochondria-mode \
+  -I sample.bam \
+  --f1r2-tar-gz f1r2.tar.gz \
+  -O mito_unfiltered.vcf.gz
+```
+
+**Parallelization via Interval Scattering:**
+```bash
+# Per-interval scatter (run many in parallel)
+gatk Mutect2 -R ref.fa -I tumor.bam -I normal.bam -normal NORMAL \
+  -L chr1 -O chr1_unfiltered.vcf.gz --f1r2-tar-gz chr1_f1r2.tar.gz
+
+# Merge results
+gatk MergeMutectStats -stats chr1_unfiltered.vcf.gz.stats \
+  -stats chr2_unfiltered.vcf.gz.stats -O merged.stats
+gatk GatherVcfs -I chr1_unfiltered.vcf.gz -I chr2_unfiltered.vcf.gz -O merged.vcf.gz
+```
+
+### 5.3 Use Cases by Research Context
+
+| Context | Mode | Key Settings | Expected Performance |
+|---|---|---|---|
+| WES tumor-normal | Tumor-Normal | Full PoN + gnomAD + BQSR | ~95% sensitivity, high specificity |
+| WGS tumor-normal | Tumor-Normal | Interval scatter + PoN | High sensitivity, compute-intensive |
+| FFPE tumor-normal | Tumor-Normal | `--pcr-indel-model NONE` | Addresses FFPE artifact patterns |
+| Low-purity tumor | Tumor-Normal | `--minimum-allele-fraction 0.01` | Sensitive low-AF detection |
+| Tumor-only (no normal) | Tumor-Only | Strong PoN required | Higher FPR; needs filtering |
+| ctDNA / liquid biopsy | Tumor-Only | `--minimum-allele-fraction 0.001` | Ultra-sensitive; high FP risk |
+| Mitochondrial | Mitochondrial | `--mitochondria-mode` | Heteroplasmy detection |
+| Amplicon sequencing | Tumor-Only/Normal | `--pcr-indel-model AGGRESSIVE` | Reduces amplicon indel artifacts |
+
+---
+
+## 6. ⚖️ Comparative Analysis
+
+### 6.1 Somatic Variant Caller Comparison
+
+| Feature | **Mutect2** | Strelka2 | VarScan2 | MuSE | SomaticSniper | LoFreq | VarDict |
+|---|---|---|---|---|---|---|---|
+| SNV calling | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Indel calling | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ |
+| Tumor-only mode | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ | ✅ |
+| PoN support | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Germline resource | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Mitochondrial mode | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Low AF (<5%) | ✅ Best | ⚠️ Moderate | ⚠️ Moderate | ⚠️ Moderate | ❌ Poor | ✅ Good | ✅ Good |
+| Speed (WES) | ⚠️ Slow | ✅ Fastest | ✅ Fast | ✅ Fast | ✅ Fast | ✅ Fast | ✅ Fast |
+| GATK ecosystem | ✅ Native | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| TCGA/GDC validated | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| License | BSD-3 | BSD-2 | LGPL | MIT | MIT | MIT | MIT |
+
+### 6.2 Performance Benchmarks (Literature Summary)
+
+| Benchmark | Mutect2 | Strelka2 | Notes |
+|---|---|---|---|
+| SNV F1 Score (high coverage) | ~0.95 | ~0.95 | Comparable at ≥20% AF |
+| SNV F1 Score (low AF <10%) | **Best** | Second | Mutect2 outperforms |
+| Indel F1 Score | ~0.87 | ~0.86 | Comparable; ensemble improves both |
+| Speed relative to Mutect2 | 1× | 17–22× faster | Strelka2 significantly faster |
+| COSMIC concordance | Highest | High | Per Nature Scientific Reports 2016 |
+| False positive rate (no PoN) | Moderate | Low | Mutect2 benefits greatly from PoN |
+
+> **Sources**: Benjamin et al. 2019; Huang et al. 2020 (Nature Scientific Reports); Zhou et al. 2023 (PMC10350007); Strelka2 comparison studies
+
+### 6.3 When to Use Mutect2 Over Alternatives
+- ✅ When **low allele fractions** are expected (low-purity tumors, ctDNA, heteroplasmy)
+- ✅ When **GATK ecosystem integration** (pre-processing, annotation, CNV) is desired
+- ✅ When a **Panel of Normals** and **germline resource** are available
+- ✅ For **clinical/regulatory** applications requiring validated GATK Best Practices compliance
+- ✅ For **multi-sample joint calling** (multiple tumors/normals from same patient)
+- ✅ When **complete somatic calling provenance** is required for publication
+
+---
+
+## 7. 🔌 GenePattern Integration Considerations
+
+### 7.1 Module Architecture Recommendations
+
+```
+GenePattern Module: Mutect2
+├── module.yaml / manifest         ← Module metadata, parameters, version
+├── run_mutect2.sh                 ← Main bash wrapper script
+├── Dockerfile                     ← Based on broadinstitute/gatk:4.5.0.0
+├── test/
+│   ├── test_tumor_normal.sh
+│   ├── test_tumor_only.sh
+│   └── test_data/
+└── README.md
+```
+
+### 7.2 Recommended GenePattern Module Parameters
+
+**Group 1 — Required Inputs:**
+| GP Parameter Name | GATK Flag | Type | Required |
+|---|---|---|---|
+| `tumor.bam` | `-I` | File | ✅ Yes |
+| `reference.fasta` | `-R` | File | ✅ Yes |
+| `output.prefix` | `-O` basis | String | ✅ Yes |
+
+**Group 2 — Tumor-Normal Setup:**
+| GP Parameter Name | GATK Flag | Type | Default |
+|---|---|---|---|
+| `normal.bam` | `-I` | File | blank |
+| `normal.sample.name` | `--normal-sample` | String | blank |
+| `tumor.sample.name` | `--tumor-sample` | String | auto |
+
+**Group 3 — Variant Resources:**
+| GP Parameter Name | GATK Flag | Type | Default |
+|---|---|---|---|
+| `germline.resource` | `--germline-resource` | File | blank |
+| `panel.of.normals` | `--panel-of-normals` | File | blank |
+| `intervals` | `-L` | File/String | blank |
+
+**Group 4 — Run Mode:**
+| GP Parameter Name | GATK Flag | Type | Default |
+|---|---|---|---|
+| `mitochondria.mode` | `--mitochondria-mode` | Boolean | false |
+| `run.filter.mutect.calls` | *(pipeline flag)* | Boolean | true |
+| `run.orientation.model` | `--f1r2-tar-gz` | Boolean | true |
+| `run.contamination.estimation` | *(pipeline flag)* | Boolean | false |
+| `contamination.resource` | *(GetPileupSummaries)* | File | blank |
+
+**Group 5 — Sensitivity Tuning:**
+| GP Parameter Name | GATK Flag | Type | Default |
+|---|---|---|---|
+| `initial.tumor.lod` | `--initial-tumor-lod` | Float | 2.0 |
+| `tumor.lod.to.emit` | `--tumor-lod-to-emit` | Float | 3.0 |
+| `minimum.allele.fraction` | `--minimum-allele-fraction` | Float | 0.0 |
+| `pcr.indel.model` | `--pcr-indel-model` | Enum | CONSERVATIVE |
+| `max.mnp.distance` | `--max-mnp-distance` | Integer | 1 |
+
+**Group 6 — Performance & Resources:**
+| GP Parameter Name | GATK Flag | Type | Default |
+|---|---|---|---|
+| `java.memory.gb` | `--java-options` | Integer | 8 |
+| `max.reads.per.start` | `--max-reads-per-alignment-start` | Integer | 50 |
+| `bam.output` | `--bam-output` | Boolean | false |
+
+**Group 7 — Advanced:**
+| GP Parameter Name | GATK Flag | Type | Default |
+|---|---|---|---|
+| `extra.args` | *(passthrough)* | String | blank |
+| `genotype.germline.sites` | `--genotype-germline-sites` | Boolean | false |
+| `genotype.pon.sites` | `--genotype-pon-sites` | Boolean | false |
+
+### 7.3 Docker Configuration
+
+```dockerfile
+FROM broadinstitute/gatk:4.5.0.0
+# GATK4 already includes Java 8/11, Python 3, and samtools
+# Add any additional utilities if needed
+RUN apt-get update && apt-get install -y bcftools tabix
+```
+
+### 7.4 Wrapper Script Logic (Pseudocode)
+
+```bash
+#!/bin/bash
+# Build core command
+CMD="gatk --java-options \"-Xmx${java_memory_gb}g\" Mutect2 \
+  -R ${reference_fasta} \
+  -I ${tumor_bam} \
+  -O ${output_prefix}_unfiltered.vcf.gz"
+
+# Conditional: Add normal if provided
+[ -n "$normal_bam" ] && CMD="$CMD -I ${normal_bam} --normal-sample ${normal_sample_name}"
+
+# Conditional: Add resources if provided
+[ -n "$germline_resource" ] && CMD="$CMD --germline-resource ${germline_resource}"
+[ -n "$panel_of_normals" ]  && CMD="$CMD --panel-of-normals ${panel_of_normals}"
+[ -n "$intervals" ]          && CMD="$CMD -L ${intervals}"
+
+# Conditional: Enable orientation model
+[ "$run_orientation_model" == "true" ] && CMD="$CMD --f1r2-tar-gz ${output_prefix}_f1r2.tar.gz"
+
+# Conditional: Mitochondrial mode
+[ "$mitochondria_mode" == "true" ] && CMD="$CMD --mitochondria-mode"
+
+# Add extra args if provided
+[ -n "$extra_args" ] && CMD="$CMD ${extra_args}"
+
+# Execute Mutect2
+eval $CMD
+
+# Run FilterMutectCalls if requested
+if [ "$run_filter_mutect_calls" == "true" ]; then
+    # Optionally run LearnReadOrientationModel
+    if [ "$run_orientation_model" == "true" ]; then
+        gatk LearnReadOrientationModel \
+          -I ${output_prefix}_f1r2.tar.gz \
+          -O ${output_prefix}_artifact_priors.tar.gz
+    fi
+    # Apply filters
+    gatk FilterMutectCalls \
+      -R ${reference_fasta} \
+      -V ${output_prefix}_unfiltered.vcf.gz \
+      ${artifact_priors_arg} \
+      ${contamination_arg} \
+      -O ${output_prefix}_filtered.vcf.gz
+fi
+```
+
+### 7.5 Known Issues & Caveats for GenePattern
+
+| Issue | Impact | Mitigation |
+|---|---|---|
+| Java version mismatch | Fatal error | Pin Docker image to specific GATK version |
+| Missing `.bai` index | Fatal error | Validate BAM index presence in wrapper |
+| Missing `.dict` / `.fai` | Fatal error | Validate reference indexes before run |
+| SM tag mismatch in BAM header | Silent wrong results | Validate sample name against BAM header |
+| Memory underallocation for WGS | OOM crash | Set `java.memory.gb` ≥ 16 for WGS |
+| Large VCF.gz without .tbi index | Downstream tool failure | Auto-run `gatk IndexFeatureFile` on VCF outputs |
+| gnomAD resource file size (~10GB) | Slow transfer | Cache in Docker or server path |
+| FFPE artifacts | High FPR | Document `--pcr-indel-model NONE` for FFPE samples |
+| Tumor-only mode high FPR | Misleading results | Strongly require PoN; document limitations |
+
+---
+
+## 8. 📚 Literature References
+
+1. **Benjamin, D. et al. (2019).** Calling Somatic SNVs and Indels with Mutect2. *bioRxiv*. doi: [10.1101/861054](https://doi.org/10.1101/861054) *(Primary methods paper)*
+
+2. **GATK Best Practices: Somatic SNVs + Indels.** Broad Institute. https://gatk.broadinstitute.org/hc/en-us/articles/360035894731
+
+3. **GATK Mutect2 Tool Documentation (v4.5).** https://gatk.broadinstitute.org/hc/en-us/articles/360037593851-Mutect2
+
+4. **Huang, T. et al. (2020).** Systematic comparison of somatic variant calling performance among different sequencing depth and mutation frequency. *Scientific Reports*. doi: 10.1038/s41598-020-60559-5
+
+5. **Zuo, C. et al. (2024).** Benchmarking study of individual somatic variant callers and voting-based ensembles for whole-exome sequencing. *Briefings in Bioinformatics*. bbae697. doi: 10.1093/bib/bbae697
+
+6. **Fang, L.T. et al. (2016).** In-depth comparison of somatic point mutation callers based on different tumor NGS depth data. *Scientific Reports*, 6, 36540.
+
+7. **Zhou, J. et al. (2023).** Accelerated somatic mutation calling for WGS/WES data. *PMC10350007*.
+
+---
+
+## 9. 🗂️ Summary Specifications Table
+
+| Property | Value |
+|---|---|
+| **Tool Name** | Mutect2 |
+| **Part of Suite** | GATK4 (Genome Analysis Toolkit) |
+| **Developer** | Broad Institute |
+| **Current Stable Version** | GATK 4.5.x |
+| **License** | BSD 3-Clause (open-source) |
+| **Primary Use** | Somatic SNV + Indel calling |
+| **Variant Types** | SNVs, Indels, MNPs |
+| **Input Formats** | BAM, CRAM, FASTA, VCF, BED, interval_list |
+| **Output Formats** | VCF 4.2, BAM (optional) |
+| **Operating Modes** | Tumor-Normal, Tumor-Only, Mitochondrial |
+| **OS Requirements** | Linux / macOS |
+| **Java Requirement** | JDK 1.8 (GATK ≤4.3.x), Java 11+ (GATK 4.4+) |
+| **Docker Image** | `broadinstitute/gatk:4.5.0.0` |
+| **Conda Package** | `bioconda::gatk4` |
+| **GenePattern Repo** | https://github.com/garvit192/Genepattern-mutect2 |
+| **GATK Repository** | https://github.com/broadinstitute/gatk |
+| **Primary Citation** | Benjamin et al. 2019, bioRxiv doi:10.1101/861054 |
+| **Key Strength** | Best-in-class low allele fraction sensitivity |
+| **Key Limitation** | Slower than Strelka2; requires GATK pre-processed BAMs |
+| **Post-processing tools** | FilterMutectCalls, LearnReadOrientationModel, CalculateContamination |
+| **Downstream tools** | Funcotator, VEP, ANNOVAR, oncotator |
+
+---
+
+> **📌 GenePattern Module Development Priority Notes:**
+> - **Start with Docker-based deployment** using `broadinstitute/gatk:4.5.0.0` to eliminate dependency issues
+> - **Expose the complete filtering pipeline** (`FilterMutectCalls` + `LearnReadOrientationModel`) as optional boolean flags to provide end-to-end usability
+> - **Validate BAM indexes and read group SM tags** programmatically in the wrapper before calling Mutect2
+> - **Provide pre-built resource file paths** for common reference genomes (hg38/hg19) as module defaults where server infrastructure allows
+> - **Separate parameter groups** clearly in the manifest (Required / Tumor-Normal / Resources / Mode / Sensitivity / Advanced) for a clean GenePattern UI experience
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

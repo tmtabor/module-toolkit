@@ -1,0 +1,63 @@
+Create a comprehensive structured plan for the GenePattern module for 'RenameFile'.
+            
+            Tool Information:
+            - Name: RenameFile
+            - Version: latest
+            - Language: any
+            - Description: Creates a result file with the contents of the input but with a new name.  Where possible, this is done without copying the file but instead by simply making a link.  While it is possible to run this with a submitted file, the common use will be to change the name of a result file or a previously uploaded file.  Note that the original file will still be present in its original location.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "RenameFile",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "Input file to be renamed",
+      "required": true,
+      "default_value": "",
+      "file_format": "bam;sam;gtf;gff;gct;res;clm;zip;bed;fasta;fastq;fq;atr;cdt;gtr;bai;sai;fai;txt;csv;wig;cdf;chip;dict;maf;seg;snp;fq1;odf"
+    },
+    {
+      "name": "output.filename",
+      "type": "java.lang.String",
+      "description": "The name to give the output file",
+      "required": true,
+      "default_value": "<input.file_basename>.cp.<input.file_extension>"
+    },
+    {
+      "name": "screen.filename",
+      "type": "java.lang.String",
+      "description": "Automatically screen out problematic characters in the filename",
+      "required": true,
+      "default_value": "yes",
+      "choices": "yes\\=yes;no\\=no"
+    },
+    {
+      "name": "force.copy",
+      "type": "java.lang.String",
+      "description": "Force a copy to be made rather than a link.",
+      "required": true,
+      "default_value": "no",
+      "choices": "yes\\=yes;no\\=no"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "David Eby",
+  "command_line": "<perl> <libdir>rename_file_for_GP.pl --inputFile <input.file> --outputFilename <output.filename> --screenFilename <screen.filename> --forceCopy <force.copy>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

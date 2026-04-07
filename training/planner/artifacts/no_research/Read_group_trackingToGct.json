@@ -1,0 +1,249 @@
+{
+  "module_name": "Read_group_trackingToGct",
+  "description": "[**Beta Release** Contact gp-help with any issues. Check stdout.txt and stderr.txt for errors] Converts a Cufflinks read_group_tracking file into GCT format",
+  "author": "David Eby, Broad Institute",
+  "input_file_formats": [
+    "gtf",
+    "read_group_tracking"
+  ],
+  "language": "unknown",
+  "categories": [
+    "RNA-seq",
+    "Data Format Conversion",
+    "Preprocess & Utilities"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:51653:1",
+  "plan": "## Read_group_trackingToGct GenePattern Module — Implementation Plan\n\n### 1. Overview\nRead_group_trackingToGct is a GenePattern module that [**Beta Release** Contact gp-help with any issues. Check stdout.txt and stderr.txt for errors] Converts a Cufflinks read_group_tracking file into GCT format\n\n### 2. Parameters\nThe module exposes 11 parameters:\n- Required: input.file, output.file.name, expression.value.column, screen.out.errors, output.value.for.error, feature.level.for.symbol.lookup, choose.gct.column.for.mapping, report.naming.conflict.details\n- Optional: gtf.file, override.attribute.name.for.lookup, override.attribute.name.for.retrieval\n\n### 3. Command Line\n```\n<java> <java_flags> -jar <libdir>ReadGroupTrackingToGct.jar --input.file\\=<input.file> --output.file.name\\=<output.file.name> --expression.value.column\\=<expression.value.column> --screen.out.errors\\=<screen.out.errors> --output.value.for.error\\=<output.value.for.error> <gtf.file> --feature.level.for.symbol.lookup\\=<feature.level.for.symbol.lookup> --choose.gct.column.for.mapping\\=<choose.gct.column.for.mapping> --report.naming.conflict.details\\=<report.naming.conflict.details> <override.attribute.name.for.lookup> <override.attribute.name.for.retrieval>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "ReadGroupTrackingToGct.jar",
+  "command_line": "<java> <java_flags> -jar <libdir>ReadGroupTrackingToGct.jar --input.file=<input.file> --output.file.name=<output.file.name> --expression.value.column=<expression.value.column> --screen.out.errors=<screen.out.errors> --output.value.for.error=<output.value.for.error> <gtf.file> --feature.level.for.symbol.lookup=<feature.level.for.symbol.lookup> --choose.gct.column.for.mapping=<choose.gct.column.for.mapping> --report.naming.conflict.details=<report.naming.conflict.details> <override.attribute.name.for.lookup> <override.attribute.name.for.retrieval>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "The read_group_tracking file to be converted into GCT format.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "read_group_tracking"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file.name",
+      "description": "The name to be given to the GCT output file.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>.gct",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "expression.value.column",
+      "description": "The column to use for extracting expression values.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "raw_frags",
+          "value": "0"
+        },
+        {
+          "display": "internal_scaled_frags",
+          "value": "1"
+        },
+        {
+          "display": "external_scaled_frags",
+          "value": "2"
+        },
+        {
+          "display": "FPKM",
+          "value": "3"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--expression.value.column",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "screen.out.errors",
+      "description": "Set to 'yes' to exclude from the GCT file any feature having at least one non-OK quantification status across all of the sequenced samples.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "true"
+        },
+        {
+          "display": "no",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--screen.out.errors",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.value.for.error",
+      "description": "This parameter controls what expression value to write to a GCT file in those cases where a feature's expression estimate carries a non-OK quantification status.  The parameter is only relevant to your final GCT when 'screen out errors' is set to 'no'.  We strongly recommend treating these as missing values (select 'NA' or 'blank').",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "NA",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "NA",
+          "value": "NA"
+        },
+        {
+          "display": "blank",
+          "value": "blank"
+        },
+        {
+          "display": "actual value (discouraged)",
+          "value": "actual"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.value.for.error",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gtf.file",
+      "description": "An optional GTF file.  If provided, this should be the same file that you provided to Cuffdiff. You can use this to map tracking IDs in the read_group_tracking file to gene symbols for output in the GCT.  Make sure that you set the feature level to match your read_group_tracking file.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gtf"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gtf.file\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "feature.level.for.symbol.lookup",
+      "description": "Select the feature level of the read_group_tracking file for mapping gene symbols from a GTF. This is ignored if no GTF is provided.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "gene",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Gene",
+          "value": "gene"
+        },
+        {
+          "display": "Isoform",
+          "value": "isoform"
+        },
+        {
+          "display": "TSS",
+          "value": "tss"
+        },
+        {
+          "display": "CDS",
+          "value": "cds"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--feature.level.for.symbol.lookup",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "choose.gct.column.for.mapping",
+      "description": "Use this to explicitly set the GCT column to use when writing symbols retrieved from the GCT. This is automatic by default, meaning that retrieved symbols go into the Name column for gene-level files and into the Description column for other feature levels.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "auto",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Auto (default)",
+          "value": "auto"
+        },
+        {
+          "display": "Name",
+          "value": "Name"
+        },
+        {
+          "display": "Description",
+          "value": "Description"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--choose.gct.column.for.mapping",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "report.naming.conflict.details",
+      "description": "Include the naming conflict details in the summary report, rather than just giving counts of the issues.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "true"
+        },
+        {
+          "display": "no",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--report.naming.conflict.details",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "override.attribute.name.for.lookup",
+      "description": "Use this to override the name of the attribute to search against to look up IDs when mapping with a GTF (gene_id, for example). Type in the attribute name exactly as it appears in the GTF.  The retrieval override must also be provided if this parameter is set.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--override.attribute.name.for.lookup\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "override.attribute.name.for.retrieval",
+      "description": "Use this to override the name of the attribute to retrieve on match when mapping with a GTF (gene_name, for example). Type in the attribute name exactly as it appears in the GTF.  The lookup override must also be provided if this parameter is set.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--override.attribute.name.for.retrieval\\=",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

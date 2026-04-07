@@ -1,0 +1,122 @@
+{
+  "module_name": "MethylationCNVAnalysis",
+  "description": "Methylation array preprocessing with the minfi R package and copy-number variation analysis with the conumee R package. Compatible with both 450k or EPIC array data.",
+  "author": "Owen Chapman;Clarence Mah;Mesirov Lab",
+  "input_file_formats": [
+    "bed",
+    "gz",
+    "tar.gz",
+    "zip"
+  ],
+  "language": "R",
+  "categories": [
+    "Methylation",
+    "CNV Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:55293:1",
+  "plan": "## MethylationCNVAnalysis GenePattern Module — Implementation Plan\n\n### 1. Overview\nMethylationCNVAnalysis is a GenePattern module that Methylation array preprocessing with the minfi R package and copy-number variation analysis with the conumee R package. Compatible with both 450k or EPIC array data.\n\n### 2. Parameters\nThe module exposes 6 parameters:\n- Required: query.sample.data, sex.chromosomes\n- Optional: control.sample.names, control.sample.data, genes.to.highlight, ignore.regions\n\n### 3. Command Line\n```\n<Rscript> <libdir>run.R --data <query.sample.data> --controlsdata <control.sample.data> --controls <control.sample.names> --ignorefile <ignore.regions> --xy <sex.chromosomes>\n```\n\n### 4. Docker Image\nDocker image: genepattern/docker-r-3-4-methylationanalysis\\:1.0\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run.R",
+  "command_line": "<Rscript> <libdir>run.R --data <query.sample.data> --controlsdata <control.sample.data> --controls <control.sample.names> --ignorefile <ignore.regions> --xy <sex.chromosomes>",
+  "parameters": [
+    {
+      "name": "query.sample.data",
+      "description": "Provide a ZIP or GZ file containing your sample(s) methylation microarray data in the Illumina Demo Dataset folder structure. See documentation for more details.",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tar.gz",
+        "gz",
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--query.sample.data",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "control.sample.names",
+      "description": "Specify a list of control sample names separated by commas if the control sample data is included in the \"sample data\" file. Otherwise write \"none\" if control samples data is separate.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "none",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--control.sample.names",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "control.sample.data",
+      "description": "Provide a ZIP or GZ file containing your control samples methylation microarray data in the Illumina Demo Dataset folder structure. See documentation for more details.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tar.gz",
+        "gz",
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--control.sample.data",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "genes.to.highlight",
+      "description": "A file with a list of genes (HUGO gene symbols) to highlight in output plots. Format as one gene symbol per line.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": "https\\://datasets.genepattern.org/gpftp/methylation/common_cancer_genes.txt",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--genesfile",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "ignore.regions",
+      "description": "A bed file specifying genomic regions to exclude from copy number analysis (hg19).",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": "https\\://datasets.genepattern.org/gpftp/methylation/ignore_regions.bed",
+      "file_formats": [
+        "bed"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--ignore.regions",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "sex.chromosomes",
+      "description": "Include analysis of X & Y sex chromosomes.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "Yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes",
+          "value": "Yes"
+        },
+        {
+          "display": "No",
+          "value": "No"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--sex.chromosomes",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/docker-r-3-4-methylationanalysis:1.0"
+}

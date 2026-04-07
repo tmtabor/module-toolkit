@@ -1,0 +1,289 @@
+{
+  "module_name": "Kallisto.Quant",
+  "description": "Runs Kallisto to perform pseudoalignment (using a human or mouse transcriptome index) and gene-level aggregation",
+  "author": "Edwin F. Juarez, Thorin Tabor, Edwin Huang",
+  "input_file_formats": [
+    "FASTQ",
+    "csv",
+    "fastq",
+    "fastq.gz",
+    "gtf",
+    "tsv"
+  ],
+  "language": "any",
+  "categories": [
+    "rna-seq"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:43134:1",
+  "plan": "## Kallisto.Quant GenePattern Module — Implementation Plan\n\n### 1. Overview\nKallisto.Quant is a GenePattern module that Runs Kallisto to perform pseudoalignment (using a human or mouse transcriptome index) and gene-level aggregation\n\n### 2. Parameters\nThe module exposes 15 parameters:\n- Required: fastq.files, transcriptome, bias, include.overhang, read.direction, output.filename, bootstrap.samples, seed, quantify.reads, pseudobam, genomebam\n- Optional: fragment.length, fragment.sd, gtf.file, chromosome.file\n\n### 3. Command Line\n```\n/module/call_kallisto.sh <fastq.files> <transcriptome> <bias> <output.filename> <bootstrap.samples> <seed> <quantify.reads> <include.overhang> <read.direction> fl_<fragment.length> fsd_<fragment.sd> <pseudobam> <genomebam> gtf_<gtf.file> chr_<chromosome.file>\n```\n\n### 4. Docker Image\nDocker image: genepattern/kallisto\\:v7\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "call_kallisto.sh",
+  "command_line": "/module/call_kallisto.sh <fastq.files> <transcriptome> <bias> <output.filename> <bootstrap.samples> <seed> <quantify.reads> <include.overhang> <read.direction> fl_<fragment.length> fsd_<fragment.sd> <pseudobam> <genomebam> gtf_<gtf.file> chr_<chromosome.file>",
+  "parameters": [
+    {
+      "name": "fastq.files",
+      "description": "The fastq or fastq.gz files for RNA quantification using psuedoalignment. Link to how psuedoalignment works (https\\://tinyheero.github.io/2015/09/02/pseudoalignments-kallisto.html)",
+      "required": true,
+      "type": "file",
+      "value_count": "0+",
+      "default_value": null,
+      "file_formats": [
+        "fastq.gz",
+        "FASTQ",
+        "fastq",
+        "fastq.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--fastq.files",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "transcriptome",
+      "description": "Which transcriptome to use for the pseudoalignment.",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--transcriptome",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "bias",
+      "description": "Perform sequence based bias correction",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "YES",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "NO",
+          "value": "NO"
+        },
+        {
+          "display": "YES",
+          "value": "YES"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--bias",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "include.overhang",
+      "description": "Include reads where unobserved rest of fragment is predicted to lie outside a transcript",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "NO",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "NO",
+          "value": "NO"
+        },
+        {
+          "display": "YES",
+          "value": "YES"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--include.overhang",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "read.direction",
+      "description": "For strand specific reads, first read forward, first read reverse or unspecified",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "not set",
+          "value": "notset"
+        },
+        {
+          "display": "first read forward",
+          "value": "forward"
+        },
+        {
+          "display": "first read reverse",
+          "value": "reverse"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--read.direction",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "The base name of the files to be created",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "expression_data",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "bootstrap.samples",
+      "description": "Number of bootstrap samples",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--bootstrap.samples",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "seed",
+      "description": "Seed for the bootstrap sampling",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "42",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--seed",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "quantify.reads",
+      "description": "Quantify single-end reads",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "NO",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "NO",
+          "value": "NO"
+        },
+        {
+          "display": "YES",
+          "value": "YES"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--quantify.reads",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "fragment.length",
+      "description": "Estimated average fragment length (float value)",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--fragment.length",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "fragment.sd",
+      "description": "Estimated standard deviation of fragment length; values are estimated with paired end data, but are required when using single-end reads (float value)",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--fragment.sd",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "pseudobam",
+      "description": "Save pseudoalignments to transcriptome to a BAM file",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "NO",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "NO",
+          "value": "NO"
+        },
+        {
+          "display": "YES",
+          "value": "YES"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--pseudobam",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "genomebam",
+      "description": "Project pseudoalignments to genome sorted BAM file",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "NO",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "NO",
+          "value": "NO"
+        },
+        {
+          "display": "YES",
+          "value": "YES"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--genomebam",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gtf.file",
+      "description": "GTF file for transcriptome information, required for projecting pseudoalignments to genome sorted BAM file",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gtf"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gtf.file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "chromosome.file",
+      "description": "Tab separated file with chromosome names and lengths, optional for projecting pseudoalignments to genome sorted BAM file, but recommended",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "csv",
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--chromosome.file",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/kallisto:v7"
+}

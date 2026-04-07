@@ -1,0 +1,90 @@
+{
+  "module_name": "MergeFCSDataFiles",
+  "description": "Merge multiple FCS data files into a single FCS datasets; includes multimple subsampling options.",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "input_file_formats": [
+    "txt",
+    "zip"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:90464:1",
+  "plan": "## MergeFCSDataFiles GenePattern Module — Implementation Plan\n\n### 1. Overview\nMergeFCSDataFiles is a GenePattern module that Merge multiple FCS data files into a single FCS datasets; includes multimple subsampling options.\n\n### 2. Parameters\nThe module exposes 5 parameters:\n- Required: Input.files, Output.file.name\n- Optional: Subsampling.rate, Keep.n.events, Random.seed\n\n### 3. Command Line\n```\n<java> <java_flags> -jar <libdir>mergefcsdatafiles.jar <Input.files> <Output.file.name> <Subsampling.rate> <Keep.n.events> <Random.seed>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "mergefcsdatafiles.jar",
+  "command_line": "<java> <java_flags> -jar <libdir>mergefcsdatafiles.jar <Input.files> <Output.file.name> <Subsampling.rate> <Keep.n.events> <Random.seed>",
+  "parameters": [
+    {
+      "name": "Input.files",
+      "description": "The input FCS files to be merged; either a zip file or a pointer to a directory or a text file with FCS file names (full path) with one filename per line.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-InputFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Subsampling.rate",
+      "description": "Subsampling rate as percentage of events to be included from each data set, value between 0 and 100, optional, default 100%, cannot be combined with keep n events.",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-SubsamplingRate\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Keep.n.events",
+      "description": "Keep approximately n events from each dataset, optional, cannot be combined with subsampling rate.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-KeepNEvents\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Random.seed",
+      "description": "The random seed",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "1234567",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-RandomSeed\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.file.name",
+      "description": "The output FCS file name.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "MergedFCSDataFiles.fcs",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-OutputFile\\:",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

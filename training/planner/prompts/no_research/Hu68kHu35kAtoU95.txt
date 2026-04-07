@@ -1,0 +1,46 @@
+Create a comprehensive structured plan for the GenePattern module for 'Hu68kHu35kAtoU95'.
+            
+            Tool Information:
+            - Name: Hu68kHu35kAtoU95
+            - Version: Updated documentation
+            - Language: Perl
+            - Description: Converts a list of Affymetrix Hu6800/Hu35KsubA probes to the corresponding Affymetrix U95Av2 probes.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "Hu68kHu35kAtoU95",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "the .pol, .tag or .grp file to be converted",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "output",
+      "type": "java.lang.String",
+      "description": "name of the output file (same format as input file)",
+      "required": true,
+      "default_value": "<input.filename_basename>.U95"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Justin Lamb (gp-help@broad.mit.edu)",
+  "command_line": "<perl> <libdir>GCM_to_U95.pl <input.filename> <output> <libdir>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

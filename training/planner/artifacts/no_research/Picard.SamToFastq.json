@@ -1,0 +1,186 @@
+{
+  "module_name": "Picard.SamToFastq",
+  "description": "Convert SAM or BAM files to FASTQ format",
+  "author": "GenePattern",
+  "input_file_formats": [
+    "bam",
+    "sam"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:68335:1",
+  "plan": "## Picard.SamToFastq GenePattern Module — Implementation Plan\n\n### 1. Overview\nPicard.SamToFastq is a GenePattern module that Convert SAM or BAM files to FASTQ format\n\n### 2. Parameters\nThe module exposes 9 parameters:\n- Required: input.file, per.read.group, re-reverse.bases, include.non.pf.reads\n- Optional: clipping.attribute, clipping.action, clipping.action.quality.value, fastq.output.prefix.1, fastq.output.prefix.2\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>jargs.jar<path.separator><libdir>SamToFastq.jar<path.separator><libdir>gp-samToFastq.jar org.genepattern.sam.SamToFastqWrapper -i<input.file> -g<per.read.group> -r<re-reverse.bases> -p<include.non.pf.reads> -c<clipping.attribute> -a<clipping.action> -q<clipping.action.quality.value> -o<fastq.output.prefix.1> -f<fastq.output.prefix.2>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "jargs.jar<path.separator><libdir>SamToFastq.jar<path.separator><libdir>gp-samToFastq.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>jargs.jar<path.separator><libdir>SamToFastq.jar<path.separator><libdir>gp-samToFastq.jar org.genepattern.sam.SamToFastqWrapper -i<input.file> -g<per.read.group> -r<re-reverse.bases> -p<include.non.pf.reads> -c<clipping.attribute> -a<clipping.action> -q<clipping.action.quality.value> -o<fastq.output.prefix.1> -f<fastq.output.prefix.2>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "The SAM or BAM file",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "bam",
+        "sam"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "per.read.group",
+      "description": "Whether to output a fastq file per read group",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--per.read.group",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "re-reverse.bases",
+      "description": "Whether to re-reverse bases and qualities of reads with negative strand flag set",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--re-reverse.bases",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "include.non.pf.reads",
+      "description": "Whether to include non-PF reads",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--include.non.pf.reads",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "clipping.attribute",
+      "description": "Attribute that stores the position at which the SAM record should be clipped",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--clipping.attribute",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "clipping.action",
+      "description": "Action to take with clipped reads when a clipping attribute is specified",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "none",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "",
+          "value": "none"
+        },
+        {
+          "display": "trim reads and qualities",
+          "value": "X"
+        },
+        {
+          "display": "change bases to Ns",
+          "value": "N"
+        },
+        {
+          "display": "change base quality values",
+          "value": "change"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--clipping.action",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "clipping.action.quality.value",
+      "description": "Value to set base qualities to when clipping action is \"change base quality values\"",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--clipping.action.quality.value",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "fastq.output.prefix.1",
+      "description": "The fastq output file name for single-end fastq or first end of a paired fastq. Only specify when \"per read group\" is \"no\".",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--fastq.output.prefix.1",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "fastq.output.prefix.2",
+      "description": "The second end of a paired fastq. Only specify when \"per read group\" is \"no\".",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--fastq.output.prefix.2",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

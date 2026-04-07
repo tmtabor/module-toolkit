@@ -1,0 +1,79 @@
+Create a comprehensive structured plan for the GenePattern module for 'Picard.ReorderSam'.
+            
+            Tool Information:
+            - Name: Picard.ReorderSam
+            - Version: latest
+            - Language: Java
+            - Description: Reorders a SAM file or a BAM file to match contig ordering in a provided reference file
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "Picard.ReorderSam",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "A SAM or BAM file.",
+      "required": true,
+      "default_value": "",
+      "file_format": "sam;bam"
+    },
+    {
+      "name": "reference.file",
+      "type": "FILE",
+      "description": "Reference sequence to which to reorder reads in FASTA format.",
+      "required": true,
+      "default_value": "",
+      "file_format": "fasta;fa;fna"
+    },
+    {
+      "name": "reference.sequence.dictionary",
+      "type": "FILE",
+      "description": "The sequence dictionary for the reference sequence file",
+      "required": true,
+      "default_value": "",
+      "file_format": "dict"
+    },
+    {
+      "name": "allow.partial.overlap",
+      "type": "java.lang.String",
+      "description": "If yes, then allows only a partial overlap of the BAM contigs with the new reference sequence contigs. This requires a corresponding contig in the new reference for each read contig.",
+      "required": true,
+      "default_value": "false",
+      "choices": "true\\=yes;false\\=no"
+    },
+    {
+      "name": "allow.contig.length.discordance",
+      "type": "java.lang.String",
+      "description": "If yes, then permits mapping from a read contig to a new reference contig with the same name but a different length. Use with extreme caution and a full knowledge of the possible consequences.",
+      "required": true,
+      "default_value": "false",
+      "choices": "true\\=yes;false\\=no"
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.lang.String",
+      "description": "The prefix of the output SAM or BAM file.",
+      "required": true,
+      "default_value": "<input.file_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Picard Tools",
+  "command_line": "<java> <java_flags> -cp <libdir>ant.jar<path.separator><libdir>ReorderSam.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>gp-ReorderSam.jar org.genepattern.sam.ReorderSamWrapper -inputFileName <input.file> -allowInc <allow.partial.overlap> -contigLen <allow.contig.length.discordance> -refFileName <reference.file> -dict <reference.sequence.dictionary> -outputFileName <output.prefix>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,49 @@
+{
+  "module_name": "SNPFileSorter",
+  "description": "Sorts a .snp file by Chromosome and location",
+  "author": "Jim Robinson, David Twomey",
+  "input_file_formats": [
+    "snp"
+  ],
+  "language": "Java",
+  "categories": [
+    "Variant Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:19812:1",
+  "plan": "## SNPFileSorter GenePattern Module — Implementation Plan\n\n### 1. Overview\nSNPFileSorter is a GenePattern module that Sorts a .snp file by Chromosome and location\n\n### 2. Parameters\nThe module exposes 2 parameters:\n- Required: snp.filename, output.file\n- Optional: none\n\n### 3. Command Line\n```\n<java> <java_flags>  -cp <libdir>snp.jar<path.separator><libdir>commons-math-1.1.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>log4j-1.2.13.jar  edu.mit.broad.cg.util.SnpDataSorter <snp.filename> <output.file>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "snp.jar<path.separator><libdir>commons-math-1.1.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>log4j-1.2.13.jar",
+  "command_line": "<java> <java_flags>  -cp <libdir>snp.jar<path.separator><libdir>commons-math-1.1.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>log4j-1.2.13.jar  edu.mit.broad.cg.util.SnpDataSorter <snp.filename> <output.file>",
+  "parameters": [
+    {
+      "name": "snp.filename",
+      "description": "snp file to sort",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "snp"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--snp.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<snp.filename_basename>.sorted.snp",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

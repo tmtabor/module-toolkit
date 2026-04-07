@@ -1,0 +1,430 @@
+{
+  "module_name": "GISTIC_2.0",
+  "description": "Genomic Identification of Significant Targets in Cancer (version 2.0.23)",
+  "author": "Jen Dobson, Rameen Beroukhim, Gad Getz",
+  "input_file_formats": [
+    "CNV",
+    "alf",
+    "cn",
+    "glad",
+    "mat",
+    "seg",
+    "txt"
+  ],
+  "language": "MATLAB",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:77261:1",
+  "plan": "## GISTIC_2.0 GenePattern Module — Implementation Plan\n\n### 1. Overview\nGISTIC_2.0 is a GenePattern module that Genomic Identification of Significant Targets in Cancer (version 2.0.23)\n\n### 2. Parameters\nThe module exposes 22 parameters:\n- Required: refgene.file, seg.file, gene.gistic, confidence.level, run.broad.analysis, focal.length.cutoff, arm.peel, gene.collapse.method\n- Optional: markers.file, maxspace, array.list.file, cnv.file, amplifications.threshold, deletions.threshold, join.segment.size, q-value.threshold, remove.X, cap.val, max.sample.segs, sample.center, output.prefix, logdat\n\n### 3. Command Line\n```\ngp_gistic2_from_seg -b . -seg <seg.file> <markers.file> <maxspace> -alf <array.list.file> -cnv <cnv.file> -refgene <refgene.file> <amplifications.threshold> <deletions.threshold> <join.segment.size> <q-value.threshold> <remove.X> <cap.val> -conf <confidence.level> -genegistic <gene.gistic> -broad <run.broad.analysis> -brlen <focal.length.cutoff> <max.sample.segs> -armpeel <arm.peel> <sample.center> -gcm <gene.collapse.method> <output.prefix> -smallmem 1 -savegene 1 -genepattern 1 -twosides 0 -saveseg 0 -savedata 0 -arb 1 -peak_type robust -smalldisk 0 -v 0 <logdat>\n```\n\n### 4. Docker Image\nDocker image: genepattern/docker-gistic\\:0.13\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.py",
+  "command_line": "gp_gistic2_from_seg -b . -seg <seg.file> <markers.file> <maxspace> -alf <array.list.file> -cnv <cnv.file> -refgene <refgene.file> <amplifications.threshold> <deletions.threshold> <join.segment.size> <q-value.threshold> <remove.X> <cap.val> -conf <confidence.level> -genegistic <gene.gistic> -broad <run.broad.analysis> -brlen <focal.length.cutoff> <max.sample.segs> -armpeel <arm.peel> <sample.center> -gcm <gene.collapse.method> <output.prefix> -smallmem 1 -savegene 1 -genepattern 1 -twosides 0 -saveseg 0 -savedata 0 -arb 1 -peak_type robust -smalldisk 0 -v 0 <logdat>",
+  "parameters": [
+    {
+      "name": "refgene.file",
+      "description": "The reference genome file input provides cytoband and gene location information.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "mat"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--refgene.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "seg.file",
+      "description": "The segmentation file contains the segmented data for all the samples identified by GLAD, CBS, or some other segmentation algorithm. (See GLAD file format in the Genepattern file formats documentation.) It is a six column, tab-delimited file with an optional first line identifying the columns. Positions are in base pair units.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "glad",
+        "seg",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--seg.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "markers.file",
+      "description": "The markers file identifies the marker names and positions of the markers in the original dataset (before segmentation). It is a three column, tab-delimited file with an optional header. If not already, markers are sorted by genomic position.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cn",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-mk",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "maxspace",
+      "description": "Set maxspace to generate pseudo-markers instead of creating a markers file. The param defines the maximum allowed spacing between pseudo-markers, in bases. Segments that contain fewer than this number of markers are joined to the neighboring segment that is closest in copy number. When 'markers file' is set 'maxspace' is ignored. When neither are set, generate pseudo-markers, with maxspace\\=10,000.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-maxspace",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "array.list.file",
+      "description": "The array list file is an optional file identifying the subset of samples to be used in the analysis. It is a one column file with an optional header. The sample identifiers listed in the array list file must match the sample names given in the segmentation file.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "alf",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--array.list.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cnv.file",
+      "description": "Specifies germline CNV (or other highly variant) regions to exclude from significance analysis. There are two forms for the cnv file\\: one allows CNVs to be identified by marker names in a single column; the other identifies excluded regions using their genomic location.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "CNV"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cnv.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gene.gistic",
+      "description": "Flag indicating that the gene GISTIC algorithm should be used to calculate the significant regions of deletion using gene locations instead of a marker locations.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "1"
+        },
+        {
+          "display": "no",
+          "value": "0"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--gene.gistic",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "amplifications.threshold",
+      "description": "Threshold for copy number amplifications. Regions with a log2 ratio above this value are considered amplified.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-ta",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "deletions.threshold",
+      "description": "Threshold for copy number deletions. Regions with a log2 ratio below the negative of this value are considered deletions.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-td",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "join.segment.size",
+      "description": "Smallest number of markers to allow in segments from the segmented data. Segments that contain a number of markers less than or equal to this number are joined to the neighboring segment that is closest in copy number.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-js",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "q-value.threshold",
+      "description": "Maximum false discovery rate for a region to be considered significant.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-qvt",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "remove.X",
+      "description": "Flag indicating whether to remove data from the X-chromosome before analysis.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "(not set)",
+          "value": ""
+        },
+        {
+          "display": "yes",
+          "value": "1"
+        },
+        {
+          "display": "no",
+          "value": "0"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-rx",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cap.val",
+      "description": "Minimum and maximum cap values on analyzed data. Regions with a log2 ratio greater than the cap are set to the cap value; regions with a log2 ratio less than -cap value are set to -cap.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "(not set)",
+          "value": ""
+        },
+        {
+          "display": "1.0",
+          "value": "1.0"
+        },
+        {
+          "display": "1.5",
+          "value": "1.5"
+        },
+        {
+          "display": "2.0",
+          "value": "2.0"
+        },
+        {
+          "display": "2.5",
+          "value": "2.5"
+        },
+        {
+          "display": "Inf",
+          "value": "Inf"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-cap",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "confidence.level",
+      "description": "Confidence level used to calculate the region containing a driver.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.90",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--confidence.level",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "run.broad.analysis",
+      "description": "Flag indicating whether an additional broad-level analysis should be performed.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "1"
+        },
+        {
+          "display": "no",
+          "value": "0"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--run.broad.analysis",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "focal.length.cutoff",
+      "description": "Threshold used to distinguish broad from focal events, given in units of fraction of chromosome arm.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.50",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--focal.length.cutoff",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.sample.segs",
+      "description": "Maximum number of segments allowed for a sample in the input data. Samples with more segments than this threshold are excluded from the analysis.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-maxseg",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "arm.peel",
+      "description": "Whether to perform arm level peel off. This helps separate peaks which cleans up noise.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "1"
+        },
+        {
+          "display": "no",
+          "value": "0"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--arm.peel",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.center",
+      "description": "Method for centering each sample prior to the GISTIC analysis.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "(not set)",
+          "value": ""
+        },
+        {
+          "display": "median",
+          "value": "median"
+        },
+        {
+          "display": "mean",
+          "value": "mean"
+        },
+        {
+          "display": "none",
+          "value": "none"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-scent",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gene.collapse.method",
+      "description": "Method for reducing marker-level copy number data to the gene-level copy number data in the gene tables. Markers contained in the gene are used when available, otherwise the flanking marker or markers are used.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "extreme",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "mean",
+          "value": "mean"
+        },
+        {
+          "display": "median",
+          "value": "median"
+        },
+        {
+          "display": "min",
+          "value": "min"
+        },
+        {
+          "display": "max",
+          "value": "max"
+        },
+        {
+          "display": "extreme",
+          "value": "extreme"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--gene.collapse.method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "The prefix for the output file name",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fname",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "logdat",
+      "description": "The '-logdat' param to apply log2 ratio for SNP arrays, default\\=autodetect",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-logdat",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/docker-gistic:0.13"
+}

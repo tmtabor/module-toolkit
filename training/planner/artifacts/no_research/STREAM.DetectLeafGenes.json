@@ -1,0 +1,136 @@
+{
+  "module_name": "STREAM.DetectLeafGenes",
+  "description": "Detect marker genes for each leaf branch.",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "input_file_formats": [
+    "pkl"
+  ],
+  "language": "Python",
+  "categories": [
+    "Single-Cell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:71760:1",
+  "plan": "## STREAM.DetectLeafGenes GenePattern Module — Implementation Plan\n\n### 1. Overview\nSTREAM.DetectLeafGenes is a GenePattern module that Detect marker genes for each leaf branch.\n\n### 2. Parameters\nThe module exposes 8 parameters:\n- Required: data.file, output.filename, cutoff.zscore, cutoff.pvalue, percentile.expr\n- Optional: root, preference, use.precomputed\n\n### 3. Command Line\n```\npython /stream/leaf_command_line.py -m <data.file> -of <output.filename> <root> <preference> <cutoff.zscore> <cutoff.pvalue> <percentile.expr> <use.precomputed> -n_jobs <job.cpuCount>\n```\n\n### 4. Docker Image\nDocker image: genepattern/stream_detectleafgenes\\:0.10\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "leaf_command_line.py",
+  "command_line": "python /stream/leaf_command_line.py -m <data.file> -of <output.filename> <root> <preference> <cutoff.zscore> <cutoff.pvalue> <percentile.expr> <use.precomputed> -n_jobs <job.cpuCount>",
+  "parameters": [
+    {
+      "name": "data.file",
+      "description": "A STREAM pkl file containing gene expression data",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "pkl"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "output file name prefix",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "root",
+      "description": "The starting node for detecting leaf genes.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-root",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "preference",
+      "description": "The preference of nodes. The branch with speficied nodes are preferred and will be dealt with first. The higher ranks the node have, The earlier the branch with that node will be analyzed.  Comma delimited eg S3,S4",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-preference",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "cutoff.zscore",
+      "description": "The z-score cutoff used for mean values of all leaf branches.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "1.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-cutoff_zscore",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cutoff.pvalue",
+      "description": "The p value cutoff used for Kruskal-Wallis H-test and post-hoc pairwise Conover\\u00e2??s test.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.01",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-cutoff_pvalue",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "percentile.expr",
+      "description": "Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "95",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-percentile_expr",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "use.precomputed",
+      "description": "If True, the previously computed scaled gene expression will be used.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "-flag_use_precomputed",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Off",
+          "value": ""
+        },
+        {
+          "display": "Use precomputed gene list",
+          "value": "-flag_use_precomputed"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--use.precomputed",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/stream_detectleafgenes:0.10"
+}

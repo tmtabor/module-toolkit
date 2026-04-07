@@ -1,0 +1,175 @@
+{
+  "module_name": "STREAM.DetectDifferentiallyExpressedGenes",
+  "description": "Used to detect differentially expressed genes between pairs of branches.",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "input_file_formats": [
+    "pkl"
+  ],
+  "language": "Python",
+  "categories": [
+    "Single-Cell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:78469:1",
+  "plan": "## STREAM.DetectDifferentiallyExpressedGenes GenePattern Module — Implementation Plan\n\n### 1. Overview\nSTREAM.DetectDifferentiallyExpressedGenes is a GenePattern module that Used to detect differentially expressed genes between pairs of branches.\n\n### 2. Parameters\nThe module exposes 11 parameters:\n- Required: data.file, output.filename, num.genes, cutoff.zscore, percentile.expr, cutoff.logfc\n- Optional: figure.width, flag.use.precomputed, figure.height, root, preference\n\n### 3. Command Line\n```\npython /stream/diffex_command_line.py -m <data.file> -of <output.filename> <figure.width> <figure.height> <root> <preference> <cutoff.zscore>  <percentile.expr> <flag.use.precomputed> <cutoff.logfc> <num.genes> -n_jobs <job.cpuCount>\n```\n\n### 4. Docker Image\nDocker image: genepattern/stream_diffex\\:0.10\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "diffex_command_line.py",
+  "command_line": "python /stream/diffex_command_line.py -m <data.file> -of <output.filename> <figure.width> <figure.height> <root> <preference> <cutoff.zscore>  <percentile.expr> <flag.use.precomputed> <cutoff.logfc> <num.genes> -n_jobs <job.cpuCount>",
+  "parameters": [
+    {
+      "name": "data.file",
+      "description": "A STREAM pkl file containing gene expression data",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "pkl"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "figure.width",
+      "description": "figure width",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_width",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "flag.use.precomputed",
+      "description": "If True, the previously computed scaled gene expression will be used.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Off",
+          "value": ""
+        },
+        {
+          "display": "Use precomputed gene list",
+          "value": "-flag_use_precomputed"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--flag.use.precomputed",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "figure.height",
+      "description": "figure height",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_height",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.filename",
+      "description": "output file name prefix",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.genes",
+      "description": "The number of genes to plot.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "15",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-num_genes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "root",
+      "description": "The starting node.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-root",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "preference",
+      "description": "The preference of nodes. The branch with speficied nodes are preferred and will be dealt with first. The higher ranks the node have, The earlier the branch with tha node will be analyzed.  This will help generate the consistent results as shown in subway map and stream plot. Comma delimited eg S3,S4",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-preference",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "cutoff.zscore",
+      "description": "The z-score cutoff used for Mann - Whitney U test.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "1.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-cutoff_zscore",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "percentile.expr",
+      "description": "Between 0 and 100. Between 0 and 100. Specify the percentile of gene expression greater than 0 to filter out some extreme gene expressions.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "95",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-percentile_expr",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cutoff.logfc",
+      "description": "The log-transformed fold change cutoff between a pair of branches.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.25",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-cutoff_logfc",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/stream_diffex:0.10"
+}

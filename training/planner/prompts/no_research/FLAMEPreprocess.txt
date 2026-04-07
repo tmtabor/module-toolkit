@@ -1,0 +1,114 @@
+Create a comprehensive structured plan for the GenePattern module for 'FLAMEPreprocess'.
+            
+            Tool Information:
+            - Name: FLAMEPreprocess
+            - Version: Pin common.R to the one associated with v. 4 release of this module
+            - Language: R
+            - Description: Performs preprocessing of .fcs or .txt flow cytometric data files
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "FLAMEPreprocess",
+  "parameters": [
+    {
+      "name": "dataset",
+      "type": "FILE",
+      "description": "A .zip file containing flow files in .txt or .fcs format. (The files should be all .txt or all .fcs, but not both.)",
+      "required": true,
+      "default_value": "",
+      "file_format": "zip"
+    },
+    {
+      "name": "file.type",
+      "type": "java.lang.String",
+      "description": "File type of input sample data.",
+      "required": true,
+      "default_value": "fcs",
+      "choices": "fcs;txt"
+    },
+    {
+      "name": "data.scale",
+      "type": "java.lang.Integer",
+      "description": "The original data scale. 18-bit (default) or 4-decade.",
+      "required": true,
+      "default_value": "262144",
+      "choices": "262144\\=18-bit;10000\\=4-decade"
+    },
+    {
+      "name": "remove.dead",
+      "type": "java.lang.String",
+      "description": "Whether to attempt removing dead cells from the samples.",
+      "required": true,
+      "default_value": "F",
+      "choices": "T\\=yes;F\\=no"
+    },
+    {
+      "name": "channels",
+      "type": "java.lang.String",
+      "description": "A comma-separated list of channel numbers indicating which columns (antibodies) to keep (e.g., 1, 2, 3, 7).",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "channel.names",
+      "type": "java.lang.String",
+      "description": "A comma-separated list of channel/antibody names that corresponds to the channel numbers (e.g., FSC, SSC, CD4, CD45RA).",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "scatter.channels",
+      "type": "java.lang.String",
+      "description": "A comma-separated list of scatter channel numbers (e.g., 1, 2, 3).",
+      "required": true,
+      "default_value": "1,2"
+    },
+    {
+      "name": "transformation",
+      "type": "java.lang.Integer",
+      "description": "The transformation to apply",
+      "required": true,
+      "default_value": "logicle",
+      "choices": "none;logicle;arsinh"
+    },
+    {
+      "name": "logicle.cofactor",
+      "type": "java.lang.Integer",
+      "description": "A cofactor that tunes the logicle transformation. The cofactor is usually greater than 0 and less than 10.",
+      "required": true,
+      "default_value": "3"
+    },
+    {
+      "name": "arsinh.cofactor",
+      "type": "java.lang.Integer",
+      "description": "A cofactor that tunes the arsinh transformation. The cofactor is 0 usually between 0 exclusively and a few thousand.",
+      "required": true,
+      "default_value": "250"
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.lang.String",
+      "description": "A prefix for output files",
+      "required": true,
+      "default_value": "<dataset_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Flow Cytometry",
+  "author": "GenePattern Team",
+  "command_line": "<R-2.7.2> <libdir>preprocess.gp.R parseCmdLine <libdir> <dataset> <remove.dead> <channels> <channel.names> <scatter.channels> <file.type> <transformation> <data.scale> <logicle.cofactor> <arsinh.cofactor> <output.prefix>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

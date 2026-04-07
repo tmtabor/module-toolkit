@@ -1,0 +1,325 @@
+{
+  "module_name": "STREAM.EPGAdjustFinalGraph",
+  "description": "Adjust the final EPG trajectory structure by pruning, extending and otherwise modifying the branches to optimize for single-cell data",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "input_file_formats": [
+    "pkl"
+  ],
+  "language": "Python",
+  "categories": [
+    "Single-Cell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:31786:1",
+  "plan": "## STREAM.EPGAdjustFinalGraph GenePattern Module — Implementation Plan\n\n### 1. Overview\nSTREAM.EPGAdjustFinalGraph is a GenePattern module that Adjust the final EPG trajectory structure by pruning, extending and otherwise modifying the branches to optimize for single-cell data\n\n### 2. Parameters\nThe module exposes 20 parameters:\n- Required: data.file, epg.beta, figure.legend.num.columns, output.filename, epg.max.steps, incremental.number.of.nodes, epg.trimming.radius, component.x, component.y, num.components, epg.alpha, epg.lambda, epg.mu, epg.collapse.mode, epg.collapse.parameter, epg.extension.mode, epg.extension.parameter, epg.final.energy\n- Optional: figure.width, figure.height\n\n### 3. Command Line\n```\npython /stream/epg_adjustfinal_command_line.py -m <data.file> -of <output.filename> <figure.width> <figure.height> <figure.legend.num.columns> <component.x> <component.y> <num.components> <epg.max.steps>  <incremental.number.of.nodes> <epg.trimming.radius> <epg.alpha> -epg_n_processes <job.cpuCount>  <epg.lambda> <epg.mu> <epg.collapse.mode> <epg.collapse.parameter> <epg.extension.mode> <epg.extension.parameter> <epg.final.energy> <epg.beta>\n```\n\n### 4. Docker Image\nDocker image: genepattern/stream_epg_adjustfinal\\:0.2\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "epg_adjustfinal_command_line.py",
+  "command_line": "python /stream/epg_adjustfinal_command_line.py -m <data.file> -of <output.filename> <figure.width> <figure.height> <figure.legend.num.columns> <component.x> <component.y> <num.components> <epg.max.steps>  <incremental.number.of.nodes> <epg.trimming.radius> <epg.alpha> -epg_n_processes <job.cpuCount>  <epg.lambda> <epg.mu> <epg.collapse.mode> <epg.collapse.parameter> <epg.extension.mode> <epg.extension.parameter> <epg.final.energy> <epg.beta>",
+  "parameters": [
+    {
+      "name": "data.file",
+      "description": "A STREAM pkl file containing gene expression data",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "pkl"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "epg.beta",
+      "description": "Beta parameter of the penalized elastic energy.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-epg_beta",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "figure.width",
+      "description": "figure width",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_width",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "figure.legend.num.columns",
+      "description": "The number of columns that the legend has.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_legend_ncol",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "figure.height",
+      "description": "figure height",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_height",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.filename",
+      "description": "output file name prefix",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "epg.max.steps",
+      "description": "The maximum number of iteration steps.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "50",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-epg_max_steps",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "incremental.number.of.nodes",
+      "description": "Incremental number of nodes for elastic principal graph.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "30",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-incr_n_nodes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "epg.trimming.radius",
+      "description": "epg_trimmingradius\\: `float`, optional (default\\: 'Inf')",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "Inf",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-epg_trimmingradius",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "component.x",
+      "description": "Component used for x axis in plots.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-comp1",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "component.y",
+      "description": "Component used for y axis in plots.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-comp2",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.components",
+      "description": "Number of components to be plotted.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-n_comp",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "epg.alpha",
+      "description": "Alpha parameter of the penalized elastic energy.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.02",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-epg_alpha",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "epg.lambda",
+      "description": "Lambda parameter used to compute the elastic energy.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.02",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-epg_lambda",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "epg.mu",
+      "description": "Mu parameter used to compute the elastic energy.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-epg_mu",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "epg.collapse.mode",
+      "description": "The mode used to prune the graph.Choose from {{'PointNumber','PointNumber_Extrema','PointNumber_Leaves','EdgesNumber','EdgesLength'}}. 'PointNumber'\\: branches with less than epg_collapse_par points (points projected on the extreme points are not considered) are removed; 'PointNumber_Extrema', branches with less than epg_collapse_par (points projected on the extreme points are not considered) are removed;  'PointNumber_Leaves', branches with less than epg_collapse_par points (points projected on non-leaf extreme points are not considered) are removed.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "None",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "None",
+          "value": "None"
+        },
+        {
+          "display": "PointNumber",
+          "value": "PointNumber"
+        },
+        {
+          "display": "PointNumber_Extrema",
+          "value": "PointNumber_Extrema"
+        },
+        {
+          "display": "PointNumber_Leaves",
+          "value": "PointNumber_Leaves"
+        },
+        {
+          "display": "EdgesNumber",
+          "value": "EdgesNumber"
+        },
+        {
+          "display": "EdgesLength",
+          "value": "EdgesLength"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-epg_collapse_mode",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "epg.collapse.parameter",
+      "description": "The paramter used to control different modes.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-epg_collapse_par",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "epg.extension.mode",
+      "description": "The mode used to extend the leaves.  Choose from {{'QuantDists','QuantCentroid','WeigthedCentroid'}}; 'QuantCentroid'\\:for each leaf node, the extreme points are ordered by their distance from the node and the centroid of the points further than epg_ext_par is returned; 'WeigthedCentroid'\\:for each leaf node, a weight is computed for each points by raising the distance to the epg_ext_par power. Larger epg_ext_par results in a bigger influence of points further than the node; 'QuantDists'\\:for each leaf node, the extreme points are ordered by their distance from the node and the 100*epg_ext_par th percentile of the points farther than epg_ext_par is returned.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "QuantDists",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "QuantDists",
+          "value": "QuantDists"
+        },
+        {
+          "display": "QuantCentroid",
+          "value": "QuantCentroid"
+        },
+        {
+          "display": "WeigthedCentroid",
+          "value": "WeigthedCentroid"
+        },
+        {
+          "display": "None",
+          "value": "None"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-epg_ext_mode",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "epg.extension.parameter",
+      "description": "The paramter used to control different modes.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-epg_ext_par",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "epg.final.energy",
+      "description": "Indicate the final elastic energy associated with the configuration.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "Penalized",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-epg_finalenergy",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/stream_epg_adjustfinal:0.2"
+}

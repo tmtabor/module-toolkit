@@ -1,0 +1,125 @@
+{
+  "module_name": "Picard.MarkDuplicates",
+  "description": "Examines aligned records in the supplied SAM or BAM file to locate duplicate reads.",
+  "author": "Picard Tools",
+  "input_file_formats": [
+    "bam",
+    "sam"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:67624:1",
+  "plan": "## Picard.MarkDuplicates GenePattern Module — Implementation Plan\n\n### 1. Overview\nPicard.MarkDuplicates is a GenePattern module that Examines aligned records in the supplied SAM or BAM file to locate duplicate reads.\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: input.file, remove.duplicates, max.file.handles, optical.duplicate.distance, sorting.collection.size.ratio, output.prefix\n- Optional: read.name.regex\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>MarkDuplicates.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>gp-MarkDuplicates.jar org.genepattern.sam.MarkDuplicatesWrapper -inputFileName <input.file> -removeDup <remove.duplicates> -maxFileH <max.file.handles> -rnRegex <read.name.regex> -dist <optical.duplicate.distance> -outputFileName <output.prefix> -ratio <sorting.collection.size.ratio>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "MarkDuplicates.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>gp-MarkDuplicates.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>MarkDuplicates.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>gp-MarkDuplicates.jar org.genepattern.sam.MarkDuplicatesWrapper -inputFileName <input.file> -removeDup <remove.duplicates> -maxFileH <max.file.handles> -rnRegex <read.name.regex> -dist <optical.duplicate.distance> -outputFileName <output.prefix> -ratio <sorting.collection.size.ratio>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "A SAM or BAM file",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "sam",
+        "bam"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "remove.duplicates",
+      "description": "Whether to remove duplicates",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "true"
+        },
+        {
+          "display": "no",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--remove.duplicates",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.file.handles",
+      "description": "Maximum number of file handles to keep open when spilling read ends to disk",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "8000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.file.handles",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "read.name.regex",
+      "description": "Regular expression that can be used to parse read names in the input file",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--read.name.regex",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "optical.duplicate.distance",
+      "description": "The maximum offset between two duplicate clusters in order to consider them optical duplicates. This should usually be set to some fairly small number (e.g. 5-10 pixels) unless using later versions of the Illumina pipeline that multiply pixel values by 10, in which case 50-100 is more normal",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--optical.duplicate.distance",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sorting.collection.size.ratio",
+      "description": "This number, plus the maximum RAM available to the JVM, determine the memory footprint used by some of the sorting collections.  If you are running out of memory, try reducing this number",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.25",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sorting.collection.size.ratio",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.prefix",
+      "description": "The prefix to use for the output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

@@ -1,0 +1,137 @@
+Create a comprehensive structured plan for the GenePattern module for 'PreprocessDataset'.
+            
+            Tool Information:
+            - Name: PreprocessDataset
+            - Version: Bug fix for optional 'threshold.for.removing.rows' and 'number.of.columns.above.threshold' module params
+            - Language: Java
+            - Description: Performs several preprocessing steps on a res, gct, or odf input file
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "PreprocessDataset",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "Input filename - .res, .gct, .odf",
+      "required": true,
+      "default_value": "",
+      "file_format": "res;gct;Dataset"
+    },
+    {
+      "name": "threshold.and.filter",
+      "type": "java.lang.String",
+      "description": "Apply floor, ceiling and variation filter",
+      "required": false,
+      "default_value": "1",
+      "choices": "0\\=no;1\\=yes"
+    },
+    {
+      "name": "floor",
+      "type": "java.lang.String",
+      "description": "Value for floor threshold",
+      "required": false,
+      "default_value": "20"
+    },
+    {
+      "name": "ceiling",
+      "type": "java.lang.String",
+      "description": "Value for ceiling threshold",
+      "required": false,
+      "default_value": "20000"
+    },
+    {
+      "name": "min.fold.change",
+      "type": "java.lang.String",
+      "description": "Minimum fold change for variation filter",
+      "required": false,
+      "default_value": "3"
+    },
+    {
+      "name": "min.delta",
+      "type": "java.lang.String",
+      "description": "Minimum delta for variation filter",
+      "required": false,
+      "default_value": "100"
+    },
+    {
+      "name": "num.outliers.to.exclude",
+      "type": "java.lang.String",
+      "description": "Number of outliers per row to ignore when calculating row min and max for variation filter",
+      "required": false,
+      "default_value": "0"
+    },
+    {
+      "name": "row.normalization",
+      "type": "java.lang.String",
+      "description": "Perform row normalization",
+      "required": false,
+      "default_value": "0",
+      "choices": "0\\=no;1\\=yes"
+    },
+    {
+      "name": "row.sampling.rate",
+      "type": "java.lang.String",
+      "description": "Sample rows without replacement to obtain this fraction of the total number of rows",
+      "required": false,
+      "default_value": "1"
+    },
+    {
+      "name": "threshold.for.removing.rows",
+      "type": "java.lang.Float",
+      "description": "Threshold for removing rows",
+      "required": false,
+      "default_value": "",
+      "prefix": "-b"
+    },
+    {
+      "name": "number.of.columns.above.threshold",
+      "type": "java.lang.Integer",
+      "description": "Remove row if this number of columns not >\\= given threshold",
+      "required": false,
+      "default_value": "",
+      "prefix": "-a"
+    },
+    {
+      "name": "log2.transform",
+      "type": "java.lang.String",
+      "description": "Apply log2 transform after all other preprocessing steps",
+      "required": false,
+      "default_value": "0",
+      "choices": "0\\=no;1\\=yes"
+    },
+    {
+      "name": "output.file.format",
+      "type": "java.lang.String",
+      "description": "Output file format",
+      "required": false,
+      "default_value": "3",
+      "choices": "0\\=gct;1\\=res;3\\=same as input"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "Output file name",
+      "required": true,
+      "default_value": "<input.filename_basename>.preprocessed"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Joshua Gould, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>Preprocess.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.modules.preprocess.Preprocess -F <input.filename> -r <output.file.format> -V <threshold.and.filter> -n <row.normalization> -f <min.fold.change> -d <min.delta> -t <floor> -c <ceiling> -p <row.sampling.rate> -e <num.outliers.to.exclude> -O <output.file> -g <log2.transform> <threshold.for.removing.rows> <number.of.columns.above.threshold>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,127 @@
+{
+  "module_name": "SVM",
+  "description": "Classify samples using SVM",
+  "author": "Joshua Gould, Broad Institute",
+  "input_file_formats": [
+    "cls",
+    "gct",
+    "model",
+    "res"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:11782:1",
+  "plan": "## SVM GenePattern Module — Implementation Plan\n\n### 1. Overview\nSVM is a GenePattern module that Classify samples using SVM\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: none\n- Optional: train.data.filename, train.cls.filename, saved.model.filename, test.data.filename, test.cls.filename, pred.results.output.file, model.output.file\n\n### 3. Command Line\n```\n<R2.5> <libdir>svm.R mysvm -rf<train.data.filename> -rc<train.cls.filename> -ef<test.data.filename> -ec<test.cls.filename> -pr<pred.results.output.file> -mf<model.output.file> -li<libdir> -sm<saved.model.filename>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "svm.R",
+  "command_line": "<R2.5> <libdir>svm.R mysvm -rf<train.data.filename> -rc<train.cls.filename> -ef<test.data.filename> -ec<test.cls.filename> -pr<pred.results.output.file> -mf<model.output.file> -li<libdir> -sm<saved.model.filename>",
+  "parameters": [
+    {
+      "name": "train.data.filename",
+      "description": "The training data file - .gct, .res",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "res",
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--train.data.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "train.cls.filename",
+      "description": "The training class file - .cls",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--train.cls.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "saved.model.filename",
+      "description": "A saved model from a previous run of SVM",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "model"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--saved.model.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "test.data.filename",
+      "description": "The test data file - .gct, .res",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "res",
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--test.data.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "test.cls.filename",
+      "description": "The test class file - .cls",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--test.cls.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "pred.results.output.file",
+      "description": "The name of the output file for prediction results",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<test.data.filename_basename>.pred.odf",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--pred.results.output.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "model.output.file",
+      "description": "The name of the file containing the saved model",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<train.data.filename_basename>.model",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--model.output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

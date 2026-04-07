@@ -1,0 +1,431 @@
+{
+  "module_name": "tfsites.PerturbTfSiteWithoutSideEffects",
+  "description": "PerturbTfSiteWithoutSideEffects reports the secondary effects of mutations.",
+  "author": "Joe Solvasson, modified into a GenePattern module as Ted Liefeld",
+  "input_file_formats": [
+    "tsv",
+    "txt"
+  ],
+  "language": "Python",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:55544:1",
+  "plan": "## tfsites.PerturbTfSiteWithoutSideEffects GenePattern Module — Implementation Plan\n\n### 1. Overview\ntfsites.PerturbTfSiteWithoutSideEffects is a GenePattern module that PerturbTfSiteWithoutSideEffects reports the secondary effects of mutations.\n\n### 2. Parameters\nThe module exposes 26 parameters:\n- Required: DNA.sequence.to.annotate, primary.TF.name, primary.SNV.effect.type.to.report, affinity.optimization.threshold, affinity.reduction.threshold\n- Optional: primary.core.binding.site.definition, primary.affinity.reference.data, primary.PWM.data, primary.PWM.minimum.score, secondary.affinity.information, secondary.affinity.files, secondary.PWM.data, secondary.PWM.minimum.score, secondary.minimum.binding.charge, primary.motif.input.file, primary.motif.input.format, primary.motif.filter.keywords, primary.motif.use.pseudocounts, primary.motif.background.frequencies, primary.motif.output.name, secondary.motif.input.file, secondary.motif.input.format, secondary.motif.filter.keywords, secondary.motif.use.pseudocounts, secondary.motif.background.frequencies, secondary.motif.output.name\n\n### 3. Command Line\n```\npython /build/tfsites-webportal/07-perturbTfSiteWithoutSideEffects/07-combined-generateMotifDatabase-and-perturbTfSiteWithoutSideEffects.py  -s <DNA.sequence.to.annotate>  -n <primary.TF.name> <primary.affinity.reference.data>  <primary.core.binding.site.definition> <primary.PWM.data>  <primary.PWM.minimum.score>    <primary.SNV.effect.type.to.report> <affinity.optimization.threshold> <affinity.reduction.threshold> <secondary.affinity.information> <secondary.affinity.files> <secondary.PWM.data> <secondary.PWM.minimum.score> <secondary.minimum.binding.charge> -d .  <primary.motif.input.file> <primary.motif.input.format>  <primary.motif.filter.keywords> <primary.motif.use.pseudocounts> <primary.motif.background.frequencies> <primary.motif.output.name>  <secondary.motif.input.file> <secondary.motif.input.format> <secondary.motif.use.pseudocounts> <secondary.motif.filter.keywords>  <secondary.motif.background.frequencies> <secondary.motif.output.name>\n```\n\n### 4. Docker Image\nDocker image: genepattern/tfsites\\:17.1.3\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "07-combined-generateMotifDatabase-and-perturbTfSiteWithoutSideEffects.py",
+  "command_line": "python /build/tfsites-webportal/07-perturbTfSiteWithoutSideEffects/07-combined-generateMotifDatabase-and-perturbTfSiteWithoutSideEffects.py  -s <DNA.sequence.to.annotate>  -n <primary.TF.name> <primary.affinity.reference.data>  <primary.core.binding.site.definition> <primary.PWM.data>  <primary.PWM.minimum.score>    <primary.SNV.effect.type.to.report> <affinity.optimization.threshold> <affinity.reduction.threshold> <secondary.affinity.information> <secondary.affinity.files> <secondary.PWM.data> <secondary.PWM.minimum.score> <secondary.minimum.binding.charge> -d .  <primary.motif.input.file> <primary.motif.input.format>  <primary.motif.filter.keywords> <primary.motif.use.pseudocounts> <primary.motif.background.frequencies> <primary.motif.output.name>  <secondary.motif.input.file> <secondary.motif.input.format> <secondary.motif.use.pseudocounts> <secondary.motif.filter.keywords>  <secondary.motif.background.frequencies> <secondary.motif.output.name>",
+  "parameters": [
+    {
+      "name": "DNA.sequence.to.annotate",
+      "description": "File containing a DNA sequence to be annotated.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--DNA.sequence.to.annotate",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "primary.TF.name",
+      "description": "Name of the primary transcription factor to use for SNV analysis.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--primary.TF.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "primary.core.binding.site.definition",
+      "description": "IUPAC definition of core TF binding site (see <a href\\=\"https\\://www.bioinformatics.org/sms/iupac.html\">here</a>). Only optional if using PWM data but required if using affinity data.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-c",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "primary.affinity.reference.data",
+      "description": "PBM affinity dataset used to assign a value to each binding site.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-a",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "primary.PWM.data",
+      "description": "PWM dataset used to assign a value to each binding site.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-p",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "primary.PWM.minimum.score",
+      "description": "PWM score required to predict a binding site.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0.7",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-m",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "primary.SNV.effect.type.to.report",
+      "description": "Specify one or more mutation types to analyze. SNV mutations can either increase (optimize) or decrease (sub-optimize) the affinity/score, delete a binding site, or create a binding site. Therefore, the possible mutation types are 'inc', 'dec', 'denovo', and 'del.' This option also takes the value 'all' if the user would like to analyze all of the listed mutation types.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "all",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "inc",
+          "value": "inc"
+        },
+        {
+          "display": "dec",
+          "value": "dec"
+        },
+        {
+          "display": "denovo",
+          "value": "denovo"
+        },
+        {
+          "display": "del",
+          "value": "del"
+        },
+        {
+          "display": "all",
+          "value": "all"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-e",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "affinity.optimization.threshold",
+      "description": "Fold change threshold for mutations that increase the affinity/score. Only SNVs with fold change above this threshold will be reported. By default, all SNVs will be reported.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "1.25",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-o",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "affinity.reduction.threshold",
+      "description": "Fold change threshold for mutations that decrease the affinity/score. Only SNVs with fold change below this threshold will be reported. By default, all SNVs will be reported.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "1.25",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-b",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "secondary.affinity.information",
+      "description": "Affinity dataset used to assign a value to each binding site.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-A",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "secondary.affinity.files",
+      "description": "Files referred to in the \"secondary affinity information\" file.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-F",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "secondary.PWM.data",
+      "description": "PWM dataset used to assign a value to each binding site.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-P",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "secondary.PWM.minimum.score",
+      "description": "PWM score required to predict a binding site.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.7",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-M",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "secondary.minimum.binding.charge",
+      "description": "The minimum change of affinity or PWM binding score required to classify an \"increase\" or \"decrease\".",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-B",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "primary.motif.input.file",
+      "description": "File containing matrix data for primary motif database generation (JASPAR format). If provided, motif database will be generated first.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_input_file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "primary.motif.input.format",
+      "description": "Specify whether primary motif database input file contains PFMs or PWMs. Required if motif input file is provided.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "pfm",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "PFM",
+          "value": "pfm"
+        },
+        {
+          "display": "PWM",
+          "value": "pwm"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--motif_input_format",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "primary.motif.filter.keywords",
+      "description": "File containing keywords to filter primary motifs during database generation.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_filter_keywords",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "primary.motif.use.pseudocounts",
+      "description": "Whether to use pseudocounts when generating primary motif database.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--motif_use_pseudocounts",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "primary.motif.background.frequencies",
+      "description": "Background frequency for each nucleotide (comma-separated string in order of ATCG) in primary motif database generation.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.25,0.25,0.25,0.25",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_background_frequencies",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "primary.motif.output.name",
+      "description": "Name of primary motif database output file. If not specified, temporary file will be created.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "generated_primary_motif_database.txt",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_output_name",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "secondary.motif.input.file",
+      "description": "File containing matrix data for secondary motif database generation (JASPAR format). If provided, motif database will be generated first.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_input_file2",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "secondary.motif.input.format",
+      "description": "Specify whether secondary motif database input file contains PFMs or PWMs. Required if motif input file is provided.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "pfm",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "PFM",
+          "value": "pfm"
+        },
+        {
+          "display": "PWM",
+          "value": "pwm"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--motif_input_format2",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "secondary.motif.filter.keywords",
+      "description": "File containing keywords to filter secondary motifs during database generation.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_filter_keywords2",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "secondary.motif.use.pseudocounts",
+      "description": "Whether to use pseudocounts when generating secondary motif database.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--motif_use_pseudocounts2",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "secondary.motif.background.frequencies",
+      "description": "Background frequency for each nucleotide (comma-separated string in order of ATCG) in secondary motif database generation.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.25,0.25,0.25,0.25",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_background_frequencies2",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "secondary.motif.output.name",
+      "description": "Name of secondary motif database output file. If not specified, temporary file will be created.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "generated_secondary_motif_database.txt",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--motif_output_name2",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/tfsites:17.1.3"
+}

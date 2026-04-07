@@ -1,0 +1,209 @@
+{
+  "module_name": "SelectFileMatrix",
+  "description": "A helper module which selects a matrix out of a delimited text file.",
+  "author": "David Eby, Broad Institute",
+  "input_file_formats": [
+    "cdt",
+    "chip",
+    "clm",
+    "cls",
+    "cn",
+    "csv",
+    "gct",
+    "glad",
+    "gmt",
+    "gmx",
+    "grp",
+    "loh",
+    "maf",
+    "odf",
+    "res",
+    "snp",
+    "txt",
+    "xcn"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:15028:1",
+  "plan": "## SelectFileMatrix GenePattern Module — Implementation Plan\n\n### 1. Overview\nSelectFileMatrix is a GenePattern module that A helper module which selects a matrix out of a delimited text file.\n\n### 2. Parameters\nThe module exposes 10 parameters:\n- Required: input.file, output.file.base.name\n- Optional: delimiter, start.row, end.row, start.column, end.column, row.select, column.select, output.rejects\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>SelectFileMatrix.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>commons-io-2.3.jar org.broadinstitute.modules.selectfilematrix.SelectFileMatrix <input.file> <output.file.base.name> <delimiter> <start.row> <end.row> <start.column> <end.column> <row.select> <column.select> <output.rejects>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "SelectFileMatrix.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>commons-io-2.3.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>SelectFileMatrix.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>commons-io-2.3.jar org.broadinstitute.modules.selectfilematrix.SelectFileMatrix <input.file> <output.file.base.name> <delimiter> <start.row> <end.row> <start.column> <end.column> <row.select> <column.select> <output.rejects>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "Name of the input file from which to pull the matrix.  Must be a delimited text file.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "csv",
+        "txt",
+        "gct",
+        "res",
+        "cdt",
+        "chip",
+        "clm",
+        "cls",
+        "cn",
+        "glad",
+        "gmt",
+        "gmx",
+        "grp",
+        "loh",
+        "maf",
+        "odf",
+        "snp",
+        "xcn"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file.base.name",
+      "description": "Base name for the output file.  The module will add an appropriate extension, either .csv for a comma-delimted file or .txt for a space- or tab-delimited file).",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>.select",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file.base.name\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "delimiter",
+      "description": "Token naming the character for the output column delimiter. Choices are TAB, COMMA, and SPACE. TAB is the default.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "TAB",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "tab",
+          "value": "TAB"
+        },
+        {
+          "display": "comma",
+          "value": "COMMA"
+        },
+        {
+          "display": "space",
+          "value": "SPACE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--delimiter\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "start.row",
+      "description": "Starting row of the matrix (line number within the file).  Defaults to the first row.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--start.row\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "end.row",
+      "description": "Ending row of the matrix (line number within the file).  Defaults to the last row.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--end.row\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "start.column",
+      "description": "Starting column of the matrix.  Defaults to the first column.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--start.column\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "end.column",
+      "description": "Ending column of the matrix. Defaults to the last column.",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--end.column\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "row.select",
+      "description": "Select specific rows to include in the matrix (e.g. \"3,5,7-12\").  Note that start/end row parameters may limit this selection.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--row.select\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "column.select",
+      "description": "Select specific columns to include in the matrix (e.g. \"1,2,4-6\").  Note that start/end column parameters may limit this selection",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--column.select\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.rejects",
+      "description": "Produce an output file containing the items not meeting the selection criteria.  The file will be named <output.file.base.name>.REJECT.<ext>",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "false",
+          "value": "false"
+        },
+        {
+          "display": "true",
+          "value": "true"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.rejects\\=",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

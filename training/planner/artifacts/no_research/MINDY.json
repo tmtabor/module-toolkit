@@ -1,0 +1,173 @@
+{
+  "module_name": "MINDY",
+  "description": "Runs the MINDY algorithm for inferring genes that modulate the activity of a transcription factor at post-transcriptional levels",
+  "author": "Marc-Danie Nazaire",
+  "input_file_formats": [
+    "gct",
+    "res",
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:64439:1",
+  "plan": "## MINDY GenePattern Module — Implementation Plan\n\n### 1. Overview\nMINDY is a GenePattern module that Runs the MINDY algorithm for inferring genes that modulate the activity of a transcription factor at post-transcriptional levels\n\n### 2. Parameters\nThe module exposes 11 parameters:\n- Required: input.file, modulator.list, transcription.factor, conditional.mi.threshold, conditional.mi.p.value, dpi.tolerance, unconditional.mi.threshold, unconditional.mi.p.value, output.file\n- Optional: dpi.transcription.factor.list, sample.percentage\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>mindy-gp.jar<path.separator><libdir>jargs.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>jama-1.0.1.jar<path.separator><libdir>trove.jar<path.separator><libdir>aracne-0.1.jar<path.separator><libdir>workbook-0.91.jar<path.separator><libdir>commons-cli.jar<path.separator><libdir>commons-math-1.0.jar<path.separator><libdir>log4j-1.2.8.jar<path.separator><libdir>collections-generic-4.0.jar<path.separator><libdir>swingx-2006_10_27.jar<path.separator><libdir>commons-logging.jar<path.separator><libdir>mindy-0.2.jar org.genepattern.modules.mindy.MINDY -i <input.file> -c <modulator.list> -h <transcription.factor> -s <sample.percentage>  -m <conditional.mi.threshold> -p <conditional.mi.p.value> -d <dpi.tolerance> -t <unconditional.mi.threshold> -n <unconditional.mi.p.value> -o <output.file>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "mindy-gp.jar<path.separator><libdir>jargs.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>jama-1.0.1.jar<path.separator><libdir>trove.jar<path.separator><libdir>aracne-0.1.jar<path.separator><libdir>workbook-0.91.jar<path.separator><libdir>commons-cli.jar<path.separator><libdir>commons-math-1.0.jar<path.separator><libdir>log4j-1.2.8.jar<path.separator><libdir>collections-generic-4.0.jar<path.separator><libdir>swingx-2006_10_27.jar<path.separator><libdir>commons-logging.jar<path.separator><libdir>mindy-0.2.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>mindy-gp.jar<path.separator><libdir>jargs.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>jama-1.0.1.jar<path.separator><libdir>trove.jar<path.separator><libdir>aracne-0.1.jar<path.separator><libdir>workbook-0.91.jar<path.separator><libdir>commons-cli.jar<path.separator><libdir>commons-math-1.0.jar<path.separator><libdir>log4j-1.2.8.jar<path.separator><libdir>collections-generic-4.0.jar<path.separator><libdir>swingx-2006_10_27.jar<path.separator><libdir>commons-logging.jar<path.separator><libdir>mindy-0.2.jar org.genepattern.modules.mindy.MINDY -i <input.file> -c <modulator.list> -h <transcription.factor> -s <sample.percentage>  -m <conditional.mi.threshold> -p <conditional.mi.p.value> -d <dpi.tolerance> -t <unconditional.mi.threshold> -n <unconditional.mi.p.value> -o <output.file>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "The dataset file - .res, .gct",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "res",
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "modulator.list",
+      "description": "A list of possible modulator genes to analyze - .txt",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--modulator.list",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "dpi.transcription.factor.list",
+      "description": "List of transcription factors in dataset - .txt",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-a <dpi.transcription.factor.list>",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "transcription.factor",
+      "description": "Transcription factor",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--transcription.factor",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.percentage",
+      "description": "Percentage of samples to use in analysis (must be <\\=50)",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "35.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sample.percentage",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "conditional.mi.threshold",
+      "description": "Conditional mutual information (MI) score threshold (number between 0 and 1)",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--conditional.mi.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "conditional.mi.p.value",
+      "description": "Conditional mutual info p-value threshold (ignored if conditonal MI threshold >0)",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "1.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--conditional.mi.p.value",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "dpi.tolerance",
+      "description": "The data processing inequality tolerance (number between 0 and 1)",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "1.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dpi.tolerance",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "unconditional.mi.threshold",
+      "description": "Unconditional mutual information (MI) score threshold (number between 0 and 1)",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--unconditional.mi.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "unconditional.mi.p.value",
+      "description": "Unconditional mutual information p-value threshold (ignored if unconditonal MI threshold >0)",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "1.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--unconditional.mi.p.value",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "Output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_basename>.mindy",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

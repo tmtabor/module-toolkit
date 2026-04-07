@@ -1,0 +1,92 @@
+Create a comprehensive structured plan for the GenePattern module for 'LandmarkMatch'.
+            
+            Tool Information:
+            - Name: LandmarkMatch
+            - Version: 1.0
+            - Language: any
+            - Description: A proteomics method to propogate identifed peptides across multiple MS runs
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "LandmarkMatch",
+  "parameters": [
+    {
+      "name": "peakList.filename",
+      "type": "FILE",
+      "description": "Zip file containing peak lists",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "retentionTime.filename",
+      "type": "FILE",
+      "description": "Zip file containing retention time (in this case from mapquant)",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "sampleInfo.filename",
+      "type": "FILE",
+      "description": "CSV file with header\\: experiment, sample, class",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "globalID.filename",
+      "type": "FILE",
+      "description": "Global list of identified peptides",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "accurateMass.filename",
+      "type": "FILE",
+      "description": "OPTIONAL\\: Specify the accurate mass table",
+      "required": false,
+      "default_value": "",
+      "file_format": "txt"
+    },
+    {
+      "name": "prefitCoef.filename",
+      "type": "FILE",
+      "description": "OPTIONAL\\: Specify the prefit coefficients in a file",
+      "required": false,
+      "default_value": "",
+      "file_format": "txt"
+    },
+    {
+      "name": "Bootstrap",
+      "type": "java.lang.String",
+      "description": "Use bootstrapping to calculate landmark match statistics",
+      "required": true,
+      "default_value": "",
+      "choices": "0\\=No;1\\=Yes"
+    },
+    {
+      "name": "running.on.LSF",
+      "type": "java.lang.String",
+      "description": "Whether you are running on an LSF cluster version of GenePattern",
+      "required": true,
+      "default_value": "no",
+      "choices": "no;yes"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Proteomics",
+  "author": "Vincent Fusaro",
+  "command_line": "<perl> <libdir>LandmarkMatch.pl <libdir> <os.name> <peakList.filename> <retentionTime.filename> <sampleInfo.filename> <globalID.filename> <Bootstrap> <running.on.LSF> <accurateMass.filename> <prefitCoef.filename>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

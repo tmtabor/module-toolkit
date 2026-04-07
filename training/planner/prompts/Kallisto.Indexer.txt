@@ -1,0 +1,476 @@
+Create a comprehensive structured plan for the GenePattern module for 'Kallisto.Indexer'.
+            
+            Tool Information:
+            - Name: Kallisto.Indexer
+            - Version: add documentation, author, docker, source code repo, change visibility to public, quality level to preproduction
+            - Language: any
+            - Description: Builds an index from a FASTA formatted file of target sequences for use with Kallisto.
+            
+            Research Results:
+            I now have all the information needed to compile a comprehensive, PhD-level research report. Here is the complete analysis:
+
+---
+
+# 🧬 Comprehensive Research Report: Kallisto.Indexer
+
+**GenePattern Module Research & Development Documentation**
+*Prepared for GenePattern Module Integration | Quality Level: Pre-Production*
+
+---
+
+## 1. Executive Summary
+
+**Kallisto.Indexer** is a GenePattern module wrapper around the `kallisto index` subcommand from the Kallisto toolkit (Pachter Lab, UC Berkeley/Caltech). It builds a binary k-mer hash index from a FASTA-formatted transcriptome sequence file. This index is the mandatory prerequisite for all Kallisto-based RNA-seq quantification workflows — both bulk (`kallisto quant`) and single-cell (`kallisto bus`). The module occupies **Step 1** in a two-step workflow, with **Kallisto.Quant** consuming its output.
+
+Kallisto is one of the most highly-cited bioinformatics tools of the past decade, described in:
+> **Bray NL, Pimentel H, Melsted P, Pachter L.** "Near-optimal probabilistic RNA-seq quantification." *Nature Biotechnology* **34**, 525–527 (2016). DOI: [10.1038/nbt.3519](https://www.nature.com/articles/nbt.3519)
+
+---
+
+## 2. Scientific Background & Tool Purpose
+
+### 2.1 The Pseudoalignment Paradigm
+
+Kallisto revolutionized RNA-seq analysis by replacing traditional sequence alignment with **pseudoalignment** — a mathematical abstraction that determines which transcripts are *compatible* with a read without finding a precise genomic coordinate. This is achieved by:
+
+1. **Index Construction** *(Kallisto.Indexer's role)*: The transcriptome FASTA is decomposed into overlapping k-mers (default k=31). These k-mers are stored in a **de Bruijn graph**, and the **colored compacted de Bruijn graph (ccDBG)** of the transcriptome is encoded into a binary hash table — the `.idx` file.
+
+2. **Pseudoalignment** *(Kallisto.Quant's role)*: For each RNA-seq read, k-mers are extracted and looked up in the hash table. The **equivalence class** of compatible transcripts is determined in microseconds per read.
+
+### 2.2 Scientific Applications
+
+| Application | Description |
+|---|---|
+| **Bulk RNA-seq Quantification** | Transcript-level and gene-level abundance estimation from total RNA or mRNA-seq experiments |
+| **Single-Cell RNA-seq** | Pre-processing via `kallisto bus` + bustools pipeline for UMI-based scRNA-seq (10x Genomics, inDrop, etc.) |
+| **Multi-Species Studies** | Custom FASTA indexing for any organism with available transcript sequences |
+| **Viral/Pathogen Quantification** | Custom FASTA index for viral transcripts or bacterial RNA |
+| **Neoantigen/Fusion Detection** | Custom target sequence indexing for immunogenomics applications |
+| **Proteomics (experimental)** | Amino acid FASTA indexing via `--aa` flag |
+| **ERCC Spike-in Quantification** | Custom FASTA combining transcriptome + spike-in controls |
+
+---
+
+## 3. Repository & Module Architecture
+
+### 3.1 Repository Information
+
+| Field | Value |
+|---|---|
+| **GenePattern GitHub** | [https://github.com/genepattern/Kallisto.Indexer](https://github.com/genepattern/Kallisto.Indexer) |
+| **Upstream Tool Repo** | [https://github.com/pachterlab/kallisto](https://github.com/pachterlab/kallisto) |
+| **Docker Hub** | [https://hub.docker.com/r/genepattern/kallisto](https://hub.docker.com/r/genepattern/kallisto) |
+| **Related GenePattern Module** | [https://github.com/genepattern/Kallisto.Quant](https://github.com/genepattern/Kallisto.Quant) |
+| **License** | BSD 2-Clause (upstream Kallisto); module wrapper terms per GenePattern |
+| **Module Quality Level** | Pre-Production |
+| **Visibility** | Public |
+
+### 3.2 GenePattern Module Context
+
+The **Kallisto.Quant** companion module targets human (GENCODE release 37, GRCh38.p13) and mouse (GENCODE release M26, GRCm39) indices. **Kallisto.Indexer** enables users to build *custom indices* for any organism or custom sequence set — a critical complement when built-in reference indices don't suffice.
+
+---
+
+## 4. Input/Output Specifications
+
+### 4.1 Inputs
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| **Transcriptome FASTA** | File | ✅ Yes | FASTA file of target sequences — **MUST be transcriptome/cDNA, NOT genome FASTA** |
+| Index output name | String | ✅ Yes | Output filename (e.g., `kallisto_index.idx`) |
+| k-mer size (`-k`) | Integer | ❌ Optional | Odd integer ≤ 31; default = 31 |
+| Make unique (`--make-unique`) | Boolean | ❌ Optional | Deduplicate repeated target names |
+| Threads (`-t`) | Integer | ❌ Optional | CPU threads; default = 1 |
+| Decoy list (`-d`) | File | ❌ Optional | FASTA of sequences to mask |
+| EC max size (`-e`) | Integer | ❌ Optional | Max targets per equivalence class |
+
+#### ⚠️ Critical Input Requirement
+The transcriptome FASTA must contain **individual transcript sequences** (cDNA/mRNA). **Genome-level FASTA files will produce incorrect results.** Common valid sources:
+
+- **Ensembl**: `Homo_sapiens.GRCh38.cdna.all.fa.gz`
+- **GENCODE**: `gencode.v44.transcripts.fa.gz`
+- **RefSeq**: `GCF_000001405.40_GRCh38.p14_rna.fna`
+- **Custom**: Concatenated FASTA from specific gene sets, viral genomes transcriptomes, or synthetic sequences
+
+### 4.2 Outputs
+
+| File | Format | Description |
+|---|---|---|
+| `*.idx` / `*.kidx` | Binary (kallisto-specific) | The kallisto index: a k-mer hash table encoding the compacted colored de Bruijn graph of the transcriptome |
+
+#### Index File Properties
+- **Size**: ~2 GB for human transcriptome (GENCODE comprehensive)
+- **Format**: Binary; not human-readable
+- **Portability**: ⚠️ Index files are **NOT portable across major kallisto versions**; must be rebuilt after version upgrades
+- **Reusability**: One index file serves **all samples** in a study using the same reference
+
+---
+
+## 5. Complete Parameter Reference
+
+### 5.1 Parameter Details with Biological Significance
+
+#### Required Parameter
+
+**`-i / --index` (STRING)**
+- **Purpose**: Specifies the output path/filename for the generated index
+- **Recommended naming convention**: `{organism}_{assembly}_{release}.idx`
+  - Example: `human_GRCh38_gencode44.idx`
+- **GenePattern type**: `TEXT`
+- **Default suggestion**: `kallisto_index.idx`
+
+---
+
+#### Core Optional Parameters
+
+**`-k / --kmer-size` (INTEGER)**
+- **Default**: 31 | **Max**: 31 | **Must be odd**
+- **Biological rationale**: k-mer size controls the specificity vs. sensitivity tradeoff:
+  - **k=31** (default): Optimal for reads ≥ 75 bp (standard Illumina short-read RNA-seq). High specificity, lower false-positive rate.
+  - **k=21**: Better for reads 50–75 bp, or when sensitivity is paramount. Recommended for some legacy short-read datasets.
+  - **k=15**: Short reads (<50 bp), ancient RNA, degraded samples. High sensitivity but more false positives.
+  - **Lower k**: Increases mapping rate but risks multi-mapping inflation; useful for degraded RNA (FFPE samples) or very short reads
+- **Community consensus**: k=31 is appropriate for ≥75 bp reads; k=21 for shorter reads
+- **GenePattern type**: `INTEGER`
+
+**`--make-unique` (FLAG)**
+- **Purpose**: Replaces duplicate FASTA sequence identifiers with auto-generated unique names
+- **When to use**: GENCODE FASTA files occasionally contain repeated transcript IDs across versions. This flag prevents index-build failures or silent errors caused by non-unique sequence headers.
+- **GenePattern type**: `BOOLEAN`
+- **Recommendation**: Enable as default for GENCODE-sourced FASTA files
+
+**`-t / --threads` (INTEGER)**
+- **Default**: 1
+- **Biological impact**: None — threading only affects runtime, not results
+- **Performance note**: Index building is primarily I/O-bound rather than CPU-bound; gains plateau above 4 threads
+- **GenePattern type**: `INTEGER`
+- **Recommended range**: 1–8 threads
+
+---
+
+#### Advanced Optional Parameters
+
+**`-d / --d-list` (FILE)**
+- **Purpose**: Provides a FASTA file of **decoy sequences** to mask from quantification. This implements decoy-aware pseudoalignment, reducing spurious assignment of reads from genomic decoy regions (e.g., introns, intergenic regions that share k-mer content with transcripts).
+- **When to use**: Studies requiring maximum quantification accuracy, especially for genes with many pseudogenes, or when comparing with Salmon (which natively supports decoy-aware alignment)
+- **Typical decoys**: Genome sequence of chroms used as decoys (similar to Salmon's selective alignment approach)
+- **GenePattern type**: `FILE`
+
+**`--aa` (FLAG)**
+- **Purpose**: Build index from amino acid (protein) sequences instead of nucleotide sequences
+- **When to use**: Proteomics-based workflows, ribosome profiling with peptide quantification, or experimental multi-omics applications
+- **GenePattern type**: `BOOLEAN`
+
+**`--distinguish` (FLAG)**
+- **Purpose**: Forces each sequence to be distinguished by its name in the de Bruijn graph, even if sequences are identical
+- **When to use**: Custom index construction where identical sequences from different sources must be tracked separately
+- **GenePattern type**: `BOOLEAN`
+
+**`-m / --min-size` (INTEGER)**
+- **Purpose**: Specifies the minimizer length used in index construction
+- **Default**: Automatically chosen by kallisto based on input
+- **Advanced use**: Fine-tuning for non-standard transcriptomes or research into pseudoalignment behavior
+- **GenePattern type**: `INTEGER`
+
+**`-e / --ec-max-size` (INTEGER)**
+- **Purpose**: Caps the maximum number of targets (transcripts) allowed in a single equivalence class
+- **Default**: No maximum
+- **When to use**: Very repetitive transcriptomes or when downstream tools struggle with large equivalence classes
+- **GenePattern type**: `INTEGER`
+
+---
+
+### 5.2 Recommended Parameter Groups for GenePattern UI
+
+```
+Group 1: Required Inputs
+  ├── transcriptome.fasta.file   [FILE, required]
+  └── index.output.name          [TEXT, required, default: "kallisto_index.idx"]
+
+Group 2: Index Construction
+  ├── kmer.size                  [INTEGER, optional, default: 31]
+  └── make.unique                [BOOLEAN, optional, default: false]
+
+Group 3: Performance
+  └── num.threads                [INTEGER, optional, default: 1]
+
+Group 4: Advanced Options
+  ├── d.list.file                [FILE, optional]
+  ├── ec.max.size                [INTEGER, optional]
+  ├── min.size                   [INTEGER, optional]
+  ├── aa.mode                    [BOOLEAN, optional, default: false]
+  └── distinguish                [BOOLEAN, optional, default: false]
+```
+
+---
+
+## 6. Performance Characteristics
+
+| Metric | Value | Notes |
+|---|---|---|
+| **Human transcriptome index build time** | 5–10 minutes | GENCODE comprehensive, single thread |
+| **Peak RAM (human)** | ~4 GB | During index construction |
+| **Output index size (human)** | ~2 GB | GENCODE v44 comprehensive |
+| **Mouse transcriptome** | ~3–7 min, ~1.5 GB | GRCm39 |
+| **CPU scaling** | Minimal improvement >4 threads | I/O bound |
+| **Disk I/O** | High | Reads entire transcriptome FASTA |
+
+---
+
+## 7. Common Workflows & Use Cases
+
+### 7.1 Standard Bulk RNA-seq Workflow
+
+```
+Step 1: [Kallisto.Indexer]
+  Input:  Homo_sapiens.GRCh38.cdna.all.fa.gz
+  Params: k=31, make-unique=true
+  Output: human_GRCh38.idx
+
+Step 2: [Kallisto.Quant] (for each sample)
+  Input:  human_GRCh38.idx + sample_R1.fastq.gz + sample_R2.fastq.gz
+  Output: abundance.tsv, abundance.h5, run_info.json
+
+Step 3: [Sleuth / tximport + DESeq2]
+  Input:  abundance.h5 files from all samples
+  Output: Differential expression results
+```
+
+### 7.2 Custom/Non-Model Organism Workflow
+
+```
+Step 1: Download organism FASTA from Ensembl/NCBI
+Step 2: [Kallisto.Indexer] with custom FASTA → custom.idx
+Step 3: [Kallisto.Quant] with custom.idx
+```
+
+### 7.3 Spike-in + Transcriptome Combined Index
+
+```bash
+# Combine FASTA files before indexing
+cat transcriptome.fa ERCC_spike_ins.fa > combined.fa
+# Index the combined file
+kallisto index -i combined.idx combined.fa
+```
+> This pattern should be documented in the GenePattern module — users can pass multiple FASTA files or a pre-concatenated FASTA.
+
+### 7.4 Single-Cell RNA-seq (10x Genomics)
+
+```
+Step 1: [Kallisto.Indexer] → transcriptome.idx
+Step 2: kallisto bus -i transcriptome.idx -o output/ -x 10xv3 *.fastq.gz
+Step 3: bustools correct + sort + count → gene expression matrix
+```
+
+---
+
+## 8. Comparative Analysis
+
+### 8.1 Kallisto.Indexer vs. Similar Index-Building Tools
+
+| Feature | **Kallisto.Indexer** | Salmon Index | STAR genomeGenerate | HISAT2 index | kb-python ref |
+|---|---|---|---|---|---|
+| **Input required** | Transcriptome FASTA only | Transcriptome FASTA (+genome for decoy) | Genome FASTA + GTF | Genome FASTA + GTF | Genome FASTA + GTF |
+| **Peak memory** | ~4 GB | ~4-8 GB | ~30 GB | ~8 GB | ~8 GB |
+| **Build time (human)** | 5–10 min | 10–20 min | 30–60 min | 30–60 min | 15–30 min |
+| **Index size (human)** | ~2 GB | ~2 GB | ~25 GB | ~8 GB | ~2 GB |
+| **Alignment type** | Pseudoalignment | Quasi-alignment | Full alignment | Spliced alignment | Pseudoalignment |
+| **BAM output** | ❌ | ❌ | ✅ | ✅ | ❌ |
+| **scRNA-seq support** | ✅ (via bus) | ✅ | ✅ | ❌ | ✅ |
+| **Amino acid indexing** | ✅ (`--aa`) | ❌ | ❌ | ❌ | ❌ |
+
+### 8.2 Kallisto vs. Salmon: Key Distinction
+
+Both tools use alignment-free approaches and show near-identical quantification results (Pearson correlation Rv=0.9999 in comparative benchmarks). The key practical distinction for **Kallisto.Indexer** vs Salmon index:
+- **Kallisto.Indexer**: Requires only a **transcriptome FASTA** — simplest input requirement
+- **Salmon decoy-aware**: Requires both transcriptome FASTA + genome FASTA — more accurate but more complex setup
+
+> **GenePattern positioning**: Kallisto.Indexer is the right choice for users wanting the simplest, fastest RNA-seq indexing workflow with no compromise in accuracy for standard experiments.
+
+---
+
+## 9. Installation & Dependency Requirements
+
+### 9.1 Upstream Tool
+
+```bash
+# Conda (recommended for GenePattern Docker)
+conda install -c bioconda kallisto
+
+# Available versions on Bioconda:
+# 0.50.1, 0.50.0, 0.48.0, 0.46.2, 0.44.0, 0.43.1...
+
+# Docker (Biocontainers)
+docker pull quay.io/biocontainers/kallisto:0.50.1--h6de1650_2
+
+# GenePattern Docker
+docker pull genepattern/kallisto
+```
+
+### 9.2 System Requirements
+
+| Resource | Minimum | Recommended |
+|---|---|---|
+| **RAM** | 4 GB | 8 GB |
+| **CPU Cores** | 1 | 4 |
+| **Disk Space (input)** | 200 MB (compressed transcriptome) | 1 GB |
+| **Disk Space (output)** | 2 GB (human index) | 5 GB |
+| **OS** | Linux x86_64, macOS | Linux x86_64 |
+| **Architecture** | x86_64 | x86_64 (ARM support in newer versions) |
+
+### 9.3 Dependencies
+
+| Dependency | Purpose |
+|---|---|
+| **C++11 compiler** | Build from source |
+| **CMake ≥ 2.8.12** | Build system |
+| **zlib** | Compressed FASTA support |
+| **HDF5** | Bootstrap output format |
+
+> For GenePattern: All dependencies are encapsulated in the Docker container — no user-side installation required.
+
+---
+
+## 10. GenePattern Module Integration Specifications
+
+### 10.1 Manifest Configuration
+
+```ini
+# module.manifest (key fields)
+name=Kallisto.Indexer
+description=Builds an index from a FASTA formatted file of target sequences for use with Kallisto.
+author=Pachter Lab (kallisto); GenePattern Team (module wrapper)
+version=1.0.0
+quality=preproduction
+privacy=public
+commandLine=<run_with_env> -u Python-3.x <libdir>kallisto_indexer.py \
+    --transcriptome <transcriptome.fasta> \
+    --index.name <index.output.name> \
+    [--kmer.size <kmer.size>] \
+    [--make.unique <make.unique>] \
+    [--threads <num.threads>] \
+    [--d-list <d.list.file>] \
+    [--ec-max-size <ec.max.size>]
+job.docker.image=genepattern/kallisto:latest
+language=any
+```
+
+### 10.2 Parameter Validation Rules
+
+```python
+# Key validation rules for the GenePattern wrapper script:
+
+# k-mer size must be odd and ≤ 31
+if kmer_size % 2 == 0:
+    raise ValueError("k-mer size must be an odd integer")
+if kmer_size > 31:
+    raise ValueError("k-mer size cannot exceed 31")
+
+# Input FASTA validation
+if not fasta_file.endswith(('.fa', '.fasta', '.fa.gz', '.fasta.gz')):
+    raise ValueError("Input file must be FASTA format (.fa, .fasta, .fa.gz, .fasta.gz)")
+
+# Warn on genome FASTA (heuristic check)
+# Large file sizes (>2GB uncompressed) may indicate genome rather than transcriptome FASTA
+```
+
+### 10.3 Recommended Output Handling
+
+The output `.idx` file should be:
+1. Named descriptively (suggest appending organism/version to the filename)
+2. Made available for direct input into **Kallisto.Quant** as a pipeline file reference
+3. Include a log file capturing kallisto's stderr output (which contains index statistics: k-mer count, number of targets, etc.)
+
+### 10.4 Example Usage in GenePattern Workflow
+
+```
+[Kallisto.Indexer]
+  transcriptome.fasta = Homo_sapiens.GRCh38.cdna.all.fa.gz
+  index.output.name   = human_GRCh38_k31.idx
+  kmer.size           = 31
+  make.unique         = true
+  num.threads         = 4
+        ↓ (output: human_GRCh38_k31.idx)
+[Kallisto.Quant]
+  index.file          = human_GRCh38_k31.idx  ← direct output from Kallisto.Indexer
+  fastq.files         = sample1_R1.fastq.gz, sample1_R2.fastq.gz
+  ...
+```
+
+---
+
+## 11. Known Issues, Caveats & Best Practices
+
+| Issue | Detail | Resolution |
+|---|---|---|
+| **Version incompatibility** | Index built with kallisto 0.46.x is not compatible with 0.50.x | Always rebuild index when upgrading kallisto version; document version in index filename |
+| **Genome vs. transcriptome confusion** | Using genome FASTA produces an invalid index with no error message | Document prominently; consider file-size heuristic warning in wrapper |
+| **Duplicate sequence IDs** | GENCODE FASTA may contain duplicate IDs; causes errors or silent failures | Use `--make-unique` flag by default or when using GENCODE source |
+| **k-mer size irreversibility** | k-mer size cannot be changed after index is built | Quantification reads must use index built with appropriate k for their length |
+| **Large index files** | Human index ≈2 GB; storage can be an issue | Document expected sizes; warn users about disk space |
+| **Non-portability** | `.idx` files are not inter-tool portable (only kallisto can use them) | Document that index is kallisto-specific binary format |
+| **ARM architecture** | Some older builds may not support ARM (Apple Silicon) | Ensure Docker image is built for linux/amd64 and optionally linux/arm64 |
+
+---
+
+## 12. Literature Support & Adoption
+
+| Metric | Value |
+|---|---|
+| **Primary Citation** | Bray et al., *Nature Biotechnology*, 2016 |
+| **Citations** | >10,000 (Google Scholar, 2024) |
+| **Adoption** | Standard tool in RNA-seq pipelines globally; featured in Galaxy, CyVerse, Nextflow/nf-core, Snakemake workflows |
+| **Benchmarks** | Concordance with RSEM, Cufflinks, Salmon confirmed across many species; Rv ≈ 0.9999 with Salmon |
+| **Maintained by** | Pachter Lab (UC Berkeley); currently active development (v0.50.1, 2024) |
+
+---
+
+## 13. References
+
+1. **Bray NL, Pimentel H, Melsted P, Pachter L.** Near-optimal probabilistic RNA-seq quantification. *Nature Biotechnology* **34**, 525–527 (2016). https://doi.org/10.1038/nbt.3519
+
+2. **Kallisto Manual v0.50.0.** Pachter Lab. https://pachterlab.github.io/kallisto/manual
+
+3. **Kallisto GitHub Repository.** pachterlab/kallisto. https://github.com/pachterlab/kallisto
+
+4. **GenePattern Kallisto.Indexer Repository.** genepattern/Kallisto.Indexer. https://github.com/genepattern/Kallisto.Indexer
+
+5. **GenePattern Kallisto.Quant Repository.** genepattern/Kallisto.Quant. https://github.com/genepattern/Kallisto.Quant
+
+6. **Kallisto | bustools Documentation.** Index Generation Guide. https://kallisto.readthedocs.io/en/latest/index/index_generation.html
+
+7. **Griffith Lab RNA-seq Tutorial.** Alignment-Free Expression Estimation (Kallisto). https://rnabio.org/module-04-kallisto/0004/02/01/Alignment_Free_Kallisto/
+
+8. **GenePattern Docker Architecture.** https://github.com/genepattern/genepattern-server/wiki/GenePattern-Docker-Architecture
+
+9. **Patro R et al.** Salmon provides fast and bias-aware quantification of transcript expression. *Nature Methods* **14**, 417–419 (2017).
+
+10. **Janis Bioinformatics Documentation.** KallistoIndex tool specification. https://janis.readthedocs.io/en/stable/tools/bioinformatics/kallisto/kallistoindex.html
+
+---
+
+## 14. Summary Recommendations for GenePattern Module Development
+
+| Priority | Action Item |
+|---|---|
+| 🔴 **Critical** | Clearly document that input MUST be transcriptome FASTA, not genome FASTA — with prominent warnings |
+| 🔴 **Critical** | Set `--make-unique` as the recommended default or expose as a prominent parameter |
+| 🔴 **Critical** | Capture and expose kallisto stderr as a log file output (contains index statistics) |
+| 🟠 **High** | Use versioned Docker image tag (`genepattern/kallisto:0.50.1`) for reproducibility |
+| 🟠 **High** | Document index version incompatibility and recommend embedding kallisto version in output filename |
+| 🟡 **Medium** | Provide links to public reference transcriptomes (Ensembl, GENCODE) in parameter help text |
+| 🟡 **Medium** | Wire output `.idx` as a named output for direct consumption by `Kallisto.Quant` in pipelines |
+| 🟢 **Low** | Add validation for odd k-mer constraint with informative error message |
+| 🟢 **Low** | Document performance expectations (time/memory) for common organisms in module description |
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

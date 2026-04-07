@@ -1,0 +1,188 @@
+{
+  "module_name": "CellFie",
+  "description": "CellFie\\: Cellular Functions InferencE - An alternative approach to capture the breadth of cellular functions by performing a functional analysis of existing biological networks. Please refer to the documentation for details about the procedure.",
+  "author": "Benjamin Kellman;UC San Diego",
+  "input_file_formats": [
+    "csv"
+  ],
+  "language": "any",
+  "categories": [
+    "metabolomics"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:24730:1",
+  "plan": "## CellFie GenePattern Module — Implementation Plan\n\n### 1. Overview\nCellFie is a GenePattern module that CellFie\\: Cellular Functions InferencE - An alternative approach to capture the breadth of cellular functions by performing a functional analysis of existing biological networks. Please refer to the documentation for details about the procedure.\n\n### 2. Parameters\nThe module exposes 9 parameters:\n- Required: Data, Sample.Number, Reference.Model, Thresholding.Approach, Percentile.Or.Value, Global.Cutoff, Local.Threshold.Type, Local.Lower.Bound, Local.Upper.Bound\n- Optional: none\n\n### 3. Command Line\n```\nsh /CellFie/matlab_compiled/execCellfie/for_redistribution_files_only/run_execCellfie.sh /usr/local/MATLAB/MATLAB_Runtime/v94 <Data> <Sample.Number> <Reference.Model> <Thresholding.Approach> <Percentile.Or.Value> <Global.Cutoff> <Local.Threshold.Type> <Local.Lower.Bound> <Local.Upper.Bound> ./\n```\n\n### 4. Docker Image\nDocker image: genepatterndev/cellfie\\:v0.7.0\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_execCellfie.sh",
+  "command_line": "sh /CellFie/matlab_compiled/execCellfie/for_redistribution_files_only/run_execCellfie.sh /usr/local/MATLAB/MATLAB_Runtime/v94 <Data> <Sample.Number> <Reference.Model> <Thresholding.Approach> <Percentile.Or.Value> <Global.Cutoff> <Local.Threshold.Type> <Local.Lower.Bound> <Local.Upper.Bound> ./",
+  "parameters": [
+    {
+      "name": "Data",
+      "description": "The gene expression matrix can be provided in a <b>.mat</b> or <b>.csv</b> format.\\n<p>\\nFor <b>.mat</b> files, you need to provide a structure variable (named e.g. \"data\")\\ncontaining a cell field named \"genes\" with NCBI Entrez gene IDs (one gene per cell)\\nand a double field named \"value\" containing a matrix with gene expression values\\nfor each of the samples you want to evaluate (i.e. with rows corresponding to genes\\nand columns corresponding to samples). See available example\\n<a href\\=https\\://github.com/LewisLabUCSD/CellFie/blob/master/test/suite/dataTest.mat>\\n    dataTest.mat</a>.\\n<p>\\nFor <b>.csv</b> files, you need to provide an expression matrix with rows corresponding\\nto genes and columns corresponding to samples. The first column is the list of genes\\nwith NCBI Entrez gene IDs and the first header row should start with \"genes\" and\\nbe followed by the name of each sample present in your dataset. See the available\\n<a href\\=https\\://github.com/LewisLabUCSD/CellFie/blob/master/test/suite/dataTest.csv>\\n    dataTest.csv</a>\\nThe list of genes and associated NCBI Entrez IDs present in each reference model\\ncan be downloaded\\n<a href\\=https\\://github.com/LewisLabUCSD/CellFie/raw/master/docs/NCBI_Entrez_gene_ID_models.xlsx>\\n    here</a>.",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "csv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Data",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Sample.Number",
+      "description": "\\ The number of samples in the input file to analyze",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Sample.Number",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Reference.Model",
+      "description": "\\ Name of the reference model to use to compute metabolic task scores",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "MT_recon_2_2_entrez.mat",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Human_recon_2_2",
+          "value": "MT_recon_2_2_entrez.mat"
+        },
+        {
+          "display": "CHO_iCHOv1",
+          "value": "MT_iCHOv1_final.mat"
+        },
+        {
+          "display": "Human_iHsa",
+          "value": "MT_iHsa.mat"
+        },
+        {
+          "display": "Mouse_iMM1415",
+          "value": "MT_iMM1415.mat"
+        },
+        {
+          "display": "Rat_iRn",
+          "value": "MT_iRno.mat"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Reference.Model",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Thresholding.Approach",
+      "description": "Two types of thresholding approaches can be used; either GLOBAL (the threshold is the same for all the genes)  or LOCAL (the threshold is gene specific)",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "local",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "local",
+          "value": "local"
+        },
+        {
+          "display": "global",
+          "value": "global"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Thresholding.Approach",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Percentile.Or.Value",
+      "description": "The threshold can be defined using a value introduced by the user (VALUE) or based on a percentile of the expression value distribution (PERCENTILE)",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "percentile",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "value",
+          "value": "value"
+        },
+        {
+          "display": "percentile",
+          "value": "percentile"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Percentile.Or.Value",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Global.Cutoff",
+      "description": "If you selected the GLOBAL thresholding approach, cutoff value or percentile defining the gene activity threshold",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Global.Cutoff",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Local.Threshold.Type",
+      "description": "If you selected the LOCAL thresholding approach, you can also define the type of local approach;  either MEAN (i.e., the threshold for a gene is defined as the mean expression value of this gene across all the samples, tissues, or conditions) or MINMAXMEAN (i.e., the threshold for a gene is determined by the mean of expression values observed for that gene among all the samples, tissues, or conditions BUT the threshold \\:(i) must be higher or equal to a lower bound and (ii) must be lower or equal to an upper bound)",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "minmaxmean",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "mean",
+          "value": "mean"
+        },
+        {
+          "display": "minmaxmean",
+          "value": "minmaxmean"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Local.Threshold.Type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Local.Lower.Bound",
+      "description": "If you selected the type MINMAXMEAN for the LOCAL thresholding approach, lower bound to define which gene are always inactive (either a value or a percentile)",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "25",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Local.Lower.Bound",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Local.Upper.Bound",
+      "description": "If you selected the type MINMAXMEAN for the LOCAL thresholding approach, upper bound  to define which gene are always inactive (either a value or a percentile)",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "75",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Local.Upper.Bound",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepatterndev/cellfie:v0.7.0"
+}

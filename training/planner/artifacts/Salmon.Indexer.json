@@ -1,0 +1,138 @@
+{
+  "module_name": "Salmon.Indexer",
+  "description": "Salmon (version 1.6.0) transcriptome indexer.<br>\\n\\nSee\\: <a href\\=\"https\\://salmon.readthedocs.io/en/latest/salmon.html\\#using-salmon\" target\\=\"_blank\">The Salmon User Guide</a>\\nfor detailed usage guidelines.",
+  "author": "Anthony S. Castanza;UCSD-MesirovLab",
+  "input_file_formats": [
+    "fa.gz",
+    "fastq.gz",
+    "fq.gz",
+    "gtf.gz"
+  ],
+  "language": "any",
+  "categories": [
+    "preprocess & utilities",
+    "rna-seq"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:71156:1",
+  "plan": "## Salmon.Indexer GenePattern Module — Implementation Plan\n\n### 1. Overview\nSalmon.Indexer is a GenePattern module that Salmon (version 1.6.0) transcriptome indexer.<br>\\n\\nSee\\: <a href\\=\"https\\://salmon.readthedocs.io/en/latest/salmon.html\\#using-salmon\" target\\=\"_blank\">The Salmon User Guide</a>\\nfor detailed usage guidelines.\n\n### 2. Parameters\nThe module exposes 6 parameters:\n- Required: Index.Mode, Use.Gencode\n- Optional: GTF.gz, Transcriptome.fa.gz, Genome.fa.gz, kmer\n\n### 3. Command Line\n```\n<libdir>salmon_index.sh -a <GTF.gz> -t <Transcriptome.fa.gz> -g <Genome.fa.gz> -k <kmer> -m <Index.Mode> -f <Use.Gencode> -l <libdir> -j <job.cpuCount>\n```\n\n### 4. Docker Image\nDocker image: genepattern/salmon-indexer\\:beta_1.6.0\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "salmon_index.sh",
+  "command_line": "<libdir>salmon_index.sh -a <GTF.gz> -t <Transcriptome.fa.gz> -g <Genome.fa.gz> -k <kmer> -m <Index.Mode> -f <Use.Gencode> -l <libdir> -j <job.cpuCount>",
+  "parameters": [
+    {
+      "name": "GTF.gz",
+      "description": "GTF file (must be gzipped).\\nOnly used if a transcriptome fasta is not provided to the 'Transcriptome fa gz' parameter, or producing a decoy-aware index. Both require that a genome fasta is provided to the 'Genome fa gz' parameter.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gtf.gz",
+        "gtf.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--GTF.gz",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Transcriptome.fa.gz",
+      "description": "Transcriptome FASTA file (must be gzipped)<br>\\nIf no Transcriptome FASTA is provided the module will attempt to generate one from the GTF and Genomic FASTA using gffread. This procedure has not been fully tested.\\n",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "fa.gz",
+        "fastq.gz",
+        "fq.gz",
+        "fa.gz",
+        "fastq.gz",
+        "fq.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Transcriptome.fa.gz",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Genome.fa.gz",
+      "description": "Genomic FASTA file (must be gzipped). Used when producing a decoy-aware index, or when reconstructing a transcriptome from a provided gtf.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "fa.gz",
+        "fastq.gz",
+        "fq.gz",
+        "fa.gz",
+        "fastq.gz",
+        "fq.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Genome.fa.gz",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "kmer",
+      "description": "kmer size used for indexing (must be odd)",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "31",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--kmer",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Index.Mode",
+      "description": "There are two options for generating a decoy-aware transcriptome\\:\\n<br>\\nFull\\: Uses the entire genome of the organism as the decoy sequence. This scheme provides a more comprehensive set of decoys resulting in more accurate quantification, but, produces a substantially larger index, requires considerably more memory to build and quantify against the index, and quantifications against the index are slower.\\n<br>\\nPartial\\: Computes a set of decoy sequences by mapping the annotated transcripts you wish to index against a hard-masked version of the organism's genome. This produces a smaller index and requires substantially less memory quantify against, but may be more susceptible to spurious mappings.\\n<br>\\nIf no Genome fasta is provided, this parameter will be ignored.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "full",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Full",
+          "value": "full"
+        },
+        {
+          "display": "Partial",
+          "value": "partial"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Index.Mode",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Use.Gencode",
+      "description": "Use Gencode format parsing for Transcriptome fasta record IDs",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "true",
+          "value": "TRUE"
+        },
+        {
+          "display": "false",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Use.Gencode",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/salmon-indexer:beta_1.6.0"
+}

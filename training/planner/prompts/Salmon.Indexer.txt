@@ -1,0 +1,446 @@
+Create a comprehensive structured plan for the GenePattern module for 'Salmon.Indexer'.
+            
+            Tool Information:
+            - Name: Salmon.Indexer
+            - Version: Updated to Salmon 1.6.0 and added support for transcriptome only index
+            - Language: any
+            - Description: Salmon (version 1.6.0) transcriptome indexer.<br>\n\nSee: <a href="https://salmon.readthedocs.io/en/latest/salmon.html\#using-salmon" target="_blank">The Salmon User Guide</a>\nfor detailed usage guidelines.
+            
+            Research Results:
+            Now I have all the comprehensive research data assembled. Let me produce the complete, structured report:
+
+---
+
+# 🐟 Comprehensive Research Report: Salmon.Indexer (v0.5 / Salmon 1.6.0)
+
+---
+
+## 1. 🔬 Tool Purpose & Scientific Applications
+
+### Overview
+**Salmon.Indexer** is a GenePattern module wrapping the `salmon index` subcommand from the **Salmon** RNA-seq analysis suite (COMBINE-lab, Carnegie Mellon University). It performs the first of two required phases in Salmon's mapping-based quantification pipeline — constructing a **pufferfish-based transcriptome index** that is subsequently used by `Salmon.Quant` to estimate transcript-level and gene-level expression abundances from RNA-seq reads.
+
+The indexing step is **reference-dependent but sample-independent**: it only needs to be run once per transcriptome version and can be reused for any number of samples sharing that reference.
+
+### Scientific Applications
+| Application | Details |
+|---|---|
+| **Bulk RNA-seq quantification** | Primary use case — transcript/gene expression from poly-A or total RNA-seq |
+| **Differential expression analysis** | Prerequisite for DESeq2, edgeR, limma-voom pipelines |
+| **Differential transcript usage** | Enables isoform-level analysis via `fishpond`/`DRIMSeq` |
+| **Single-cell preprocessing** | Index supports `salmon alevin` for scRNA-seq (CEL-seq2, Drop-seq) |
+| **Multi-organism studies** | Works with any FASTA transcriptome (human, mouse, plant, pathogen, de-novo assembled) |
+| **Decoy-aware read mapping** | Reduces spurious transcript assignments from genomic loci via decoy sequences |
+
+### Key Scientific Concepts
+- **Pufferfish Index (v1.0+)**: Replaced the original quasi-mapping hash index. Built on a compacted colored de Bruijn graph (ccDBG) via TwoPaCo, then indexed using a minimal perfect hash function (MPHF) for sub-second k-mer lookups.
+- **Selective Alignment**: Salmon ≥ v0.13 shifted from pure quasi-mapping to selective alignment — scoring candidate loci with a SIMD-accelerated DP algorithm (ksw2) using chaining from minimap2. The index is the enabler of this approach.
+- **Decoy-Aware Indexing**: By including genomic sequences (whole genome or partial homologs) as "decoys" alongside the transcriptome, Salmon can identify reads that map better to non-transcribed genomic regions and exclude them from quantification, dramatically reducing false positive transcript assignments.
+
+---
+
+## 2. 📁 Input/Output Formats & Requirements
+
+### Input Files
+
+| Input | Parameter | Format | Required | Notes |
+|---|---|---|---|---|
+| **Transcriptome FASTA** | `-t / --transcripts` | `.fa`, `.fasta`, `.fa.gz`, `.fasta.gz` | ✅ Yes | Multi-FASTA of all target transcripts. For decoy-aware mode, this must be the **gentrome** (transcripts + genome concatenated) |
+| **Decoys File** | `-d / --decoys` | Plain text `.txt`, one ID per line | ❌ Optional | Lists sequence IDs to treat as decoys (typically chromosome names). Enables decoy-aware index |
+| **Output Directory Name** | `-i / --index` | String (directory path) | ✅ Yes | The target output directory. Created if it doesn't exist |
+
+#### Constructing Input for Decoy-Aware Index
+```bash
+# Step 1: Concatenate transcriptome + genome into gentrome
+cat Homo_sapiens.GRCh38.cdna.fa Homo_sapiens.GRCh38.dna.fa > gentrome.fa
+
+# Step 2: Extract chromosome names as decoys
+grep "^>" Homo_sapiens.GRCh38.dna.fa | cut -d " " -f 1 | sed 's/>//g' > decoys.txt
+
+# Step 3: Build index
+salmon index -t gentrome.fa -d decoys.txt -i salmon_index -p 8
+```
+
+#### Transcriptome-Only Index (v0.5 Module Feature)
+```bash
+# Simpler — no genome required, suitable for restricted environments
+salmon index -t transcripts.fa -i salmon_index -k 31 -p 4
+```
+
+### Output Files (Index Directory)
+
+| File | Type | Purpose |
+|---|---|---|
+| `complete_ref_lens.bin` | Binary | Complete reference sequence lengths |
+| `ctable.bin` | Binary | Contig/color table for pufferfish traversal |
+| `ctg_offsets.bin` | Binary | Contig position offsets |
+| `duplicate_clusters.tsv` | Tab-separated text | Records of duplicate transcript sequences identified |
+| `eqtable.bin` | Binary | Equivalence class table for quantification |
+| `info.json` | JSON | **Critical** — index metadata (k-mer size, decoy status, sequence count, Salmon version). Used by `tximeta` for provenance tracking |
+| `mphf.bin` | Binary | Minimal perfect hash function for k-mer lookup |
+| `pos.bin` | Binary | Position lookup data structure |
+| `pre_indexing.log` | Text | Log from pre-indexing phase |
+| `rank.bin` | Binary | Rank data structure for pufferfish |
+| `refAccumLengths.bin` | Binary | Accumulated reference lengths |
+| `ref_indexing.log` | Text | Log from reference indexing phase |
+| `reflengths.bin` | Binary | Per-reference sequence lengths |
+| `refseq.bin` | Binary | Reference sequence data |
+| `seq.bin` | Binary | Encoded sequence binary |
+| `versionInfo.json` | JSON | Salmon version metadata for index compatibility checking |
+
+> ⚠️ **GenePattern Note**: The entire index directory must be archived (e.g., `.tar.gz`) for transfer between GenePattern modules. The `Salmon.Quant` module must receive this archive as input.
+
+---
+
+## 3. ⚙️ Parameter Analysis & Usage Patterns
+
+### Complete Parameter Catalog
+
+#### Required Parameters
+
+| Parameter | Short Flag | Type | Default | Description |
+|---|---|---|---|---|
+| `--transcripts` | `-t` | FILE | *Required* | Transcript FASTA (plain or gzip). In decoy-aware mode: concatenated gentrome FASTA |
+| `--index` | `-i` | DIR | *Required* | Output directory path for the constructed index |
+
+#### Optional Parameters
+
+| Parameter | Short Flag | Type | Default | Biological Significance |
+|---|---|---|---|---|
+| `--kmerLen` | `-k` | INTEGER (7–31) | `31` | K-mer size for index. **Smaller k increases sensitivity** (especially for short reads ≤75 bp), increases index size and build time. Values of 23 or 25 recommended for short-read sensitivity improvements |
+| `--decoys` | `-d` | FILE (text) | `None` | Decoy sequence ID list. **Critical for accuracy** — prevents spurious mapping of genomic reads to annotated transcripts |
+| `--gencode` | — | FLAG | `false` | Parse GENCODE-format headers (splits at `\|`). **Required when using GENCODE FASTA files** (e.g., `gencode.v38.transcripts.fa`) |
+| `--features` | — | FLAG | `false` | Expect TSV feature file format (non-standard reference input) |
+| `--keepDuplicates` | — | FLAG | `false` | Retain duplicate transcript sequences. Useful when duplicate transcripts must be individually quantified |
+| `--keepFixedFasta` | — | FLAG | `false` | Store the preprocessed FASTA in the index directory. Aids debugging and provenance |
+| `--sparse` | — | FLAG | `false` | **Sparse index mode** — reduces memory from ~18 GB to ~14 GB for human genome at cost of slower mapping speed. Recommended for resource-limited compute environments |
+| `--threads` | `-p` | INTEGER (1–N) | `2` | Parallel threads for index construction. Index building is CPU and I/O intensive; 4–16 threads typical |
+| `--type` | — | STRING | `puff` | Index type. Only `puff` (pufferfish) is currently supported |
+| `--tmpdir` | — | DIR | System temp | Temporary working directory during index construction |
+
+### Parameter Groupings for GenePattern UI
+
+```
+Group 1: Required Inputs
+  ├── transcriptome.fasta     (FILE, required)
+  └── output.index.name       (STRING, required)
+
+Group 2: Index Mode & Accuracy
+  ├── decoys.file             (FILE, optional)
+  ├── kmer.length             (INTEGER, default=31)
+  └── gencode.flag            (BOOLEAN, default=false)
+
+Group 3: Memory & Performance
+  ├── sparse.index            (BOOLEAN, default=false)
+  └── num.threads             (INTEGER, default=2)
+
+Group 4: Advanced Options
+  ├── keep.duplicates         (BOOLEAN, default=false)
+  ├── keep.fixed.fasta        (BOOLEAN, default=false)
+  └── tmp.directory           (STRING, optional)
+```
+
+### Usage Pattern Decision Tree
+
+```
+Need to index transcriptome for Salmon quantification?
+│
+├── Do you have a genome FASTA available?
+│   ├── YES (recommended for model organisms)
+│   │   ├── Full genome → Concatenate (gentrome.fa) + extract decoys.txt → Use --decoys
+│   │   └── Partial (MashMap2) → Use generateDecoyTranscriptome.sh → Use --decoys
+│   └── NO → Transcriptome-only mode (no --decoys flag)
+│
+├── What annotation source are you using?
+│   ├── GENCODE → Add --gencode flag
+│   ├── Ensembl / NCBI / custom → No special flag needed
+│   └── UCSC → Check header format
+│
+├── Are your reads short (< 75 bp)?
+│   └── YES → Consider -k 23 or -k 25 (improved sensitivity)
+│
+└── Memory constraints?
+    ├── < 16 GB RAM → Use --sparse flag
+    └── ≥ 16 GB RAM → Default dense index (faster quantification)
+```
+
+---
+
+## 4. 🖥️ Installation & Dependency Requirements
+
+### Software Dependencies
+
+| Component | Version | Source | Purpose |
+|---|---|---|---|
+| **Salmon** | 1.6.0 | COMBINE-lab/salmon GitHub | Core binary |
+| **TwoPaCo** | Bundled | Included in Salmon source | Compacted de Bruijn graph construction |
+| **ksw2** | Bundled | Included in Salmon source | SIMD DP alignment scoring |
+| **zlib** | System | OS package | Gzip/compressed FASTA support |
+| **Boost** | ≥ 1.66 | System library | C++ utilities (for source builds) |
+| **CMake** | ≥ 3.9 | Build tool | Source compilation only |
+
+### Installation Methods
+
+#### 1. Conda (Recommended for reproducibility)
+```bash
+conda install -c bioconda salmon=1.6.0
+```
+
+#### 2. Docker (Used by GenePattern module)
+```bash
+docker pull combinelab/salmon:1.6.0
+# or via Bioconda BioContainers:
+docker pull quay.io/biocontainers/salmon:1.6.0--h84f40af_0
+```
+
+#### 3. Pre-compiled Binary
+```bash
+wget https://github.com/COMBINE-lab/salmon/releases/download/v1.6.0/salmon-1.6.0_linux_x86_64.tar.gz
+tar -xzf salmon-1.6.0_linux_x86_64.tar.gz
+export PATH=$PATH:$(pwd)/salmon-1.6.0_linux_x86_64/bin
+```
+
+### System Requirements
+
+| Resource | Transcriptome-Only | Decoy-Aware Dense | Decoy-Aware Sparse |
+|---|---|---|---|
+| **RAM** | 4–8 GB | ~18 GB (human) | ~14 GB (human) |
+| **CPU** | 2+ cores | 4–16 cores | 4–16 cores |
+| **Disk (index)** | 1–5 GB | 30–50 GB | 15–25 GB |
+| **Disk (temp)** | 2–10 GB | 10–30 GB | 10–30 GB |
+| **Build Time** | 5–15 min | 30–90 min | 20–60 min |
+
+> 🖥️ **GenePattern Cloud Note**: For the Broad Institute's public GenePattern server, the transcriptome-only or sparse decoy-aware index modes are most practical given typical cloud instance memory profiles (8–16 GB). For decoy-aware dense indices, users may need dedicated high-memory instances.
+
+---
+
+## 5. 🔄 Common Workflows & Use Cases
+
+### Workflow 1: Standard Human RNA-seq (Recommended)
+```
+1. Download reference:
+   - GENCODE transcriptome:  gencode.v38.transcripts.fa.gz
+   - GRCh38 genome:          GRCh38.primary_assembly.genome.fa.gz
+
+2. [Salmon.Indexer] Build decoy-aware index:
+   - transcriptome.fasta = gentrome.fa (concat)
+   - decoys.file = decoys.txt
+   - kmer.length = 31
+   - gencode.flag = true
+   - num.threads = 8
+   → Output: salmon_index.tar.gz
+
+3. [Salmon.Quant] Quantify each sample:
+   - index = salmon_index.tar.gz
+   - reads = sample_R1.fastq.gz, sample_R2.fastq.gz
+   → Output: quant.sf (per sample)
+
+4. [tximeta / tximport in R]:
+   - Import quant.sf files
+   - Summarize transcript → gene level
+   → Output: DESeqDataSet or SummarizedExperiment
+
+5. [DESeq2 / edgeR / limma-voom]:
+   → Differential expression results
+```
+
+### Workflow 2: Non-Model Organism / De Novo Assembly
+```
+1. De-novo transcriptome assembly (Trinity or similar)
+   → transcripts.fasta
+
+2. [Salmon.Indexer]:
+   - transcriptome.fasta = transcripts.fasta
+   - No decoys file (genome typically unavailable)
+   - kmer.length = 23 (for improved sensitivity)
+   → Output: salmon_index.tar.gz
+
+3. [Salmon.Quant] → quant.sf per sample
+```
+
+### Workflow 3: Memory-Limited Environment
+```
+[Salmon.Indexer]:
+- transcriptome.fasta = transcripts.fa
+- sparse.index = true
+- num.threads = 4
+→ Reduced memory footprint index
+```
+
+### Workflow 4: GenePattern nf-core/rnaseq Integration
+The index produced by `Salmon.Indexer` is a drop-in replacement for indices built in the nf-core/rnaseq pipeline when using the `salmon` quantification track, supporting cross-platform reproducibility.
+
+### Key Downstream Compatible Tools
+
+| Tool | Ecosystem | Use |
+|---|---|---|
+| `salmon quant` / Salmon.Quant | Command line / GenePattern | Primary quantification |
+| `tximeta` | R/Bioconductor | Import with automatic provenance from `info.json` |
+| `tximport` | R/Bioconductor | Import and gene-level summarization |
+| `DESeq2` | R/Bioconductor | Differential expression |
+| `edgeR` | R/Bioconductor | Differential expression |
+| `limma-voom` | R/Bioconductor | Differential expression |
+| `fishpond` | R/Bioconductor | Differential transcript usage |
+| `MultiQC` | Python | QC aggregation of Salmon logs |
+| `alevinQC` | R/Bioconductor | QC for alevin single-cell mode |
+
+---
+
+## 6. 🔗 Comparative Analysis
+
+| Feature | **Salmon.Indexer** | kallisto index | STAR genomeGenerate | HISAT2 build | RSEM prepare-reference |
+|---|---|---|---|---|---|
+| **Index type** | Pufferfish (ccDBG) | k-mer hash | SA/FM-index | Graph-based FM | Bowtie/STAR-based |
+| **Alignment mode** | Selective alignment (SA) | Pseudoalignment | Full splice-aware | Full splice-aware | Full alignment |
+| **Decoy support** | ✅ Yes (genome-level) | ❌ No | N/A | N/A | ❌ No |
+| **Transcriptome-based** | ✅ Yes | ✅ Yes | ❌ Genome-based | ❌ Genome-based | ✅ Yes (via alignment) |
+| **Memory (human)** | 4–18 GB | ~4 GB | ~30–38 GB | ~4–8 GB | ~8–16 GB |
+| **Index build time** | 5–90 min | 2–10 min | 30–90 min | 15–45 min | 20–60 min |
+| **Bias correction** | ✅ Rich models | ❌ Limited | ❌ None | ❌ None | ✅ Moderate |
+| **GENCODE support** | ✅ `--gencode` flag | ✅ Manual | ✅ Manual | ✅ Manual | ✅ Manual |
+| **Gzip input** | ✅ Native | ✅ Native | ✅ Native | ✅ Native | ✅ Native |
+| **Accuracy rank** | ⭐⭐⭐⭐⭐ (SA+decoy) | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
+| **Speed rank** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
+| **GenePattern fit** | ✅ Excellent | ✅ Good | ⚠️ Memory issues | ✅ Good | ✅ Moderate |
+
+> **Key Differentiator**: Salmon with selective alignment + decoy-aware index achieves the best balance of speed, accuracy, and bias correction among all lightweight quantification tools, as validated in Srivastava et al. 2020 (*Genome Biology*).
+
+---
+
+## 7. 🧩 GenePattern Module Integration Considerations
+
+### Module Architecture (v0.5)
+
+```
+Salmon.Indexer v0.5
+├── manifest                        ← GenePattern module manifest
+├── Dockerfile                      ← Docker container definition
+│   └── FROM combinelab/salmon:1.6.0 (or bioconda-based)
+├── run_salmon_index.sh (or .py)    ← Wrapper script
+│   ├── Parses GenePattern parameters
+│   ├── Constructs salmon index command
+│   ├── Executes salmon index
+│   └── Archives output directory → output.tar.gz
+└── test/                           ← Test data and scripts
+```
+
+### Recommended GenePattern Manifest Parameters
+
+```properties
+# Core required inputs
+p1_name=transcriptome.fasta
+p1_type=java.io.File
+p1_description=FASTA file of reference transcripts (gzip supported). For decoy-aware indexing, provide gentrome (transcripts + genome concatenated).
+p1_optional=false
+p1_fileFormat=fa;fasta;fa.gz;fasta.gz
+
+p2_name=output.prefix
+p2_type=java.lang.String
+p2_description=Base name for the output index archive
+p2_default_value=salmon_index
+p2_optional=false
+
+# Decoy support
+p3_name=decoys.file
+p3_type=java.io.File
+p3_description=Text file with one decoy sequence ID per line (e.g., chromosome names). Leave blank for transcriptome-only index.
+p3_optional=true
+p3_fileFormat=txt
+
+# K-mer length
+p4_name=kmer.length
+p4_type=java.lang.Integer
+p4_description=K-mer length for index construction (7-31). Default 31; use 23-25 for short reads.
+p4_default_value=31
+p4_optional=true
+
+# GENCODE flag
+p5_name=gencode.format
+p5_type=java.lang.String
+p5_description=Set to true if using GENCODE-format transcript FASTA files.
+p5_default_value=false
+p5_choiceDir=true;false
+p5_optional=true
+
+# Sparse index
+p6_name=sparse.index
+p6_type=java.lang.String
+p6_description=Build sparse index (lower memory, slower mapping). Recommended for memory-limited environments.
+p6_default_value=false
+p6_choiceDir=true;false
+p6_optional=true
+
+# Threads
+p7_name=num.threads
+p7_type=java.lang.Integer
+p7_description=Number of threads for index construction.
+p7_default_value=4
+p7_optional=true
+
+# Advanced
+p8_name=keep.duplicates
+p8_type=java.lang.String
+p8_description=Keep duplicate transcript sequences in the index (advanced use).
+p8_default_value=false
+p8_choiceDir=true;false
+p8_optional=true
+```
+
+### Key Implementation Notes
+
+1. **Output Packaging**: The index is a **directory** of binary files; it must be packaged as a `.tar.gz` archive for GenePattern file transfer and unpacked by `Salmon.Quant` before use.
+
+2. **tximeta Compatibility**: The `info.json` file inside the index is used by the Bioconductor `tximeta` package for automatic metadata provenance. This file must be preserved intact in the archive.
+
+3. **Version Pinning**: Salmon is strict about index compatibility — the index must have been built with the **same major Salmon version** used for quantification. Pin the Docker image to `salmon:1.6.0`.
+
+4. **Input Validation**:
+   - Validate FASTA format and non-empty sequence content
+   - If `decoys.file` is provided, validate that all listed IDs exist in the FASTA headers
+   - Warn if `--gencode` is not set but GENCODE-format headers (containing `|`) are detected
+
+5. **Memory Management**: Default GenePattern job executor should request ≥ 8 GB RAM for transcriptome-only mode and ≥ 20 GB for decoy-aware (dense) mode.
+
+6. **New in v0.5 (Salmon 1.6.0)**: Support for **transcriptome-only index** mode (no genome/decoys required) — important for non-model organisms and users without genome FASTA access.
+
+---
+
+## 8. 📚 Key References & Authoritative Sources
+
+| Reference | Type | Relevance |
+|---|---|---|
+| **Patro R, et al.** (2017) Salmon provides fast and bias-aware quantification of transcript expression. *Nature Methods* **14**: 417–419. [doi:10.1038/nmeth.4197](https://doi.org/10.1038/nmeth.4197) | Primary publication | Core Salmon algorithm |
+| **Srivastava A, et al.** (2020) Alignment and mapping methodology influence transcript abundance estimation. *Genome Biology* **21**:239. [doi:10.1186/s13059-020-02151-8](https://doi.org/10.1186/s13059-020-02151-8) | Methods comparison | Validates selective alignment + decoy indexing |
+| **Love MI, et al.** (2020) Tximeta: reference sequence checksums for provenance identification in RNA-seq. *PLOS Computational Biology*. | Downstream tool | tximeta uses Salmon index metadata |
+| **Salmon Documentation** v1.11.4. [readthedocs.io](https://salmon.readthedocs.io/en/latest/salmon.html) | Official docs | Parameters and usage |
+| **COMBINE-lab/salmon** GitHub. [github.com/COMBINE-lab/salmon](https://github.com/COMBINE-lab/salmon) | Source code | Release notes, issues |
+| **GenePattern/Salmon.Indexer** v0.5. [github.com/genepattern/Salmon.Indexer](https://github.com/genepattern/Salmon.Indexer/tree/v0.5) | Module repository | GenePattern-specific implementation |
+| **Ubuntu Manpage**: salmon-index(1). [manpages.ubuntu.com](https://manpages.ubuntu.com/manpages/jammy/man1/salmon-index.1.html) | System manual | Parameter reference |
+| **Snakemake Wrappers** — salmon/index. [snakemake-wrappers.readthedocs.io](https://snakemake-wrappers.readthedocs.io/en/v2.8.0/wrappers/salmon/) | Workflow integration | Standard output file listing |
+
+---
+
+## 9. ⚠️ Known Limitations & Caveats
+
+1. **Index Version Locking**: Salmon indices are **not backward or forward compatible** across major versions. An index built with v1.6.0 cannot be used with v1.5.x or v1.7.x.
+2. **No Windows Support**: Salmon binaries are Linux/macOS only; Docker is required for Windows GenePattern deployments.
+3. **Memory for Full Genome Decoy**: Requires ~18 GB RAM for human/mouse, which may exceed default GenePattern cloud job allocations.
+4. **Not Splice-Aware (Indexing)**: Salmon indexes transcripts, not the genome — splice junctions are implicitly handled through the transcript sequences. It cannot discover novel splice junctions (unlike STAR).
+5. **Gentrome Preparation Complexity**: Building a proper decoy-aware gentrome requires external tools (GNU `cat`, `grep`, `sed`), which should ideally be automated within the GenePattern wrapper script.
+6. **Transcriptome Quality Dependency**: Index quality is directly tied to the reference transcriptome completeness. Incomplete or redundant FASTA inputs will reduce quantification accuracy.
+7. **k-mer Sensitivity Trade-off**: Default k=31 is optimal for long reads (>100 bp) but may reduce sensitivity for short reads; users should be guided to adjust this parameter appropriately.
+
+---
+
+*Report compiled from: Official Salmon Documentation, COMBINE-lab GitHub Repository, Peer-reviewed literature (Nature Methods, Genome Biology), Ubuntu Manpages, Snakemake Wrappers documentation, Bioconductor/HBC Training resources, and GenePattern module repository. All sources accessed and cross-validated for accuracy.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

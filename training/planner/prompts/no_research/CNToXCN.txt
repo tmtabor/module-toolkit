@@ -1,0 +1,47 @@
+Create a comprehensive structured plan for the GenePattern module for 'CNToXCN'.
+            
+            Tool Information:
+            - Name: CNToXCN
+            - Version: latest
+            - Language: perl
+            - Description: - Repository:
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "CNToXCN",
+  "parameters": [
+    {
+      "name": "cn.file",
+      "type": "FILE",
+      "description": "Input CN file (a tab-delimited file format that contains SNP copy numbers)",
+      "required": true,
+      "default_value": "",
+      "file_format": "cn"
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.lang.String",
+      "description": "Prefix for the output XCN file name",
+      "required": true,
+      "default_value": "<cn.file_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "SNP Analysis",
+  "author": "gp-help@broad.mit.edu, Broad Institute",
+  "command_line": "<perl> <libdir>cn2xcn.pl <cn.file> <output.prefix>.nocalls.xcn"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

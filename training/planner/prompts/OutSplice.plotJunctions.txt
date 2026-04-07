@@ -1,0 +1,583 @@
+Create a comprehensive structured plan for the GenePattern module for 'OutSplice.plotJunctions'.
+            
+            Tool Information:
+            - Name: OutSplice.plotJunctions
+            - Version: Initial Revision.
+            - Language: any
+            - Description: Using the result file from OutSplice, OutSplice.plotJunctions creates bar and waterfall plots of junction expression in both the tumor and normal samples.
+            
+            Research Results:
+            All research data collected and synthesized. Now let me compile the complete, comprehensive report with full scientific rigor.
+
+---
+
+# 🔬 Comprehensive Research Report: OutSplice.plotJunctions
+
+**GenePattern Module Development Research | PhD-Level Bioinformatics Analysis**
+*Sources: Bioconductor v1.10.0 Documentation, MDPI BioMedInformatics (2023), GenePattern Registry, Docker Hub, PMC Literature Review*
+
+---
+
+## 📋 EXECUTIVE SUMMARY
+
+**OutSplice.plotJunctions** is a specialized post-processing visualization module in the GenePattern platform that generates bar plots and waterfall plots of RNA-seq junction expression data from tumor and normal tissue samples. It is a downstream companion to the **OutSplice** Bioconductor package's analysis modules, directly wrapping the `plotJunctionData()` R function to provide publication-quality figures. The module occupies a critical niche in cancer genomics: visualizing *outlier-based* aberrant splicing events discovered in heterogeneous tumor transcriptomes—a task not adequately served by mean-comparison tools like DEXSeq or rMATS.
+
+> **Official LSID:** `urn:lsid:genepattern.org:module.analysis:00433`
+> **Docker Image:** `genepattern/outsplice.plotjunctions:0.4`
+> **Underlying R Package:** OutSplice v1.10.0 (Bioconductor 3.22+)
+
+---
+
+## 1. 🎯 TOOL PURPOSE AND SCIENTIFIC APPLICATIONS
+
+### 1.1 Primary Function
+OutSplice.plotJunctions is a visualization-only post-processing tool. It does NOT perform statistical analysis—it renders graphical representations of junction expression results that have already been computed by the companion **OutSplice** or **OutSplice.TCGA** GenePattern modules (LSID `00431`). The module calls the `plotJunctionData()` function from the OutSplice Bioconductor package.
+
+### 1.2 Biological Problem Being Solved
+Cancer transcriptomes are highly heterogeneous: different tumor samples may harbor distinct sets of aberrant splicing events even within the same cancer type. Classical differential splicing tools (rMATS, DEXSeq) compare **group means**, which can miss events that are extreme outliers in only a subset of tumors. OutSplice uses **outlier statistics** (modified Ghosh rank-sum method) to identify per-sample aberrant junctions. Once identified, OutSplice.plotJunctions makes these results interpretable by:
+
+- **Bar plots**: Displaying raw junction expression (RPM or normalized RPM) per sample, with tumor and normal samples color-coded, allowing direct visual inspection of expression distributions.
+- **Waterfall plots**: Sorting and ranking junction expression values across all samples to reveal the characteristic "outlier" shape — a few tumor samples with dramatically elevated or suppressed junction usage against a relatively flat normal baseline.
+
+### 1.3 Scientific Applications
+| Application | Description |
+|---|---|
+| **Cancer Biology** | Identifying splicing events unique to specific tumor subtypes or individual patients |
+| **Biomarker Discovery** | Visualizing candidate junction biomarkers before downstream validation |
+| **Splice Burden Analysis** | Confirming that high-burden samples show the expected outlier expression patterns |
+| **Quality Control** | Visual verification of OutSplice statistical results for individual junctions |
+| **Publication Figures** | Generating PDF figures directly suitable for journal submissions |
+| **Exploratory Analysis** | Iterative inspection of top-ranked junctions at various p-value cutoffs |
+
+### 1.4 Validated Scientific Contexts
+The OutSplice framework has been validated and applied in peer-reviewed literature:
+- **BioMedInformatics (2023):** Bendik et al. validated OutSplice on TCGA Head and Neck Squamous Cell Carcinoma (HNSC) data, identifying tumor-specific alternative splicing events using the complete OutSplice → plotJunctions workflow. DOI: [10.3390/biomedinformatics3040053](https://doi.org/10.3390/biomedinformatics3040053)
+- **Head & Neck / PMC (2025–2026):** Kalavacherla et al. used OutSplice to define splice burden as **a novel biomarker** for immune infiltration and prognosis in HNSC (PMID: 40755385), demonstrating clinical relevance of the OutSplice workflow.
+- **SINE Neoantigen study (MDPI IJMS):** OutSplice was used to identify significantly over-expressed splicing events in >50% of tumors for neoantigen pipeline integration.
+
+---
+
+## 2. 📁 INPUT/OUTPUT FORMATS AND REQUIREMENTS
+
+### 2.1 Primary Input
+
+| Parameter | Format | Description |
+|---|---|---|
+| `data_file` | `.RData` (R binary data) | **Required.** Output file from a prior OutSplice or OutSplice.TCGA GenePattern run. Contains all analysis objects as a saved R environment. |
+
+The `.RData` file must contain the following R objects (produced by `outspliceAnalysis()` or `outspliceTCGA()`):
+
+| Object | Type | Description |
+|---|---|---|
+| `TumorOverExpression` | `matrix` (logical) | Per-junction, per-sample logical matrix; `TRUE` = outlier over-expression in that tumor sample |
+| `TumorUnderExpression` | `matrix` (logical) | Per-junction, per-sample logical matrix; `TRUE` = outlier under-expression in that tumor sample |
+| `FisherP` | `matrix` (numeric) | FDR-corrected Fisher's exact test p-values per junction event |
+| `junc.RPM` | `matrix` (numeric) | Raw junction counts normalized to Reads Per Million (RPM) by dividing by total per-sample read counts |
+| `junc.RPM.norm` | `matrix` (numeric) | `junc.RPM` further normalized by gene-level expression (accounts for overall transcriptional activity) |
+| `gene_expr` | `matrix` (numeric) | Gene expression values for each junction-associated gene |
+| `splice_burden` | `matrix` (numeric) | Per-sample count of Fisher-P significant over-expressed, under-expressed, and total outlier junctions |
+
+> ⚠️ **Critical Note:** This input format is tightly coupled to the OutSplice R package's internal output structure. The `.RData` file is not a generic format and must originate specifically from OutSplice analysis functions.
+
+### 2.2 Optional Inputs
+- `junctions`: A character vector of specific junction coordinates in the format `"chrN:start-end"` (e.g., `"chr1:150483674-150483956"` for the ECM1 gene junction used in the vignette example). This allows targeted visualization of pre-known or pre-selected junctions.
+
+### 2.3 Primary Output
+
+| Output | Format | Description |
+|---|---|---|
+| `pdffile` | `.pdf` | **Primary output.** Multi-page PDF containing bar plots and waterfall plots for all selected junctions |
+
+Each junction of interest generates **two plot pages** in the PDF:
+1. **Bar Plot** — Junction expression (RPM or normalized RPM) on the Y-axis, samples on the X-axis, tumor samples colored `tumcol` (default: red), normal samples colored `normcol` (default: blue).
+2. **Waterfall Plot** — Samples ranked by junction expression value creating a descending waterfall curve, visually emphasizing the outlier distribution characteristic of tumor-specific events.
+
+---
+
+## 3. ⚙️ PARAMETER ANALYSIS AND USAGE PATTERNS
+
+### 3.1 Complete Parameter Catalog
+
+#### **Group 1: Required Input/Output Parameters**
+| Parameter | Type | Default | Description | GenePattern UI Type |
+|---|---|---|---|---|
+| `data_file` | `file path` | None (required) | Path to `.RData` file from OutSplice analysis | File input (`.rdata`, `.RData`) |
+| `pdffile` | `file path` | None (required) | Output PDF file path | Text/output file name |
+
+#### **Group 2: Junction Selection Parameters** *(Mutually Influenced)*
+| Parameter | Type | Default | Description | Notes |
+|---|---|---|---|---|
+| `NUMBER` | `integer` | `1` | Number of top-ranked significant junctions to plot | Used when selecting by rank |
+| `junctions` | `character vector` | example junction | Specific junction coordinate(s) to visualize | Format: `"chrN:start-end"` |
+| `GENE` | `logical` | `FALSE` | If `TRUE`, select junctions by gene symbol instead of coordinates | Must set `SYMBOL` when TRUE |
+| `SYMBOL` | `character` | `NULL` | Gene symbol for junction selection (e.g., `"ECM1"`, `"TP53"`) | Only used when `GENE=TRUE` |
+
+> **Selection Logic:** Users can select junctions by: (a) top-N count via `NUMBER`, (b) specific coordinates via `junctions`, or (c) gene symbol via `GENE=TRUE` + `SYMBOL`. These approaches are alternatives.
+
+#### **Group 3: Statistical Filtering Parameters**
+| Parameter | Type | Default | Description | Valid Values |
+|---|---|---|---|---|
+| `tail` | `character` or `NULL` | `NULL` | Which expression tail to visualize | `NULL` (both), `"over"` (over-expressed only), `"under"` (under-expressed only) |
+| `p_value` | `numeric` | `0.05` | FDR-corrected p-value significance threshold for junction selection | Range: 0.0–1.0 (typical: 0.05, 0.01, 0.001) |
+
+#### **Group 4: Visualization/Output Parameters**
+| Parameter | Type | Default | Description | Notes |
+|---|---|---|---|---|
+| `makepdf` | `logical` | `TRUE` | Whether to save output as a PDF file | Should always be `TRUE` in GenePattern context |
+| `tumcol` | `character` | `"red"` | Color for tumor sample bars | Any valid R color name or hex code |
+| `normcol` | `character` | `"blue"` | Color for normal sample bars | Any valid R color name or hex code |
+
+### 3.2 Recommended Parameter Groupings for GenePattern UI
+
+```
+┌─────────────────────────────────────────┐
+│  GROUP 1: Input File                    │
+│  • data_file  [REQUIRED]                │
+├─────────────────────────────────────────┤
+│  GROUP 2: Junction Selection            │
+│  • NUMBER (default: 1)                  │
+│  • junctions (specific coordinates)     │
+│  • GENE (boolean toggle)                │
+│  • SYMBOL (gene name)                   │
+├─────────────────────────────────────────┤
+│  GROUP 3: Statistical Filtering         │
+│  • tail (dropdown: both/over/under)     │
+│  • p_value (default: 0.05)             │
+├─────────────────────────────────────────┤
+│  GROUP 4: Output & Visualization        │
+│  • pdffile (output name)                │
+│  • makepdf (default: TRUE)              │
+│  • tumcol (default: "red")              │
+│  • normcol (default: "blue")            │
+└─────────────────────────────────────────┘
+```
+
+### 3.3 Common Usage Patterns
+
+**Pattern A — Top-N Significant Junctions (Most Common)**
+```r
+plotJunctionData(
+  data_file = "outsplice_results.RData",
+  NUMBER = 10,
+  tail = "over",
+  p_value = 0.05,
+  makepdf = TRUE,
+  pdffile = "top10_over_expressed_junctions.pdf",
+  tumcol = "red",
+  normcol = "blue"
+)
+```
+
+**Pattern B — Single Known Junction by Coordinate**
+```r
+plotJunctionData(
+  data_file = "outsplice_results.RData",
+  junctions = "chr1:150483674-150483956",
+  tail = NULL,
+  p_value = 0.05,
+  makepdf = TRUE,
+  pdffile = "ECM1_junction_plot.pdf"
+)
+```
+
+**Pattern C — Gene-Symbol–Based Selection**
+```r
+plotJunctionData(
+  data_file = "outsplice_results.RData",
+  GENE = TRUE,
+  SYMBOL = "TP53",
+  tail = "under",
+  p_value = 0.01,
+  makepdf = TRUE,
+  pdffile = "TP53_under_expressed.pdf",
+  tumcol = "darkred",
+  normcol = "darkblue"
+)
+```
+
+**Pattern D — Under-Expressed Junction Survey**
+```r
+plotJunctionData(
+  data_file = "outsplice_results.RData",
+  NUMBER = 5,
+  tail = "under",
+  p_value = 0.05,
+  makepdf = TRUE,
+  pdffile = "top5_under_expressed.pdf",
+  tumcol = "orange",
+  normcol = "steelblue"
+)
+```
+
+---
+
+## 4. 🛠️ INSTALLATION AND DEPENDENCY REQUIREMENTS
+
+### 4.1 R and Bioconductor Requirements
+
+| Dependency | Type | Version | Purpose |
+|---|---|---|---|
+| `R` | Runtime | ≥ 4.0 | Language runtime |
+| `Bioconductor` | Framework | ≥ 3.13 | Package manager |
+| `OutSplice` | Bioc package | ≥ 1.0.0 (current: 1.10.0) | Core analysis + plotting functions |
+| `AnnotationDbi` | Bioc package | Latest | Annotation database interface |
+| `GenomicRanges` | Bioc package | Latest | Genomic coordinate manipulation |
+| `TxDb.Hsapiens.UCSC.hg19.knownGene` | Bioc annotation | Latest | Transcript database (hg19/GRCh37) |
+| `org.Hs.eg.db` | Bioc annotation | Latest | Human gene ID mappings |
+| `methods` | R base | Built-in | S4 class system |
+| `stats` | R base | Built-in | Statistical functions |
+
+> ⚠️ **Genome Build Note:** The package relies on `TxDb.Hsapiens.UCSC.hg19.knownGene`, meaning it is anchored to **hg19/GRCh37**. Users with hg38-aligned data should perform coordinate liftover before analysis, or use an alternative TxDb package.
+
+### 4.2 Installation Commands
+```r
+# Install Bioconductor manager
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+# Install OutSplice and all dependencies
+BiocManager::install("OutSplice")
+
+# Verify installation
+library(OutSplice)
+packageVersion("OutSplice")  # Should return >= 1.10.0
+```
+
+### 4.3 Docker Container
+The GenePattern module uses a pre-built Docker image that encapsulates all R and Bioconductor dependencies:
+
+```
+Registry:    Docker Hub
+Image:       genepattern/outsplice.plotjunctions:0.4
+Digest:      sha256-3b736da079901fcc28e2e74e5ad9ba630a414662f446374d6a9e46e71e9bf821
+```
+
+The Docker image ensures reproducibility and eliminates local installation requirements for GenePattern users.
+
+### 4.4 System Requirements (Estimated)
+| Resource | Minimum | Recommended |
+|---|---|---|
+| RAM | 4 GB | 8 GB |
+| CPU | 1 core | 2 cores |
+| Disk | 2 GB (for Docker + annotation packages) | 5 GB |
+| OS | Linux x86_64 (Docker) | Linux x86_64 |
+
+> **Note:** OutSplice.plotJunctions is a visualization-only module. Computational demands are modest compared to the upstream analysis module. The bottleneck is usually reading the `.RData` file and annotation lookups, not graphical rendering.
+
+---
+
+## 5. 🔄 COMMON WORKFLOWS AND USE CASES
+
+### 5.1 Standard GenePattern Two-Module Workflow
+
+```
+                        RNA-seq Data
+                      ┌──────────────┐
+                      │  Junction    │  (from STAR, HISAT2, etc.)
+                      │  Count File  │
+                      │  Gene Expr.  │
+                      │  Phenotype   │
+                      └──────┬───────┘
+                             │
+                             ▼
+                 ┌───────────────────────┐
+                 │  OutSplice            │  ← GenePattern Module
+                 │  (LSID: 00431)        │     outspliceAnalysis()
+                 │                       │     OR
+                 │  - Normalizes RPM     │     outspliceTCGA()
+                 │  - Rank-sum outliers  │
+                 │  - Fisher's exact     │
+                 │  - FDR correction     │
+                 └──────────┬────────────┘
+                            │
+                     ┌──────┴──────┐
+                     │  .RData     │ ← Primary output
+                     │  Results    │   (TumorOverExpression,
+                     │  File       │    FisherP, junc.RPM, etc.)
+                     └──────┬──────┘
+                            │
+                            ▼
+              ┌─────────────────────────────┐
+              │  OutSplice.plotJunctions     │  ← GenePattern Module
+              │  (LSID: 00433)               │     plotJunctionData()
+              │                             │
+              │  Select junctions by:        │
+              │  • Top-N rank                │
+              │  • Specific coordinates      │
+              │  • Gene symbol               │
+              │                             │
+              │  Filter by:                  │
+              │  • p-value threshold         │
+              │  • Expression tail           │
+              └──────────────┬──────────────┘
+                             │
+                      ┌──────┴──────┐
+                      │  PDF Output │ ← Bar plots + Waterfall plots
+                      │             │   per junction of interest
+                      └─────────────┘
+```
+
+### 5.2 Common Use Cases
+
+**Use Case 1: Discovery Mode — Explore Top Hits**
+After running OutSplice analysis on a cancer cohort, researchers routinely visualize the top 10–20 most significant over-expressed junctions to identify candidates for follow-up validation. `NUMBER=20, tail="over", p_value=0.05`.
+
+**Use Case 2: Hypothesis-Driven — Known Cancer Genes**
+Researchers investigating specific cancer driver genes (e.g., TP53, EGFR, KRAS) use `GENE=TRUE, SYMBOL="TP53"` to visualize all significant junction events within a gene of interest regardless of global rank.
+
+**Use Case 3: Publication Figure Generation**
+Final validated junctions are plotted with specific coordinates (`junctions="chrN:start-end"`) and custom colors to generate consistent, publication-ready PDF figures. Color customization (`tumcol`, `normcol`) allows journal-specific styling.
+
+**Use Case 4: TCGA Cohort Analysis**
+When paired with OutSplice.TCGA module, the workflow retrieves junction and expression data directly from TCGA repositories, runs the analysis, then plotJunctions is used to visualize cohort-level outlier patterns in any of the 33 TCGA cancer types.
+
+**Use Case 5: Comparative Splicing Survey**
+Running plotJunctions with `tail=NULL` (both tails) allows researchers to compare over- vs. under-expressed junction patterns simultaneously — useful for identifying genes with complex bidirectional splicing deregulation.
+
+### 5.3 Integration with Broader Bioinformatics Workflows
+```
+RNA-seq BAM Files
+      │
+      ▼
+STAR / HISAT2 Alignment → Junction SJ.out.tab files
+      │
+      ▼
+Junction count matrix assembly
+      │
+      ▼
+OutSplice / OutSplice.TCGA (GenePattern)
+      │
+      ├──→ OutSplice.plotJunctions (GenePattern)  ← Visualization
+      │
+      ├──→ Downstream: SINE (neoantigen pipeline)
+      │
+      ├──→ Downstream: Survival analysis (TCGA clinical data)
+      │
+      └──→ Downstream: Immune infiltration (xCell, CIBERSORT)
+```
+
+---
+
+## 6. 🔗 INTEGRATION CONSIDERATIONS FOR GENEPATTERN
+
+### 6.1 Module Architecture
+```yaml
+Module_Name: OutSplice.plotJunctions
+LSID: urn:lsid:genepattern.org:module.analysis:00433
+Version: Initial Revision
+Category: RNA-seq / Visualization / Alternative Splicing
+Language: R (via Docker)
+Docker_Image: genepattern/outsplice.plotjunctions:0.4
+Author: Theresa Guo Lab (UCSD) + GenePattern Team
+```
+
+### 6.2 GenePattern Module Manifest Recommendations
+
+```properties
+# Suggested manifest entries
+name=OutSplice.plotJunctions
+description=Using the result file from OutSplice, OutSplice.plotJunctions creates bar and waterfall plots of junction expression in both the tumor and normal samples.
+version=1
+categories=RNA-seq;Visualization;Alternative Splicing
+os=any
+language=any
+cpuType=any
+taskType=Visualizer
+privacy=public
+quality=production
+
+# Parameters
+p0=data.file
+p1=number
+p2=junctions
+p3=tail
+p4=p.value
+p5=gene.mode
+p6=gene.symbol
+p7=output.filename
+p8=tumor.color
+p9=normal.color
+```
+
+### 6.3 Input Parameter UI Recommendations
+
+| GP Parameter Name | Display Name | UI Widget | Validation |
+|---|---|---|---|
+| `data.file` | OutSplice Result File | File chooser | `.RData`, `.rdata` extension required |
+| `number` | Number of Top Junctions | Integer spinner | Min: 1, Max: 500, Default: 1 |
+| `junctions` | Junction Coordinates | Text field | Optional; format hint: `"chrN:start-end"` |
+| `tail` | Expression Direction | Dropdown | Options: `both` (→NULL), `over`, `under`; Default: `both` |
+| `p.value` | P-value Cutoff | Numeric field | Range: 0.0001–1.0, Default: 0.05 |
+| `gene.mode` | Select by Gene Symbol | Checkbox/Toggle | Default: unchecked (FALSE) |
+| `gene.symbol` | Gene Symbol | Text field | Visible/enabled only when `gene.mode=TRUE` |
+| `output.filename` | Output PDF Filename | Text field | Default: `junction_plots.pdf` |
+| `tumor.color` | Tumor Bar Color | Text/color field | Default: `red` |
+| `normal.color` | Normal Bar Color | Text/color field | Default: `blue` |
+
+### 6.4 Command Line Template (for module manifest)
+```bash
+Rscript /path/to/run_plotJunctions.R \
+  --data_file <data.file> \
+  --NUMBER <number> \
+  --junctions "<junctions>" \
+  --tail <tail> \
+  --p_value <p.value> \
+  --GENE <gene.mode> \
+  --SYMBOL "<gene.symbol>" \
+  --pdffile <output.filename> \
+  --tumcol "<tumor.color>" \
+  --normcol "<normal.color>"
+```
+
+### 6.5 Wrapper R Script Structure
+```r
+#!/usr/bin/env Rscript
+# OutSplice.plotJunctions GenePattern Wrapper
+# wraps OutSplice::plotJunctionData()
+
+suppressPackageStartupMessages({
+  library(OutSplice)
+  library(optparse)
+})
+
+option_list <- list(
+  make_option("--data_file",  type="character"),
+  make_option("--NUMBER",     type="integer",   default=1),
+  make_option("--junctions",  type="character", default=NULL),
+  make_option("--tail",       type="character", default=NULL),
+  make_option("--p_value",    type="double",    default=0.05),
+  make_option("--GENE",       type="logical",   default=FALSE),
+  make_option("--SYMBOL",     type="character", default=NULL),
+  make_option("--pdffile",    type="character", default="junction_plots.pdf"),
+  make_option("--tumcol",     type="character", default="red"),
+  make_option("--normcol",    type="character", default="blue")
+)
+
+opt <- parse_args(OptionParser(option_list=option_list))
+
+# Convert "both" tail selection to NULL for R function
+if (!is.null(opt$tail) && opt$tail == "both") opt$tail <- NULL
+if (!is.null(opt$junctions) && opt$junctions == "") opt$junctions <- NULL
+if (!is.null(opt$SYMBOL) && opt$SYMBOL == "") opt$SYMBOL <- NULL
+
+plotJunctionData(
+  data_file = opt$data_file,
+  NUMBER    = opt$NUMBER,
+  junctions = opt$junctions,
+  tail      = opt$tail,
+  p_value   = opt$p_value,
+  GENE      = opt$GENE,
+  SYMBOL    = opt$SYMBOL,
+  makepdf   = TRUE,
+  pdffile   = opt$pdffile,
+  tumcol    = opt$tumcol,
+  normcol   = opt$normcol
+)
+```
+
+### 6.6 Known Limitations and Caveats
+
+| Issue | Description | Mitigation |
+|---|---|---|
+| **hg19-only** | Depends on `TxDb.Hsapiens.UCSC.hg19.knownGene` | Document genome build requirement; liftover for hg38 data |
+| **RData coupling** | Input must be exactly the OutSplice `.RData` format | Strong validation with clear error messages |
+| **NULL handling for `tail`** | GenePattern cannot natively pass NULL; must map "both" → NULL in wrapper | Implement in wrapper script |
+| **Junction coordinate format** | Users must know exact UCSC-style coordinates | Provide examples; recommend using gene-symbol mode |
+| **PDF-only output** | Currently outputs only PDF (no PNG/SVG) | Consider adding raster output option for web display |
+| **No interactive plots** | Static PDF output only | Could add Plotly/ggplot2 HTML output in future versions |
+| **Human-only** | All annotation packages are human-specific | Document scope limitation; non-human data not supported |
+
+---
+
+## 7. 🆚 COMPARATIVE ANALYSIS WITH SIMILAR TOOLS
+
+| Feature | **OutSplice.plotJunctions** | Sashimi Plots | MAJIQ/Voila | leafviz | psichomics |
+|---|---|---|---|---|---|
+| **Statistical basis** | Outlier/rank-sum | None (pure viz) | PSI/deltaPSI | Dirichlet-Multinomial | PSI/mean |
+| **Tumor heterogeneity** | ✅ Per-sample outliers | ❌ | ❌ Mean-based | ❌ Mean-based | ❌ Mean-based |
+| **Input type** | `.RData` from OutSplice | BAM files | BAM files | leafcutter output | Various |
+| **Output** | PDF (bar + waterfall) | PNG/PDF arcs | Interactive HTML | Interactive Shiny | Interactive Shiny |
+| **GenePattern native** | ✅ First-class module | ❌ | ❌ | ❌ | ❌ |
+| **TCGA integration** | ✅ | ❌ | ❌ | ❌ | ✅ |
+| **No-code use** | ✅ | ❌ | Limited | Limited | ✅ |
+| **Genome build** | hg19 | Any | Any | Any | Any |
+
+### Unique Strengths of OutSplice.plotJunctions
+1. **Outlier visualization**: The waterfall plot format is uniquely designed to communicate outlier splicing — the key biological signal in heterogeneous tumors
+2. **Integrated workflow**: Seamless chain with OutSplice analysis module via `.RData` handoff
+3. **GenePattern-native**: No command-line required; accessible to bench biologists
+4. **Sample-level resolution**: Unlike group-level tools, shows individual sample expression values
+5. **Clinically validated**: Used in published research identifying prognostic biomarkers in HNSC
+
+---
+
+## 8. 📚 LITERATURE AND CITATION FRAMEWORK
+
+### Primary References
+
+1. **Tool Paper (Required citation):**
+   Bendik, J., Kalavacherla, S., Webster, N., Califano, J., Fertig, E.J., Ochs, M.F., Carter, H., & Guo, T. (2023). *OutSplice: A Novel Tool for the Identification of Tumor-Specific Alternative Splicing Events.* **BioMedInformatics**, 3(4), 853–868. https://doi.org/10.3390/biomedinformatics3040053
+
+2. **Clinical Application:**
+   Kalavacherla, S. et al. (2025/2026). *Aberrant Splicing Burden Predicts Immune Infiltration and Prognosis in Head and Neck Squamous Cell Carcinomas.* **Head & Neck** (Wiley). PMID: 40755385. PMC: 12826392.
+
+3. **Statistical Method:**
+   Ghosh, D. (2004). Modified Ghosh rank-sum outlier method — as implemented in OutSplice with minimum expression threshold of 0.00001 normalized RPM.
+
+4. **GenePattern Platform:**
+   Reich, M. et al. (2006). *GenePattern 2.0.* **Nature Genetics**, 38(5), 500–501. https://doi.org/10.1038/ng1785
+
+### Software Citations
+
+- **R Bioconductor OutSplice package**: `citation("OutSplice")` in R
+- **Bioconductor**: Huber, W. et al. (2015). *Orchestrating high-throughput genomic analysis with Bioconductor.* **Nature Methods**, 12(2), 115–121.
+
+---
+
+## 9. 🏁 SUMMARY AND GenePattern MODULE DEVELOPMENT PRIORITIES
+
+### Critical Implementation Items
+1. ✅ **Wrapper script** implementing NULL-safe parameter handling for `tail` parameter
+2. ✅ **Input validation** checking `.RData` file integrity and expected object structure
+3. ✅ **`tail` dropdown mapping**: UI value `"both"` → R value `NULL`
+4. ✅ **`GENE`/`SYMBOL` conditional UI**: Show `SYMBOL` field only when `GENE=TRUE`
+5. ✅ **Docker image** (`genepattern/outsplice.plotjunctions:0.4`) is already available
+
+### Recommended Parameter Defaults for GenePattern
+```
+data.file     → [required, no default]
+number        → 1
+junctions     → [empty/optional]  
+tail          → "both" (maps to NULL)
+p.value       → 0.05
+gene.mode     → false
+gene.symbol   → [empty/optional]
+output.file   → junction_plots.pdf
+tumor.color   → red
+normal.color  → blue
+```
+
+### Module Quality Assessment
+| Criterion | Rating | Notes |
+|---|---|---|
+| Scientific Validity | ⭐⭐⭐⭐⭐ | Peer-reviewed, validated in multiple studies |
+| Parameter Completeness | ⭐⭐⭐⭐⭐ | All 11 parameters fully documented |
+| Dependency Clarity | ⭐⭐⭐⭐ | Well-defined Bioconductor stack |
+| GenePattern Fit | ⭐⭐⭐⭐⭐ | Already has LSID, Docker image, companion module |
+| User Accessibility | ⭐⭐⭐⭐ | Straightforward for biologists familiar with OutSplice |
+| Limitation Documentation | ⭐⭐⭐⭐ | hg19-only and PDF-only are notable constraints |
+
+---
+
+*Research compiled from: Bioconductor OutSplice v1.10.0 vignette, MDPI BioMedInformatics (2023), GenePattern LSID Registry (module.analysis:00433), Docker Hub (genepattern/outsplice.plotjunctions:0.4), PMC literature (PMID: 40755385), and comparative analysis of alternative splicing visualization tools.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

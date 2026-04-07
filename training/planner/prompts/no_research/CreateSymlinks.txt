@@ -1,0 +1,40 @@
+Create a comprehensive structured plan for the GenePattern module for 'CreateSymlinks'.
+            
+            Tool Information:
+            - Name: CreateSymlinks
+            - Version: latest
+            - Language: any
+            - Description: Creates symlinks to the input files in the job results directory. This is intended to be a helper module for creating scatter-gather pipelines.  Note that this module is not supported on Windows
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "CreateSymlinks",
+  "parameters": [
+    {
+      "name": "input.files",
+      "type": "FILE",
+      "description": "One or more input files",
+      "required": true,
+      "default_value": "",
+      "num_values": "1+"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "GenePattern Team",
+  "command_line": "<perl> <libdir>createsymlinks.pl --inputfilelist <input.files>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

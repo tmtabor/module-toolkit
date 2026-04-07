@@ -1,0 +1,494 @@
+Create a comprehensive structured plan for the GenePattern module for 'HeatMapViewer'.
+            
+            Tool Information:
+            - Name: HeatMapViewer
+            - Version: Bug fix to support S3 files
+            - Language: HTML,JQuery
+            - Description: A configurable heat map viewer that provides users with several options for manipulating and visualizing array-based data
+            
+            Research Results:
+            I now have all the comprehensive research data needed. Let me compile the full, detailed research report.
+
+---
+
+# 🧬 Comprehensive Research Report: HeatMapViewer
+
+**GenePattern Module Research & Analysis**
+*Compiled from: Official GenePattern Documentation (v11, v14 BETA), GitHub Repository, Peer-Reviewed Literature (PMC3893799), GenePattern FAQ/Blog, and File Format Specifications*
+
+---
+
+## 1. 🔬 Tool Purpose and Scientific Applications
+
+### Overview
+**HeatMapViewer** is a browser-based, interactive visualization module within the GenePattern genomic analysis platform. It renders gene expression matrices as color-coded heat maps where intensity represents expression magnitude. Its core scientific purpose is enabling researchers to rapidly identify patterns, clusters, and outliers in multi-dimensional array-based genomic data without requiring programming expertise.
+
+### Scientific Applications
+
+| Application Domain | Use Case | Key Benefit |
+|---|---|---|
+| **Microarray Gene Expression** | Visualize expression across phenotypic classes | Pattern detection across thousands of genes |
+| **Differential Expression** | Display top-ranked differentially expressed genes | Confirm ComparativeMarkerSelection results |
+| **RNA-seq (post-normalization)** | Explore normalized count matrices | Cross-condition comparisons |
+| **Biomarker Discovery** | Heatmap of candidate marker genes | Visual validation of statistical results |
+| **Quality Control** | Exploratory data analysis of raw/preprocessed data | Sample outlier detection |
+| **Class Distinction** | Visualize class separation in expression data | Confirm biological hypotheses |
+| **Epigenomics/Proteomics** | Any array-based numeric matrix | Generalizable beyond transcriptomics |
+
+### Color Encoding Model
+The default diverging color scheme encodes:
+- 🔴 **Red (Hot)** → Largest/highest expression values
+- 🔵 **Blue (Cool)** → Smallest/lowest expression values
+- ⚪ **Light colors** → Intermediate/near-mean values
+
+This red-blue diverging scale is biologically intuitive — upregulation appears as warm red tones, downregulation as cool blue tones — and is standard across the bioinformatics community.
+
+### Version History & Authors
+| Version | Author | Key Change |
+|---|---|---|
+| Early (pre-v11) | Broad Institute | Java applet-based implementation |
+| v11 (Stable) | **Joshua Gould**, The Broad Institute | Full rewrite to HTML/jQuery; Java-free |
+| v14 (BETA/Current) | **Marc-Danie Nazaire**, The Broad Institute | **Bug fix: Amazon S3 file URL support** |
+
+> 📌 **The version described in the known information ("Bug fix to support S3 files")** corresponds to **v14 BETA**, the current active development version, representing the module's evolution to cloud-compatible data access.
+
+---
+
+## 2. 📁 Input/Output Formats and Requirements
+
+### Input File Formats
+
+#### Primary Format: GCT (Gene Cluster Text)
+```
+#1.2
+[num_rows]   [num_cols]
+Name    Description    Sample1    Sample2    Sample3 ...
+GeneA   Description1   1.23       4.56       7.89   ...
+GeneB   Description2   2.34       5.67       8.90   ...
+```
+- **Extension:** `.gct`
+- **Structure:** Tab-delimited; version header `#1.2`, then dimension row, then data matrix
+- **Missing Values:** ✅ Supported (blank cells)
+- **Use Case:** Standard GenePattern expression format; most commonly used input
+- **Source:** Any expression analysis pipeline, preprocessing modules, RNA-seq normalization
+
+#### Secondary Format: RES (Affymetrix Expression)
+```
+Description    Accession    Sample1   C1   Sample2   C2 ...
+[Gene descriptions and Affy call data]
+```
+- **Extension:** `.res`
+- **Structure:** Tab-delimited; contains **absent (A) / present (P) / marginal (M)** calls per gene per sample
+- **Missing Values:** ❌ NOT supported
+- **Use Case:** Affymetrix-specific microarray data with call information
+- **Note:** RES format is Affymetrix-chip specific; most modern workflows use GCT
+
+#### Tertiary Format: ODF (Output Data Format)
+- **Extension:** `.odf`
+- **Structure:** GenePattern-internal pipeline interchange format
+- **Use Case:** Direct output from `ExtractComparativeMarkerResults`, passed into HeatMapViewer within pipeline
+- **Key Pipeline Use:** `ComparativeMarkerSelection → ExtractComparativeMarkerResults (.odf/.gct) → HeatMapViewer`
+
+#### Supporting Format: CLS (Class Labels)
+- **Extension:** `.cls`
+- **Required For:** Sort-by-differential-expression feature (T-Test / Signal-to-Noise sorting)
+- **Structure:** Defines phenotypic class assignment for each sample column
+- **Note:** Not a direct input parameter to the module launch, but used interactively within the viewer
+
+### Output
+
+| Output Type | Format | Limitation |
+|---|---|---|
+| **Interactive Display** | Browser-rendered HTML/Canvas | Primary output; requires modern browser |
+| **Saved Image** | PNG / SVG | ⚠️ **Gene annotations NOT included** in exported image (confirmed GenePattern FAQ) |
+| **No computational output files** | N/A | This is a visualizer only; no downstream analysis outputs |
+
+### File Format Compatibility Matrix
+
+```
+Input Source Module          → Compatible Input Format → HeatMapViewer
+─────────────────────────────────────────────────────────────────────
+PreprocessDataset             → .gct, .res               ✅ Direct
+ComparativeMarkerSelection    → .odf                     ✅ Direct
+ExtractComparativeMarkerRes.  → .gct, .odf               ✅ Direct
+HierarchicalClustering        → .gct                     ✅ Direct
+RNA-seq normalization tools   → .gct                     ✅ Direct
+Amazon S3 cloud storage       → .gct, .res (URL)         ✅ (v14 bug fix)
+Raw Excel/CSV data            → Must convert to .gct     ⚠️ Conversion needed
+```
+
+---
+
+## 3. ⚙️ Parameter Analysis and Usage Patterns
+
+### Parameter Taxonomy
+
+#### Group 1: Required Input Parameters
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dataset` | File | ✅ Yes | Gene expression dataset (.gct, .res, .odf). The sole mandatory parameter at launch. |
+
+#### Group 2: Color & Normalization Controls (Interactive)
+| Parameter | Type | Default | Options | Biological Significance |
+|---|---|---|---|---|
+| `color_scheme` | Enum | `Row Relative` | `Row Relative`, `Global` | **Row Relative**: Per-gene normalization; reveals relative expression patterns within each gene. **Global**: Absolute scale across entire dataset; preserves cross-gene magnitude relationships |
+| `color_gradient` | Config | Red-Blue diverging | Custom user-defined | Maps numeric range to color spectrum |
+| `row_normalization` | Boolean/Enum | Off | On/Off | Normalize each row to zero-mean unit-variance before coloring |
+
+> 🔬 **Biological Significance of Color Scheme Choice:**
+> - **Row Relative** is ideal when genes have vastly different absolute expression levels and you want to highlight *patterns* (up/down relative to a gene's own mean)
+> - **Global** is ideal when *absolute magnitude comparisons across genes* matter (e.g., comparing highly vs. lowly expressed gene clusters)
+
+#### Group 3: Display Geometry Controls (Interactive)
+| Parameter | Type | Default | Options |
+|---|---|---|---|
+| `row_size` | Integer/Enum | Medium | Small, Medium, Large (zoom control for gene rows) |
+| `column_size` | Integer/Enum | Medium | Small, Medium, Large (zoom control for sample columns) |
+| `grid_lines` | Boolean | On | On / Off |
+
+#### Group 4: Annotation & Labeling (Interactive)
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `gene_annotations` | Boolean | On | Display gene/feature names on row axis |
+| `sample_annotations` | Boolean | On | Display sample names on column axis |
+
+#### Group 5: Sorting and Analysis Features (Interactive)
+| Parameter | Type | Options | Requirement |
+|---|---|---|---|
+| `sort_features` | Enum | `T-Test`, `Signal To Noise` | Requires associated CLS file for class labels |
+
+> 🔬 **Scientific Significance:**
+> - **T-Test sorting**: Ranks genes by statistical significance of expression difference between classes (two-sample t-statistic)
+> - **Signal-to-Noise (S2N)**: Ranks by `(µ₁ - µ₂) / (σ₁ + σ₂)` — a robust SNR metric used prominently in GSEA methodology; less sensitive to outliers than raw t-test
+
+### Parameter Grouping for GenePattern Module Development
+
+```
+┌─────────────────────────────────────────────────────────┐
+│              GENEPATTERN MODULE PARAMETERS               │
+├─────────────────────────────────────────────────────────┤
+│ GROUP 1: INPUT (Required)                                │
+│   • dataset [.gct / .res / .odf]                        │
+├─────────────────────────────────────────────────────────┤
+│ GROUP 2: DISPLAY CONFIGURATION (Optional)               │
+│   • color.scheme [row.relative | global]                │
+│   • row.size [small | medium | large]                   │
+│   • column.size [small | medium | large]                │
+│   • show.grid.lines [yes | no]                          │
+│   • show.gene.labels [yes | no]                         │
+│   • show.sample.labels [yes | no]                       │
+├─────────────────────────────────────────────────────────┤
+│ GROUP 3: SORTING & ANALYSIS (Optional)                  │
+│   • sort.method [none | ttest | signal.to.noise]        │
+│   • cls.file [.cls] (required if sort.method != none)   │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 4. 🛠️ Installation and Dependency Requirements
+
+### Architecture: Browser-Based Visualizer
+HeatMapViewer is fundamentally different from computational analysis modules — it is a **client-side HTML/jQuery visualizer** that renders entirely in the user's web browser.
+
+### Technology Stack
+```
+Frontend:
+├── HTML5                    (page structure, Canvas rendering)
+├── jQuery                   (DOM manipulation, event handling)
+├── CSS3                     (styling, layout)
+└── JavaScript (ES5/ES6)     (data processing, color mapping)
+
+Backend/Server:
+├── GenePattern Server       (serves the module, handles file I/O)
+├── Amazon S3 (optional)     (cloud file storage, v14 bug fix)
+└── No R/Python/Java runtime required for visualization
+
+Browser Requirements:
+├── Modern web browser       (Chrome, Firefox, Safari, Edge)
+├── JavaScript enabled       ✅ Required
+├── Canvas API support       ✅ Required (HTML5)
+└── Java plugin              ❌ NOT required (key improvement over older versions)
+```
+
+### Installation Within GenePattern
+- **Module Type:** `Visualizer` (distinct from `Analysis` or `Pipeline` types)
+- **Packaging:** ZIP archive containing HTML, JS, CSS, manifest
+- **Deployment:** Install via GenePattern Module Manager (`.zip` upload)
+- **No Docker container required** for the current HTML/jQuery implementation
+- **No external binary dependencies** — pure web technology
+
+### Historical Dependency Note
+Prior to the HTML/jQuery rewrite, the module required a **Java applet** (JVM). In June 2014, GenePattern released updated visualizers (including HeatMapViewer) to maintain compatibility with Java 7. The current HTML/jQuery version eliminates this Java dependency entirely — a significant modernization and cross-browser compatibility improvement.
+
+### S3 Integration (v14 Bug Fix)
+The current version adds support for **Amazon S3 file URLs**, enabling:
+- Files stored in AWS S3 buckets to be directly referenced as input
+- Cloud-native genomics workflows (e.g., Terra, cloud GenePattern instances)
+- No need to download/re-upload files when data is already in cloud storage
+
+---
+
+## 5. 🔄 Common Workflows and Use Cases
+
+### Workflow 1: Differential Expression Visualization (Primary Use Case)
+```
+Input Files: all_aml_train.gct + all_aml_train.cls
+      │
+      ▼
+┌─────────────────────────┐
+│  ComparativeMarkerSel.  │  ← Computes per-gene class separation statistics
+│  (T-Test, S2N metrics)  │
+└──────────┬──────────────┘
+           │ .odf output
+           ▼
+┌─────────────────────────────────┐
+│  ExtractComparativeMarkerResult │  ← Filters top N differentially expressed genes
+│  (output format: GCT)          │
+└──────────┬──────────────────────┘
+           │ .gct output
+           ▼
+┌──────────────────┐
+│  HeatMapViewer   │  ← Visualize top markers; sort by T-Test or S2N
+│  (color: row rel)│
+└──────────────────┘
+```
+📚 *Documented in GenePattern Differential Expression Tutorial and PMC3893799*
+
+### Workflow 2: Exploratory Data Analysis / Quality Control
+```
+Raw expression data (.cel files, FASTQ)
+      │
+      ▼ [external normalization]
+┌──────────────────────┐
+│  PreprocessDataset   │  ← Floor, ceiling, variation filter, log transform
+└──────────┬───────────┘
+           │ .gct
+           ▼
+┌──────────────────┐
+│  HeatMapViewer   │  ← Visually assess preprocessing effects, sample outliers
+└──────────────────┘
+```
+
+### Workflow 3: Hierarchical Clustering Visualization
+```
+expression_data.gct
+      │
+      ▼
+┌──────────────────────────┐
+│  HierarchicalClustering  │  ← Cluster genes and/or samples
+└──────────┬───────────────┘
+           │ .gct (+ optional .cdt/.atr/.gtr)
+           ▼
+┌──────────────────┐        ┌──────────────────────────────┐
+│  HeatMapViewer   │   OR   │  HierarchicalClusteringViewer │
+│  (no dendrograms)│        │  (with dendrograms)           │
+└──────────────────┘        └──────────────────────────────┘
+```
+> **Decision rule:** Use `HierarchicalClusteringViewer` when dendrograms are needed. Use `HeatMapViewer` when a clean matrix view without tree structure is preferred.
+
+### Workflow 4: Pipeline Terminal Step
+```
+[Any upstream analysis producing .gct output]
+      │
+      ▼
+┌──────────────────┐
+│  HeatMapViewer   │  ← Final pipeline visualization step (human review)
+└──────────────────┘
+```
+In GenePattern pipelines, HeatMapViewer typically serves as a **terminal visualization node** — the last step where results are presented to the researcher for interpretation.
+
+### Workflow 5: Cloud-Native Analysis (v14 Feature)
+```
+S3://my-bucket/expression-data.gct
+      │ (S3 URL input)
+      ▼
+┌──────────────────┐
+│  HeatMapViewer   │  ← Direct S3 URL input (bug fix in current version)
+│  (v14 BETA)      │
+└──────────────────┘
+```
+
+---
+
+## 6. 🔗 Integration Considerations for GenePattern
+
+### Module Classification
+```
+Category:     Visualizer
+Subcategory:  Array-Based Gene Expression → Visualization
+Input:        .gct, .res, .odf
+Output:       Visual (browser display), exportable image
+```
+
+### GenePattern Module Manifest Considerations
+```properties
+# Key manifest fields for HeatMapViewer
+name=HeatMapViewer
+description=A configurable heat map viewer that provides users with \
+  several options for manipulating and visualizing array-based data
+version=14
+author=Marc-Danie Nazaire, The Broad Institute
+privacy=public
+quality=beta
+categories=Visualizer
+fileFormat=gct;res;odf
+taskType=Visualizer
+commandLine=[DEFINED_VARIABLE]/run.html <dataset>
+cpuType=any
+os=any
+language=HTML
+```
+
+### Parameter Validation Rules
+```
+dataset:
+  - type: FILE
+  - required: true
+  - fileFormats: ["gct", "res", "odf"]
+  - s3.support: true (v14)
+
+sort.method:
+  - type: TEXT
+  - default: "none"
+  - choices: ["none", "ttest", "signal_to_noise"]
+  - dependency: if sort.method != "none" THEN cls.file required
+
+color.scheme:
+  - type: TEXT
+  - default: "row.relative"
+  - choices: ["row.relative", "global"]
+```
+
+### Integration Architecture
+```
+GenePattern Server
+       │
+       ├── Module ZIP Package
+       │     ├── manifest
+       │     ├── index.html       (main viewer entry point)
+       │     ├── heatmap.js       (jQuery-based rendering engine)
+       │     ├── styles.css       (display styling)
+       │     └── lib/
+       │           └── jquery.min.js
+       │
+       └── Runtime: Served as web content; no execution environment needed
+             └── Input file passed as URL parameter to HTML page
+```
+
+### Strengths for GenePattern Integration
+
+| Strength | Details |
+|---|---|
+| ✅ **Zero execution overhead** | No compute jobs; renders in browser instantly |
+| ✅ **Cross-platform** | Runs in any modern browser, any OS |
+| ✅ **No Java dependency** | Eliminates Java security/compatibility issues |
+| ✅ **S3-compatible** | Works with cloud-hosted data (critical for cloud GenePattern) |
+| ✅ **Pipeline-native** | Accepts GenePattern-native formats (.gct, .res, .odf) |
+| ✅ **Pipeline connectable** | Output of any GCT-producing module feeds directly in |
+| ✅ **Interactive** | Users can adjust display without re-running analysis |
+| ✅ **Lightweight** | Pure HTML/JS; minimal server resources required |
+
+### Known Limitations & Caveats for Module Development
+
+| Limitation | Impact | Mitigation |
+|---|---|---|
+| ⚠️ **No gene annotations in saved image** | Exported images lack row labels | Document clearly in module help; suggest workarounds |
+| ⚠️ **No computational output** | Cannot chain HeatMapViewer to downstream analysis | Use `HeatMapImage` for batch/pipeline image generation |
+| ⚠️ **Performance with large matrices** | Very large datasets (>10K genes × >500 samples) may be slow | Recommend upstream filtering via `PreprocessDataset` |
+| ⚠️ **JavaScript required** | Fails in JS-disabled environments | Documented as browser requirement |
+| ⚠️ **BETA status (v14)** | May contain unresolved bugs beyond S3 fix | Test thoroughly before production deployment |
+| ⚠️ **Image annotation gap** | PNG/SVG export misses metadata | Consider future enhancement to embed labels |
+
+### Comparable Tools Within GenePattern Ecosystem
+
+| Module | Relationship | When to Use Instead |
+|---|---|---|
+| `HierarchicalClusteringViewer` | Sibling visualizer | Need dendrograms / clustering trees |
+| `HeatMapImage` | Non-interactive companion | Batch image generation, pipeline automation |
+| `ComparativeMarkerSelectionViewer` | Specialized CMS viewer | Also need statistical table of marker scores |
+| `GENE-E` | Deprecated desktop predecessor | Do NOT use (no longer supported) |
+| `Morpheus` (Broad) | External web tool | Need more advanced annotation/clustering features |
+
+---
+
+## 7. 📚 Literature and Community Context
+
+### Peer-Reviewed Citations
+1. **Reich M, et al.** (2006). *GenePattern 2.0.* **Nature Genetics** 38:500–501. — Primary GenePattern platform paper; HeatMapViewer is a core module.
+2. **Using GenePattern for Gene Expression Analysis** — PMC3893799. Detailed protocol paper explicitly documenting HeatMapViewer use (Figure 7.12.7) in differential expression workflows.
+3. **Heatmapper** (Babicki et al., 2016). *Nucleic Acids Research* 44:W147–W153. — Cites GenePattern as a comparable heat map tool platform.
+4. **HeatmapGenerator** (PMC4279803) — Comparative review citing GenePattern/HeatMapViewer among major GUI heatmap tools.
+
+### Community Adoption
+- HeatMapViewer is a **core GenePattern module** included in standard GenePattern installations
+- Referenced in GenePattern's official **10-Minute Tutorial**, **Differential Expression Tutorial**, and **User Guide**
+- Used in the GenePattern platform that provides **150+ analytical and visualization modules** (Broad Institute)
+- Mentioned as a standard heatmap tool in multiple bioinformatics comparison papers
+
+---
+
+## 8. 📋 Summary Specifications Card
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║              HEATMAPVIEWER — GENEPATTERN MODULE                  ║
+╠══════════════════════════════════════════════════════════════════╣
+║ Type          │ Visualizer (browser-based, no compute job)       ║
+║ Language      │ HTML, jQuery (JavaScript)                         ║
+║ Version       │ v14 BETA — Bug fix to support S3 files           ║
+║ Authors       │ J. Gould (v11); M-D. Nazaire (v14), Broad Inst. ║
+║ Repository    │ github.com/genepattern/HeatMapViewer              ║
+╠══════════════════════════════════════════════════════════════════╣
+║ Input Files   │ .gct (primary), .res (Affymetrix), .odf          ║
+║ S3 Support    │ Yes (v14 bug fix)                                 ║
+║ Output        │ Interactive browser display + image export        ║
+╠══════════════════════════════════════════════════════════════════╣
+║ Key Features  │ • Red-blue diverging color map                   ║
+║               │ • Row-relative vs. global color schemes          ║
+║               │ • Sort by T-Test or Signal-to-Noise              ║
+║               │ • Row/column zoom controls                       ║
+║               │ • Grid lines toggle                              ║
+║               │ • Gene & sample annotation labels                ║
+║               │ • Row normalization                              ║
+╠══════════════════════════════════════════════════════════════════╣
+║ Workflows     │ 1. Differential Expression (with CMS pipeline)   ║
+║               │ 2. Exploratory data analysis / QC                ║
+║               │ 3. Post-hierarchical clustering display          ║
+║               │ 4. Terminal pipeline visualization step          ║
+║               │ 5. Cloud/S3 data visualization (v14)             ║
+╠══════════════════════════════════════════════════════════════════╣
+║ Known Issues  │ ⚠ Saved images lack gene annotations             ║
+║               │ ⚠ Performance degrades with very large matrices  ║
+║               │ ⚠ v14 BETA status — may contain other bugs       ║
+╠══════════════════════════════════════════════════════════════════╣
+║ Dependencies  │ Modern web browser + JavaScript (no Java, no R)  ║
+║ License       │ Broad Institute / GenePattern open-source        ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+---
+
+## 9. 🎯 Recommendations for GenePattern Module Development
+
+1. **Manifest Configuration:** Classify as `taskType=Visualizer`; set `fileFormat=gct;res;odf` and `cpuType=any; os=any`
+2. **Parameter Groups:** Organize into (a) Required Input, (b) Display Configuration, (c) Sorting & Analysis as described in Section 3
+3. **S3 URL Handling:** Ensure input file parameter accepts `s3://` URLs — this is the defining feature of the current version
+4. **Documentation Priority Items:**
+   - Explicitly note the **saved image annotation limitation** in the module help page
+   - Clearly explain Row Relative vs. Global color scheme with biological examples
+   - Provide the CLS file requirement for sort features prominently
+5. **Pipeline Positioning:** Configure as a downstream visualizer accepting GCT output from `ExtractComparativeMarkerResults`, `PreprocessDataset`, and `HierarchicalClustering`
+6. **Testing Matrix:** Test with: (a) standard GCT file, (b) RES file, (c) ODF file, (d) S3-hosted GCT file, (e) very large matrix (performance), (f) matrix with missing values
+7. **Alternative Module Cross-References:** Include links to `HeatMapImage` (batch processing), `HierarchicalClusteringViewer` (dendrogram display), and `Morpheus` (advanced features) in documentation
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,49 @@
+{
+  "module_name": "RemoveSaturatedFCSEvents",
+  "description": "Remove saturated events from an FCS data file",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "input_file_formats": [
+    "fcs"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:56020:1",
+  "plan": "## RemoveSaturatedFCSEvents GenePattern Module — Implementation Plan\n\n### 1. Overview\nRemoveSaturatedFCSEvents is a GenePattern module that Remove saturated events from an FCS data file\n\n### 2. Parameters\nThe module exposes 2 parameters:\n- Required: Input.FCS.data.file\n- Optional: Output.FCS.file.name\n\n### 3. Command Line\n```\n<java> <java_flags> -jar <libdir>removesaturated.jar <Input.FCS.data.file> <Output.FCS.file.name>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "removesaturated.jar",
+  "command_line": "<java> <java_flags> -jar <libdir>removesaturated.jar <Input.FCS.data.file> <Output.FCS.file.name>",
+  "parameters": [
+    {
+      "name": "Input.FCS.data.file",
+      "description": "An FCS data file to remove saturated events from.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fcs"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-InputFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.FCS.file.name",
+      "description": "The output FCS file name.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<Input.FCS.data.file_basename>.without_saturated.fcs",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-OutputFile\\:",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

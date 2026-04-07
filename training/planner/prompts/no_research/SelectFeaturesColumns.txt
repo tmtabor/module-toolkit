@@ -1,0 +1,61 @@
+Create a comprehensive structured plan for the GenePattern module for 'SelectFeaturesColumns'.
+            
+            Tool Information:
+            - Name: SelectFeaturesColumns
+            - Version: Added support for .snp, .cn, and .loh files
+            - Language: Java
+            - Description: Takes a 'column slice' from a .res, .gct, .snp, .cn, .loh, .odf, or .cls file.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "SelectFeaturesColumns",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "input file - .res, .gct, .snp, .cn, .loh, .odf, or .cls file from which the slice is extracted",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct;res;Dataset;snp;cn;loh;cls"
+    },
+    {
+      "name": "columns",
+      "type": "java.lang.String",
+      "description": "columns to select (e.g. 0-3, 5, 9). Either columns or a list file must be provided.",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "list.filename",
+      "type": "FILE",
+      "description": "text file containing one identifier per line that specifies the columns to select. Either columns or a list file must be provided.",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "output",
+      "type": "java.lang.String",
+      "description": "output filename - .res, .gct, .snp, .cn, .loh, .odf, .cls",
+      "required": true,
+      "default_value": "<input.filename_basename>.slice"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Gene List Selection",
+  "author": "Joshua Gould, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>SelectFeaturesColumns.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.selectfeaturescolumns.SelectFeaturesColumns <input.filename> <output> -t<columns> -f<list.filename>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

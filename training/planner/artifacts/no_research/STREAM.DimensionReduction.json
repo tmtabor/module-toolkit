@@ -1,0 +1,205 @@
+{
+  "module_name": "STREAM.DimensionReduction",
+  "description": "Perform dimension reduction on the dataset to make it easier to reliably assess similarity or distances between cells. Starting from the genes selected in the STREAM.FeatureSelection module, we project cells to a lower dimensional space using a non-linear dimensionality reduction method.",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "input_file_formats": [
+    "pkl"
+  ],
+  "language": "Python",
+  "categories": [
+    "Single-Cell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:75131:1",
+  "plan": "## STREAM.DimensionReduction GenePattern Module — Implementation Plan\n\n### 1. Overview\nSTREAM.DimensionReduction is a GenePattern module that Perform dimension reduction on the dataset to make it easier to reliably assess similarity or distances between cells. Starting from the genes selected in the STREAM.FeatureSelection module, we project cells to a lower dimensional space using a non-linear dimensionality reduction method.\n\n### 2. Parameters\nThe module exposes 12 parameters:\n- Required: data.file, output.filename, num.components.to.keep, method, num.components.to.plot, component.x, figure.legend.num.columns\n- Optional: percent.neighbor.cells, feature, component.y, figure.width, figure.height\n\n### 3. Command Line\n```\npython /stream/dimred_command_line.py -m <data.file> -of <output.filename> <percent.neighbor.cells> <num.components.to.keep> <feature>  <method> <num.components.to.plot> <component.x> <component.y> <figure.width> <figure.height>  <figure.legend.num.columns>  -n_jobs <job.cpuCount>\n```\n\n### 4. Docker Image\nDocker image: genepattern/stream_dimensionreduction\\:0.3\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "dimred_command_line.py",
+  "command_line": "python /stream/dimred_command_line.py -m <data.file> -of <output.filename> <percent.neighbor.cells> <num.components.to.keep> <feature>  <method> <num.components.to.plot> <component.x> <component.y> <figure.width> <figure.height>  <figure.legend.num.columns>  -n_jobs <job.cpuCount>",
+  "parameters": [
+    {
+      "name": "data.file",
+      "description": "A STREAM pkl file containing gene expression data",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "pkl"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "output file name prefix",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "percent.neighbor.cells",
+      "description": "The percentage neighbor cells (only valid when 'mlle', 'se', or 'umap' is specified).",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-nb_pct",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "num.components.to.keep",
+      "description": "Number of components to keep",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-n_comp_k",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "feature",
+      "description": "Feature used for dimension reduction. Choose from ['var_genes','top_pcs','all']. 'var_genes'\\: most variable genes. 'top_pcs'\\: top principal components.  'all'\\: all genes",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "var_genes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "most variable genes",
+          "value": "var_genes"
+        },
+        {
+          "display": "top principal components",
+          "value": "top_pcs"
+        },
+        {
+          "display": "all",
+          "value": "all"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-feat",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "method",
+      "description": "Method used for dimension reduction.Choose from {{'mlle','umap','pca'}}",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "mlle",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Modified locally linear embedding algorithm (MLLE)",
+          "value": "mlle"
+        },
+        {
+          "display": "Uniform Manifold Approximation and Projection (UMAP)",
+          "value": "umap"
+        },
+        {
+          "display": "Principal component analysis (PCA)",
+          "value": "pca"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.components.to.plot",
+      "description": "Number of components to be plotted.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-nc_plot",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "component.x",
+      "description": "Component used for x axis.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-comp1",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "component.y",
+      "description": "Component used for y axis.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-comp2",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "figure.width",
+      "description": "figure width",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_width",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "figure.legend.num.columns",
+      "description": "The number of columns that the legend has.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_legend_ncol",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "figure.height",
+      "description": "figure height",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-fig_height",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/stream_dimensionreduction:0.3"
+}

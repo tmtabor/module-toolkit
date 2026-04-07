@@ -1,0 +1,49 @@
+{
+  "module_name": "mzXMLToCsv",
+  "description": "Converts a mzXML file to a zip of csv files",
+  "author": "Joshua Gould, Broad Institute",
+  "input_file_formats": [
+    "mzXML"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:95373:1",
+  "plan": "## mzXMLToCsv GenePattern Module — Implementation Plan\n\n### 1. Overview\nmzXMLToCsv is a GenePattern module that Converts a mzXML file to a zip of csv files\n\n### 2. Parameters\nThe module exposes 2 parameters:\n- Required: input.filename, output.file\n- Optional: none\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>mzXMLToCSV.jar<path.separator><libdir>jrap.jar<path.separator><libdir>xerces.jar org.genepattern.modules.mzxml.Convert <input.filename> <output.file>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "mzXMLToCSV.jar<path.separator><libdir>jrap.jar<path.separator><libdir>xerces.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>mzXMLToCSV.jar<path.separator><libdir>jrap.jar<path.separator><libdir>xerces.jar org.genepattern.modules.mzxml.Convert <input.filename> <output.file>",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "description": "input filename - .mzXML",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "mzXML"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "output file containing zip of csv files",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.filename_basename>.zip",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

@@ -1,0 +1,55 @@
+Create a comprehensive structured plan for the GenePattern module for 'TransposeDataset'.
+            
+            Tool Information:
+            - Name: TransposeDataset
+            - Version: Added gct as an output format
+            - Language: Java
+            - Description: Transpose a Dataset - .res .gct, .odf
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "TransposeDataset",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "Dataset - .res .gct, .odf",
+      "required": true,
+      "default_value": "",
+      "file_format": "res;gct;Dataset"
+    },
+    {
+      "name": "output.file.format",
+      "type": "java.lang.String",
+      "description": "The output file format",
+      "required": true,
+      "default_value": "gct",
+      "choices": "gct;odf"
+    },
+    {
+      "name": "output.file.name",
+      "type": "java.lang.String",
+      "description": "The name of the output file",
+      "required": true,
+      "default_value": "<input.filename_basename>.transposed"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "GenePattern",
+  "command_line": "<java> <java_flags> -cp <libdir>TransposeDataset.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.modules.transpose.Transpose <input.filename> <output.file.format> <output.file.name>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

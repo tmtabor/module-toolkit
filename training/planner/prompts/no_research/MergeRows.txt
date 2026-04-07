@@ -1,0 +1,63 @@
+Create a comprehensive structured plan for the GenePattern module for 'MergeRows'.
+            
+            Tool Information:
+            - Name: MergeRows
+            - Version: latest
+            - Language: Java
+            - Description: Merge datasets by row.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "MergeRows",
+  "parameters": [
+    {
+      "name": "input.filename1",
+      "type": "FILE",
+      "description": "first file to merge",
+      "required": false,
+      "default_value": "",
+      "file_format": "gct;res;Dataset;snp;cn;loh"
+    },
+    {
+      "name": "input.filename2",
+      "type": "FILE",
+      "description": "second file to merge",
+      "required": false,
+      "default_value": "",
+      "file_format": "gct;res;Dataset;snp;cn;loh"
+    },
+    {
+      "name": "zip.filename",
+      "type": "FILE",
+      "description": "zip file containing files to merge. Either a zip file or the input files above must be provided.",
+      "required": false,
+      "default_value": "",
+      "file_format": "zip"
+    },
+    {
+      "name": "output",
+      "type": "java.lang.String",
+      "description": "name of the merged file",
+      "required": true,
+      "default_value": "<input.filename1_basename><zip.filename_basename>.merged"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Joshua Gould, gp-help@broad.mit.edu, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>MergeRows.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.MergeRows -1<input.filename1> -2<input.filename2> -o<output> -z<zip.filename>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

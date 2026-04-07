@@ -1,0 +1,92 @@
+Create a comprehensive structured plan for the GenePattern module for 'SplitDatasetTrainTest'.
+            
+            Tool Information:
+            - Name: SplitDatasetTrainTest
+            - Version: Added output types train.0.gct, test.0.gct, train.1.gct, test.1.gct, et cetera
+            - Language: R
+            - Description: Splits a dataset (and cls file) into a number of train and test subsets
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "SplitDatasetTrainTest",
+  "parameters": [
+    {
+      "name": "input.dataset.file",
+      "type": "FILE",
+      "description": "input dataset - .gct, .res",
+      "required": true,
+      "default_value": "",
+      "file_format": "res;gct"
+    },
+    {
+      "name": "cls.file",
+      "type": "FILE",
+      "description": "class template - .cls",
+      "required": true,
+      "default_value": "",
+      "file_format": "cls"
+    },
+    {
+      "name": "split.method",
+      "type": "java.lang.String",
+      "description": "whether to split the data using a percentage split or cross validation approach",
+      "required": true,
+      "default_value": "random",
+      "choices": "random\\=percentage split;CV\\=cross-validation"
+    },
+    {
+      "name": "stratified",
+      "type": "java.lang.String",
+      "description": "whether to create splits stratified with respect to the class template",
+      "required": true,
+      "default_value": "T",
+      "choices": "T\\=yes;F\\=no"
+    },
+    {
+      "name": "folds",
+      "type": "java.lang.Integer",
+      "description": "number of train/test splits to generate",
+      "required": true,
+      "default_value": "1"
+    },
+    {
+      "name": "percentage.split.proportion",
+      "type": "java.lang.Float",
+      "description": "proportion of data to be allocated to train file when split method is percentage split (ignored when split method is cross-validation)",
+      "required": false,
+      "default_value": "0.5"
+    },
+    {
+      "name": "seed",
+      "type": "java.lang.Integer",
+      "description": "random number generator seed",
+      "required": true,
+      "default_value": "123456"
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.lang.String",
+      "description": "output saved to output.prefix.{train,test}.n.{gct|res,cls}, where n is the fold index",
+      "required": true,
+      "default_value": "<input.dataset.file_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Stefano Monti, Marc-Danie Nazaire",
+  "command_line": "<R2.5> <libdir>SplitDatasetTrainTest.R parseCmdLine <input.dataset.file> <cls.file> <output.prefix> <split.method> <stratified> <folds> <seed> <libdir> <percentage.split.proportion>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

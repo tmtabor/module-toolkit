@@ -1,0 +1,428 @@
+{
+  "module_name": "RandomForest",
+  "description": "Performs random forest classification on data and class files (cross-validation or test-train prediction), outputting a prediction results file.",
+  "author": "Omar Halawa;GenePattern Team @ Mesirov Lab - UCSD",
+  "input_file_formats": [
+    "cls",
+    "gct",
+    "pkl"
+  ],
+  "language": "Python",
+  "categories": [
+    "prediction"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:68460:1",
+  "plan": "## RandomForest GenePattern Module — Implementation Plan\n\n### 1. Overview\nRandomForest is a GenePattern module that Performs random forest classification on data and class files (cross-validation or test-train prediction), outputting a prediction results file.\n\n### 2. Parameters\nThe module exposes 25 parameters:\n- Required: none\n- Optional: train.data.file, train.class.file, model.output, model.output.filename, test.data.file, test.class.file, prediction.results.filename, feature.importance.filename, bootstrap, ccp_alpha, class_weight, criterion, max_depth, max_features, max_leaf_nodes, max_samples, min_impurity_decrease, min_samples_leaf, min_samples_split, min_weight_fraction_leaf, n_estimators, random_state, debug, verbose, model.input.file\n\n### 3. Command Line\n```\npython /RandomForest/rnd_forest.py <train.data.file> <train.class.file> <test.data.file> <test.class.file> <model.output> <model.output.filename> <model.input.file>  <prediction.results.filename>  <feature.importance.filename> --n_jobs <job.cpuCount> <bootstrap> <ccp_alpha> <class_weight> <criterion> <max_depth> <max_features> <max_leaf_nodes> <max_samples> <min_impurity_decrease> <min_samples_leaf> <min_samples_split> <min_weight_fraction_leaf> <n_estimators>  <random_state> <verbose> <debug>\n```\n\n### 4. Docker Image\nDocker image: genepattern/randomforest\\:v0.5\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "rnd_forest.py",
+  "command_line": "python /RandomForest/rnd_forest.py <train.data.file> <train.class.file> <test.data.file> <test.class.file> <model.output> <model.output.filename> <model.input.file>  <prediction.results.filename>  <feature.importance.filename> --n_jobs <job.cpuCount> <bootstrap> <ccp_alpha> <class_weight> <criterion> <max_depth> <max_features> <max_leaf_nodes> <max_samples> <min_impurity_decrease> <min_samples_leaf> <min_samples_split> <min_weight_fraction_leaf> <n_estimators>  <random_state> <verbose> <debug>",
+  "parameters": [
+    {
+      "name": "train.data.file",
+      "description": "Training data (feature) file. Takes .gct file (follows GenePattern GCT format).",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--feature",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "train.class.file",
+      "description": "Training class (target) file. Takes .cls file (follows GenePattern CLS format).",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--target",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "model.output",
+      "description": "Optional parameter to export model trained on the dataset input in \"Training Data\" as a compressed pickle file (.pkl). Note\\: This model will always be fitted using all samples of train.data.file regardless of if LOOCV is carried out for prediction. Only works if training dataset (not model input file) is provided. Default value is False.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "False",
+          "value": "False"
+        },
+        {
+          "display": "True",
+          "value": "True"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--model_output",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "model.output.filename",
+      "description": "Optional parameter to name the model output file if model.output is True (and training dataset is provided). Default uses training data basename.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "<train.data.file_basename>.pkl",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--model_output_filename",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "test.data.file",
+      "description": "Testing data (feature) file. Takes .gct file (follows GenePattern GCT format).",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--test_feat",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "test.class.file",
+      "description": "Testing class (target) file. Takes .cls file (follows GenePattern CLS format).",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--test_tar",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "prediction.results.filename",
+      "description": "Classifier prediction results filename (.pred.odf, follows GenePattern ODF format). Default is results.pred.odf.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "results.pred.odf",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--pred_odf",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "feature.importance.filename",
+      "description": "Classifier feature importance filename; only outputted for test-train prediction (.feat.odf, follows GenePattern ODF format). Default is model.feat.odf. See documentation for more details.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "model.feat.odf",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--feat_odf",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "bootstrap",
+      "description": "Optional boolean to turn on classifier bootstrapping.\\n\\nDefault value is True.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "True",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--bootstrap",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "ccp_alpha",
+      "description": "Optional float for complexity parameter of minimum cost-complexity pruning.\\n\\nPossible input range is any float greater than or equal to 0.0.\\nDefault value is 0.0.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--ccp_alpha",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "class_weight",
+      "description": "Optional string for class weight specification.\\n\\nDefault value is None.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "None",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "None",
+          "value": "None"
+        },
+        {
+          "display": "balanced",
+          "value": "balanced"
+        },
+        {
+          "display": "balanced_subsample",
+          "value": "balanced_subsample"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--class_weight",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "criterion",
+      "description": "Optional string for node-splitting criterion.\\n\\nDefault value is \"gini.\"",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "gini",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "gini",
+          "value": "gini"
+        },
+        {
+          "display": "entropy",
+          "value": "entropy"
+        },
+        {
+          "display": "log_loss",
+          "value": "log_loss"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--criterion",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max_depth",
+      "description": "Optional int for maximum tree depth.\\n\\nPossible input range is ints greater than or equal to 1. Default value is None.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "None",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max_depth",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max_features",
+      "description": "Optional string for number of features to consider when looking for best split. \"None\" will use all features.\\n\\nDefault value is \"sqrt.\"\\nNote\\: \"auto\" is removed in new version of Scikit (v1.3 and later).",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "sqrt",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "sqrt",
+          "value": "sqrt"
+        },
+        {
+          "display": "log2",
+          "value": "log2"
+        },
+        {
+          "display": "auto",
+          "value": "auto"
+        },
+        {
+          "display": "None",
+          "value": "None"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--max_features",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max_leaf_nodes",
+      "description": "Optional int for maximum leaf nodes per tree.\\n\\nPossible input range is ints greater than or equal to 2. Default value is None.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "None",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max_leaf_nodes",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max_samples",
+      "description": "Optional float for ratio of datasets to use per tree.\\n\\nPossible input range is floats between 0.0 and 1.0 (inclusive of both).\\nDefault value is None.\\nNote\\: If bootstrap is False, can only be None",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "None",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max_samples",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min_impurity_decrease",
+      "description": "Optional float for minimum impurity decrease needed per node split.\\n\\nPossible input range is floats greater than or equal to 0.0.\\nDefault value is 0.0.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min_impurity_decrease",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min_samples_leaf",
+      "description": "Optional int for minimum number of samples required at leaf node.\\n\\nPossible input range is ints greater than or equal to 1.\\nDefault value is 1.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min_samples_leaf",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min_samples_split",
+      "description": "Optional int for minimum sample number to split node.\\n\\nPossible input range is ints greater than or equal to 2.\\nDefault value is 2.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min_samples_split",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "min_weight_fraction_leaf",
+      "description": "Optional float for min weighted fraction of weight sum total to be leaf.\\n\\nPossible input range is floats between 0.0 and 0.5 (inclusive of both).\\nDefault value is 0.0.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min_weight_fraction_leaf",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "n_estimators",
+      "description": "Optional int for number of trees in forest.\\n\\nPossible input range is ints greater than or equal to 1.\\nDefault value is 100.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--n_estimators",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "random_state",
+      "description": "Optional int for seed of random number generator.\\n\\nPossible input range is non-negative ints (caps at 4294967295, 2^32 - 1). \\nDefault value is None.\\nNote\\: Setting this to a specific integer for a specific dataset will always yield the same prediction results file; see random_state in documentation for more details.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "None",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--random_state",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "debug",
+      "description": "Optional boolean for program debugging.\\n\\nDefault value is False.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "False",
+          "value": "False"
+        },
+        {
+          "display": "True",
+          "value": "True"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--debug",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "verbose",
+      "description": "Optional int (0 \\= no verbose, 1 \\= base verbosity) to increase classifier verbosity. For other values, see Scikit documentation linked above.\\n\\nPossible input range is non-negative ints.\\nDefault value is 0.\\n",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--verbose",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "model.input.file",
+      "description": "Optional model file input (.pkl, similar to model.output file). This can serve as a substitute for \"Training Data,\" and if both are provided, the model input file is used.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "pkl"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--model_input",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/randomforest:v0.5"
+}

@@ -1,0 +1,59 @@
+Create a comprehensive structured plan for the GenePattern module for 'DiSCoVER'.
+            
+            Tool Information:
+            - Name: DiSCoVER
+            - Version: Showing only upload option for contol.
+            - Language: Python
+            - Description: Beta implementation of the DiSCoVER algorithm.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "DiSCoVER",
+  "parameters": [
+    {
+      "name": "disease_subtype_gene_expression_sample",
+      "type": "FILE",
+      "description": "The csv file which contains the gene expression to be used as input.",
+      "required": true,
+      "default_value": "",
+      "file_format": "csv",
+      "num_values": "0..1"
+    },
+    {
+      "name": "control_sample",
+      "type": "FILE",
+      "description": "The csv control file to use as input (to compare disease subtype samples against).",
+      "required": true,
+      "default_value": "",
+      "file_format": "csv",
+      "num_values": "0..1"
+    },
+    {
+      "name": "output_supplementary_files",
+      "type": "TEXT",
+      "description": "Whether or not to output supplementary files.",
+      "required": true,
+      "default_value": "False",
+      "choices": "False\\=False;True\\=True",
+      "num_values": "0..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/discover\\:1.3",
+  "categories": "RNA-Seq;RNA-seq;Statistical Methods;Prediction",
+  "task_type": "Prediction",
+  "author": "Edwin F. Juarez;UCSD -- Mesirov Lab",
+  "command_line": "python /module/call_discover.py -g <disease_subtype_gene_expression_sample> -u \"Custom\" -c <control_sample> -s <output_supplementary_files>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

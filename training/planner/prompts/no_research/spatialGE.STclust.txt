@@ -1,0 +1,123 @@
+Create a comprehensive structured plan for the GenePattern module for 'spatialGE.STclust'.
+            
+            Tool Information:
+            - Name: spatialGE.STclust
+            - Version: latest
+            - Language: any
+            - Description: This function performs spatial clustering on gene expression data using the STclust method.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "spatialGE.STclust",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "STList object in .RDS file format to cluster on.",
+      "required": true,
+      "default_value": "",
+      "num_values": "0..1"
+    },
+    {
+      "name": "output.file",
+      "type": "TEXT",
+      "description": "Path to save the output STlist object. Default is 'output.RData'.",
+      "required": false,
+      "default_value": "spatialGE_STclustered.rds",
+      "num_values": "0..1"
+    },
+    {
+      "name": "tissue.images",
+      "type": "FILE",
+      "description": "Tar gz compressed file of the images of the samples in the STList object.",
+      "required": false,
+      "default_value": "",
+      "prefix": "--images",
+      "num_values": "0..1"
+    },
+    {
+      "name": "spatial.weight",
+      "type": "TEXT",
+      "description": "Weight to be applied to spatial distances (0-1). Default is 0.025.",
+      "required": false,
+      "default_value": "0.025",
+      "num_values": "0..1"
+    },
+    {
+      "name": "distance.metric",
+      "type": "TEXT",
+      "description": "Distance metric to be used. Default is 'euclidean'.",
+      "required": false,
+      "default_value": "euclidean",
+      "num_values": "0..1"
+    },
+    {
+      "name": "linkage.method",
+      "type": "TEXT",
+      "description": "Linkage method applied to hierarchical clustering. Default is 'ward.D2'",
+      "required": false,
+      "default_value": "ward.D2",
+      "num_values": "0..1"
+    },
+    {
+      "name": "dynamic.tree.cut",
+      "type": "TEXT",
+      "description": "Whether to automatically determine the number of clusters using Dynamic Tree Cut.",
+      "required": true,
+      "default_value": "TRUE",
+      "choices": "FALSE\\=FALSE;TRUE\\=TRUE",
+      "num_values": "1"
+    },
+    {
+      "name": "number.of.genes",
+      "type": "TEXT",
+      "description": "Number of genes with highest spot-to-spot expression variation. Default is 2000",
+      "required": false,
+      "default_value": "2000",
+      "num_values": "0..1"
+    },
+    {
+      "name": "deep.split",
+      "type": "TEXT",
+      "description": "Logical or integer (1-4) to control cluster resolution. Default is FALSE",
+      "required": false,
+      "default_value": "FALSE",
+      "choices": "FALSE\\=FALSE;TRUE\\=TRUE",
+      "num_values": "0..1"
+    },
+    {
+      "name": "minimum.clusters",
+      "type": "TEXT",
+      "description": "Minimum number of clusters (tissue domains). Must be >\\= 2. Only used if Dynamic Tree Cut is false.",
+      "required": false,
+      "default_value": "2",
+      "num_values": "0..1"
+    },
+    {
+      "name": "maximum.clusters",
+      "type": "TEXT",
+      "description": "Maximum number of clusters (tissue domains). Only used if Dynamic Tree Cut is false.",
+      "required": false,
+      "default_value": "5",
+      "num_values": "0..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/spatialgp.preprocessing\\:0.4",
+  "categories": "clustering;spatial transcriptomics",
+  "task_type": "spatial transcriptomics",
+  "author": "GenePattern Team",
+  "command_line": "Rscript <libdir>stclust_wrapper_ai.R -j <job_id> -e <input.file> --ws <spatial.weight> --dist_metric <distance.metric> --linkage <linkage.method> --ks <dynamic.tree.cut> --mink <minimum.clusters> --maxk <maximum.clusters> --topgenes <number.of.genes> --deepSplit <deep.split> --output <output.file>    <tissue.images>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

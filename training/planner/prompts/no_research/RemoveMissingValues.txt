@@ -1,0 +1,55 @@
+Create a comprehensive structured plan for the GenePattern module for 'RemoveMissingValues'.
+            
+            Tool Information:
+            - Name: RemoveMissingValues
+            - Version: Public Release
+            - Language: R
+            - Description: Removes features and/or samples containing missing (NA) values
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "RemoveMissingValues",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "Input file (gct, res)",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct, res"
+    },
+    {
+      "name": "remove.opt",
+      "type": "java.lang.String",
+      "description": "Remove rows, columns, or both containing missing values",
+      "required": true,
+      "default_value": "1",
+      "choices": "1\\=rows;2\\=cols;3\\=both"
+    },
+    {
+      "name": "output.filename",
+      "type": "java.lang.String",
+      "description": "output file",
+      "required": true,
+      "default_value": "<input.file_basename>.na-rm.gct"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Missing Value Imputation",
+  "author": "Michael Reich",
+  "command_line": "<R2.5> <libdir>remove_missing.R remove_missing -l<libdir> -i<input.file> -r<remove.opt> -o<output.filename>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

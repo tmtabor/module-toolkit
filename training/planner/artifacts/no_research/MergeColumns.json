@@ -1,0 +1,95 @@
+{
+  "module_name": "MergeColumns",
+  "description": "Merge datasets by column.",
+  "author": "Joshua Gould, gp-help@broad.mit.edu, Broad Institute",
+  "input_file_formats": [
+    "Dataset",
+    "cn",
+    "gct",
+    "loh",
+    "res",
+    "snp",
+    "zip"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:34313:1",
+  "plan": "## MergeColumns GenePattern Module — Implementation Plan\n\n### 1. Overview\nMergeColumns is a GenePattern module that Merge datasets by column.\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: output\n- Optional: input.filename1, input.filename2, zip.filename\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>MergeColumns.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.merge.MergeColumns -1<input.filename1> -2<input.filename2> -o<output> -z<zip.filename>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "MergeColumns.jar<path.separator><libdir>gp-modules.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>MergeColumns.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.merge.MergeColumns -1<input.filename1> -2<input.filename2> -o<output> -z<zip.filename>",
+  "parameters": [
+    {
+      "name": "input.filename1",
+      "description": "first file to merge",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "res",
+        "Dataset",
+        "snp",
+        "cn",
+        "loh"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename1",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "input.filename2",
+      "description": "second file to merge",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "res",
+        "Dataset",
+        "snp",
+        "cn",
+        "loh"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename2",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "zip.filename",
+      "description": "zip file containing files to merge. Either a zip file or the input files above must be provided.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--zip.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output",
+      "description": "name of the merged file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.filename1_basename><zip.filename_basename>.merged",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

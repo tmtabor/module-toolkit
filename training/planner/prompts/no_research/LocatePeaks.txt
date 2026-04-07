@@ -1,0 +1,55 @@
+Create a comprehensive structured plan for the GenePattern module for 'LocatePeaks'.
+            
+            Tool Information:
+            - Name: LocatePeaks
+            - Version: Updated for R 2.5.0
+            - Language: R
+            - Description: Locates detected peaks in a spectrum.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "LocatePeaks",
+  "parameters": [
+    {
+      "name": "peaks.output.filename",
+      "type": "FILE",
+      "description": "The output from the Peaks module",
+      "required": true,
+      "default_value": "",
+      "file_format": "Spectrum Peaks"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "output file name",
+      "required": true,
+      "default_value": "<peaks.output.filename_basename>.locate.odf"
+    },
+    {
+      "name": "locate.peaks.as",
+      "type": "java.lang.String",
+      "description": "max-location of maximum filtered value, area-center of area of the peak",
+      "required": true,
+      "default_value": "",
+      "choices": "max;area"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Proteomics",
+  "author": "D.R. Mani, Broad Institute",
+  "command_line": "<R2.5> <libdir>pipeline.wrapper.R peaks.locate.wrapper <peaks.output.filename> <output.file> <locate.peaks.as> <libdir>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,289 @@
+{
+  "module_name": "HTSeq.Count",
+  "description": "Takes alignment files in SAM/BAM format and a feature file in GTF/GFF format (usually with exon annotation), name sorts the alignment file and calculates for each sample the number of reads mapping to each feature. (HTSeq.count v0.11.2)",
+  "author": "Barbara Hill;Broad Institute, Guy Bottu;VIB BioinformaticsCore",
+  "input_file_formats": [
+    "bam",
+    "gff",
+    "gff.gz",
+    "gff3",
+    "gff3.gz",
+    "gtf",
+    "gtf.gz",
+    "sam",
+    "txt"
+  ],
+  "language": "Python",
+  "categories": [
+    "RNA-seq"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:48763:1",
+  "plan": "## HTSeq.Count GenePattern Module — Implementation Plan\n\n### 1. Overview\nHTSeq.Count is a GenePattern module that Takes alignment files in SAM/BAM format and a feature file in GTF/GFF format (usually with exon annotation), name sorts the alignment file and calculates for each sample the number of reads mapping to each feature. (HTSeq.count v0.11.2)\n\n### 2. Parameters\nThe module exposes 14 parameters:\n- Required: input.files, GTF.file, strandedness, min.qual, mode, count.nonunique, count.secondary, count.supplementary, feature.type, id.type, output.file, output.format\n- Optional: sample.names, gene.name\n\n### 3. Command Line\n```\n/htseq_count/htseqcount_input_detect_and_sort.py --htseqcount htseq-count --input <input.files> <sample.names> --gtf <GTF.file> --strand <strandedness> --minqual <min.qual> --mode <mode> --nonunique <count.nonunique> --secondary <count.secondary> --supplementary <count.supplementary> --featuretype <feature.type> --idtype <id.type> <gene.name> --output <output.file> --outformat <output.format>\n```\n\n### 4. Docker Image\nDocker image: genepattern/htseq_count\\:0.6\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "htseqcount_input_detect_and_sort.py",
+  "command_line": "/htseq_count/htseqcount_input_detect_and_sort.py --htseqcount htseq-count --input <input.files> <sample.names> --gtf <GTF.file> --strand <strandedness> --minqual <min.qual> --mode <mode> --nonunique <count.nonunique> --secondary <count.secondary> --supplementary <count.supplementary> --featuretype <feature.type> --idtype <id.type> <gene.name> --output <output.file> --outformat <output.format>",
+  "parameters": [
+    {
+      "name": "input.files",
+      "description": "Input file(s) in SAM or BAM format.",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": [
+        "bam",
+        "sam"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.files",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.names",
+      "description": "Text file with the names of the samples, one per line (optional and only relevant if you request Excel or GCT format). The names in the file must be in the same order as the input SAM/BAM files. If you do not provide a file the sample names will be derived from the SAM/BAM file names.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--names",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "GTF.file",
+      "description": "A GTF or GFF file containing a list of gene model annotations. (This file can be gzipped)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gff",
+        "gff3",
+        "gtf",
+        "gtf.gz",
+        "gff.gz",
+        "gff3.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--GTF.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "strandedness",
+      "description": "none \\: a read is considered overlapping with a feature regardless of whether it is mapped to the same or the opposite strand as the feature.\\n<p>\\nforward \\: a single-end read has to be mapped to the same strand as the feature, for paired-end reads  the first read has to be on the same strand and the second read on the opposite strand.\\n<p>\\nreverse \\: the above rules are reversed.\\n<p>\\n<b><i>set to 'none' if your input file contains no strand information.</i></b>",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "none",
+          "value": "no"
+        },
+        {
+          "display": "forward",
+          "value": "yes"
+        },
+        {
+          "display": "reverse",
+          "value": "reverse"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--strandedness",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.qual",
+      "description": "Minimum quality to accept a read.",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.qual",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "mode",
+      "description": "Mode to handle reads overlapping more than one feature. Consult the documentation for a full explanation.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "union",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "union",
+          "value": "union"
+        },
+        {
+          "display": "intersection-strict",
+          "value": "intersection-strict"
+        },
+        {
+          "display": "intersection-nonempty",
+          "value": "intersection-nonempty"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--mode",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "count.nonunique",
+      "description": "Whether to count reads that are not uniquely aligned or are ambiguously assigned to features.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "none",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "all"
+        },
+        {
+          "display": "no",
+          "value": "none"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--count.nonunique",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "count.secondary",
+      "description": "Whether to count secondary alignments (which are marked in the SAM/BAM file by a 0x100 flag).",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "ignore",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "score"
+        },
+        {
+          "display": "no",
+          "value": "ignore"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--count.secondary",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "count.supplementary",
+      "description": "Whether to count supplementary alignments (which are marked in the SAM/BAM file by a 0x800 flag).",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "ignore",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "score"
+        },
+        {
+          "display": "no",
+          "value": "ignore"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--count.supplementary",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "feature.type",
+      "description": "Name in the 3<sup>rd</sup> column of the GTF/GFF input file that is used to identify the features that must be counted.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "exon",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--feature.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "id.type",
+      "description": "GTF/GFF attribute used to group features.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "gene_id",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--id.type",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gene.name",
+      "description": "GTF/GFF attribute with the name of the gene or some other information that can help to identify the gene in a more user-friendly way than the ID (optional). If you fill this in an extra column will be added to the output table. For Ensembl data <b>gene_id</b> is suitable.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--genename",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.file",
+      "description": "output file name - <i>Inputfile_Basename.Output_Filename</i> (if you choose GCT format .gct will automatically be added)",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "HTSeq.counts",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.format",
+      "description": "",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "htseq",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "raw HTSeq format",
+          "value": "htseq"
+        },
+        {
+          "display": "with header added, suitable for import in Excel",
+          "value": "excel"
+        },
+        {
+          "display": "GCT",
+          "value": "gct"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.format",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/htseq_count:0.6"
+}

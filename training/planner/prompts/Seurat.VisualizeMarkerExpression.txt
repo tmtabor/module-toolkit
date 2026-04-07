@@ -1,0 +1,546 @@
+Create a comprehensive structured plan for the GenePattern module for 'Seurat.VisualizeMarkerExpression'.
+            
+            Tool Information:
+            - Name: Seurat.VisualizeMarkerExpression
+            - Version: Same as first version, oficial release.
+            - Language: any
+            - Description: Visualize Marker Expression as violin plots and on a UMap. To be used after Seurat.Clustering
+            
+            Research Results:
+            Now I have all the data needed to compile the full, detailed research report. Here is the comprehensive output:
+
+---
+
+# 🔬 Comprehensive Research Report: `Seurat.VisualizeMarkerExpression`
+
+---
+
+## 📋 Executive Summary
+
+**Seurat.VisualizeMarkerExpression** is a GenePattern module that serves as the **fourth step in the GenePattern Seurat scRNA-seq analysis suite**, designed to visualize the expression of identified marker genes across cell clusters using two complementary plot types: **Violin Plots** (`VlnPlot()`) and **UMAP Feature Plots** (`FeaturePlot()`). It is the direct consumer of outputs produced by `Seurat.Clustering` and bridges computational cluster discovery with biological cell-type interpretation.
+
+- **Version:** v2 (first official release)
+- **Language:** R
+- **Repository:** https://github.com/genepattern/Seurat.VisualizeMarkerExpression/releases/tag/v2
+- **Underlying Package:** Seurat (Satija Lab, NYU) — the dominant scRNA-seq analysis toolkit globally
+- **Container:** `genepattern/docker-seurat`
+
+---
+
+## 1. 🎯 Tool Purpose and Scientific Applications
+
+### 1.1 Scientific Context
+
+Single-cell RNA sequencing (scRNA-seq) produces gene expression profiles for thousands of individual cells simultaneously. After unsupervised clustering (e.g., Louvain/Leiden graph-based clustering in Seurat), **each cluster must be biologically interpreted** by inspecting which marker genes are uniquely or highly expressed within it. This step is essential for:
+
+- **Cell type annotation** (e.g., identifying T cells by *CD3D*/*CD8A*, B cells by *MS4A1*/*CD19*)
+- **Biological validation** that clustering has separated biologically distinct populations
+- **Quality control** of cluster results (detecting poor-quality or doublet clusters)
+- **Hypothesis generation** for downstream experiments
+
+### 1.2 Core Visualization Strategy
+
+The module implements **two complementary visual approaches** to marker expression, both rooted in Seurat's standard visualization framework:
+
+| Plot Type | Seurat Function | What It Shows | Biological Insight |
+|---|---|---|---|
+| **Violin Plot** | `VlnPlot()` | Distribution of expression per cluster | Expression levels and heterogeneity within each cluster |
+| **UMAP Feature Plot** | `FeaturePlot()` | Expression overlaid on low-dimensional embedding | Spatial co-localization of expressing cells |
+
+Together, these two plots provide a **comprehensive marker expression profile**: violin plots reveal *how much* and *how consistently* a marker is expressed across clusters, while UMAP feature plots show *where* expressing cells reside in transcriptomic space, confirming cluster specificity.
+
+### 1.3 Position in the GenePattern Seurat Pipeline
+
+```
+Seurat.QC
+    ↓  (quality-filtered count matrices)
+Seurat.Preprocessing
+    ↓  (normalized, scaled, PCA-reduced Seurat object .rds)
+Seurat.Clustering
+    ↓  (UMAP-embedded, cluster-assigned Seurat object .rds + markers CSV)
+Seurat.VisualizeMarkerExpression  ← THIS MODULE
+    ↓  (violin plot PDFs/PNGs + UMAP feature plot PDFs/PNGs)
+[Manual Cell Type Annotation / Further Downstream Analysis]
+```
+
+---
+
+## 2. 📂 Input/Output Formats and Requirements
+
+### 2.1 Inputs
+
+| # | Parameter Name | Format | Description | Source |
+|---|---|---|---|---|
+| 1 | `seurat.object` | `.rds` | Serialized R Seurat object with UMAP computed and cluster assignments | Output of `Seurat.Clustering` |
+| 2 | `marker.genes` | `.csv` or `.txt` | Marker gene table from `FindAllMarkers()` | Output of `Seurat.Clustering` |
+| 3 | `output.file.prefix` | String | Prefix for output file names | User-defined |
+
+**Seurat Object (`.rds`) Required Internal Contents:**
+```
+Seurat Object
+├── Assays
+│   └── RNA
+│       ├── counts    (raw integer counts)
+│       ├── data      (log-normalized expression, DEFAULT for plotting)
+│       └── scale.data (scaled for PCA)
+├── Reductions
+│   ├── pca           (required prior to UMAP)
+│   └── umap          (required for FeaturePlot — MUST be pre-computed)
+├── Graphs
+│   └── RNA_snn / RNA_nn
+└── meta.data
+    ├── seurat_clusters  (active.ident for VlnPlot grouping)
+    ├── nFeature_RNA
+    ├── nCount_RNA
+    └── percent.mt
+```
+
+**Marker Genes CSV Column Schema (from `FindAllMarkers()`):**
+```
+p_val        – raw p-value (Wilcoxon rank-sum, default)
+avg_log2FC   – average log2 fold-change (cluster vs. all others)
+pct.1        – fraction of cells in cluster expressing the gene
+pct.2        – fraction of cells in all other clusters expressing the gene
+p_val_adj    – Bonferroni-corrected p-value
+cluster      – cluster identity
+gene         – gene symbol (feature name)
+```
+
+### 2.2 Outputs
+
+| Output File | Format | Description |
+|---|---|---|
+| `<prefix>_violin_plots.pdf` | PDF (multi-page) | VlnPlot panels for each marker gene |
+| `<prefix>_umap_feature_plots.pdf` | PDF (multi-page) | FeaturePlot UMAP panels for each marker gene |
+| `<prefix>_violin_plots.png` | PNG | Rasterized violin plot panels |
+| `<prefix>_umap_feature_plots.png` | PNG | Rasterized UMAP feature plot panels |
+
+> **Note:** Plots are ggplot2-based objects assembled via `patchwork`, saved using `ggsave()`. Typical output dimensions are 10–20" wide × 7–12" tall at 150–300 DPI for PDF/PNG respectively.
+
+---
+
+## 3. ⚙️ Parameter Analysis and Usage Patterns
+
+### 3.1 Core Input Parameters
+
+| Parameter | Type | Default | Description | Biological Significance |
+|---|---|---|---|---|
+| `seurat.object` | File (`.rds`) | **Required** | Clustered Seurat object | Must contain UMAP reduction |
+| `marker.genes` | File (`.csv`) | **Required** | FindAllMarkers output table | Drives gene selection |
+| `output.file.prefix` | String | `"output"` | Prefix for all output filenames | Identification |
+
+### 3.2 Gene Selection Parameters
+
+| Parameter | Type | Default | Range/Options | Description |
+|---|---|---|---|---|
+| `num.markers.per.cluster` | Integer | `5` | 1–50 | Top N markers per cluster (by avg_log2FC) selected from markers CSV |
+| `gene.list` | String (comma-sep) | `NULL` | Any valid gene symbols | Override marker CSV with custom gene list |
+| `log2fc.threshold` | Numeric | `0.25` | 0.0–5.0 | Minimum log2FC filter when selecting from markers CSV |
+| `min.pct` | Numeric | `0.1` | 0.0–1.0 | Minimum fraction of cells expressing gene |
+| `assay` | String | `"RNA"` | `"RNA"`, `"SCT"`, `"integrated"` | Which assay to pull expression from |
+
+### 3.3 VlnPlot-Specific Parameters
+
+| Parameter | Type | Default | Range/Options | Biological Significance |
+|---|---|---|---|---|
+| `pt.size` | Numeric | `0.1` | 0–5.0 | Individual cell point size on violin; `0` = no points (cleaner for large datasets) |
+| `group.by` | String | `"seurat_clusters"` | Any metadata column | Group violin bodies by cluster or other categorical variable |
+| `split.by` | String | `NULL` | Any metadata column | Split violins by condition/sample (multi-group comparison) |
+| `idents` | String | `NULL` (all) | Comma-separated cluster IDs | Restrict to specific clusters |
+| `same.y.lims` | Boolean | `FALSE` | `TRUE`/`FALSE` | Force identical y-axis scale across all features (for direct comparison) |
+| `y.max` | Numeric | `NULL` | Positive numeric | Cap y-axis maximum |
+| `log` | Boolean | `FALSE` | `TRUE`/`FALSE` | Log-scale y-axis |
+| `sort` | Boolean | `FALSE` | `TRUE`/`FALSE`/`"increasing"`/`"decreasing"` | Sort x-axis clusters by mean expression |
+| `ncol.vln` | Integer | `NULL` (auto) | 1–10 | Columns in multi-feature violin panel |
+| `stack` | Boolean | `FALSE` | `TRUE`/`FALSE` | Stack violins vertically (compact, good for many genes) |
+| `flip` | Boolean | `FALSE` | `TRUE`/`FALSE` | Flip axes (horizontal violins) |
+| `cols` | String | `NULL` (Seurat defaults) | Hex colors or R color names | Custom cluster colors |
+| `adjust` | Numeric | `1.0` | 0.1–5.0 | Violin bandwidth smoothing kernel adjustment |
+
+### 3.4 FeaturePlot (UMAP)-Specific Parameters
+
+| Parameter | Type | Default | Range/Options | Biological Significance |
+|---|---|---|---|---|
+| `reduction` | String | `"umap"` | `"umap"`, `"tsne"`, `"pca"` | Which dimensionality reduction to overlay expression onto |
+| `order` | Boolean | `TRUE` | `TRUE`/`FALSE` | Plot highest-expressing cells on top (critical for visibility of rare populations) |
+| `min.cutoff` | Numeric/String | `NA` | Numeric or `"q05"` (quantile) | Minimum expression threshold for color scale |
+| `max.cutoff` | Numeric/String | `NA` | Numeric or `"q95"` (quantile) | Maximum expression threshold; prevents outlier cells dominating color scale |
+| `cols.feature` | String | `"lightgrey,blue"` | Comma-separated colors | Color gradient for expression (low→high) |
+| `pt.size.feature` | Numeric | `NULL` (auto) | 0.01–5.0 | Point size on UMAP plot |
+| `label` | Boolean | `FALSE` | `TRUE`/`FALSE` | Add cluster ID labels to UMAP |
+| `label.size` | Numeric | `4` | 1–20 | Font size for cluster labels |
+| `repel` | Boolean | `FALSE` | `TRUE`/`FALSE` | Use `ggrepel` to avoid label overlap |
+| `ncol.feat` | Integer | `NULL` (auto) | 1–10 | Columns in multi-feature UMAP panel |
+| `blend` | Boolean | `FALSE` | `TRUE`/`FALSE` | Co-visualize two features using dual-color blending |
+| `split.by.feature` | String | `NULL` | Any metadata column | Split UMAP feature plot by condition/sample |
+| `raster` | Boolean | `NULL` (auto) | `TRUE`/`FALSE` | Rasterize large plots (>100K cells → set TRUE) |
+| `raster.dpi` | Integer | `512` | 150–1200 | DPI for rasterized output |
+
+### 3.5 Output Control Parameters
+
+| Parameter | Type | Default | Options | Description |
+|---|---|---|---|---|
+| `output.file.prefix` | String | `"output"` | Any string | Prefix for all output files |
+| `plot.format` | String | `"pdf"` | `"pdf"`, `"png"`, `"both"` | Output file format |
+| `plot.width` | Numeric | `12` | 4–40 | Plot width in inches |
+| `plot.height` | Numeric | `8` | 4–40 | Plot height in inches |
+| `plot.dpi` | Integer | `150` | 72–600 | Resolution for PNG output |
+
+### 3.6 Parameter Grouping for GenePattern Module UI
+
+```
+Group 1: REQUIRED INPUTS
+  ├── seurat.object          [File — .rds]
+  ├── marker.genes           [File — .csv/.txt]
+  └── output.file.prefix     [Text]
+
+Group 2: GENE SELECTION
+  ├── num.markers.per.cluster  [Integer, default: 5]
+  ├── gene.list                [Text, optional override]
+  ├── log2fc.threshold         [Float, default: 0.25]
+  ├── min.pct                  [Float, default: 0.1]
+  └── assay                    [Dropdown: RNA/SCT/integrated]
+
+Group 3: VIOLIN PLOT OPTIONS
+  ├── pt.size                  [Float, default: 0.1]
+  ├── group.by                 [Text, default: seurat_clusters]
+  ├── split.by                 [Text, optional]
+  ├── idents                   [Text, optional]
+  ├── same.y.lims              [Boolean, default: FALSE]
+  ├── y.max                    [Float, optional]
+  ├── log                      [Boolean, default: FALSE]
+  ├── ncol.vln                 [Integer, optional]
+  └── stack                    [Boolean, default: FALSE]
+
+Group 4: UMAP FEATURE PLOT OPTIONS
+  ├── reduction                [Dropdown: umap/tsne/pca, default: umap]
+  ├── order                    [Boolean, default: TRUE]
+  ├── min.cutoff               [Text, optional, e.g. NA or "q05"]
+  ├── max.cutoff               [Text, optional, e.g. NA or "q95"]
+  ├── cols.feature             [Text, default: lightgrey,blue]
+  ├── label                    [Boolean, default: FALSE]
+  ├── label.size               [Float, default: 4]
+  ├── repel                    [Boolean, default: FALSE]
+  ├── ncol.feat                [Integer, optional]
+  └── raster                   [Boolean, optional]
+
+Group 5: OUTPUT OPTIONS
+  ├── plot.format              [Dropdown: pdf/png/both, default: pdf]
+  ├── plot.width               [Float, default: 12]
+  ├── plot.height              [Float, default: 8]
+  └── plot.dpi                 [Integer, default: 150]
+```
+
+---
+
+## 4. 🛠️ Installation and Dependency Requirements
+
+### 4.1 R Package Dependencies
+
+| Package | Role | Version Compatibility |
+|---|---|---|
+| `Seurat` | Core — VlnPlot, FeaturePlot | ≥ v4.0 (v5.x preferred) |
+| `ggplot2` | Plot rendering backend | ≥ 3.3.0 |
+| `patchwork` | Multi-panel plot composition | ≥ 1.1.0 |
+| `dplyr` | Data manipulation (top_n filtering) | ≥ 1.0.0 |
+| `SeuratObject` | Seurat object class definitions | Must match Seurat version |
+| `ggrepel` | Label repulsion (optional, if `repel=TRUE`) | ≥ 0.9.0 |
+| `grDevices` | PDF/PNG device for ggsave | Base R |
+
+### 4.2 System Requirements
+
+| Resource | Minimum | Recommended | Notes |
+|---|---|---|---|
+| RAM | 8 GB | 32+ GB | Scales with Seurat object size; a 50K-cell dataset requires ~8–16 GB |
+| CPU | 2 cores | 4–8 cores | Mainly single-threaded R operations |
+| Storage | 500 MB | 2 GB | For output plots (PDF multi-panel can be large) |
+| R Version | ≥ 4.0.0 | ≥ 4.3.0 | Required for Seurat v5 compatibility |
+
+### 4.3 Docker Container
+
+The GenePattern Seurat suite uses a dedicated Docker container:
+```
+genepattern/docker-seurat
+```
+This container includes:
+- R ≥ 4.3.0
+- Seurat v4/v5
+- All required R package dependencies
+- System libraries (libhdf5, libpng, cairo for PDF rendering)
+
+### 4.4 Typical R Script Invocation Pattern
+
+```r
+#!/usr/bin/env Rscript
+# Seurat.VisualizeMarkerExpression - Main script
+# Command-line argument parsing (GenePattern style)
+args <- commandArgs(trailingOnly = TRUE)
+
+# Parse named arguments
+seurat_rds    <- args[1]   # --seurat.object
+markers_file  <- args[2]   # --marker.genes
+output_prefix <- args[3]   # --output.file.prefix
+num_markers   <- as.integer(args[4])  # --num.markers.per.cluster
+pt_size       <- as.numeric(args[5])  # --pt.size
+reduction     <- args[6]   # --reduction
+# ... etc.
+
+library(Seurat)
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+
+# Load inputs
+seurat_obj <- readRDS(seurat_rds)
+markers    <- read.csv(markers_file)
+
+# Select top N markers per cluster
+top_markers <- markers %>%
+  filter(p_val_adj < 0.05, avg_log2FC > log2fc_threshold) %>%
+  group_by(cluster) %>%
+  top_n(n = num_markers, wt = avg_log2FC) %>%
+  pull(gene) %>%
+  unique()
+
+# Generate violin plots
+vln_plot <- VlnPlot(
+  seurat_obj,
+  features  = top_markers,
+  pt.size   = pt_size,
+  ncol      = ncol_vln,
+  group.by  = group_by
+)
+
+# Generate UMAP feature plots
+feat_plot <- FeaturePlot(
+  seurat_obj,
+  features    = top_markers,
+  reduction   = reduction,
+  order       = order_cells,
+  min.cutoff  = min_cutoff,
+  max.cutoff  = max_cutoff,
+  label       = label,
+  repel       = repel,
+  ncol        = ncol_feat
+)
+
+# Save outputs
+ggsave(paste0(output_prefix, "_violin_plots.pdf"),
+       plot = vln_plot, width = plot_width, height = plot_height)
+ggsave(paste0(output_prefix, "_umap_feature_plots.pdf"),
+       plot = feat_plot, width = plot_width, height = plot_height)
+```
+
+---
+
+## 5. 🔄 Common Workflows and Use Cases
+
+### 5.1 Standard Workflow: Cluster Marker Confirmation
+
+```
+[Input: clustered_seurat.rds + all_markers.csv]
+       ↓
+Select top 5 markers per cluster (by avg_log2FC)
+       ↓
+VlnPlot → confirm cluster-specific expression distributions
+       ↓
+FeaturePlot → confirm UMAP spatial co-localization
+       ↓
+[Manual Annotation: "Cluster 0 = CD14+ Monocytes", "Cluster 1 = CD4+ T cells"...]
+```
+
+### 5.2 Use Case A: PBMC Cell Type Identification
+**Context:** 10x Genomics 3' scRNA-seq of peripheral blood  
+**Typical markers visualized:**
+```r
+# Canonical PBMC markers (visualized via this module)
+features = c(
+  "CD3D",   # Pan T cell
+  "CD8A",   # Cytotoxic T cell
+  "CD4",    # Helper T cell
+  "MS4A1",  # B cell (CD20)
+  "CD14",   # Classical monocyte
+  "FCGR3A", # Non-classical monocyte
+  "NKG7",   # NK cell
+  "PPBP"    # Platelet
+)
+```
+
+### 5.3 Use Case B: Tumor Microenvironment Profiling
+**Context:** Tumor biopsy scRNA-seq; distinguishing malignant from immune cells  
+**Key parameters:**
+- `split.by = "sample_type"` (tumor vs. normal)
+- `min.cutoff = "q10"`, `max.cutoff = "q95"` (robust color scaling)
+- `order = TRUE` (rare expressing cells visible on UMAP)
+
+### 5.4 Use Case C: Developmental Trajectory Validation
+**Context:** Time-course scRNA-seq; confirming stage-specific markers  
+**Key parameters:**
+- `group.by = "timepoint"` (instead of clusters)
+- `same.y.lims = TRUE` (direct expression level comparison)
+- `stack = TRUE` (compact multi-gene view)
+
+### 5.5 Use Case D: Large Dataset (>100K cells)
+**Special considerations:**
+- `raster = TRUE` (rasterize cell points to prevent file size explosion)
+- `raster.dpi = 300`
+- `pt.size = 0` in violin plots (individual points hidden)
+- `min.cutoff = "q05"` (prevent zero-inflation dominating color scale)
+
+---
+
+## 6. 🔗 Integration Considerations for GenePattern
+
+### 6.1 Module Manifest Requirements
+
+```json
+{
+  "name": "Seurat.VisualizeMarkerExpression",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.analysis:00440",
+  "version": "2",
+  "description": "Visualize Marker Expression as violin plots and on a UMAP. To be used after Seurat.Clustering.",
+  "author": "GenePattern Team",
+  "language": "R>=4.0",
+  "fileFormat": "rds,csv,txt,pdf,png",
+  "taskType": "Visualizer",
+  "categories": "Single Cell,RNA-seq,Visualization",
+  "os": "any",
+  "cpuType": "any",
+  "requiredPatchLSIDs": "",
+  "requiredPatchURLs": ""
+}
+```
+
+### 6.2 Critical Pipeline Coupling Points
+
+| Concern | Detail | Recommendation |
+|---|---|---|
+| **RDS Seurat Version** | Seurat v4 vs v5 RDS files are NOT backward compatible | Enforce consistent Docker container version across entire Seurat suite |
+| **UMAP Requirement** | `FeaturePlot` with `reduction="umap"` fails if UMAP not computed | Add validation check: `"umap" %in% names(seurat_obj@reductions)` |
+| **Layer vs Slot** | Seurat v5 uses `layer=` instead of deprecated `slot=` | Use version-conditional code or fix to Seurat v5 |
+| **Gene Name Matching** | Gene names in marker CSV must exactly match Seurat object rownames | Add case-insensitive matching with warning |
+| **Memory** | Large Seurat objects (>100K cells) require 16–32 GB RAM | Document resource requirements in manifest |
+| **Plot File Size** | Non-rasterized PDF with many cells can exceed 100 MB | Enable auto-rasterization for datasets > 50K cells |
+
+### 6.3 Input Validation Checklist (for R script)
+
+```r
+# Validate Seurat object
+stopifnot(class(seurat_obj) == "Seurat")
+stopifnot("umap" %in% names(seurat_obj@reductions))
+stopifnot(length(Idents(seurat_obj)) > 0)
+
+# Validate markers file
+required_cols <- c("gene", "cluster", "avg_log2FC", "p_val_adj")
+stopifnot(all(required_cols %in% colnames(markers)))
+
+# Validate gene overlap
+available_genes <- intersect(top_markers, rownames(seurat_obj))
+if (length(available_genes) < length(top_markers)) {
+  warning(paste("Genes not found in Seurat object:",
+    paste(setdiff(top_markers, rownames(seurat_obj)), collapse=", ")))
+}
+stopifnot(length(available_genes) > 0)
+```
+
+### 6.4 Error Handling Edge Cases
+
+| Edge Case | Symptom | Mitigation |
+|---|---|---|
+| Empty markers CSV | No genes to plot → crash | Check `nrow(markers) > 0` before proceeding |
+| Single cluster object | VlnPlot with 1 group uninformative | Emit warning, still produce output |
+| Gene not in assay | `Error: feature not found` | Filter gene list against `rownames()` with warning |
+| No UMAP computed | `Error: reduction 'umap' not found` | Informative error message guiding user to re-run Seurat.Clustering |
+| SCT assay requested but absent | `Error: assay not found` | Fall back to RNA assay with warning |
+| Too many genes (>50) | Plot panels illegible | Cap at max 50 genes with warning |
+
+---
+
+## 7. 📊 Comparative Tool Analysis
+
+| Aspect | Seurat.VisualizeMarkerExpression | Scanpy (Python) | Galaxy Seurat | Loupe Browser | Native R Seurat |
+|---|---|---|---|---|---|
+| **Platform** | GenePattern (web) | Python CLI/Jupyter | Galaxy (web) | Desktop GUI | R console |
+| **Coding Required** | ❌ No | ✅ Yes | ❌ No | ❌ No | ✅ Yes |
+| **Input Format** | .rds + .csv | .h5ad | Various | .cloupe | .rds |
+| **VlnPlot** | ✅ | ✅ (`sc.pl.violin`) | ✅ | ✅ | ✅ |
+| **UMAP Feature Plot** | ✅ | ✅ (`sc.pl.umap`) | ✅ | ✅ | ✅ |
+| **Pipeline Integration** | ✅ Seurat Suite | ❌ Separate ecosystem | ✅ Galaxy | ❌ Standalone | ❌ Manual |
+| **Batch Processing** | ✅ | ✅ | ✅ | ❌ | ✅ |
+| **Key Advantage** | Seamless Seurat pipeline integration, reproducible, no coding | Scalable to very large datasets | Free web workflow | Interactive exploration | Full customization |
+
+**Unique Positioning:** `Seurat.VisualizeMarkerExpression` occupies a critical niche as the **only GenePattern-native, no-code, pipeline-integrated** solution that directly consumes `Seurat.Clustering` outputs without format conversion, ensuring complete reproducibility within the GenePattern Seurat Suite.
+
+---
+
+## 8. 📚 Scientific Literature and Validation
+
+### Primary Seurat Citations
+
+| Version | Citation | DOI |
+|---|---|---|
+| **Seurat v5** | Hao Y, Stuart T, et al. (2023). *Dictionary learning for integrative, multimodal and scalable single-cell analysis.* **Nature Biotechnology** | 10.1038/s41587-023-01769-w |
+| **Seurat v4** | Hao Y, et al. (2021). *Integrated analysis of multimodal single-cell data.* **Cell** | 10.1016/j.cell.2021.04.048 |
+| **Seurat v3** | Stuart T, Butler A, et al. (2019). *Comprehensive Integration of Single-Cell Data.* **Cell** 177:1888–1902 | 10.1016/j.cell.2019.05.031 |
+| **Original** | Butler A, et al. (2018). *Integrating single-cell transcriptomic data across different conditions.* **Nature Biotechnology** 36:411–420 | 10.1038/nbt.4096 |
+
+### Adoption Metrics
+- Seurat is cited in **>10,000 peer-reviewed publications** (as of 2024)
+- `VlnPlot` and `FeaturePlot` are the two **most commonly used visualization functions** in scRNA-seq publications globally
+- The UMAP-based feature plot has become a **de facto standard figure** in single-cell biology publications
+
+---
+
+## 9. ⚠️ Known Limitations and Caveats
+
+| Limitation | Impact | Workaround |
+|---|---|---|
+| **Seurat v4/v5 RDS incompatibility** | Cannot mix module versions | Standardize entire pipeline to single Seurat version |
+| **No interactive plots** | Static PDF/PNG only | For interactive exploration, use Loupe Browser or CellBrowser separately |
+| **Memory scaling** | Very large datasets (>500K cells) may OOM | Use `raster=TRUE` and subsample with `Seurat::subset()` |
+| **Color perception** | Default blue gradient is not colorblind-safe | Expose `cols.feature` parameter; recommend viridis |
+| **Gene list size** | >20–30 genes produces illegible multi-panel figures | Recommend ≤5–10 genes per call; automatic panel sizing |
+| **Non-UMAP reductions** | tSNE/PCA less biologically interpretable | Default to UMAP; document alternatives |
+| **Assay mismatch** | SCT-normalized data requires different interpretation | Clear documentation on assay selection |
+
+---
+
+## 10. 📋 GenePattern Module Development Checklist
+
+```
+✅ R script with argparse/commandArgs parameter handling
+✅ Docker container: genepattern/docker-seurat (Seurat v5 + ggplot2 + patchwork + dplyr)
+✅ manifest.json / module.yaml with parameter definitions
+✅ Input validation (RDS class, UMAP presence, gene name matching)
+✅ Top-N marker selection logic from FindAllMarkers CSV
+✅ VlnPlot generation with configurable parameters
+✅ FeaturePlot (UMAP) generation with configurable parameters
+✅ ggsave output to PDF and/or PNG
+✅ Informative error messages for all failure modes
+✅ README.md / doc.md with parameter documentation
+✅ Example datasets for testing (e.g., pbmc3k_final.rds)
+✅ LSID registration on GenePattern platform
+✅ Link predecessor module (Seurat.Clustering) in suite documentation
+```
+
+---
+
+## 🔑 Key Takeaways for GenePattern Module Development
+
+1. **Two mandatory inputs:** A `.rds` Seurat object (with UMAP already computed) + a `.csv` marker table from `FindAllMarkers()` — both produced by `Seurat.Clustering`.
+2. **Two mandatory output types:** Violin plots and UMAP feature plots, both saved as PDF (and optionally PNG).
+3. **Most impactful parameters for users:** `num.markers.per.cluster`, `pt.size`, `order`, `min.cutoff`/`max.cutoff`, and `label` — these should be prominently exposed in the UI.
+4. **Critical validation:** Always check for UMAP presence and gene-name overlap before attempting to plot.
+5. **Docker alignment:** Must use the same Seurat version Docker container as `Seurat.Clustering` to ensure RDS compatibility.
+6. **Scientific impact:** This module represents the **biological payoff** of the entire upstream pipeline — the moment computational clusters become interpretable cell types. High-quality, customizable output is essential.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

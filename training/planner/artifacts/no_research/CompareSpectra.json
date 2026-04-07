@@ -1,0 +1,90 @@
+{
+  "module_name": "CompareSpectra",
+  "description": "Compares two spectra to determine similarity",
+  "author": "D.R. Mani, Broad Institute",
+  "input_file_formats": [
+    "csv"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:97482:1",
+  "plan": "## CompareSpectra GenePattern Module — Implementation Plan\n\n### 1. Overview\nCompareSpectra is a GenePattern module that Compares two spectra to determine similarity\n\n### 2. Parameters\nThe module exposes 5 parameters:\n- Required: spectrum1.filename, spectrum2.filename, output.file\n- Optional: low.Da, high.Da\n\n### 3. Command Line\n```\n<R2.5> <libdir>pipeline.wrapper.R spectra.compare.wrapper <spectrum1.filename> <spectrum2.filename> <output.file> <libdir> -l<low.Da> -h<high.Da>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "pipeline.wrapper.R",
+  "command_line": "<R2.5> <libdir>pipeline.wrapper.R spectra.compare.wrapper <spectrum1.filename> <spectrum2.filename> <output.file> <libdir> -l<low.Da> -h<high.Da>",
+  "parameters": [
+    {
+      "name": "spectrum1.filename",
+      "description": "Spectrum file -.csv",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "csv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--spectrum1.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "spectrum2.filename",
+      "description": "Spectrum file - .csv",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "csv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--spectrum2.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "Output file name - .odf",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<spectrum1.filename_basename>_<spectrum2.filename_basename>_compare.odf",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "low.Da",
+      "description": "Minimum M/Z to include",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--low.Da",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "high.Da",
+      "description": "Maximum M/Z to include",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--high.Da",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

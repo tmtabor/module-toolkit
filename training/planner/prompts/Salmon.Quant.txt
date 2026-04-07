@@ -1,0 +1,487 @@
+Create a comprehensive structured plan for the GenePattern module for 'Salmon.Quant'.
+            
+            Tool Information:
+            - Name: Salmon.Quant
+            - Version: Update to Salmon v1.6.0 and add Gencode Human release v39 and Mouse release vM28- beta update
+            - Language: any
+            - Description: Perform transcript-level quantification of RNA-seq data using Salmon (version 1.6.0).<br>\n\nSee: <a href="https://salmon.readthedocs.io/en/latest/salmon.html\#using-salmon" target="_blank">The Salmon User Guide</a>\nfor detailed usage guidelines.
+            
+            Research Results:
+            I now have all the data needed to compile the comprehensive research report. Here is the full, structured analysis:
+
+---
+
+# 🔬 Comprehensive Research Report: Salmon.Quant (GenePattern Module v0.9)
+
+---
+
+## 📌 1. Executive Summary
+
+**Salmon.Quant** is a GenePattern module wrapping **Salmon v1.6.0**, a state-of-the-art RNA-seq transcript quantification tool developed by the COMBINE-lab. It performs **transcript-level abundance estimation** from RNA-seq reads using selective alignment (quasi-mapping), providing TPM and estimated read counts for each transcript without producing a traditional genome alignment (BAM) file. The GenePattern module (v0.9, beta) bundles pre-built **GENCODE** indices for human (release v39, GRCh38) and mouse (release vM28, GRCm39), making it immediately usable without any index-building step.
+
+**Primary Citation:**
+> Patro, R., Duggal, G., Love, M.I., Irizarry, R.A., & Kingsford, C. (2017). **Salmon provides fast and bias-aware quantification of transcript expression**. *Nature Methods*, 14, 417–419. DOI: [10.1038/nmeth.4197](https://doi.org/10.1038/nmeth.4197) | PMID: 28263959
+
+---
+
+## 🎯 2. Tool Purpose and Scientific Applications
+
+### 2.1 Core Function
+Salmon quantifies **transcript expression levels** from RNA-seq reads. Unlike alignment-based methods that map reads to a genome, Salmon uses a **two-phase inference procedure** combining:
+1. **Selective alignment** (replacing earlier quasi-mapping from v1.0+): Maps reads to a compact index of the transcriptome using a SMEM-based algorithm with score validation
+2. **Variational Bayesian EM (VBEM)**: Estimates transcript abundances while simultaneously modeling multi-mapping and various technical biases
+
+### 2.2 Scientific Applications
+| Application | Description |
+|---|---|
+| **Differential Expression** | Provides TPM + estimated counts as input to DESeq2, edgeR via tximport/tximeta |
+| **Isoform-level analysis** | Transcript-resolution expression estimates, not collapsed to gene level |
+| **Bias-corrected quantification** | Accounts for GC content, sequence-specific, and positional biases |
+| **Uncertainty quantification** | Bootstrap/Gibbs sampling for expression uncertainty (used by sleuth, fishpond) |
+| **Multi-condition comparisons** | Gene expression atlas studies, eQTL mapping, co-expression networks |
+| **Single-cell preprocessing** | Alevin sub-command (not in this module) extends to single-cell RNA-seq |
+| **Time-series / longitudinal** | Fast enough (~minutes/sample) to scale to large cohorts |
+
+### 2.3 Key Scientific Innovations
+- **First tool to correct for fragment-level GC bias** genome-wide (`--gcBias`)
+- **Sequence-specific bias correction** models 5′/3′ primer biases (`--seqBias`)
+- **Automatic library-type detection** (`-l A`) — infers strandedness from data
+- **Equivalence class dumping** (`--dumpEq`) for downstream use in compositional analysis
+- **Effective length correction**: Corrects raw counts for transcript length × bias effects, improving differential expression accuracy when used with tximeta
+
+---
+
+## 📂 3. Input / Output Formats and Requirements
+
+### 3.1 Inputs
+
+#### Required Inputs
+| Input | Parameter | Format | Notes |
+|---|---|---|---|
+| **Read file(s)** | `-r` / `-1,-2` | FASTQ, FASTQ.GZ | Single-end (`-r`) or paired-end (`-1 R1.fq.gz -2 R2.fq.gz`) |
+| **Salmon Index** | `-i` | Directory | Pre-built using `salmon index`; GenePattern provides pre-built GENCODE indices |
+| **Library Type** | `-l` | String | e.g., `A` (auto), `ISR`, `ISF`, `IU`, `U`, `SF`, `SR` |
+
+#### Optional but Strongly Recommended
+| Input | Parameter | Format | Notes |
+|---|---|---|---|
+| **Gene Map** | `-g` / `--geneMap` | GTF or tx2gene TSV | Enables gene-level `quant.genes.sf` output |
+| **BAM file** | `-a` | BAM (sorted by name) | Alignment-based mode only |
+| **Transcriptome FASTA** | `-t` | FASTA | Required only in alignment-based mode |
+
+#### GenePattern-Specific Inputs (v0.9)
+- **Pre-built GENCODE Human v39** index (GRCh38/hg38)
+- **Pre-built GENCODE Mouse vM28** index (GRCm39/mm39)
+- Option to provide a **custom Salmon index** (tar.gz archive)
+
+### 3.2 Outputs
+
+#### Primary Output
+```
+quant.sf  (Tab-separated, one row per transcript)
+```
+| Column | Description |
+|---|---|
+| `Name` | Transcript identifier (e.g., ENST00000456328.2) |
+| `Length` | Genomic length of transcript (bp) |
+| `EffectiveLength` | Bias-adjusted effective length |
+| `TPM` | Transcripts Per Million (normalized expression) |
+| `NumReads` | Estimated read count (may be fractional due to multi-mapping) |
+
+#### Secondary Outputs
+| File/Directory | Contents |
+|---|---|
+| `quant.genes.sf` | Gene-level aggregation (if `--geneMap` provided) |
+| `aux_info/meta_info.json` | Run metadata: Salmon version, total reads, mapping rate, library type |
+| `aux_info/fld.gz` | Inferred fragment length distribution |
+| `aux_info/obs5_seq.gz`, `obs3_seq.gz` | Observed sequence-specific bias models |
+| `aux_info/exp_gc.gz`, `obs_gc.gz` | GC content bias models (if `--gcBias`) |
+| `aux_info/obs5_pos.gz`, `obs3_pos.gz` | Positional bias models (if `--posBias`) |
+| `lib_format_counts.json` | Library format auto-detection report |
+| `cmd_info.json` | Exact command-line parameters used |
+| `eq_classes.txt` | Equivalence class counts (if `--dumpEq`) |
+| `bootstraps/` | Per-bootstrap quant files (if `--numBootstraps > 0`) |
+
+---
+
+## ⚙️ 4. Parameter Analysis and Usage Patterns
+
+### 4.1 Parameters by Functional Group
+
+#### Group 1: Core Input / Output (Required)
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `-i` / `--index` | Path | — | Salmon index directory |
+| `-l` / `--libType` | String | — | Library fragment type (use `A` for auto-detection) |
+| `-1` / `--mates1` | File | — | Paired-end R1 FASTQ |
+| `-2` / `--mates2` | File | — | Paired-end R2 FASTQ |
+| `-r` / `--unmatedReads` | File | — | Single-end FASTQ |
+| `-o` / `--output` | Path | — | Output directory |
+
+#### Group 2: Reference / Annotation
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `-g` / `--geneMap` | File | None | GTF or tx2gene mapping for gene-level output |
+| `--gencode` | Boolean | False | Handle GENCODE pipe-delimited transcript names; **required when using GENCODE indices** |
+
+#### Group 3: Mapping / Alignment Quality
+| Parameter | Type | Default | Recommendation |
+|---|---|---|---|
+| `--validateMappings` | Boolean | True (v1.0+) | Enable selective alignment; strongly recommended for accuracy |
+| `--minScoreFraction` | Float | 0.65 | Minimum alignment score as fraction of optimal; decrease for divergent transcriptomes |
+| `--maxMMPExtension` | Integer | 7 | Max MMP extension in selective alignment |
+| `--incompatPrior` | Float | 0.0 | Prior for incompatible fragments; set to ~1e-8 to reduce noise |
+
+#### Group 4: Bias Correction (Accuracy Enhancement)
+| Parameter | Type | Default | Biological Significance |
+|---|---|---|---|
+| `--seqBias` | Boolean | False | Corrects 5′/3′ sequence-specific primer/adapter biases; adds ~1–2 min |
+| `--gcBias` | Boolean | False | Corrects fragment-level GC content bias; **recommended for all samples**; adds ~2–5 min |
+| `--posBias` | Boolean | False | Models positional coverage biases along transcript body |
+| `--biasSpeedSamp` | Integer | 1 | Sampling rate for bias model fitting |
+
+#### Group 5: Quantification Algorithm
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `--useVBOpt` | Boolean | True | Use Variational Bayesian EM (default, recommended) |
+| `--useEM` | Boolean | False | Use classical EM instead of VBEM |
+| `--rangeFactorizationBins` | Integer | 4 | Improves EM accuracy for multi-mapping; range 1–4+ |
+| `--numBootstraps` | Integer | 0 | Number of bootstrap samples (for sleuth, fishpond uncertainty) |
+| `--numGibbsSamples` | Integer | 0 | Alternative to bootstraps using Gibbs sampling |
+
+#### Group 6: Performance
+| Parameter | Type | Default | Notes |
+|---|---|---|---|
+| `-p` / `--threads` | Integer | auto | Optimal: 8–12 threads; diminishing returns above 12 |
+
+#### Group 7: Fragment Length (Single-End Only)
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `--fldMean` | Integer | 200 | Expected mean fragment length for single-end libraries |
+| `--fldSD` | Integer | 80 | Expected SD of fragment length for single-end libraries |
+
+#### Group 8: Advanced Output
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `--dumpEq` | Boolean | False | Write equivalence class counts to `eq_classes.txt` |
+
+### 4.2 Library Type Reference Table
+```
+Fragment Orientation:    I = Inward (→←)   O = Outward (←→)   M = Matching (→→)
+Strandedness:           S = Stranded        U = Unstranded
+Direction:              F = Forward         R = Reverse
+```
+| Code | Meaning | Typical Protocol |
+|---|---|---|
+| **A** | Auto-detect | **Recommended default** |
+| **IU** | Inward, Unstranded | Standard unstranded PE (TruSeq unstranded) |
+| **ISF** | Inward, Stranded, Forward | Ligation-based, ScriptSeq |
+| **ISR** | Inward, Stranded, Reverse | **dUTP, TruSeq Stranded (most common)** |
+| **U** | Unstranded (SE) | Single-end unstranded |
+| **SF** | Stranded Forward (SE) | Single-end, forward strand |
+| **SR** | Stranded Reverse (SE) | Single-end, reverse strand |
+
+### 4.3 Recommended Usage Patterns
+
+**Pattern 1: Standard Paired-End (Best Practice)**
+```bash
+salmon quant \
+  -i /path/to/gencode_v39_index \
+  -l A \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  --validateMappings \
+  --gcBias \
+  --seqBias \
+  --gencode \
+  -g gencode.v39.annotation.gtf \
+  -p 12 \
+  -o ./sample_quant
+```
+
+**Pattern 2: Single-End with Uncertainty Estimation**
+```bash
+salmon quant \
+  -i /path/to/index \
+  -l A \
+  -r sample.fastq.gz \
+  --validateMappings \
+  --gcBias \
+  --numBootstraps 30 \
+  --fldMean 200 --fldSD 80 \
+  -p 8 \
+  -o ./sample_quant
+```
+
+**Pattern 3: Alignment-Based Mode (STAR BAM input)**
+```bash
+salmon quant \
+  -t transcriptome.fa \
+  -l A \
+  -a STAR_Aligned.toTranscriptome.out.bam \
+  --gcBias \
+  -g annotation.gtf \
+  -o ./sample_quant
+```
+
+---
+
+## 🔧 5. Installation and Dependency Requirements
+
+### 5.1 System Requirements
+| Requirement | Specification |
+|---|---|
+| **OS** | Linux x86_64 (primary), macOS Intel x86_64 |
+| **Memory** | 1–4 GB RAM for human transcriptome index; 8–16 GB recommended |
+| **Storage** | ~500 MB–2 GB for index + decoy; ~50–200 MB per sample output |
+| **CPU** | Multi-core; 8–12 threads optimal |
+| **Windows** | ❌ Not natively supported (use WSL2 or Docker) |
+| **macOS M1/ARM** | ⚠️ Limited — use Docker container |
+
+### 5.2 Software Dependencies
+| Dependency | Purpose |
+|---|---|
+| `libtbb` | Threading Building Blocks for parallelism |
+| `libboost` | C++ boost libraries |
+| `zlib` | Compression/decompression of FASTQ.GZ |
+| `libbzip2` | Bzip2 compression support |
+| `cereal` | Serialization library |
+
+### 5.3 Installation Methods
+
+**Bioconda (Recommended):**
+```bash
+conda config --add channels conda-forge
+conda config --add channels bioconda
+conda create -n salmon_env salmon=1.6.0
+conda activate salmon_env
+```
+
+**Docker (GenePattern):**
+```bash
+docker pull genepattern/salmon-alevin-quant:beta
+# OR upstream:
+docker pull combinelab/salmon:1.6.0
+```
+
+**Pre-built Binaries:**
+```bash
+# Download from GitHub releases:
+wget https://github.com/COMBINE-lab/salmon/releases/download/v1.6.0/salmon-1.6.0_linux_x86_64.tar.gz
+tar xzf salmon-1.6.0_linux_x86_64.tar.gz
+export PATH=$PATH:$(pwd)/salmon-1.6.0_linux_x86_64/bin
+```
+
+**Build Index (if not using pre-built):**
+```bash
+# Standard index:
+salmon index -t gencode.v39.transcripts.fa.gz -i gencode_v39_index --gencode
+
+# Decoy-aware index (recommended for best sensitivity):
+grep ">" GRCh38.primary_assembly.genome.fa | cut -d " " -f 1 | sed 's/>//' > decoys.txt
+cat gencode.v39.transcripts.fa.gz GRCh38.primary_assembly.genome.fa.gz > gentrome.fa.gz
+salmon index -t gentrome.fa.gz -d decoys.txt -i gencode_v39_index --gencode
+```
+
+---
+
+## 🔄 6. Common Workflows and Use Cases
+
+### 6.1 Standard Bulk RNA-seq DE Workflow
+```
+Raw FASTQ → [Quality Trim: fastp/Trimmomatic] → Salmon.Quant → tximeta/tximport (R) → DESeq2/edgeR
+```
+
+1. **Salmon.Quant** (this module) → produces per-sample `quant.sf` files
+2. **tximeta** (R/Bioconductor) → imports `quant.sf` files with metadata, creates `SummarizedExperiment`
+3. **DESeq2 or edgeR** → differential expression analysis using length-scaled counts from tximeta
+
+### 6.2 Isoform-Level Analysis Workflow
+```
+Salmon.Quant → IsoformSwitchAnalyzeR / DRIMSeq → Differential Transcript Usage
+```
+
+### 6.3 Uncertainty-Aware Differential Expression
+```
+Salmon.Quant (--numBootstraps 30) → sleuth → LRT/Wald tests with uncertainty
+Salmon.Quant (--numGibbsSamples 30) → fishpond (swish test) → DE with resampling
+```
+
+### 6.4 Multi-Sample Expression Atlas
+```
+[Batch of FASTQ pairs] → Salmon.Quant (parallel runs) → quantmerge → Expression matrix
+```
+```bash
+salmon quantmerge --quants sample1/ sample2/ sample3/ --names S1 S2 S3 -o merged_TPM.tsv
+```
+
+### 6.5 Downstream R Analysis (Canonical)
+```r
+library(tximeta)
+library(DESeq2)
+
+# Load sample table
+coldata <- read.csv("sample_table.csv")
+coldata$files <- file.path(coldata$names, "quant.sf")
+
+# Import with tximeta (handles GENCODE metadata automatically)
+se <- tximeta(coldata)
+gse <- summarizeToGene(se)  # Collapse to gene level
+
+# Differential expression
+dds <- DESeqDataSet(gse, design = ~condition)
+dds <- DESeq(dds)
+res <- results(dds)
+```
+
+---
+
+## 🆚 7. Comparative Analysis
+
+### 7.1 Salmon vs. Key Competitors
+
+| Feature | **Salmon** | **kallisto** | **RSEM** | **STAR+featureCounts** |
+|---|---|---|---|---|
+| **Algorithm** | Selective alignment | Pseudoalignment | Full alignment (Bowtie2/STAR) | Genome alignment + count |
+| **Speed** | ⚡⚡⚡ Fast (minutes/sample) | ⚡⚡⚡⚡ Fastest | ⚡ Slow (30–60+ min) | ⚡⚡ Moderate |
+| **Accuracy** | ⭐⭐⭐⭐⭐ Excellent | ⭐⭐⭐⭐ Very good | ⭐⭐⭐⭐ Very good | ⭐⭐⭐ Good (gene-level) |
+| **GC Bias Correction** | ✅ Best-in-class | ❌ No | ❌ No | ❌ No |
+| **Seq Bias Correction** | ✅ Yes | ✅ Yes | ❌ No | ❌ No |
+| **Isoform Quantification** | ✅ Transcript-level | ✅ Transcript-level | ✅ Transcript-level | ❌ Gene-level only |
+| **Uncertainty Estimates** | ✅ Bootstrap/Gibbs | ✅ Bootstrap | ❌ No | ❌ No |
+| **No BAM Required** | ✅ Yes | ✅ Yes | ❌ Requires alignment | ❌ Requires BAM |
+| **GENCODE Support** | ✅ Native `--gencode` | ⚠️ Manual parsing | ⚠️ Manual parsing | ✅ Via GTF |
+| **Output** | quant.sf (TPM+counts) | abundance.tsv | *.results | Counts matrix |
+| **Best For** | Bulk RNA-seq DE pipelines | Ultra-fast exploratory | Strict reproducibility | Genome annotation studies |
+
+### 7.2 Positioning of Salmon.Quant
+**Salmon occupies the optimal balance** between speed and accuracy in the RNA-seq quantification landscape:
+- **vs. kallisto**: Salmon is marginally slower but provides superior bias correction (especially `--gcBias`), which is critical for accurate isoform-level DE
+- **vs. RSEM**: Salmon is 10–50x faster with comparable accuracy and no need for a full alignment step
+- **vs. STAR+featureCounts**: Salmon provides transcript-level estimates and bias-corrected TPMs; STAR+featureCounts remains preferable for splice-junction discovery workflows
+
+---
+
+## 🧩 8. GenePattern Module Integration Considerations
+
+### 8.1 Module Architecture (v0.9)
+- **Execution Environment**: Docker container (`genepattern/salmon-alevin-quant:beta`)
+- **Platform**: GenePattern Server + GenePattern Notebook (Jupyter-based)
+- **Version Packaged**: Salmon v1.6.0
+- **Pre-built Indices**:
+  - GENCODE Human v39 (GRCh38 / hg38): 60,649 genes, 232,225 transcripts
+  - GENCODE Mouse vM28 (GRCm39 / mm39): 55,401 genes, 149,547 transcripts
+
+### 8.2 Recommended Module Parameter Organization
+
+#### Parameter Group A: Input Files
+| UI Label | Internal Parameter | Type | Required | Default |
+|---|---|---|---|---|
+| Read type | derived | Enum | Yes | Paired-end |
+| FASTQ file (R1 / single-end) | `-r` or `-1` | File | Yes | — |
+| FASTQ file (R2) | `-2` | File | Conditional | — |
+| Reference genome / index | `-i` | Enum + File | Yes | GENCODE Human v39 |
+
+#### Parameter Group B: Library Settings
+| UI Label | Internal Parameter | Type | Default |
+|---|---|---|---|
+| Library type | `--libType` | Enum (A/IU/ISR/ISF/U/SF/SR) | A |
+| Use GENCODE index | `--gencode` | Boolean | True (auto when GENCODE selected) |
+| Gene map (GTF) | `--geneMap` | File (optional) | Pre-bundled with index |
+
+#### Parameter Group C: Bias Correction
+| UI Label | Internal Parameter | Type | Default |
+|---|---|---|---|
+| Correct GC bias | `--gcBias` | Boolean | True |
+| Correct sequence bias | `--seqBias` | Boolean | True |
+| Correct positional bias | `--posBias` | Boolean | False |
+
+#### Parameter Group D: Quantification Options
+| UI Label | Internal Parameter | Type | Default |
+|---|---|---|---|
+| Validate mappings | `--validateMappings` | Boolean | True |
+| Number of bootstrap samples | `--numBootstraps` | Integer | 0 |
+| Number of Gibbs samples | `--numGibbsSamples` | Integer | 0 |
+| Number of threads | `--threads` | Integer | 8 |
+
+#### Parameter Group E: Single-End Fragment Length
+| UI Label | Internal Parameter | Type | Default | Condition |
+|---|---|---|---|---|
+| Mean fragment length | `--fldMean` | Integer | 200 | Single-end only |
+| Fragment length SD | `--fldSD` | Integer | 80 | Single-end only |
+
+### 8.3 Critical Implementation Notes
+
+1. **`--gencode` Flag**: **Must be auto-enabled** whenever a GENCODE index is selected; GENCODE transcript headers contain pipe-delimited fields (e.g., `ENST00000456328.2|ENSG00000223972.5|...`) that will cause quantification errors without this flag.
+
+2. **Index Packaging**: Pre-built decoy-aware indices should be stored as compressed archives (`.tar.gz`) within the module container or a linked data repository; unpacking at runtime adds ~10–30 sec.
+
+3. **Output Packaging**: For GenePattern, bundle the entire output directory as a `.tar.gz` or `.zip`; at minimum expose `quant.sf`, `quant.genes.sf`, and `aux_info/meta_info.json`.
+
+4. **Paired-End Detection**: Validate that both R1 and R2 are provided for paired-end mode; flag file naming inconsistencies (mismatched read counts).
+
+5. **Mapping Rate Check**: Parse `meta_info.json` to emit a warning if `percent_mapped < 50%` — indicates possible species mismatch or wrong library type.
+
+6. **Bootstrap/Gibbs Mutual Exclusion**: `--numBootstraps` and `--numGibbsSamples` are mutually exclusive; UI should enforce this.
+
+7. **Single-End Fragment Length**: `--fldMean` and `--fldSD` are **only relevant for single-end** libraries; Salmon infers these from data for paired-end runs.
+
+8. **Thread Safety**: The module should cap threads at the available container CPU allocation (typically 8 on shared GenePattern infrastructure).
+
+### 8.4 Known Limitations and Caveats
+
+| Issue | Impact | Mitigation |
+|---|---|---|
+| No Windows native support | N/A for Docker-based module | Docker handles this transparently |
+| M1/ARM macOS incompatibility | Local development | Use x86_64 Docker image |
+| Index must match genome build | Wrong results if mismatched | Clearly label index versions in UI |
+| GENCODE pipe headers | Parse errors | Auto-enable `--gencode` for GENCODE indices |
+| GC bias adds runtime | ~2–5 extra minutes | Enable by default; document in UI |
+| Bootstraps increase disk usage | ~10x larger output | Only enable when needed for sleuth/fishpond |
+| Transcript-only (no novel isoforms) | Cannot detect unannotated transcripts | Use StringTie for discovery workflows |
+| Effective length < 1 warning | May affect rare very short transcripts | Salmon handles internally, low-concern |
+
+---
+
+## 📚 9. References and Sources
+
+| Source | Type | URL/Citation |
+|---|---|---|
+| **Patro et al. 2017** | Primary paper | *Nature Methods* 14:417–419. DOI:10.1038/nmeth.4197 |
+| **Salmon ReadTheDocs** | Official documentation | https://salmon.readthedocs.io/en/latest/salmon.html |
+| **COMBINE-lab/salmon** | Source repository | https://github.com/COMBINE-lab/salmon |
+| **GenePattern Salmon.Quant** | Module repository | https://github.com/genepattern/Salmon.Quant/tree/v0.9 |
+| **Bioconda salmon** | Package distribution | https://bioconda.github.io/recipes/salmon/README.html |
+| **GENCODE** | Reference genome | https://www.gencodegenes.org |
+| **tximeta (Bioconductor)** | Downstream import | Love et al. 2020, *PLOS Computational Biology* |
+| **BMC Bioinformatics 2021** | Benchmarking | doi:10.1186/s12859-021-04198-1 |
+| **GenePattern Help Forum** | Community usage | groups.google.com/g/genepattern-help |
+
+---
+
+## ✅ 10. Summary Recommendations for GenePattern Module Development
+
+| Priority | Recommendation |
+|---|---|
+| 🔴 **Critical** | Auto-enable `--gencode` when a GENCODE index is selected |
+| 🔴 **Critical** | Expose both mapping mode (FASTQ) and alignment mode (BAM) as selectable workflows |
+| 🔴 **Critical** | Parse and display `meta_info.json` mapping rate as a job status metric |
+| 🟠 **High** | Default `--gcBias` and `--seqBias` to `True` — they improve accuracy and rarely hurt |
+| 🟠 **High** | Bundle GENCODE Human v39 and Mouse vM28 decoy-aware indices in Docker or linked storage |
+| 🟠 **High** | Include bundled GTF gene maps for gene-level `quant.genes.sf` output |
+| 🟡 **Medium** | Enforce mutual exclusion of `--numBootstraps` and `--numGibbsSamples` in UI |
+| 🟡 **Medium** | Show fragment length parameters (`--fldMean`, `--fldSD`) only for single-end mode |
+| 🟡 **Medium** | Package output as `.tar.gz` bundle + expose individual `quant.sf` for direct download |
+| 🟢 **Low** | Add `--dumpEq` option for advanced users running compositional methods |
+| 🟢 **Low** | Provide a link to canonical tximeta/DESeq2 downstream analysis notebook |
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

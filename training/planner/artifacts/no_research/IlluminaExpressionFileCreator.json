@@ -1,0 +1,306 @@
+{
+  "module_name": "IlluminaExpressionFileCreator",
+  "description": "Creates a GCT file from a zip of Illumina IDAT files and an Illumina manifest file",
+  "author": "David Eby (eby@broadinstitute.org)",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:21816:1",
+  "plan": "## IlluminaExpressionFileCreator GenePattern Module — Implementation Plan\n\n### 1. Overview\nIlluminaExpressionFileCreator is a GenePattern module that Creates a GCT file from a zip of Illumina IDAT files and an Illumina manifest file\n\n### 2. Parameters\nThe module exposes 9 parameters:\n- Required: idat.zip, output.file\n- Optional: manifest, custom.manifest, background.subtraction.mode, collapse.mode, chip, custom.chip, clm\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>IlluminaExpressionFileCreator.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-codec-1.4.jar<path.separator><libdir>commons-io-1.4.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>dom4j-1.6.1.jar org.genepattern.illumina.expression.ExpressionFileCreator -manifestfile <custom.manifest> -manifesturl <manifest> -inputfile <idat.zip> -outputfile <output.file> -bg <background.subtraction.mode> -collapse <collapse.mode> -chipfile <custom.chip> -chipurl <chip> -clmfile <clm>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "IlluminaExpressionFileCreator.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-codec-1.4.jar<path.separator><libdir>commons-io-1.4.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>dom4j-1.6.1.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>IlluminaExpressionFileCreator.jar<path.separator><libdir>commons-cli-1.2.jar<path.separator><libdir>commons-codec-1.4.jar<path.separator><libdir>commons-io-1.4.jar<path.separator><libdir>commons-lang-2.5.jar<path.separator><libdir>dom4j-1.6.1.jar org.genepattern.illumina.expression.ExpressionFileCreator -manifestfile <custom.manifest> -manifesturl <manifest> -inputfile <idat.zip> -outputfile <output.file> -bg <background.subtraction.mode> -collapse <collapse.mode> -chipfile <custom.chip> -chipurl <chip> -clmfile <clm>",
+  "parameters": [
+    {
+      "name": "idat.zip",
+      "description": "Zip of Illumina IDAT files",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--idat.zip",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "manifest",
+      "description": "Illumina manifest file in tab-delimited (TXT) format. A manifest file is required; either selected from this list or specified in custom manifest below.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Select a manifest file",
+          "value": ""
+        },
+        {
+          "display": "HumanHT-12_V3_0_R2_11283641_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/HumanHT-12_V3_0_R2_11283641_A.txt"
+        },
+        {
+          "display": "HumanHT-12_V4_0_R2_15002873_B.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/HumanHT-12_V4_0_R2_15002873_B.txt"
+        },
+        {
+          "display": "HumanHT-12_V3_0_R3_11283641_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/HumanHT-12_V3_0_R3_11283641_A.txt"
+        },
+        {
+          "display": "HumanHT-12_V4_0_R1_15002873_B.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/HumanHT-12_V4_0_R1_15002873_B.txt"
+        },
+        {
+          "display": "HumanMI_V1_R2_XS0000122-MAP.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/HumanMI_V1_R2_XS0000122-MAP.txt"
+        },
+        {
+          "display": "HumanMI_V2_R0_XS0000124-MAP.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/HumanMI_V2_R0_XS0000124-MAP.txt"
+        },
+        {
+          "display": "HumanRef-8_V2_0_R4_11223162_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/HumanRef-8_V2_0_R4_11223162_A.txt"
+        },
+        {
+          "display": "HumanRef-8_V3_0_R1_11282963_A_WGDASL.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/HumanRef-8_V3_0_R1_11282963_A_WGDASL.txt"
+        },
+        {
+          "display": "HumanRef-8_V3_0_R2_11282963_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/HumanRef-8_V3_0_R2_11282963_A.txt"
+        },
+        {
+          "display": "HumanRef-8_V3_0_R3_11282963_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/HumanRef-8_V3_0_R3_11282963_A.txt"
+        },
+        {
+          "display": "HumanWG-6_V2_0_R4_11223189_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/HumanWG-6_V2_0_R4_11223189_A.txt"
+        },
+        {
+          "display": "HumanWG-6_V3_0_R2_11282955_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/HumanWG-6_V3_0_R2_11282955_A.txt"
+        },
+        {
+          "display": "HumanWG-6_V3_0_R3_11282955_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/HumanWG-6_V3_0_R3_11282955_A.txt"
+        },
+        {
+          "display": "MouseMI_V1_R2_XS0000127-MAP.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/MouseMI_V1_R2_XS0000127-MAP.txt"
+        },
+        {
+          "display": "MouseMI_V2_R0_XS0000129-MAP.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/MouseMI_V2_R0_XS0000129-MAP.txt"
+        },
+        {
+          "display": "MouseRef-8_V1_1_R4_11234312_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/MouseRef-8_V1_1_R4_11234312_A.txt"
+        },
+        {
+          "display": "MouseRef-8_V2_0_R2_11278551_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/MouseRef-8_V2_0_R2_11278551_A.txt"
+        },
+        {
+          "display": "MouseRef-8_V2_0_R3_11278551_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/MouseRef-8_V2_0_R3_11278551_A.txt"
+        },
+        {
+          "display": "MouseWG-6_V1_1_R4_11234304_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/MouseWG-6_V1_1_R4_11234304_A.txt"
+        },
+        {
+          "display": "MouseWG-6_V2_0_R2_11278593_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/MouseWG-6_V2_0_R2_11278593_A.txt"
+        },
+        {
+          "display": "MouseWG-6_V2_0_R3_11278593_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/MouseWG-6_V2_0_R3_11278593_A.txt"
+        },
+        {
+          "display": "RatRef-12_V1_0_R5_11222119_A.txt",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/manifests/RatRef-12_V1_0_R5_11222119_A.txt"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--manifest",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "custom.manifest",
+      "description": "Other Illumina manifest file in tab-delimited (TXT) format. A manifest file is required; either selected from the list above or specified here.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--custom.manifest",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "Output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<idat.zip_basename>.gct",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "background.subtraction.mode",
+      "description": "Perform background subtraction.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "false",
+          "value": "false"
+        },
+        {
+          "display": "true",
+          "value": "true"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--background.subtraction.mode",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "collapse.mode",
+      "description": "Collapse probes to genes based on the manifest or CHIP file (if provided).",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "none",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "none",
+          "value": "none"
+        },
+        {
+          "display": "max",
+          "value": "max"
+        },
+        {
+          "display": "median",
+          "value": "median"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--collapse.mode",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "chip",
+      "description": "CHIP file to map probes to genes.",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Select a chip file",
+          "value": ""
+        },
+        {
+          "display": "ilmn_HumanHT_12_V3_0_R3_11283641_A.chip",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/chip/ilmn_HumanHT_12_V3_0_R3_11283641_A.chip"
+        },
+        {
+          "display": "ilmn_HumanHT_12_V4_0_R1_15002873_B.chip",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/chip/ilmn_HumanHT_12_V4_0_R1_15002873_B.chip"
+        },
+        {
+          "display": "ilmn_HumanRef_8_V2_0_R4_11223162_A.chip",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/chip/ilmn_HumanRef_8_V2_0_R4_11223162_A.chip"
+        },
+        {
+          "display": "ilmn_HumanReF_8_V3_0_R1_11282963_A_WGDASL.chip",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/chip/ilmn_HumanReF_8_V3_0_R1_11282963_A_WGDASL.chip"
+        },
+        {
+          "display": "ilmn_HumanRef_8_V3_0_R3_11282963_A.chip",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/chip/ilmn_HumanRef_8_V3_0_R3_11282963_A.chip"
+        },
+        {
+          "display": "ilmn_HumanWG_6_V2_0_R4_11223189_A.chip",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/chip/ilmn_HumanWG_6_V2_0_R4_11223189_A.chip"
+        },
+        {
+          "display": "ilmn_HumanWG_6_V3_0_R3_11282955_A.chip",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/chip/ilmn_HumanWG_6_V3_0_R3_11282955_A.chip"
+        },
+        {
+          "display": "ilmn_MouseRef_8_V1_1_R4_11234312_A.chip",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/chip/ilmn_MouseRef_8_V1_1_R4_11234312_A.chip"
+        },
+        {
+          "display": "ilmn_MouseRef_8_V2_0_R3_11278551_A.chip",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/chip/ilmn_MouseRef_8_V2_0_R3_11278551_A.chip"
+        },
+        {
+          "display": "ilmn_MouseWG_6_V1_1_R4_11234304_A.chip",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/chip/ilmn_MouseWG_6_V1_1_R4_11234304_A.chip"
+        },
+        {
+          "display": "ilmn_MouseWG_6_V2_0_R3_11278593_A.chip",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/chip/ilmn_MouseWG_6_V2_0_R3_11278593_A.chip"
+        },
+        {
+          "display": "ilmn_RatRef_12_V1_0_R5_11222119_A.chip",
+          "value": "ftp://ftp.broadinstitute.org/pub/genepattern/modules/IlluminaExpressionFileCreator/chip/ilmn_RatRef_12_V1_0_R5_11222119_A.chip"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--chip",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "custom.chip",
+      "description": "Other CHIP file to map probes to genes.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--custom.chip",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "clm",
+      "description": "CLM file to map file names to sample names.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--clm",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

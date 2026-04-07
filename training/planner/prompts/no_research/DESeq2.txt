@@ -1,0 +1,101 @@
+Create a comprehensive structured plan for the GenePattern module for 'DESeq2'.
+            
+            Tool Information:
+            - Name: DESeq2
+            - Version: Updated Dockerfile to using R 4.3, updated Deseq2 version as well.
+            - Language: any
+            - Description: A Differential Expression workflow for RNA-Seq data based on the DESeq2 package from Bioconductor
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "DESeq2",
+  "parameters": [
+    {
+      "name": "input.file",
+      "type": "FILE",
+      "description": "A GCT file containing raw RNA-Seq counts, such as is produced by MergeHTSeqCounts",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct",
+      "num_values": "1..1"
+    },
+    {
+      "name": "cls.file",
+      "type": "FILE",
+      "description": "A categorical CLS file specifying the phenotype classes for the samples in the GCT file.  This should contain exactly two classes with the control specified first.",
+      "required": true,
+      "default_value": "",
+      "file_format": "cls",
+      "num_values": "1..1"
+    },
+    {
+      "name": "confounding.variable.cls.file",
+      "type": "FILE",
+      "description": "A categorical CLS file specifying an additional confounding variable, mapped to the input file samples.  Use this for a two-factor comparison.",
+      "required": false,
+      "default_value": "",
+      "file_format": "cls",
+      "prefix": "--confounding.variable.cls.file\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "output.file.base",
+      "type": "TEXT",
+      "description": "The base name of the output file(s). File extensions will be added automatically.",
+      "required": true,
+      "default_value": "<input.file_basename>",
+      "num_values": "1..1"
+    },
+    {
+      "name": "qc.plot.format",
+      "type": "TEXT",
+      "description": "Choose a file format for the QC plots (or skip them completely)",
+      "required": true,
+      "default_value": "skip",
+      "choices": "pdf;svg;png;skip\\=skip (do not produce QC plots)",
+      "num_values": "1..1"
+    },
+    {
+      "name": "fdr.threshold",
+      "type": "Floating Point",
+      "description": "FDR threshold to use in filtering before creating the reports of top up-regulated and down-regulated genes",
+      "required": true,
+      "default_value": "0.1",
+      "num_values": "1..1"
+    },
+    {
+      "name": "top.N.count",
+      "type": "Integer",
+      "description": "Max gene count to use when creating the reports of top up-regulated and down-regulated genes",
+      "required": true,
+      "default_value": "20",
+      "num_values": "1..1"
+    },
+    {
+      "name": "random.seed",
+      "type": "Integer",
+      "description": "Seed to use for randomization",
+      "required": true,
+      "default_value": "779948241",
+      "num_values": "1..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/deseq2\\:v3",
+  "categories": "differential expression",
+  "task_type": "differential expression",
+  "author": "David Eby;Broad Institute",
+  "command_line": "Rscript --no-save --quiet --slave --no-restore <libdir>run_gp_deseq2.R <libdir> --input.file\\=<input.file> --cls.file\\=<cls.file> <confounding.variable.cls.file> --output.file.base\\=<output.file.base> --qc.plot.format\\=<qc.plot.format> --fdrThreshold\\=<fdr.threshold> --topNCount\\=<top.N.count> --randomSeed\\=<random.seed>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

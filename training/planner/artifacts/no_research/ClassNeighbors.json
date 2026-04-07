@@ -1,0 +1,230 @@
+{
+  "module_name": "ClassNeighbors",
+  "description": "Select genes that most closely resemble a profile",
+  "author": "Ken Ross",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:64789:1",
+  "plan": "## ClassNeighbors GenePattern Module — Implementation Plan\n\n### 1. Overview\nClassNeighbors is a GenePattern module that Select genes that most closely resemble a profile\n\n### 2. Parameters\nThe module exposes 14 parameters:\n- Required: data.filename, class.filename, marker.gene.list.file, marker.data.set.file, num.neighbors, num.permutations, user.pval, filter.data, min.threshold, max.threshold, min.fold.diff, min.abs.diff\n- Optional: mean.or.median, ttest.or.snr\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>RunMarkerSelection.jar edu.mit.wi.genome.expresso.alg.RunMarkerSelection.RunMarkerSelection -t <data.filename> -c <class.filename> -H -m <min.threshold> -M <max.threshold> -f -F <min.fold.diff> -D <min.abs.diff> -o <marker.gene.list.file> -p -P <num.permutations>  -N <num.neighbors> -l <user.pval> -O <marker.data.set.file> -G <filter.data> <mean.or.median> <ttest.or.snr>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>RunMarkerSelection.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>RunMarkerSelection.jar edu.mit.wi.genome.expresso.alg.RunMarkerSelection.RunMarkerSelection -t <data.filename> -c <class.filename> -H -m <min.threshold> -M <max.threshold> -f -F <min.fold.diff> -D <min.abs.diff> -o <marker.gene.list.file> -p -P <num.permutations>  -N <num.neighbors> -l <user.pval> -O <marker.data.set.file> -G <filter.data> <mean.or.median> <ttest.or.snr>",
+  "parameters": [
+    {
+      "name": "data.filename",
+      "description": "Dataset file - .res, .gct, .odf",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "class.filename",
+      "description": "class file - .cls, .odf",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--class.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "marker.gene.list.file",
+      "description": "output filename for marker gene list results - .odf file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.filename_basename>.genelist",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--marker.gene.list.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "marker.data.set.file",
+      "description": "output filename for marker data - .gct file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.filename_basename>.neighbors",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--marker.data.set.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.neighbors",
+      "description": "number of neighbors to find",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "50",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.neighbors",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.permutations",
+      "description": "number of permutations in permutation test",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.permutations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "user.pval",
+      "description": "user-set significance value for permutation test",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--user.pval",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "mean.or.median",
+      "description": "use mean or median for feature selection",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "mean",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "mean",
+          "value": ""
+        },
+        {
+          "display": "median",
+          "value": "-d"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--mean.or.median",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "ttest.or.snr",
+      "description": "use signal-to-noise or t-test to select neighbors",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "t-test",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "t-test",
+          "value": ""
+        },
+        {
+          "display": "SNR",
+          "value": "-S"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--ttest.or.snr",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "filter.data",
+      "description": "if no, values below will be ignored",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--filter.data",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.threshold",
+      "description": "minimum threshold for data",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.threshold",
+      "description": "maximum threshold for data",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "16000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.fold.diff",
+      "description": "minimum fold difference for filtering genes",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.fold.diff",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.abs.diff",
+      "description": "minimum absolute difference for filtering genes",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "50",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.abs.diff",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

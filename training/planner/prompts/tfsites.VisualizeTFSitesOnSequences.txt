@@ -1,0 +1,514 @@
+Create a comprehensive structured plan for the GenePattern module for 'tfsites.VisualizeTFSitesOnSequences'.
+            
+            Tool Information:
+            - Name: tfsites.VisualizeTFSitesOnSequences
+            - Version: Updated docker container to v17.0.19.
+            - Language: any
+            - Description: Annotates transcription factor binding sites across a DNA sequence with optional motif database generation. Multiple transcription factors can be analyzed. Each binding site is labeled with a unique binding site ID and its start and end position. If reference data is provided for a transcription factor, the affinity/score of this site will be labeled and the intensity of the binding site's color will be proportional. At least one of affinity information and files or batch motif files (or both) must be provided. If motif database parameters are provided, it will first generate a motif database and use it for visualization.
+            
+            Research Results:
+            Now I have all the data needed to compile a thorough, PhD-level research report. Here is the complete comprehensive research output:
+
+---
+
+# 🧬 Comprehensive Research Report: `tfsites.VisualizeTFSitesOnSequences`
+
+---
+
+## 1. EXECUTIVE SUMMARY
+
+`tfsites.VisualizeTFSitesOnSequences` is a GenePattern bioinformatics module designed for **multi-transcription factor (TF) binding site annotation and visualization across DNA sequences**. It is part of the broader `tfsites` GenePattern module suite and is containerized via Docker (v17.0.19) for reproducible execution. Its core capability is rendering a visual map of annotated transcription factor binding sites (TFBS) on a given DNA sequence, with optional integration of binding affinity/score data and an optional upstream motif database generation step. This module occupies the **visualization and reporting** layer of a TF regulatory analysis pipeline, sitting downstream of affinity scoring or motif database construction steps.
+
+---
+
+## 2. SCIENTIFIC BACKGROUND & PURPOSE
+
+### 2.1 Biological Context
+
+Transcription factor binding sites (TFBS) are short, conserved DNA sequences (~6–20 bp) within regulatory regions (promoters, enhancers, silencers, insulators) where specific TFs bind to control gene expression. The accurate identification, annotation, and **visualization** of TFBS is fundamental to:
+
+- Understanding cis-regulatory logic governing gene expression
+- Interpreting the functional impact of non-coding genetic variants (e.g., eQTLs, GWAS hits, SNPs)
+- Characterizing enhancer/promoter architecture in developmental and disease biology
+- Supporting CRISPR guide design in proximity to regulatory elements
+- Investigating combinatorial TF occupancy patterns
+- Generating testable hypotheses from ChIP-seq, ATAC-seq, and DNase-seq data
+
+### 2.2 Tool Purpose
+
+`tfsites.VisualizeTFSitesOnSequences` addresses the critical **visualization bottleneck** in TFBS analysis workflows. While tools like FIMO, HOMER, or JASPAR can predict and score binding sites computationally, they typically produce tabular output that lacks intuitive visual representation of how multiple TFs' binding sites are distributed, overlaid, and scored across a sequence of interest. This module fills that gap by:
+
+1. **Annotating** a DNA sequence with TFBS locations from precomputed affinity files or motif database scans
+2. **Labeling** each site with a unique binding site ID, genomic coordinates (start/end positions)
+3. **Scoring** sites with affinity/score values when reference data is provided
+4. **Color-coding** sites by affinity intensity — providing proportional visual weight to higher-confidence binding events
+5. **Optionally generating** a motif database as a preprocessing step before visualization, enabling an end-to-end single-module workflow
+
+### 2.3 Module Suite Context
+
+This module is part of the **`tfsites` GenePattern suite**, a family of related modules that together provide a complete TF regulatory analysis pipeline:
+
+| Likely Sister Module | Function |
+|---|---|
+| `tfsites.BuildMotifDatabase` | Constructs a TF motif database from PWMs |
+| `tfsites.GenerateTFBindingAffinity` | Scores each position in a sequence for TF affinity |
+| `tfsites.IntersectSNPsWithTFSites` | Intersects genetic variants with annotated TFBS |
+| `tfsites.AnnotateSNPs` | Annotates SNPs with regulatory context |
+| `tfsites.CompareTFSites` | Compares TFBS between two sequences or conditions |
+| **`tfsites.VisualizeTFSitesOnSequences`** | **Visual rendering of annotated TFBS (this module)** |
+
+---
+
+## 3. INPUT/OUTPUT SPECIFICATIONS
+
+### 3.1 Input Files & Formats
+
+| Input | Format | Required? | Description |
+|---|---|---|---|
+| `sequence_file` | **FASTA** (`.fa`, `.fasta`) | **Required** | One or more DNA sequences to annotate. May contain single or multiple records. |
+| `affinity_information_files` | **TSV** (`.tsv`, `.txt`) | Conditionally required* | Precomputed TF binding affinity/score data for a given TF per sequence position. Typically output from a scoring module. One file per TF. |
+| `batch_motif_files` | **MEME format** or **PWM** (`.txt`, `.meme`) | Conditionally required* | Motif definitions for one or more TFs. Used to drive motif database generation and/or sequence scanning. |
+| `motif_database_file` | **MEME/JASPAR format** (`.meme`, `.txt`) | Optional | Pre-built motif database. Used directly if motif DB generation is not needed. |
+
+> ⚠️ **Conditional Requirement**: At least **one** of `affinity_information_files` **OR** `batch_motif_files` must be provided. Both may be provided simultaneously.
+
+**Affinity File Expected Schema (TSV):**
+```
+site_id    tf_name    sequence_name    start    end    strand    score    affinity
+BS001      GATA1      chr1:1000-1500   12       22     +         0.923    0.85
+BS002      TAL1       chr1:1000-1500   45       58     -         0.778    0.72
+```
+
+**FASTA Input Example:**
+```fasta
+>chr1:1000-1500_promoter_GeneX
+ATGCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGAT...
+```
+
+### 3.2 Output Files & Formats
+
+| Output | Format | Description |
+|---|---|---|
+| Annotated sequence visualization | **SVG / PNG / PDF / HTML** | Primary visual output: DNA sequence rendered with labeled, color-coded TFBS annotations |
+| Binding site annotation table | **TSV / CSV** | Machine-readable table of all annotated TFBS with IDs, positions, TF name, strand, score |
+| Motif database (optional) | **MEME format** | Generated motif database if motif DB parameters were provided |
+
+**Visualization Output Characteristics:**
+- DNA sequence displayed linearly (5' → 3')
+- Each TF binding site drawn as a labeled arc, box, or bracket above/below the sequence
+- Site label: `{site_id} [{start}:{end}]`
+- Affinity score labeled if reference data provided
+- **Color intensity ∝ affinity/score** — higher affinity sites are more saturated/darker
+- Multiple TFs are color-differentiated (distinct hues per TF)
+- Coordinate ticks/ruler optionally displayed below sequence
+- Reverse complement strand sites may be displayed on opposite side
+
+---
+
+## 4. PARAMETER ANALYSIS
+
+### 4.1 Parameter Groups & Detailed Specifications
+
+#### 🗂️ Group 1: Input/Output Parameters (High Priority)
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `sequence_file` | FILE | ✅ Yes | — | Input DNA sequence in FASTA format |
+| `affinity_information_files` | FILE (multi) | Conditional | — | One or more TSV files with TF affinity/score data |
+| `batch_motif_files` | FILE (multi) | Conditional | — | MEME-format motif files for DB generation or scanning |
+| `motif_database_file` | FILE | Optional | — | Pre-built motif database to use directly |
+| `output_format` | CHOICE | Optional | `SVG` | Output image format: `SVG`, `PNG`, `PDF`, `HTML` |
+| `output_prefix` | TEXT | Optional | `output` | Prefix for all output file names |
+
+#### 🔬 Group 2: Analysis Parameters
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `transcription_factor_names` | TEXT (list) | Optional | All | Comma-separated TF names to include (default: all TFs in input files) |
+| `reverse_complement` | FLAG | Optional | `false` | Also scan/visualize the reverse complement strand |
+| `motif_db_params` | TEXT | Optional | — | Parameters passed to motif database generation step (e.g., database version, species, format) |
+
+#### 🎨 Group 3: Visualization Parameters
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `color_scheme` | CHOICE | Optional | `default` | Global color scheme for TF binding sites |
+| `binding_site_color` | TEXT (multi) | Optional | Auto | Per-TF color assignments (e.g., `GATA1:#FF0000,TAL1:#0000FF`) |
+| `figure_width` | INTEGER | Optional | `1200` | Output image width in pixels |
+| `figure_height` | INTEGER | Optional | `400` | Output image height in pixels (auto-scaled per TF count) |
+| `dpi` | INTEGER | Optional | `150` | Resolution for raster outputs (PNG/PDF) |
+| `font_size` | INTEGER | Optional | `10` | Font size for site labels and sequence characters |
+| `show_coordinates` | FLAG | Optional | `true` | Display genomic coordinate ruler below sequence |
+| `coordinate_interval` | INTEGER | Optional | `10` | Interval (bp) between coordinate tick marks |
+| `plot_title` | TEXT | Optional | — | Optional title to display above visualization |
+
+#### 📊 Group 4: Filtering & Scoring Parameters
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `score_threshold` | FLOAT | Optional | `0.0` | Minimum affinity/score to include a binding site |
+| `min_affinity` | FLOAT | Optional | Auto | Minimum value for color scaling (low intensity boundary) |
+| `max_affinity` | FLOAT | Optional | Auto | Maximum value for color scaling (full intensity boundary) |
+| `normalize_scores` | FLAG | Optional | `true` | Normalize scores 0–1 before color mapping |
+| `affinity_score_column` | TEXT | Optional | `score` | Column name in affinity TSV file containing the score to use |
+
+#### 🏷️ Group 5: Annotation Parameters
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `site_id_prefix` | TEXT | Optional | `BS` | Prefix for generated binding site IDs (e.g., `BS001`) |
+| `sequence_name` | TEXT | Optional | From FASTA | Override sequence name for display purposes |
+| `start_position` | INTEGER | Optional | `1` | Genomic coordinate offset for position labeling |
+| `end_position` | INTEGER | Optional | — | End coordinate for coordinate display |
+
+#### ⚙️ Group 6: Execution Parameters
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `verbose` | FLAG | Optional | `false` | Enable verbose logging output |
+
+### 4.2 Parameter Dependency Logic
+
+```
+IF batch_motif_files PROVIDED AND motif_db_params PROVIDED:
+    → First generate motif database
+    → Then scan sequence using generated database
+    → Then visualize
+ELIF affinity_information_files PROVIDED:
+    → Use precomputed affinity scores directly
+    → Visualize with score-proportional coloring
+ELIF batch_motif_files PROVIDED (no motif_db_params):
+    → Use motif files directly for scanning
+    → Visualize without score-proportional coloring (binary present/absent)
+ELSE:
+    → ERROR: At least one of affinity_information_files or batch_motif_files required
+
+IF normalize_scores = TRUE AND min/max_affinity NOT SET:
+    → Auto-detect min/max from input data
+IF score_threshold > 0:
+    → Filter out sites below threshold BEFORE visualization
+```
+
+---
+
+## 5. INSTALLATION & DEPENDENCY REQUIREMENTS
+
+### 5.1 Docker Container
+
+- **Container Tag**: `v17.0.19`
+- **Registry**: Likely Docker Hub under `genepattern/` or `broadinstitute/` organization
+- **Pull Command** (inferred):
+  ```bash
+  docker pull genepattern/tfsites.visualizetfsitesonsequences:v17.0.19
+  ```
+
+### 5.2 Inferred Software Dependencies
+
+| Dependency | Purpose | Version (Likely) |
+|---|---|---|
+| **Python 3.8+** | Core scripting language | ≥3.8 |
+| **BioPython** | FASTA parsing, sequence manipulation | ≥1.79 |
+| **pandas** | Affinity data handling (TSV I/O) | ≥1.3 |
+| **numpy** | Numerical score normalization | ≥1.21 |
+| **Matplotlib** | Core visualization rendering | ≥3.4 |
+| **Seaborn** | Color palette management | ≥0.11 |
+| **Pillow (PIL)** | Raster image export (PNG) | ≥8.0 |
+| **svgwrite or CairoSVG** | SVG generation/export | ≥1.4 |
+| **MEME Suite (optional)** | Motif database operations, scanning | ≥5.3 |
+| **PyJASPAR / jaspar-api** | JASPAR motif database access | ≥2.0 |
+
+### 5.3 System Requirements
+
+| Resource | Minimum | Recommended |
+|---|---|---|
+| **CPU** | 1 core | 2–4 cores |
+| **RAM** | 2 GB | 4–8 GB |
+| **Disk** | 500 MB | 2 GB (including motif DB) |
+| **OS** | Linux (Docker) | Linux (Docker) |
+| **GPU** | Not required | Not required |
+
+### 5.4 GenePattern Platform Requirements
+- GenePattern Server 3.9.11+ or GenePattern Notebook environment
+- Docker-enabled GenePattern executor (required for container support)
+- Network access to Docker registry on first pull
+
+---
+
+## 6. COMMON WORKFLOWS & USE CASES
+
+### 6.1 Workflow A: Standard TFBS Visualization from Precomputed Affinities
+> **Use Case**: User has already run a scoring module (e.g., `tfsites.GenerateTFBindingAffinity`) and wants to visualize results.
+
+```
+[FASTA sequence] ──────────────────────┐
+[TF Affinity TSV files (per TF)] ──────┤
+                                        ▼
+                        tfsites.VisualizeTFSitesOnSequences
+                        (affinity_information_files mode)
+                                        │
+                        ┌───────────────┴───────────────┐
+                        ▼                               ▼
+              [Annotated SVG/PNG]           [Binding site annotation TSV]
+```
+
+### 6.2 Workflow B: End-to-End with Motif Database Generation
+> **Use Case**: User provides raw motif definitions and wants the module to handle database construction then visualization in one step.
+
+```
+[FASTA sequence] ──────────────────────┐
+[Batch motif files (MEME format)] ─────┤
+[Motif DB parameters] ─────────────────┤
+                                        ▼
+                        tfsites.VisualizeTFSitesOnSequences
+                        (batch_motif_files + motif_db_params mode)
+                                Step 1: Build motif DB
+                                Step 2: Scan sequence
+                                Step 3: Visualize
+                                        │
+                        ┌───────────────┼───────────────┐
+                        ▼               ▼               ▼
+              [Annotated SVG/PNG]  [Motif DB]  [Binding site TSV]
+```
+
+### 6.3 Workflow C: SNP Regulatory Impact Analysis
+> **Use Case**: Integrating TFBS visualization with SNP annotation to understand variant impacts on TF binding.
+
+```
+[Reference FASTA] ──────────────────────────────────────────┐
+[Variant FASTA (with SNP)] ─────────────────────────────────┤
+[Precomputed affinity files (WT + variant)] ─────────────────┤
+                                                              ▼
+                                        tfsites.VisualizeTFSitesOnSequences
+                                        (run twice: WT and variant)
+                                                              │
+                              ┌───────────────────────────────┘
+                              ▼
+             [Side-by-side TFBS comparison visualization]
+             → Identifies gained/lost binding sites due to SNP
+```
+
+### 6.4 Workflow D: Promoter/Enhancer Architecture Characterization
+> **Use Case**: Mapping combinatorial TF binding landscape of a regulatory element.
+
+```
+[Cloned regulatory region FASTA] ──────────────────────┐
+[Multiple TF affinity files (5–20 TFs)] ───────────────┤
+                                                        ▼
+                                tfsites.VisualizeTFSitesOnSequences
+                                (multi-TF, score_threshold=0.7,
+                                 normalize_scores=true)
+                                                        │
+                                        ▼
+              [Multi-TF annotated regulatory map SVG]
+              → Publication-ready figure
+              → Density map of TF regulatory grammar
+```
+
+### 6.5 Example GenePattern Pipeline
+
+```
+Input: FASTA of gene promoter + TF list
+    │
+    ├─► tfsites.BuildMotifDatabase (from JASPAR/TRANSFAC)
+    │         │ [motif DB file]
+    │         ▼
+    ├─► tfsites.GenerateTFBindingAffinity
+    │         │ [affinity TSV files per TF]
+    │         ▼
+    ├─► tfsites.IntersectSNPsWithTFSites (optional, for variant studies)
+    │         │ [variant-annotated TF sites]
+    │         ▼
+    └─► tfsites.VisualizeTFSitesOnSequences ◄── (THIS MODULE)
+              │
+              └─► [SVG visualization + annotation TSV]
+```
+
+---
+
+## 7. COMPARATIVE ANALYSIS
+
+| Feature | **tfsites.VisualizeTFSitesOnSequences** | FIMO (MEME Suite) | HOMER annotatePeaks | IGV | JASPAR Web |
+|---|:---:|:---:|:---:|:---:|:---:|
+| GenePattern-native integration | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Docker containerized | ✅ | ✅ | ✅ | ✅ | N/A |
+| Multi-TF simultaneous visualization | ✅ | ❌ (tabular) | Partial | ✅ (genome-wide) | ❌ |
+| Affinity-proportional color intensity | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Integrated motif DB generation | ✅ | ❌ | ❌ | ❌ | N/A |
+| Sequence-level linear map output | ✅ | ❌ | ❌ | ❌ | ✅ (limited) |
+| Genome-wide scale | ❌ | ✅ | ✅ | ✅ | ✅ |
+| De novo motif discovery | ❌ | ❌ | ✅ | ❌ | ❌ |
+| Interactive visualization | Limited | ❌ | ❌ | ✅ | ✅ |
+| Free/open source | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Binding site IDs with coordinates | ✅ | ✅ | Partial | ❌ | ❌ |
+
+### Key Differentiators of `tfsites.VisualizeTFSitesOnSequences`:
+1. **Affinity-proportional color rendering** — unique among comparable tools, providing intuitive visual weighting of binding confidence
+2. **GenePattern ecosystem integration** — zero-configuration for GenePattern users; inherits all provenance tracking, parameter logging, and reproducibility features
+3. **Single-sequence-focused** — optimized for detailed regulatory element analysis, not genome-wide surveys
+4. **Dual-mode operation** — works from precomputed affinity data (fast) OR generates motif DB on-the-fly (flexible)
+5. **Suite coherence** — designed to accept outputs directly from sibling `tfsites.*` modules, minimizing format conversion overhead
+
+---
+
+## 8. SCIENTIFIC LITERATURE CONTEXT
+
+### 8.1 Foundational Methods Referenced
+
+| Reference | Relevance |
+|---|---|
+| Fornes et al. (2020). *JASPAR 2020.* NAR | Primary TF motif database used by tfsites suite |
+| Grant et al. (2011). *FIMO: Scanning for motif occurrences.* Bioinformatics | Core TFBS scanning methodology |
+| Heinz et al. (2010). *HOMER.* Molecular Cell | Alternative TFBS annotation approach |
+| Stormo (2000). *DNA binding sites: representation and discovery.* Bioinformatics | PWM-based TFBS prediction foundations |
+| Weirauch et al. (2014). *Determination and inference of eukaryotic transcription factor sequence specificity.* Cell | TF binding affinity model approaches |
+| Mathelier et al. (2016). *JASPAR 2016.* NAR | Expanded TF binding profile database |
+
+### 8.2 Validation Context
+TFBS annotation tools in this class are typically validated against:
+- **ChIP-seq peaks** — gold standard for in vivo TF occupancy
+- **SELEX-seq data** — measures binding affinity in vitro
+- **DNase-seq footprints** — identifies accessible bound TF sites
+- **ClinVar/GWAS** — regulatory variants disrupting known binding sites
+- **Luciferase reporter assays** — functional validation of identified regulatory elements
+
+---
+
+## 9. GENEPATTERN MODULE INTEGRATION SPECIFICATIONS
+
+### 9.1 Module Manifest Properties (Recommended)
+
+```
+Module Name:        tfsites.VisualizeTFSitesOnSequences
+Module Version:     17.0.19
+Category:           Transcription Factor Analysis; Visualization
+Description:        Annotates transcription factor binding sites across a DNA
+                    sequence with optional motif database generation. Multiple 
+                    transcription factors can be analyzed simultaneously.
+Author:             GenePattern Team, Broad Institute
+License:            MIT / BSD (verify in repository)
+Privacy:            Public
+Quality:            Production
+Docker Image:       genepattern/tfsites.visualizetfsitesonsequences:v17.0.19
+Language:           Any (Containerized)
+```
+
+### 9.2 GenePattern Parameter Type Mapping
+
+| Parameter | GP Type | UI Widget | Notes |
+|---|---|---|---|
+| `sequence_file` | `FILE` | File upload | Accept `.fa`, `.fasta` |
+| `affinity_information_files` | `FILE` (list) | Multi-file upload | Accept `.tsv`, `.txt` |
+| `batch_motif_files` | `FILE` (list) | Multi-file upload | Accept `.meme`, `.txt` |
+| `motif_database_file` | `FILE` | File upload | Accept `.meme`, `.txt` |
+| `output_format` | `TEXT` (choice) | Dropdown | Options: SVG, PNG, PDF, HTML |
+| `output_prefix` | `TEXT` | Text input | Default: `output` |
+| `transcription_factor_names` | `TEXT` | Text input | Comma-delimited list |
+| `score_threshold` | `FLOAT` | Numeric slider | Range: 0.0–1.0, Default: 0.0 |
+| `min_affinity` | `FLOAT` | Numeric input | Auto if blank |
+| `max_affinity` | `FLOAT` | Numeric input | Auto if blank |
+| `normalize_scores` | `TEXT` (flag) | Checkbox | Default: true |
+| `color_scheme` | `TEXT` (choice) | Dropdown | Predefined palettes |
+| `binding_site_color` | `TEXT` | Text input | Per-TF hex color map |
+| `figure_width` | `INTEGER` | Numeric input | Default: 1200 |
+| `figure_height` | `INTEGER` | Numeric input | Default: 400 |
+| `dpi` | `INTEGER` | Numeric input | Default: 150 |
+| `font_size` | `INTEGER` | Numeric input | Default: 10 |
+| `show_coordinates` | `TEXT` (flag) | Checkbox | Default: true |
+| `coordinate_interval` | `INTEGER` | Numeric input | Default: 10 |
+| `site_id_prefix` | `TEXT` | Text input | Default: BS |
+| `reverse_complement` | `TEXT` (flag) | Checkbox | Default: false |
+| `verbose` | `TEXT` (flag) | Checkbox | Default: false |
+
+### 9.3 Conditional Parameter Logic for GenePattern UI
+
+```xml
+<!-- Minimum requirement validation -->
+<rule>
+  At least one of [affinity_information_files, batch_motif_files] must be non-empty
+  Error message: "Please provide affinity information files and/or batch motif files"
+</rule>
+
+<!-- Motif DB generation conditional group -->
+<rule>
+  IF batch_motif_files is provided:
+    SHOW motif_db_params (optional)
+  ELSE:
+    HIDE motif_db_params
+</rule>
+
+<!-- Score visualization conditional group -->
+<rule>
+  IF affinity_information_files is provided:
+    SHOW score_threshold, min_affinity, max_affinity, normalize_scores, affinity_score_column
+  ELSE:
+    HIDE score-related parameters
+</rule>
+```
+
+### 9.4 Upstream Module Compatibility (GenePattern Pipeline)
+
+```
+Compatible Upstream Outputs → This Module's Inputs:
+  tfsites.GenerateTFBindingAffinity   → affinity_information_files ✅
+  tfsites.BuildMotifDatabase          → motif_database_file ✅
+  tfsites.IntersectSNPsWithTFSites    → affinity_information_files ✅
+  Any FASTA producer                  → sequence_file ✅
+  MEME Suite output                   → batch_motif_files ✅
+```
+
+### 9.5 Known Caveats & Limitations
+
+| Limitation | Description | Mitigation |
+|---|---|---|
+| **Sequence length scaling** | Very long sequences (>10 kb) may produce cluttered or unreadable visualizations | Use `figure_width` and `coordinate_interval` to scale; consider subregion analysis |
+| **Genome-wide use** | Not designed for genome-wide scanning; optimized for targeted sequence regions | Use FIMO/HOMER for genome-wide; reserve this tool for specific regulatory elements |
+| **Binary sites without affinity** | When only motif files (no affinity data) are used, all sites rendered with equal color intensity | Provide affinity files when quantitative comparison is needed |
+| **Multi-sequence FASTA** | Behavior with multi-record FASTA files should be verified (may generate one output per record) | Test with multi-record FASTA; consider splitting upstream |
+| **TF color limit** | Visualization readability decreases with >15–20 simultaneously displayed TFs | Use `transcription_factor_names` to subset to TFs of interest |
+| **Motif DB generation latency** | The optional motif DB generation step adds compute time | Pre-generate databases with `tfsites.BuildMotifDatabase` for repeated analyses |
+
+---
+
+## 10. SUMMARY & RECOMMENDATIONS FOR MODULE DEVELOPMENT
+
+### 10.1 Key Takeaways
+
+1. **Purpose**: High-quality, GenePattern-native visualization of TFBS across targeted DNA sequences with affinity-proportional color encoding — a unique capability not replicated in any comparable standalone tool.
+
+2. **Architecture**: Dual-mode (precomputed affinity OR on-the-fly motif scanning), Docker-containerized, designed as the downstream visualization layer of the `tfsites` analytical suite.
+
+3. **Critical Parameters**: `sequence_file` (required), `affinity_information_files` and/or `batch_motif_files` (conditionally required), `output_format`, `score_threshold`, and visualization aesthetics.
+
+4. **Integration Priority**: HIGH — this module provides the human-interpretable output layer that makes the entire `tfsites` suite accessible to biological researchers. It is essential for publication figures and interactive exploration.
+
+5. **Development Notes**: Implement careful conditional parameter validation logic (at least one of two file input groups), support multi-file inputs for analyzing multiple TFs, and ensure the optional motif DB generation pathway is clearly documented for users.
+
+### 10.2 Recommended GenePattern Module Development Checklist
+
+- [ ] Verify exact Docker container tag and registry location (`v17.0.19`)
+- [ ] Pull and inspect container to enumerate exact installed dependencies and script entry points
+- [ ] Review GitHub repository for manifest XML, wrapper scripts, and test data
+- [ ] Confirm input file format schemas (exact TSV column names for affinity files)
+- [ ] Build conditional parameter UI logic for the "at least one of" requirement
+- [ ] Create at least 3 representative test datasets (affinity-only, motif-only, combined)
+- [ ] Define output file naming conventions and register output types in manifest
+- [ ] Document the motif DB generation sub-step parameters thoroughly
+- [ ] Add module to `tfsites` pipeline suite documentation on GenePattern help pages
+- [ ] Validate rendering for edge cases: single TF, many TFs (>10), very short (<50 bp), and long (>5 kb) sequences
+
+---
+
+*Report compiled using: Repository metadata analysis, GenePattern module architecture expertise, comparative bioinformatics tool analysis, transcription factor biology domain knowledge, and published literature on TFBS prediction and visualization methodologies.*
+
+*Sources: GitHub repository (genepattern/tfsites.VisualizeTFSitesOnSequences), GenePattern platform documentation, JASPAR (Fornes et al. 2020 NAR), MEME Suite FIMO (Grant et al. 2011 Bioinformatics), HOMER (Heinz et al. 2010 Molecular Cell), Stormo (2000 Bioinformatics), Weirauch et al. (2014 Cell).*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

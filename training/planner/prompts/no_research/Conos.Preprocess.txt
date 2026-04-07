@@ -1,0 +1,90 @@
+Create a comprehensive structured plan for the GenePattern module for 'Conos.Preprocess'.
+            
+            Tool Information:
+            - Name: Conos.Preprocess
+            - Version: updated accepted file formats for input file
+            - Language: any
+            - Description: GenePattern Module which implements the preprocessing and PCA steps of Conos
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "Conos.Preprocess",
+  "parameters": [
+    {
+      "name": "file_list",
+      "type": "FILE",
+      "description": "List of files to load.",
+      "required": true,
+      "default_value": "",
+      "file_format": "rds;txt",
+      "num_values": "0+"
+    },
+    {
+      "name": "knn",
+      "type": "Integer",
+      "description": "Pagoda2\\: default number of neighbors to use in kNN graph",
+      "required": true,
+      "default_value": "40",
+      "num_values": "0..1"
+    },
+    {
+      "name": "perplexity",
+      "type": "Integer",
+      "description": "Pagoda2\\: perplexity to use in generating tSNE and largeVis embeddings (default\\=50)",
+      "required": true,
+      "default_value": "50",
+      "num_values": "0..1"
+    },
+    {
+      "name": "pagoda_odgenes",
+      "type": "Integer",
+      "description": "Pagoda2\\: number of top overdispersed genes to use (default\\=3e3)",
+      "required": true,
+      "default_value": "3000",
+      "num_values": "0..1"
+    },
+    {
+      "name": "projection_method",
+      "type": "TEXT",
+      "description": "Whether to perform PCA or CPCA",
+      "required": true,
+      "default_value": "PCA",
+      "choices": "PCA\\=PCA;CPCA\\=CPCA",
+      "num_values": "0..1"
+    },
+    {
+      "name": "ncomps",
+      "type": "Integer",
+      "description": "How many PCA components to use (?) (default\\=50)",
+      "required": true,
+      "default_value": "50",
+      "num_values": "0..1"
+    },
+    {
+      "name": "conos_odgenes",
+      "type": "TEXT",
+      "description": "Pagoda2\\: number of top overdispersed genes to use (default\\=1e3)",
+      "required": true,
+      "default_value": "1000",
+      "num_values": "0..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/conos\\:v3",
+  "categories": "clustering;singlecell",
+  "task_type": "clustering",
+  "author": "Edwin F. Juarez & Anthony Castanza;UCSD -- Mesirov Lab",
+  "command_line": "Rscript /module/run_conos_preprocess.R --file_list <file_list> --k <knn> --perplexity <perplexity> --pagoda_odgenes <pagoda_odgenes> --projection_method <projection_method> --ncomps <ncomps> --conos_odgenes <conos_odgenes>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

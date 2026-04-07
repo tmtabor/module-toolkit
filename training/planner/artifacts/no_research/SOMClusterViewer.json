@@ -1,0 +1,36 @@
+{
+  "module_name": "SOMClusterViewer",
+  "description": "Visualize clusters created with the SOM algorithm",
+  "author": "Ken Ross, Joshua Gould, Broad Institute",
+  "input_file_formats": [
+    "SOM Cluster"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:24258:1",
+  "plan": "## SOMClusterViewer GenePattern Module — Implementation Plan\n\n### 1. Overview\nSOMClusterViewer is a GenePattern module that Visualize clusters created with the SOM algorithm\n\n### 2. Parameters\nThe module exposes 1 parameters:\n- Required: som.cluster.filename\n- Optional: none\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>somviewer.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.som.SOM <som.cluster.filename>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "somviewer.jar<path.separator><libdir>gp-modules.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>somviewer.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.som.SOM <som.cluster.filename>",
+  "parameters": [
+    {
+      "name": "som.cluster.filename",
+      "description": "SOM Properties ODF file",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "SOM Cluster"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--som.cluster.filename",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

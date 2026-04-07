@@ -1,0 +1,126 @@
+{
+  "module_name": "CoGAPS",
+  "description": "Coordinated Gene Activity in Pattern Sets (CoGAPS) implements a Bayesian MCMC matrix factorization algorithm, GAPS, and links it to gene set statistic methods to infer biological process activity. It can be used to perform sparse matrix factorization on any data, and when this data represents biomolecules, to do gene set analysis.",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "input_file_formats": [
+    "mtx",
+    "rds"
+  ],
+  "language": "R",
+  "categories": [
+    "Tutorial"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:69121:1",
+  "plan": "## CoGAPS GenePattern Module — Implementation Plan\n\n### 1. Overview\nCoGAPS is a GenePattern module that Coordinated Gene Activity in Pattern Sets (CoGAPS) implements a Bayesian MCMC matrix factorization algorithm, GAPS, and links it to gene set statistic methods to infer biological process activity. It can be used to perform sparse matrix factorization on any data, and when this data represents biomolecules, to do gene set analysis.\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: data.file, output.file, num.iterations, transpose.data\n- Optional: num.patterns, param.file, github.tag\n\n### 3. Command Line\n```\n/usr/bin/Rscript --no-save --quiet --slave --no-restore /usr/local/bin/cogaps/run_cogaps_module.R  --data.file\\=<data.file>  --output.file\\=<output.file> <param.file> <num.patterns> --transpose.data\\=<transpose.data> --num.threads\\=<job.cpuCount> <github.tag> --num.iterations\\=<num.iterations>\n```\n\n### 4. Docker Image\nDocker image: genepattern/docker-cogaps\\:v0.12\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_cogaps_module.R",
+  "command_line": "/usr/bin/Rscript --no-save --quiet --slave --no-restore /usr/local/bin/cogaps/run_cogaps_module.R  --data.file=<data.file>  --output.file=<output.file> <param.file> <num.patterns> --transpose.data=<transpose.data> --num.threads=<job.cpuCount> <github.tag> --num.iterations=<num.iterations>",
+  "parameters": [
+    {
+      "name": "data.file",
+      "description": "A csv/tsv/gct/mtx file containing gene expression data",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "mtx"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "Output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.file_basename>-result",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.patterns",
+      "description": "Number of Patterns",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.patterns\\=",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "num.iterations",
+      "description": "Number of Iterations",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "50000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.iterations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "param.file",
+      "description": "An rds file containg a CogapsParams object",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "rds"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--param.file\\=",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "transpose.data",
+      "description": "Transpose the dataset before running",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "TRUE"
+        },
+        {
+          "display": "False",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--transpose.data",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "github.tag",
+      "description": "Alternate github tag to use to pull a different version of cogaps to run - for testing and development only.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--github.tag\\=",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/docker-cogaps:v0.12"
+}

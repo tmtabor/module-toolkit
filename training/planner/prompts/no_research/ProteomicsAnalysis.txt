@@ -1,0 +1,170 @@
+Create a comprehensive structured plan for the GenePattern module for 'ProteomicsAnalysis'.
+            
+            Tool Information:
+            - Name: ProteomicsAnalysis
+            - Version: Updated for R 2.5
+            - Language: R
+            - Description: Runs the proteomics analysis on the set of input spectra
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ProteomicsAnalysis",
+  "parameters": [
+    {
+      "name": "zip.filename",
+      "type": "FILE",
+      "description": "Zip file containing spectra data. Spectra data are stored as M/Z,Intensity",
+      "required": true,
+      "default_value": "",
+      "file_format": "zip"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "The base name for output files",
+      "required": true,
+      "default_value": "<zip.filename_basename>"
+    },
+    {
+      "name": "quality.threshold",
+      "type": "java.lang.String",
+      "description": "discard spectra with quality < quality threshold",
+      "required": false,
+      "default_value": "0.45"
+    },
+    {
+      "name": "fill.na",
+      "type": "java.lang.String",
+      "description": "whether to fill missing peaks",
+      "required": true,
+      "default_value": "yes",
+      "choices": "yes;no"
+    },
+    {
+      "name": "normalize",
+      "type": "java.lang.String",
+      "description": "normalization strategy",
+      "required": true,
+      "default_value": "tan",
+      "choices": "tan;tin;01;none"
+    },
+    {
+      "name": "peak.detection.method",
+      "type": "java.lang.String",
+      "description": "peak detection method",
+      "required": true,
+      "default_value": "detect",
+      "choices": "detect;input;random"
+    },
+    {
+      "name": "filter.peaks",
+      "type": "java.lang.String",
+      "description": "filter peaks based on peak intensity / noise",
+      "required": true,
+      "default_value": "yes",
+      "choices": "yes;no"
+    },
+    {
+      "name": "filter.peaks.factor",
+      "type": "java.lang.Float",
+      "description": "retains peaks if peak intensity >\\= filter.peaks.factor * stdev(noise)",
+      "required": false,
+      "default_value": "10"
+    },
+    {
+      "name": "peak.list.filename",
+      "type": "FILE",
+      "description": "file containing one M/Z per line when peaks\\=input",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "random.seed",
+      "type": "java.lang.Integer",
+      "description": "random seed when peaks\\=random",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "random.n.peaks",
+      "type": "java.lang.Integer",
+      "description": "number of random M/Z's selected when peaks\\=random",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "low.Da",
+      "type": "java.lang.Float",
+      "description": "Minimum M/Z to include",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "high.Da",
+      "type": "java.lang.Float",
+      "description": "Maximum M/Z to include",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "percentile",
+      "type": "java.lang.Float",
+      "description": "After applying filters, threshold above which peaks are located",
+      "required": true,
+      "default_value": "0.65"
+    },
+    {
+      "name": "smoothing.size",
+      "type": "java.lang.Float",
+      "description": "Size of the smoothing filter",
+      "required": true,
+      "default_value": "21"
+    },
+    {
+      "name": "adaptive.background.correction.strength",
+      "type": "java.lang.Float",
+      "description": "Strength of the adaptive background correction filter",
+      "required": true,
+      "default_value": "0.75"
+    },
+    {
+      "name": "adaptive.background.correction.size",
+      "type": "java.lang.Float",
+      "description": "Size of the adaptive background correction filter",
+      "required": true,
+      "default_value": "21"
+    },
+    {
+      "name": "high.pass.filter.strength",
+      "type": "java.lang.Float",
+      "description": "Strength of the high pass filter",
+      "required": true,
+      "default_value": "10"
+    },
+    {
+      "name": "high.pass.filter.factor",
+      "type": "java.lang.Float",
+      "description": "Filter factor for the high pass filter",
+      "required": true,
+      "default_value": "5"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Proteomics",
+  "author": "D.R. Mani, Broad Institute",
+  "command_line": "<R2.5> <libdir>pipeline.wrapper.R pipeline.wrapper <zip.filename> <output.file> <libdir> -_3<quality.threshold> -_40.00125 -_5<fill.na> -_6<normalize> -_7<peak.detection.method> -_8<filter.peaks> -_9<filter.peaks.factor> -10<peak.list.filename> -11<random.seed> -12<random.n.peaks> -13<low.Da> -14<high.Da> -15<percentile> -16<smoothing.size> -17<adaptive.background.correction.strength> -18<adaptive.background.correction.size> -19<high.pass.filter.strength> -20<high.pass.filter.factor>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

@@ -1,0 +1,157 @@
+{
+  "module_name": "NearestTemplatePrediction",
+  "description": "Nearest neighbor prediction based on a list of marker genes",
+  "author": "Yujin Hoshida (Broad Institute)",
+  "input_file_formats": [
+    "gct",
+    "txt"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:71587:1",
+  "plan": "## NearestTemplatePrediction GenePattern Module — Implementation Plan\n\n### 1. Overview\nNearestTemplatePrediction is a GenePattern module that Nearest neighbor prediction based on a list of marker genes\n\n### 2. Parameters\nThe module exposes 8 parameters:\n- Required: input.exp.filename, input.features.filename, output.name, distance.selection, weight.genes, num.resamplings, GenePattern.output, random.seed\n- Optional: none\n\n### 3. Command Line\n```\n<R3.1_Rscript> <libdir>NTPez.R <input.exp.filename> <input.features.filename> <output.name> <distance.selection> <weight.genes> <num.resamplings> <GenePattern.output> <random.seed>\n```\n\n### 4. Docker Image\nDocker image: genepattern/docker-r-3-13\\:0.1\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "NTPez.R",
+  "command_line": "<R3.1_Rscript> <libdir>NTPez.R <input.exp.filename> <input.features.filename> <output.name> <distance.selection> <weight.genes> <num.resamplings> <GenePattern.output> <random.seed>",
+  "parameters": [
+    {
+      "name": "input.exp.filename",
+      "description": "Gene expression data set (.gct)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.exp.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "input.features.filename",
+      "description": "List of marker genes (.txt)\\: Probe ID, Gene name, Class (1,2,...), Weight (optional)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.features.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.name",
+      "description": "Name for output files",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "NTP",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "distance.selection",
+      "description": "Distance metric",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "cosine",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "cosine",
+          "value": "cosine"
+        },
+        {
+          "display": "correlation",
+          "value": "correlation"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--distance.selection",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "weight.genes",
+      "description": "Weight genes? (by statistic, fold change, etc. only for 2 classes)",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "T",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "T"
+        },
+        {
+          "display": "no",
+          "value": "F"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--weight.genes",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.resamplings",
+      "description": "\\# resampling to generate null distribution for distance metric",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.resamplings",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "GenePattern.output",
+      "description": "Create .gct and .cls files for GenePattern",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "F",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "T"
+        },
+        {
+          "display": "no",
+          "value": "F"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--GenePattern.output",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "random.seed",
+      "description": "Random seed",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "7392854",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--random.seed",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/docker-r-3-13:0.1"
+}

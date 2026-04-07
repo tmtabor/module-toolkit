@@ -1,0 +1,126 @@
+{
+  "module_name": "tfsites.GenerateMotifDatabase",
+  "description": "GenerateMotifDatabase can be used to obtain position weight matrix (PWM) data to score binding sites in other TFSites modules. This tool extracts the PFM(s) for one or more transcription factor(s) of interest and then converts each PFM to its respective PWM.",
+  "author": "Joe Solvason",
+  "input_file_formats": [
+    "JASPAR",
+    "jaspar",
+    "tsv",
+    "txt"
+  ],
+  "language": "Python",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:31842:1",
+  "plan": "## tfsites.GenerateMotifDatabase GenePattern Module — Implementation Plan\n\n### 1. Overview\ntfsites.GenerateMotifDatabase is a GenePattern module that GenerateMotifDatabase can be used to obtain position weight matrix (PWM) data to score binding sites in other TFSites modules. This tool extracts the PFM(s) for one or more transcription factor(s) of interest and then converts each PFM to its respective PWM.\n\n### 2. Parameters\nThe module exposes 6 parameters:\n- Required: PFM.input.file, input.format, use.pseudocounts.to.calculate.score, output.filename\n- Optional: filter.keywords, background.nucleotide.frequencies\n\n### 3. Command Line\n```\npython /build/tfsites-webportal/02-generateMotifDatabase/02-generateMotifDatabase.py -i <PFM.input.file> -b <background.nucleotide.frequencies> -p <use.pseudocounts.to.calculate.score>  <filter.keywords> -o <output.filename>  -f <input.format>\n```\n\n### 4. Docker Image\nDocker image: genepattern/tfsites\\:16.3\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "02-generateMotifDatabase.py",
+  "command_line": "python /build/tfsites-webportal/02-generateMotifDatabase/02-generateMotifDatabase.py -i <PFM.input.file> -b <background.nucleotide.frequencies> -p <use.pseudocounts.to.calculate.score>  <filter.keywords> -o <output.filename>  -f <input.format>",
+  "parameters": [
+    {
+      "name": "PFM.input.file",
+      "description": "File containing multiple PFMs. It is formatted similar to a fasta file where the header line starts with \">\" and is followed by that PFM.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt",
+        "jaspar",
+        "JASPAR"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--PFM.input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "input.format",
+      "description": "Input whether the motif database is a PFM (counts of each nt at each position) or PWM (frequency of each nt at each position weighted by the background frequency of the genomes and adjusted by pseudocounts).",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "pfm",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "pfm",
+          "value": "pfm"
+        },
+        {
+          "display": "pwm",
+          "value": "pwm"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--input.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "filter.keywords",
+      "description": "File containing a single column with a list of keywords. The keywords can be the transcription factor name and/or matrix ID.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-k",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "use.pseudocounts.to.calculate.score",
+      "description": "Choose if you want to use pseudocounts to calculate the PWM score for binding sites.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        },
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--use.pseudocounts.to.calculate.score",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "background.nucleotide.frequencies",
+      "description": "Choose the nucleotide background frequencies in the order of A, T, G, and C.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.25,0.25,0.25,0.25",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--background.nucleotide.frequencies",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.filename",
+      "description": "Base name of the output files.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<PFM.input.file_basename>_out.txt",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/tfsites:16.3"
+}

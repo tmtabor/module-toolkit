@@ -1,0 +1,611 @@
+Create a comprehensive structured plan for the GenePattern module for 'Kallisto.Quant'.
+            
+            Tool Information:
+            - Name: Kallisto.Quant
+            - Version: dynamic drop down for kallisto, rename to Kallisto.Quant, update parameter descriptions
+            - Language: any
+            - Description: Runs Kallisto to perform pseudoalignment (using a human or mouse transcriptome index) and gene-level aggregation
+            
+            Research Results:
+            All research data has been collected and analyzed. Now let me compile everything into the definitive, PhD-level comprehensive research report:
+
+---
+
+# 🧬 Comprehensive Research Report: Kallisto.Quant
+
+**GenePattern Module Development Reference**
+*Research conducted across official documentation, primary literature, repository analysis, and comparative benchmarks*
+
+---
+
+## 1. 📖 TOOL PURPOSE & SCIENTIFIC BACKGROUND
+
+### 1.1 Primary Purpose
+**Kallisto.Quant** is a GenePattern module wrapping **kallisto**, a near-optimal probabilistic RNA-seq quantification tool. It performs *pseudoalignment* of RNA-seq reads against a reference transcriptome to produce transcript- and gene-level abundance estimates, without requiring full read alignment to a genome.
+
+### 1.2 Foundational Algorithm — Pseudoalignment
+Kallisto is built on the concept of **pseudoalignment**, introduced by Bray *et al.* in *Nature Biotechnology* (2016). Rather than finding exact positions where reads map in a genome, pseudoalignment determines the *compatibility* of reads with transcripts by matching k-mers (default k=31) to a **colored de Bruijn graph** of the transcriptome. This results in transcript *equivalence classes* — sets of transcripts compatible with each read — which are then used to solve for abundance via the Expectation-Maximization (EM) algorithm.
+
+> **Key Insight**: Reads need not be precisely placed — only their *transcript-of-origin* must be determined. This makes kallisto **~100× faster** than alignment-based approaches with comparable accuracy for transcript and gene quantification.
+
+### 1.3 Primary Citation
+> Bray NL, Pimentel H, Melsted P, Pachter L. **Near-optimal probabilistic RNA-seq quantification.** *Nature Biotechnology* **34**, 525–527 (2016). DOI: [10.1038/nbt.3519](https://doi.org/10.1038/nbt.3519) | PMID: 27043002
+
+This paper has received **>10,000 citations** as of 2024, reflecting kallisto's widespread adoption. A companion long-read extension (lr-kallisto) was published in *PNAS* (2024), confirming the algorithm's ongoing development.
+
+### 1.4 Scientific Applications
+| Application | Description |
+|---|---|
+| **Bulk RNA-seq quantification** | Primary use case — transcript/gene abundance from Illumina RNA-seq |
+| **Differential expression analysis** | Upstream step for DESeq2, edgeR, limma-voom |
+| **Isoform-level analysis** | Transcript-level estimates for sleuth or tximport |
+| **Uncertainty quantification** | Bootstrap resampling for downstream sleuth inference |
+| **Single-cell pre-processing** | With bustools/kb-python for scRNA-seq (BUS format) |
+| **Fusion detection** | With Pizzly for gene fusion identification |
+| **Metatranscriptomics** | Against custom transcriptome indexes |
+
+---
+
+## 2. 🗂️ INPUT/OUTPUT FORMATS & REQUIREMENTS
+
+### 2.1 Inputs
+
+#### Required Inputs
+| Input | Format | Description |
+|---|---|---|
+| **FASTQ reads** | `.fastq`, `.fastq.gz`, `.fq`, `.fq.gz` | Single-end or paired-end RNA-seq reads; gzip compression supported natively |
+| **Transcriptome index** | `.idx` (binary) | Pre-built kallisto index from reference transcriptome FASTA. In GenePattern, available as a **dropdown** for Human (Gencode GRCh38.p13) or Mouse (GRCm39) |
+
+#### Conditional/Optional Inputs
+| Input | Format | Condition |
+|---|---|---|
+| **GTF annotation file** | `.gtf`, `.gtf.gz` | Required when `--genomebam` is used |
+| **Chromosome sizes file** | Tab-separated `.txt` | Optional with `--genomebam`; improves BAM header consistency |
+| **Custom FASTA** (for index building) | `.fa`, `.fa.gz` | Required when building a custom index via `kallisto index` |
+
+### 2.2 Outputs
+
+#### Standard Output Files (per sample)
+| File | Format | Contents |
+|---|---|---|
+| `abundance.h5` | HDF5 binary | Run info, abundance estimates, bootstrap samples, effective transcript lengths. **Primary file for tximport and sleuth** |
+| `abundance.tsv` | Tab-separated text | Plaintext abundances with columns: `target_id`, `length`, `eff_length`, `est_counts`, `tpm` |
+| `run_info.json` | JSON | Metadata: #targets, #bootstraps, #reads processed, #pseudoaligned reads, kallisto version, index version, start time, call string |
+
+#### GenePattern Kallisto.Quant Additional Outputs
+| File | Format | Contents |
+|---|---|---|
+| `module_log.txt` | Text | All commands executed by the module |
+| `RNASeq_quant/<output>_abundance.h5` | HDF5 | Transcript-level abundance (use with tximport) |
+| `RNASeq_quant/<output>_abundance.tsv` | TSV | Transcript-level plaintext abundance |
+| `RNASeq_quant/<output>_run_info.json` | JSON | Run metadata |
+| `pseudoalignments.bam` *(optional)* | BAM | Genome-projected pseudoalignments (requires `--genomebam`) |
+| `pseudoalignments.bam.bai` *(optional)* | BAI | Index for genome BAM |
+| **Gene-level counts** *(GenePattern-specific)* | Matrix/GCT | Aggregated gene-level counts via tximport R integration |
+
+### 2.3 TSV Abundance Column Definitions
+| Column | Type | Description |
+|---|---|---|
+| `target_id` | String | Transcript identifier (matches index) |
+| `length` | Integer | Transcript length in base pairs |
+| `eff_length` | Float | Effective length (accounts for fragment length distribution) |
+| `est_counts` | Float | Estimated fractional read counts |
+| `tpm` | Float | Transcripts Per Million (normalized abundance) |
+
+---
+
+## 3. ⚙️ PARAMETER ANALYSIS & USAGE PATTERNS
+
+### 3.1 Complete Parameter Reference for `kallisto quant`
+
+#### Required Parameters
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `-i`, `--index` | STRING | *none* | Path to kallisto transcriptome index (`.idx`). In GenePattern: **dynamic dropdown** for Human (Gencode 37/GRCh38.p13) or Mouse (Gencode M26/GRCm39) |
+| `-o`, `--output-dir` | STRING | *none* | Output directory. GenePattern populates this automatically |
+
+#### Read Mode Parameters *(Mutually Exclusive)*
+| Parameter | Type | Default | Biological Significance |
+|---|---|---|---|
+| *(default)* | — | paired-end | Standard paired-end RNA-seq; fragment length estimated from data |
+| `--single` | Boolean flag | FALSE | For single-end libraries; **requires `-l` and `-s`** |
+| `--single-overhang` | Boolean flag | FALSE | Include reads predicted to extend beyond transcript boundaries; useful for short transcripts |
+
+#### Fragment Length Parameters *(Single-End Only)*
+| Parameter | Type | Default | Biological Significance |
+|---|---|---|---|
+| `-l`, `--fragment-length` | DOUBLE | *required* | Estimated mean insert size. Typically 180–250 bp for standard RNA-seq libraries. Can be obtained from library prep documentation or FastQC/Picard metrics |
+| `-s`, `--sd` | DOUBLE | `-l × 0.01` | Standard deviation of fragment length distribution. Typically 20–50 bp; reflects library heterogeneity |
+
+> ⚠️ **Critical**: Incorrect `-l`/`-s` values for single-end data significantly affect effective length calculations and consequently TPM normalization accuracy.
+
+#### Strandedness Parameters *(Optional but Recommended)*
+| Parameter | Type | Biological Use |
+|---|---|---|
+| `--fr-stranded` | Flag | First-read-forward (sense) stranded. Use for **dUTP-based libraries** (most Illumina TruSeq Stranded), **ligation-based strand-specific** methods |
+| `--rf-stranded` | Flag | First-read-reverse (antisense) stranded. Use for certain directional library preparations |
+| *(omit both)* | — | Unstranded library (default); appropriate for standard non-stranded RNA-seq |
+
+> ℹ️ **Best Practice**: Always specify strandedness when known. Incorrect strandedness can reduce the number of pseudoaligned reads and introduce quantification bias.
+
+#### Computational Parameters
+| Parameter | Type | Default | Guidance |
+|---|---|---|---|
+| `-t`, `--threads` | INT | 1 | Number of CPU threads. Recommend 4–8 for typical server environments; GenePattern should expose this |
+| `--bias` | Boolean flag | FALSE | Sequence-based bias correction (hexamer priming). **Recommended** for most libraries, especially polyA-selected |
+| `-b`, `--bootstrap-samples` | INT | 0 | Bootstrap iterations for uncertainty quantification. Use **≥100** for sleuth downstream analysis; 0 is sufficient for DESeq2/edgeR |
+| `--seed` | INT | 42 | Random seed for bootstrap reproducibility |
+
+#### Output Format Parameters
+| Parameter | Type | Default | Notes |
+|---|---|---|---|
+| `--plaintext` | Flag | FALSE | Output plaintext TSV instead of HDF5; NOTE: omits bootstrap estimates |
+| `--genomebam` | Flag | FALSE | Project pseudoalignments to genome-coordinate BAM (requires `--gtf`) |
+| `--gtf` | FILE | *none* | GTF annotation; required for `--genomebam` |
+| `--chromosomes` | FILE | *none* | Chromosome sizes file; improves BAM header consistency |
+| `--fusion` | Flag | FALSE | Output fusion candidates for Pizzly analysis |
+| `--verbose` | Flag | FALSE | Print detailed run information to stderr |
+
+### 3.2 Index Building Parameters (`kallisto index`)
+| Parameter | Type | Default | Notes |
+|---|---|---|---|
+| `-i`, `--index` | STRING | *none* | Output index filename |
+| `-k`, `--kmer-size` | INT (odd) | 31 | k-mer length. Max value 31. Smaller k (e.g., 21) improves sensitivity for short reads (<50bp) at cost of slightly reduced specificity |
+| `--make-unique` | Flag | FALSE | Replace duplicate transcript names with unique identifiers |
+| `-t`, `--threads` | INT | 1 | Threads for index building |
+
+### 3.3 Recommended Parameter Groups for GenePattern UI
+
+```
+GROUP 1 — Input Data
+  ├── input.file          [FASTQ/FASTQ.GZ, required]
+  ├── index               [dropdown: human_gencode37 | mouse_gencodeM26 | custom]
+  └── output.filename     [STRING]
+
+GROUP 2 — Library Type
+  ├── read.type           [paired-end | single-end]
+  ├── fragment.length     [DOUBLE, visible when single-end]
+  ├── fragment.sd         [DOUBLE, visible when single-end]
+  └── strandedness        [none | fr-stranded | rf-stranded]
+
+GROUP 3 — Quantification Options
+  ├── bias.correction     [boolean, default: false]
+  ├── bootstrap.samples   [INT, default: 0]
+  └── seed                [INT, default: 42]
+
+GROUP 4 — Genome BAM Output (Advanced)
+  ├── genomebam           [boolean, default: false]
+  ├── gtf.file            [GTF, visible when genomebam=true]
+  └── chromosomes.file    [TSV, optional]
+
+GROUP 5 — Computational Resources
+  ├── threads             [INT, default: 4]
+  └── plaintext.output    [boolean, default: false]
+```
+
+---
+
+## 4. 🔧 INSTALLATION & DEPENDENCY REQUIREMENTS
+
+### 4.1 Core Software
+| Component | Version | Role |
+|---|---|---|
+| **kallisto** | 0.50.0 (latest), also 0.44.x–0.52.x | Core pseudoalignment engine |
+| **R** | ≥4.0 | Gene-level aggregation via tximport |
+| **tximport** (Bioconductor) | ≥1.20 | Transcript-to-gene level summarization |
+| **rhdf5** (Bioconductor) | ≥2.36 | Reading HDF5 abundance files |
+
+### 4.2 System Dependencies
+| Dependency | Role |
+|---|---|
+| **HDF5** | Read/write `.h5` binary output files |
+| **zlib** | Native gzip FASTQ decompression |
+| **cmake** (≥3.0) | Build from source (not needed for binaries) |
+| **C++ compiler** (C++14) | Compilation only |
+
+### 4.3 Installation Methods
+
+```bash
+# Method 1: Bioconda (Recommended)
+conda install -c bioconda kallisto
+# Available versions: 0.43.0 through 0.52.0
+
+# Method 2: Source compilation
+git clone https://github.com/pachterlab/kallisto
+cd kallisto && mkdir build && cd build
+cmake .. -DUSE_HDF5=ON
+make && make install
+
+# Method 3: Docker (GenePattern)
+docker pull genepattern/kallisto
+# or via BioContainers:
+docker pull quay.io/biocontainers/kallisto:0.50.0--h7d86c95_2
+
+# Method 4: R dependencies (for gene aggregation)
+BiocManager::install(c("tximport", "rhdf5"))
+```
+
+### 4.4 GenePattern-Specific Container
+- **Docker image**: `genepattern/kallisto`
+- **Available on**: Docker Hub under the `genepattern` organization
+- **Architecture**: Wraps kallisto binary + R/tximport for gene-level aggregation
+- **Index files**: Pre-packaged Gencode reference indexes hosted as GenePattern support files:
+  - Human: `Gencode release 37 (GRCh38.p13)` — ~3.5 GB
+  - Mouse: `Gencode release M26 (GRCm39)` — ~2.5 GB
+
+### 4.5 Computational Resource Requirements
+| Resource | Minimum | Recommended |
+|---|---|---|
+| **RAM** | 4 GB | 8–16 GB |
+| **Index storage** | ~3.5 GB (human) | SSD preferred |
+| **CPU** | 1 core | 4–8 cores |
+| **Runtime (50M PE reads)** | ~3 min (1 thread) | ~45 sec (8 threads) |
+
+> ℹ️ **Contrast**: STAR requires ~30 GB RAM; Salmon requires ~8 GB. Kallisto's low memory footprint is a major advantage for shared server environments.
+
+---
+
+## 5. 🔬 COMMON WORKFLOWS & USE CASES
+
+### 5.1 Standard Bulk RNA-seq Workflow
+
+```
+FASTQ reads (paired-end)
+     │
+     ▼
+[Kallisto.Quant] ─────────────────────────────────────┐
+     │  -i human_gencode37.idx                         │
+     │  -o output_dir                                  │
+     │  --bias                                         │
+     │  -t 8                                           │
+     ▼                                                 │
+abundance.h5 / abundance.tsv / run_info.json          │
+     │                                                 │
+     ▼                                                 │
+[tximport] ── tx2gene mapping ─────────────────────── ┘
+     │  Gene-level counts matrix
+     ▼
+[DESeq2 / edgeR / limma-voom]
+     │  Differential Expression
+     ▼
+[GenePattern DiffEx Modules]
+```
+
+### 5.2 Key Workflow Commands
+
+```bash
+# Step 1: (GenePattern handles) — Build or use pre-built index
+kallisto index -i human_gencode37.idx Homo_sapiens.GRCh38.cdna.all.fa.gz
+
+# Step 2: Paired-end quantification with bias correction
+kallisto quant \
+    -i human_gencode37.idx \
+    -o sample1_output \
+    --bias \
+    -t 8 \
+    sample1_R1.fastq.gz sample1_R2.fastq.gz
+
+# Step 3: Single-end quantification
+kallisto quant \
+    -i human_gencode37.idx \
+    -o sample1_output \
+    --single -l 200 -s 30 \
+    --bias \
+    -t 8 \
+    sample1.fastq.gz
+
+# Step 4: With bootstrap (for sleuth)
+kallisto quant \
+    -i human_gencode37.idx \
+    -o sample1_output \
+    -b 100 \
+    --bias \
+    -t 8 \
+    sample1_R1.fastq.gz sample1_R2.fastq.gz
+
+# Step 5: Gene-level aggregation in R via tximport
+library(tximport)
+files <- c("sample1/abundance.h5", "sample2/abundance.h5")
+names(files) <- c("sample1", "sample2")
+tx2gene <- read.csv("tx2gene_human_gencode37.csv")
+txi <- tximport(files, type = "kallisto", tx2gene = tx2gene)
+# txi$counts = gene-level count matrix for DESeq2
+# txi$abundance = gene-level TPM matrix
+```
+
+### 5.3 GenePattern Sample Run Log (from Module)
+```
+[quant] fragment length distribution is truncated gaussian with mean=200, sd=30
+[index] k-mer length: 31
+[index] number of targets: 234,485
+[index] number of k-mers: 143,310,200
+[index] number of equivalence classes: 1,002,767
+[quant] running in single-end mode
+[quant] will process file 1: SRR1515119_50k.fastq.gz
+[quant] finding pseudoalignments for the reads ... done
+[quant] processed 50,000 reads, 192 reads pseudoaligned
+[ em] quantifying the abundances ... done
+[ em] the Expectation-Maximization algorithm ran for 501 rounds
+[bstrp] running EM for the bootstrap: 1
+[bstrp] running EM for the bootstrap: 2
+'gene_mode' is TRUE
+```
+
+### 5.4 Downstream Integration Options
+| Downstream Tool | Input from Kallisto | Analysis Type |
+|---|---|---|
+| **DESeq2** | Gene counts via tximport | Differential expression |
+| **edgeR** | Gene counts via tximport | Differential expression |
+| **limma-voom** | Gene counts via tximport | Differential expression |
+| **sleuth** | `abundance.h5` directly | Transcript-level DE with uncertainty |
+| **tximport** | `abundance.h5` or `.tsv` | Gene-level aggregation |
+| **IGV/UCSC** | `pseudoalignments.bam` | Visualization (limited) |
+| **Pizzly** | Fusion output | Gene fusion detection |
+
+---
+
+## 6. 🆚 COMPARATIVE ANALYSIS
+
+### 6.1 Performance Benchmark Summary
+
+| Tool | Speed | Memory | Accuracy | BAM Output | Novel Junctions |
+|---|---|---|---|---|---|
+| **Kallisto.Quant** | ⭐⭐⭐⭐⭐ (~3 min) | ⭐⭐⭐⭐⭐ (~4 GB) | ⭐⭐⭐⭐ (near-optimal) | Optional (pseudobam) | ❌ |
+| **Salmon** | ⭐⭐⭐⭐⭐ (~5 min) | ⭐⭐⭐⭐ (~8 GB) | ⭐⭐⭐⭐⭐ (selective align.) | ❌ | ❌ |
+| **HISAT2 + featureCounts** | ⭐⭐⭐ (~20 min) | ⭐⭐⭐⭐ (~8 GB) | ⭐⭐⭐⭐ | ✅ (genomic) | ✅ |
+| **STAR + RSEM** | ⭐⭐ (~35 min) | ⭐ (~30 GB) | ⭐⭐⭐⭐⭐ | ✅ (genomic) | ✅ |
+| **HTSeq** | ⭐ (very slow) | ⭐⭐⭐ | ⭐⭐⭐ | Requires BAM | ❌ |
+
+### 6.2 Kallisto vs. Salmon (Closest Competitor)
+| Aspect | Kallisto | Salmon |
+|---|---|---|
+| Algorithm | Pseudoalignment (exact k-mer) | Selective alignment (quasi-mapping) |
+| Speed | Marginally faster | Slightly slower |
+| Bias Correction | Sequence-based (`--bias`) | GC-bias + sequence-bias + positional-bias |
+| Output | H5/TSV | SF (native), also HDF5 |
+| scRNA-seq | Yes (via bustools/BUS) | Yes (via alevin) |
+| Accuracy correlation | Rv = 0.9999 vs Salmon | Reference standard |
+| GenePattern availability | ✅ (Kallisto.Quant) | Separate module |
+
+### 6.3 When to Choose Kallisto.Quant
+✅ **Best choice when:**
+- Fast turnaround on well-annotated genomes (human, mouse)
+- Low memory computing environments
+- Gene-level counts for DESeq2/edgeR are the end goal
+- Processing many samples in parallel
+- Single-cell pre-processing (bus mode)
+
+⚠️ **Consider alternatives when:**
+- Novel splice junction detection is required → use STAR
+- Extensive bias correction needed → consider Salmon
+- Downstream analysis requires true genomic BAM → use STAR or HISAT2
+- Transcript-level differential expression with full bias modeling → use Salmon + tximport
+
+---
+
+## 7. 🖥️ GENEPATTERN MODULE INTEGRATION
+
+### 7.1 Module Metadata
+| Field | Value |
+|---|---|
+| **Module Name** | Kallisto.Quant |
+| **Version** | v2 (with dynamic dropdown for kallisto versions) |
+| **Repository** | https://github.com/genepattern/Kallisto.Quant |
+| **Container** | `genepattern/kallisto` (Docker Hub) |
+| **Language** | Any (shell script wrapping kallisto binary + R) |
+| **Category** | RNA-seq / Quantification |
+| **License** | BSD 2-Clause (kallisto) |
+
+### 7.2 Reference Index Configuration (GenePattern-Specific)
+The module uses **pre-built transcriptome indexes** hosted as GenePattern support files:
+
+| Organism | Genome Assembly | Annotation | Index Source |
+|---|---|---|---|
+| *Homo sapiens* | GRCh38.p13 | Gencode Release 37 | `datasets.genepattern.org/.../Kallisto/` |
+| *Mus musculus* | GRCm39 | Gencode Release M26 | `datasets.genepattern.org/.../Kallisto/` |
+
+> ℹ️ The "dynamic dropdown" in the module version description refers to allowing users to select from available pre-built indexes, with the ability to update the dropdown list as new reference versions are added — without requiring a full module version update.
+
+### 7.3 Module Parameter Descriptions (Recommended)
+
+```yaml
+parameters:
+  - name: input.file
+    description: >
+      FASTQ or gzipped FASTQ file(s) containing RNA-seq reads. For paired-end
+      data, provide two files (R1 and R2). Gzip compression (.fastq.gz, .fq.gz)
+      is supported natively. Minimum recommended: 1 million reads.
+    type: FILE
+    required: true
+    formats: [FASTQ, FASTQ.GZ]
+
+  - name: index
+    description: >
+      Pre-built kallisto transcriptome index. Select 'human' for Homo sapiens
+      (Gencode GRCh38.p13 release 37) or 'mouse' for Mus musculus
+      (Gencode GRCm39 release M26). For other organisms, provide a custom
+      .idx file built with 'kallisto index'.
+    type: CHOICE
+    choices: [human_gencode37, mouse_gencodeM26, custom]
+    required: true
+
+  - name: output.filename
+    description: >
+      Base name for output files. Output will be placed in
+      RNASeq_quant/<output.filename>_abundance.h5 (and .tsv).
+    type: STRING
+    required: true
+
+  - name: read.type
+    description: >
+      Library read type. 'paired-end' (default) for standard paired-end
+      sequencing; 'single-end' for single-end reads (requires fragment.length
+      and fragment.sd to be specified).
+    type: CHOICE
+    choices: [paired-end, single-end]
+    default: paired-end
+
+  - name: fragment.length
+    description: >
+      [Required for single-end only] Estimated mean fragment (insert) size in
+      base pairs. Typically 180–250 bp for standard polyA RNA-seq libraries.
+      Check library prep documentation or use Picard CollectInsertSizeMetrics.
+    type: FLOAT
+    required: false  # conditionally required
+
+  - name: fragment.sd
+    description: >
+      [Required for single-end only] Estimated standard deviation of fragment
+      length in base pairs. Typically 20–50 bp. Affects effective length
+      normalization and TPM calculation accuracy.
+    type: FLOAT
+    default: 30
+
+  - name: strandedness
+    description: >
+      Specifies strand-specific protocol. 'fr-stranded': first read forward
+      (use for dUTP/TruSeq Stranded libraries). 'rf-stranded': first read
+      reverse. Leave unset for non-stranded libraries. Using the correct
+      setting can improve pseudoalignment rates.
+    type: CHOICE
+    choices: [none, fr-stranded, rf-stranded]
+    default: none
+
+  - name: bootstrap.samples
+    description: >
+      Number of bootstrap samples for uncertainty quantification. Set to 0
+      (default) for DESeq2/edgeR workflows. Set to ≥100 for downstream
+      analysis with sleuth (transcript-level differential expression with
+      uncertainty estimates). More bootstraps = more runtime.
+    type: INTEGER
+    default: 0
+    min: 0
+
+  - name: bias.correction
+    description: >
+      Perform sequence-based bias correction to account for hexamer priming
+      bias in cDNA synthesis. Recommended for most standard polyA RNA-seq
+      libraries. Slightly increases runtime.
+    type: BOOLEAN
+    default: false
+
+  - name: threads
+    description: >
+      Number of CPU threads for parallel processing. Kallisto scales well
+      up to 8 threads. Increasing threads linearly reduces runtime.
+    type: INTEGER
+    default: 4
+    min: 1
+    max: 32
+
+  - name: genomebam
+    description: >
+      Project pseudoalignments onto the genome and output a genome-sorted BAM
+      file (pseudoalignments.bam). Requires a GTF annotation file. Useful for
+      visualization in genome browsers (note: not equivalent to a full
+      genomic alignment BAM).
+    type: BOOLEAN
+    default: false
+
+  - name: gtf.file
+    description: >
+      [Required when genomebam=true] GTF annotation file providing
+      transcript-to-genome coordinate mapping. Must match the transcriptome
+      used to build the index.
+    type: FILE
+    required: false
+    formats: [GTF, GTF.GZ]
+
+  - name: chromosomes.file
+    description: >
+      [Optional, for genomebam] Tab-separated file with chromosome names and
+      lengths. Ensures consistent BAM header format required by some
+      downstream tools.
+    type: FILE
+    required: false
+    formats: [TXT, TSV]
+```
+
+### 7.4 Gene-Level Aggregation (GenePattern-Specific Feature)
+The GenePattern module goes beyond the base kallisto binary by integrating **tximport** (Bioconductor) to automatically perform transcript-to-gene level aggregation:
+
+```R
+# Internal R code for gene aggregation in the module
+library(tximport)
+library(rhdf5)
+
+# tx2gene mapping derived from Gencode GTF
+tx2gene <- read.csv("/opt/module_support/tx2gene_human_gencode37.csv")
+
+files <- list.files("RNASeq_quant", pattern="abundance.h5", full.names=TRUE)
+names(files) <- output.filename
+
+txi <- tximport(
+    files,
+    type = "kallisto",
+    tx2gene = tx2gene,
+    ignoreTxVersion = TRUE
+)
+
+# Output: gene-level counts matrix (for DESeq2/edgeR)
+write.csv(txi$counts, "gene_counts.csv")
+# Output: gene-level TPM matrix
+write.csv(txi$abundance, "gene_tpm.csv")
+```
+
+### 7.5 Known Limitations & Caveats for Module Documentation
+1. **Novel transcripts**: Cannot quantify transcripts absent from the reference index
+2. **Pseudobam limitations**: `--genomebam` BAM is not equivalent to true genomic alignment; cannot be used for variant calling
+3. **Fragment length sensitivity**: Incorrect `-l`/`-s` for single-end data materially affects TPM normalization
+4. **Index version incompatibility**: kallisto v0.50.0 uses a new index format incompatible with older versions — GenePattern must track index-binary version pairing
+5. **Low-expression sensitivity**: Marginally lower detection of very lowly expressed genes compared to alignment-based methods (HISAT2)
+6. **Multi-mapping**: Reads equally compatible with multiple transcript families are probabilistically assigned — appropriate for most gene-level analyses but requires caution for paralog-heavy gene families
+
+---
+
+## 8. 📚 LITERATURE & CITATIONS
+
+| Reference | Year | Key Contribution |
+|---|---|---|
+| Bray *et al.*, *Nat. Biotechnol.* 34:525–527 | 2016 | Original kallisto paper — pseudoalignment algorithm |
+| Pimentel *et al.*, *Nat. Methods* 14:687–690 | 2017 | sleuth — bootstrap-based differential expression with kallisto |
+| Love *et al.*, *F1000Research* | 2018 | Tximeta/tximport — transcript-to-gene aggregation workflow |
+| Melsted *et al.*, *Nat. Biotechnol.* | 2021 | Modular and efficient pre-processing with bustools (kb-python) |
+| Booeshaghi & Pachter, *Sci. Rep.* | 2021 | Normalization benchmarks validating kallisto TPM |
+| Tian *et al.*, *Genome Biology* | 2019 | scRNA-seq benchmarking including kallisto|bustools |
+| Kaminow *et al.*, *Genome Biology* | 2022 | STARsolo vs kallisto|bustools for scRNA-seq |
+| Soneson *et al.*, *PMC* | 2024 | lr-kallisto — long-read extension of pseudoalignment |
+
+---
+
+## 9. ✅ SUMMARY & RECOMMENDATIONS FOR GENEPATTERN MODULE DEVELOPMENT
+
+### Critical Implementation Points
+1. **Dynamic Index Dropdown**: Implement versioned index selection with clear organism/assembly/annotation labels (e.g., `Human - GRCh38.p13 - Gencode 37`). Update process should not require full module version bump.
+2. **Single-end validation**: Enforce that `-l` and `-s` are provided when `--single` mode is selected; add sensible default suggestions (l=200, s=30).
+3. **Gene-level aggregation**: The tximport integration is a key differentiator of this module vs. raw kallisto — ensure the tx2gene mapping files are version-matched to the reference indexes.
+4. **HDF5 output**: Keep `abundance.h5` as primary output (not `--plaintext`) to preserve bootstrap data for sleuth compatibility.
+5. **Version tracking**: Maintain strict kallisto binary ↔ index version compatibility (v0.50.0 index is incompatible with older binaries).
+6. **Container versioning**: Pin specific kallisto version in Docker image; use `quay.io/biocontainers/kallisto` BioContainers as fallback.
+7. **Resource defaults**: Set default threads to 4; document expected runtime (~3–10 min for 50M reads with 4 threads).
+8. **Quality metric surfacing**: Parse `run_info.json` to display pseudoalignment rate in the module output summary — rates <60% may indicate index mismatch or poor-quality data.
+
+### Recommended Module Test Data
+- **Test dataset**: `SRR1515119_50k.fastq.gz` (already used in GenePattern module testing)
+- **Expected output**: ~50,000 reads processed, ~192 reads pseudoaligned (low rate expected for 50k subset)
+- **Full validation**: Use SEQC benchmark dataset or GEUVADIS RNA-seq data
+
+---
+
+*Report compiled from: pachterlab.github.io/kallisto (manual v0.50.0), github.com/genepattern/Kallisto.Quant, Nature Biotechnology (2016), Bioconductor tximport documentation, Bioconda package registry, PMC comparative benchmarks, and GenePattern module documentation.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

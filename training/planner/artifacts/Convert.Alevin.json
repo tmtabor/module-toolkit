@@ -1,0 +1,98 @@
+{
+  "module_name": "Convert.Alevin",
+  "description": "Read alevin output files and convert them to anndata (.h5ad) or loom (.loom) format for downstream analysis. Designed to convert Alevin Velocity quantification into a compatible format for scVelo.",
+  "author": "Anthony S. Castanza;UCSD-MesirovLab",
+  "input_file_formats": [
+    "tar.gz",
+    "tsv"
+  ],
+  "language": "Python",
+  "categories": [
+    "singlecell",
+    "single-cell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:95291:1",
+  "plan": "## Convert.Alevin GenePattern Module — Implementation Plan\n\n### 1. Overview\nConvert.Alevin is a GenePattern module that Read alevin output files and convert them to anndata (.h5ad) or loom (.loom) format for downstream analysis. Designed to convert Alevin Velocity quantification into a compatible format for scVelo.\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: Alevin.Quants, Merge, Out.Type\n- Optional: Features\n\n### 3. Command Line\n```\npython3 /build/alevin.vpolo.py -i <Alevin.Quants> -f <Features> -m <Merge> -o <Out.Type>\n```\n\n### 4. Docker Image\nDocker image: genepattern/convert_alevin\\:v1\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "alevin.vpolo.py",
+  "command_line": "python3 /build/alevin.vpolo.py -i <Alevin.Quants> -f <Features> -m <Merge> -o <Out.Type>",
+  "parameters": [
+    {
+      "name": "Alevin.Quants",
+      "description": "Alevin output directories. Files must be in .tar.gz format, and have unique names.",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": [
+        "tar.gz",
+        "tar.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Alevin.Quants",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Features",
+      "description": "A tab delimited file containing the list of spliced gene ids in column 1, the unspliced gene ids in column 2, and gene names (symbols) in column 3. (From PreprocessVelocityTranscriptome, or manually created)",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Features",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Merge",
+      "description": "Combine multiple Alevin runs into a single output object (True), or output them individually (false).",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "True",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "true",
+          "value": "True"
+        },
+        {
+          "display": "false",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Merge",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Out.Type",
+      "description": "Output alevin results as anndata (.h5ad) or loom (.loom)",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "h5ad",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "h5ad",
+          "value": "h5ad"
+        },
+        {
+          "display": "loom",
+          "value": "loom"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Out.Type",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/convert_alevin:v1"
+}

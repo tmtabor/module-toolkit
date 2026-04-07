@@ -1,0 +1,249 @@
+{
+  "module_name": "PreprocessDataset",
+  "description": "Performs several preprocessing steps on a res, gct, or odf input file",
+  "author": "Joshua Gould, Broad Institute",
+  "input_file_formats": [
+    "Dataset",
+    "gct",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:67543:1",
+  "plan": "## PreprocessDataset GenePattern Module — Implementation Plan\n\n### 1. Overview\nPreprocessDataset is a GenePattern module that Performs several preprocessing steps on a res, gct, or odf input file\n\n### 2. Parameters\nThe module exposes 14 parameters:\n- Required: input.filename, output.file\n- Optional: threshold.and.filter, floor, ceiling, min.fold.change, min.delta, num.outliers.to.exclude, row.normalization, row.sampling.rate, threshold.for.removing.rows, number.of.columns.above.threshold, log2.transform, output.file.format\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>Preprocess.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.modules.preprocess.Preprocess -F <input.filename> -r <output.file.format> -V <threshold.and.filter> -n <row.normalization> -f <min.fold.change> -d <min.delta> -t <floor> -c <ceiling> -p <row.sampling.rate> -e <num.outliers.to.exclude> -O <output.file> -g <log2.transform> <threshold.for.removing.rows> <number.of.columns.above.threshold>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "Preprocess.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>gp-modules.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>Preprocess.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.modules.preprocess.Preprocess -F <input.filename> -r <output.file.format> -V <threshold.and.filter> -n <row.normalization> -f <min.fold.change> -d <min.delta> -t <floor> -c <ceiling> -p <row.sampling.rate> -e <num.outliers.to.exclude> -O <output.file> -g <log2.transform> <threshold.for.removing.rows> <number.of.columns.above.threshold>",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "description": "Input filename - .res, .gct, .odf",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "res",
+        "gct",
+        "Dataset"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "threshold.and.filter",
+      "description": "Apply floor, ceiling and variation filter",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": "0"
+        },
+        {
+          "display": "yes",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--threshold.and.filter",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "floor",
+      "description": "Value for floor threshold",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "20",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--floor",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "ceiling",
+      "description": "Value for ceiling threshold",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "20000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--ceiling",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.fold.change",
+      "description": "Minimum fold change for variation filter",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.fold.change",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.delta",
+      "description": "Minimum delta for variation filter",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.delta",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.outliers.to.exclude",
+      "description": "Number of outliers per row to ignore when calculating row min and max for variation filter",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.outliers.to.exclude",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "row.normalization",
+      "description": "Perform row normalization",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": "0"
+        },
+        {
+          "display": "yes",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--row.normalization",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "row.sampling.rate",
+      "description": "Sample rows without replacement to obtain this fraction of the total number of rows",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--row.sampling.rate",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "threshold.for.removing.rows",
+      "description": "Threshold for removing rows",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-b",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "number.of.columns.above.threshold",
+      "description": "Remove row if this number of columns not >\\= given threshold",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-a",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "log2.transform",
+      "description": "Apply log2 transform after all other preprocessing steps",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no",
+          "value": "0"
+        },
+        {
+          "display": "yes",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--log2.transform",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file.format",
+      "description": "Output file format",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "gct",
+          "value": "0"
+        },
+        {
+          "display": "res",
+          "value": "1"
+        },
+        {
+          "display": "same as input",
+          "value": "3"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.file.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "Output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.filename_basename>.preprocessed",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

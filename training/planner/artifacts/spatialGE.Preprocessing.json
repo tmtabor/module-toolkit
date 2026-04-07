@@ -1,0 +1,486 @@
+{
+  "module_name": "spatialGE.Preprocessing",
+  "description": "The package spatialGE provides a collection of tools for the visualization of gene expression from spatially-resolved transcriptomic experiments. The data input methods have been designed so that any data can be analyzed as long as it contains gene expression counts per region of interest (ROI), spot, or cell, and the spatial coordinates of those ROIs, spots, or cells, as it is generated in platforms such as GeoMx, Visium, and CosMx-SMI. The spatialge.Preprocessing module performs initial data ingestion, filtering, transform and pseudo-bulk operations to prepare data for further processing. Order of operations are\\: ingestion, filter, pseudobulk, transform.",
+  "author": "Edwin Huang, Ted Liefeld, Thorin Tabor, Michael Reich;UCSD - Mesirov Lab",
+  "input_file_formats": [
+    "csv",
+    "gz",
+    "tsv",
+    "txt"
+  ],
+  "language": "R",
+  "categories": [
+    "spatial transcriptomics"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:43766:1",
+  "plan": "## spatialGE.Preprocessing GenePattern Module — Implementation Plan\n\n### 1. Overview\nspatialGE.Preprocessing is a GenePattern module that The package spatialGE provides a collection of tools for the visualization of gene expression from spatially-resolved transcriptomic experiments. The data input methods have been designed so that any data can be analyzed as long as it contains gene expression counts per region of interest (ROI), spot, or cell, and the spatial coordinates of those ROIs, spots, or cells, as it is generated in platforms such as GeoMx, Visium, and CosMx-SMI. The spatialge.Preprocessing module performs initial data ingestion, filtering, transform and pseudo-bulk operations to prepare data for further processing. Order of operations are\\: ingestion, filter, pseudobulk, transform.\n\n### 2. Parameters\nThe module exposes 32 parameters:\n- Required: input.data.archive, verbose, transform.data, output.filename, pseudobulk, pseudobulk.plot.meta, pseudobulk.heatmap.num.displayed.genes, distribution.plot.meta, input.clinical.data, filter.data\n- Optional: pseudobulk.max.var.genes, spot.min.reads, spot.min.genes, spot.max.reads, spot.max.genes, transform.scale.f, transform.num.regression.genes, transform.min.spots.or.cells, spot.min.percent, spot.max.percent, gene.min.reads, gene.max.reads, gene.min.spots, gene.max.spots, gene.min.percent, gene.max.percent, filter.samples, rm.tissue, rm.spots, rm.genes, rm.genes.regex, spot.percentage.genes.regex\n\n### 3. Command Line\n```\nRscript /spatialGE/spatialge_preprocessing_wrapper.R <input.data.archive> <input.clinical.data> <verbose> <transform.data> <output.filename> <pseudobulk> <pseudobulk.max.var.genes> <pseudobulk.plot.meta> <pseudobulk.heatmap.num.displayed.genes> <distribution.plot.meta> <spot.min.reads> <spot.min.genes> <spot.max.reads> <spot.max.genes> <transform.scale.f> <transform.num.regression.genes> <transform.min.spots.or.cells> <spot.min.percent> <spot.max.percent> <gene.min.reads> <gene.max.reads> <gene.min.spots> <gene.max.spots> <gene.min.percent> <gene.max.percent> <filter.samples> <rm.tissue> <rm.spots> <rm.genes> <rm.genes.regex> <spot.percentage.genes.regex> <filter.data>\n```\n\n### 4. Docker Image\nDocker image: genepattern/spatialgp.preprocessing\\:0.9\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "spatialge_preprocessing_wrapper.R",
+  "command_line": "Rscript /spatialGE/spatialge_preprocessing_wrapper.R <input.data.archive> <input.clinical.data> <verbose> <transform.data> <output.filename> <pseudobulk> <pseudobulk.max.var.genes> <pseudobulk.plot.meta> <pseudobulk.heatmap.num.displayed.genes> <distribution.plot.meta> <spot.min.reads> <spot.min.genes> <spot.max.reads> <spot.max.genes> <transform.scale.f> <transform.num.regression.genes> <transform.min.spots.or.cells> <spot.min.percent> <spot.max.percent> <gene.min.reads> <gene.max.reads> <gene.min.spots> <gene.max.spots> <gene.min.percent> <gene.max.percent> <filter.samples> <rm.tissue> <rm.spots> <rm.genes> <rm.genes.regex> <spot.percentage.genes.regex> <filter.data>",
+  "parameters": [
+    {
+      "name": "input.data.archive",
+      "description": "Input data archive in gz format. Should match directory structure as defined by spatialGE as described <a href\\=\"https\\://fridleylab.github.io/spatialGE/reference/STlist.html\">here</a>.",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-a",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "verbose",
+      "description": "Output additional files including summarized STList, distribution_plots before and after filtering, and pseudobulk PCA plot and heatmap.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "False",
+          "value": "False"
+        },
+        {
+          "display": "True",
+          "value": "True"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-c",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "transform.data",
+      "description": "None, log or sct. If log, log-normalization is performed. If sct, then the <a href\\=\"https\\://rdrr.io/pkg/sctransform/man/vst.html\">SCTransform</a> method is applied. SCT is a variance stabilizing transformation to UMI count data using a regularized Negative Binomial regression model.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "Log",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "None",
+          "value": "None"
+        },
+        {
+          "display": "Log",
+          "value": "Log"
+        },
+        {
+          "display": "SCT",
+          "value": "SCT"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-d",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "The basename to use for output file (no need to add \".txt\" at the end)",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "<input.data.archive_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-e",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "pseudobulk",
+      "description": "Perform pseudobulk to creates (pseudo) bulk RNAseq data sets by combining all counts from each sample. Then log transform the pseudo bulk and perform PCA. Note that the spatial coordinate information is not considered here, which is intended only as an exploratory analysis analysis.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "False",
+          "value": "False"
+        },
+        {
+          "display": "True",
+          "value": "True"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-f",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "pseudobulk.max.var.genes",
+      "description": "The number of most variable genes (standard deviation) to use in pseudobulk analysis.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "5000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-g",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "pseudobulk.plot.meta",
+      "description": "A string indicating the name of the variable in the sample metadata to color points in the PCA plot.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "patient_id",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-F",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "pseudobulk.heatmap.num.displayed.genes",
+      "description": "The number of genes to display in the pseudobulk heatmap, selected based on decreasing order of standard deviation across samples.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "30",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-i",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "distribution.plot.meta",
+      "description": "Vector of variables in x@spatial_meta to plot distributions. If 'total_counts', the function plots the counts per spot/cell. If 'total_genes', the function plots the number of genes per spot/cell are plotted.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "total_counts",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-j",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "spot.min.reads",
+      "description": "The minimum number of total reads for a spot to be retained",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "5000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-k",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "spot.min.genes",
+      "description": "the minimum number of non-zero counts for a spot to be retained",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "1000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-l",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "spot.max.reads",
+      "description": "The maximum number of total reads for a spot to be retained",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "150000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-m",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "spot.max.genes",
+      "description": "The maximum number of non-zero counts for a spot to be retained.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-n",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "transform.scale.f",
+      "description": "The scale factor used in logarithmic transformation.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "10000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-o",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "transform.num.regression.genes",
+      "description": "The number of genes to be used in the regression model during SCTransform. The function sctransform\\:\\:vst makes a random gene selection based on this number.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "3000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-p",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "transform.min.spots.or.cells",
+      "description": "The minimum number of spots/cells to be used in the regression model fit by sctransform\\:\\:vst.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-q",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "spot.min.percent",
+      "description": "The minimum percentage of counts for features defined by spot_pct_expr for a spot to be retained.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-r",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "spot.max.percent",
+      "description": "The maximum percentage of counts for features defined by spot_pct_expr for a spot to be retained.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-s",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gene.min.reads",
+      "description": "The minimum number of total reads for a gene to be retained.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-t",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gene.max.reads",
+      "description": "The maximum number of total reads for a gene to be retained.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-u",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gene.min.spots",
+      "description": "The minimum number of spots with non-zero counts for a gene to be retained.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-v",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gene.max.spots",
+      "description": "The maximum number of spots with non-zero counts for a gene to be retained.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-w",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gene.min.percent",
+      "description": "The minimum percentage of spots with non-zero counts for a gene to be retained.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-x",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gene.max.percent",
+      "description": "The maximum percentage of spots with non-zero counts for a gene to be retained.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-y",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "filter.samples",
+      "description": "Samples (as in names(x@counts)) to perform filtering.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-z",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "rm.tissue",
+      "description": "Sample (as in names(x@counts)) to remove from STlist. Removes samples in x@counts, x@tr_counts, x@spatial_meta, x@gene_meta, and x@sample_meta.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-A",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "rm.spots",
+      "description": "Vector of spot/cell IDs to remove. Removes spots/cells in x@counts, x@tr_counts, and x@spatial_meta.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-B",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "rm.genes",
+      "description": "Vector of gene names to remove from STlist. Removes genes in x@counts, x@tr_counts, and x@gene_meta",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-C",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "rm.genes.regex",
+      "description": "A regular expression that matches genes to remove. Removes genes in x@counts, x@tr_counts, and x@gene_meta.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-D",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "spot.percentage.genes.regex",
+      "description": "a expression to use with spot_minpct and spot_maxpct. By default '^MT-'.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-E",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "input.clinical.data",
+      "description": "Metadata associated with each sample in a csv file. The sample names are in the first column, and they must match the names of the folders containing the data.",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "tsv",
+        "csv",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-b",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "filter.data",
+      "description": "Filter data, T/F",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "True",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-G",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/spatialgp.preprocessing:0.9"
+}

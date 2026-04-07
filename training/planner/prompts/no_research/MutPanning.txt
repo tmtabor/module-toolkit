@@ -1,0 +1,82 @@
+Create a comprehensive structured plan for the GenePattern module for 'MutPanning'.
+            
+            Tool Information:
+            - Name: MutPanning
+            - Version: Initial Release
+            - Language: any
+            - Description: MutPanning identifies driver genes based on their abundance of nonsynonymous mutations and their increased number of mutations in unusual nucleotide contexts that deviate from the background mutational process.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "MutPanning",
+  "parameters": [
+    {
+      "name": "mutation.file",
+      "type": "FILE",
+      "description": "The <b>mutation file</b>  should be a tab-delimited standard *.maf format and contain the following columns\\: <b>Hugo_Symbol</b> (gene name), <b>Chromosome</b>, <b>Start_Position</b> (according to Hg19), <b>End_Position</b> (according to Hg19), <b>Strand</b> (1 or -1), <b>Variant_Classification</b> (e.g. Missense_Mutation, Nonsense_Mutation, In_Frame_Del, Silent, etc.), <b>Variant_Type</b> (e.g. SNP, DEL, INS, etc.), <b>Reference_Allele</b> (reference nucleotide in Hg19), <b>Tumor_Seq_Allele1</b> (allele A in tumor), <b>Tumor_Seq_Allele2</b> (allele B in tumor), <b>Tumor_Sample_Barcode</b>.<br/>Names in column <b>Tumor_Sample_Barcode</b> should exactly match the names in the sample file (case-sensitive). If you are unsure about the file format, you can download an example <a href\\=\"http\\://storage.googleapis.com/mutpanning_hg19/MutationsSkin.maf\">here</a>. Make sure that <b>Variant_Classification</b> and <b>Variant_Type</b> are annotated by exactly the same terms/names as in the exemplary mutation file (case-sensitive, hyphenation, underscores, etc.)",
+      "required": true,
+      "default_value": "",
+      "file_format": "maf",
+      "num_values": "1..1"
+    },
+    {
+      "name": "sample.annotation.file",
+      "type": "FILE",
+      "description": "The <b>sample annotation file</b> should be a tab-delimited *.txt file that contains at least two columns labeled <b>Sample</b> and <b>Cohort</b>. The Sample column contains unique sample name for each sample in the maf file. No duplicates allowed, all samples in the mutation file must be listed in the sample file. The cohort column contains the subcohort (e.g. cancer type) to which the sample belongs (case-sensitive). If you are unsure about the file format, you can download an exemplary sample file <a href\\=\"http\\://storage.googleapis.com/mutpanning_hg19/SamplesSkin.txt\">here</a>",
+      "required": true,
+      "default_value": "",
+      "file_format": "txt",
+      "num_values": "1..1"
+    },
+    {
+      "name": "min.samples.per.cluster",
+      "type": "TEXT",
+      "description": "Minimum number of samples needed per nucleotide context cluster. Unless you are familiar with the MutPanning algorithm, we recommend running MutPanning with standard parameters (default value 3).",
+      "required": true,
+      "default_value": "3",
+      "num_values": "1..1"
+    },
+    {
+      "name": "min.mutations.per.cluster",
+      "type": "TEXT",
+      "description": "Minimum number of mutations needed per nucleotide context cluster. Unless you are familiar with the MutPanning algorithm, we recommend running MutPanning with standard parameters (default value 1000).",
+      "required": true,
+      "default_value": "1000",
+      "num_values": "1..1"
+    },
+    {
+      "name": "min.samples.Bayesian.model",
+      "type": "TEXT",
+      "description": "Minimum number of samples needed to calibrate the Bayesian background model. Unless you are familiar with the MutPanning algorithm, we recommend running MutPanning with standard parameters (default value 100).",
+      "required": true,
+      "default_value": "100",
+      "num_values": "1..1"
+    },
+    {
+      "name": "min.mutations.Bayesian.model",
+      "type": "TEXT",
+      "description": "Minimum number of mutations needed to calibrate the Bayesian background model. Unless you are familiar with the MutPanning algorithm, we recommend running MutPanning with standard parameters (default value 5000).",
+      "required": true,
+      "default_value": "5000",
+      "num_values": "1..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/docker-mutpanning\\:v0.10",
+  "categories": "Mutational Significance Analysis",
+  "task_type": "Mutational Significance Analysis",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "command_line": "/mutpanning/run-mutpanning-module.sh <job.memory> /mutpanning_temp <mutation.file>  <sample.annotation.file>  /mutpanning_hg19/Hg19/  <min.samples.per.cluster>  <min.mutations.per.cluster>  <min.samples.Bayesian.model> <min.mutations.Bayesian.model>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

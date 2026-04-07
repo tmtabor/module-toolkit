@@ -1,0 +1,36 @@
+{
+  "module_name": "SageKda2Cys",
+  "description": "Takes a zip of KeyDriverAnalysis output files and formats them as a cytoscape .cys session file",
+  "author": "Alex Pico, Ted Liefeld",
+  "input_file_formats": [
+    "zip"
+  ],
+  "language": "Perl",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:22691:1",
+  "plan": "## SageKda2Cys GenePattern Module — Implementation Plan\n\n### 1. Overview\nSageKda2Cys is a GenePattern module that Takes a zip of KeyDriverAnalysis output files and formats them as a cytoscape .cys session file\n\n### 2. Parameters\nThe module exposes 1 parameters:\n- Required: input.filename\n- Optional: none\n\n### 3. Command Line\n```\n<perl> <libdir>kda2cys.pl <input.filename> <libdir>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "kda2cys.pl",
+  "command_line": "<perl> <libdir>kda2cys.pl <input.filename> <libdir>",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "description": "a zip file containing the outputs from the SageKeyDriverAnalysis module",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

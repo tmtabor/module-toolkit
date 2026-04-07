@@ -1,0 +1,175 @@
+Create a comprehensive structured plan for the GenePattern module for 'SurvivalCurve'.
+            
+            Tool Information:
+            - Name: SurvivalCurve
+            - Version: Modified to use R 2.7 and Cairo to output images in PNG format
+            - Language: R
+            - Description: Draws a survival curve based on a cls file
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "SurvivalCurve",
+  "parameters": [
+    {
+      "name": "input.surv.data.file",
+      "type": "FILE",
+      "description": "input clinical data including survival time & censor status -.txt",
+      "required": true,
+      "default_value": "",
+      "file_format": "txt"
+    },
+    {
+      "name": "input.cls.file",
+      "type": "FILE",
+      "description": "Class information file -.cls",
+      "required": false,
+      "default_value": "",
+      "file_format": "cls"
+    },
+    {
+      "name": "time.field",
+      "type": "java.lang.String",
+      "description": "Name of survival time field",
+      "required": true,
+      "default_value": "time"
+    },
+    {
+      "name": "censor.field",
+      "type": "java.lang.String",
+      "description": "Name of survival time field (value should be \"event\\:1, censor\\:0\")",
+      "required": false,
+      "default_value": "status"
+    },
+    {
+      "name": "cls.field",
+      "type": "java.lang.String",
+      "description": "Name of class field in survival data file (optional)",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "print.fit.results",
+      "type": "java.lang.String",
+      "description": "Output file name for survival fit results",
+      "required": true,
+      "default_value": "F",
+      "choices": "T\\=yes;F\\=no"
+    },
+    {
+      "name": "line.type.color.assign",
+      "type": "java.lang.String",
+      "description": "Assign line type/color automatically/manually?",
+      "required": true,
+      "default_value": "automatic",
+      "choices": "automatic\\=automatic;manual\\=manual"
+    },
+    {
+      "name": "manual.line.type",
+      "type": "java.lang.Integer",
+      "description": "e.g. 1,2,3,... (1\\: solid, 2\\: dashed, 3\\: dotted, 4\\: dot-dashed)",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "manual.line.color",
+      "type": "java.lang.String",
+      "description": "e.g. black, blue, red, ...",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "line.width",
+      "type": "java.lang.Integer",
+      "description": "Line width",
+      "required": true,
+      "default_value": "1",
+      "choices": "1\\=thin;2\\=thick;3\\=thickest"
+    },
+    {
+      "name": "time.conversion",
+      "type": "java.lang.Float",
+      "description": "Survival time conversion",
+      "required": true,
+      "default_value": "1",
+      "choices": "1\\=none;365.25\\=days to years;12\\=months to years"
+    },
+    {
+      "name": "max.time",
+      "type": "java.lang.Float",
+      "description": "Maximum survival time (in original scale)",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "surv.function.lower",
+      "type": "java.lang.Float",
+      "description": "Lower limit of y axis range",
+      "required": true,
+      "default_value": "0"
+    },
+    {
+      "name": "surv.function.higher",
+      "type": "java.lang.Float",
+      "description": "Upper limit of y axis range",
+      "required": true,
+      "default_value": "1"
+    },
+    {
+      "name": "curve.type",
+      "type": "java.lang.String",
+      "description": "Type of survival curve",
+      "required": true,
+      "default_value": "log",
+      "choices": "log\\=survival;event\\=event;cumhaz\\=cumulative hazard;cloglog\\=complimentary log-log survival"
+    },
+    {
+      "name": "show.conf.interval",
+      "type": "java.lang.Integer",
+      "description": "Show confidence inteval?",
+      "required": true,
+      "default_value": "0",
+      "choices": "0\\=no;1\\=yes"
+    },
+    {
+      "name": "add.legend",
+      "type": "java.lang.String",
+      "description": "Show legend?",
+      "required": true,
+      "default_value": "T",
+      "choices": "T\\=yes;F\\=no"
+    },
+    {
+      "name": "legend.position",
+      "type": "java.lang.String",
+      "description": "Position of legend",
+      "required": true,
+      "default_value": "left-bottom",
+      "choices": "left-bottom;left-top;right-bottom;right-top"
+    },
+    {
+      "name": "output.filename",
+      "type": "java.lang.String",
+      "description": "Name for output files",
+      "required": true,
+      "default_value": "<input.surv.data.file_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Survival Analysis",
+  "author": "Yujin Hoshida (Broad Institute)",
+  "command_line": "<R2.7> <libdir>SurvivalCurve.R SurvivalCurve <input.surv.data.file> -c<input.cls.file> <output.filename> <time.field> <censor.field> -f<cls.field> <print.fit.results> <line.type.color.assign> -lt<manual.line.type> -lc<manual.line.color> <line.width> <time.conversion> -m<max.time> <surv.function.lower> <surv.function.higher> <curve.type> <show.conf.interval> <add.legend> <legend.position>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

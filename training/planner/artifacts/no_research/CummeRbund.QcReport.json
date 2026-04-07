@@ -1,0 +1,235 @@
+{
+  "module_name": "CummeRbund.QcReport",
+  "description": "[Beta Release** Contact gp-help with any issues. Check stdout.txt and stderr.txt for errors] Cuffdiff visualization package providing plots and tables related to QC and Global Stats.",
+  "author": "Loyal Goff, MIT Computer Science and Artificial Intelligence Lab; David Eby, Broad Institute",
+  "input_file_formats": [
+    "db"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:64202:1",
+  "plan": "## CummeRbund.QcReport GenePattern Module — Implementation Plan\n\n### 1. Overview\nCummeRbund.QcReport is a GenePattern module that [Beta Release** Contact gp-help with any issues. Check stdout.txt and stderr.txt for errors] Cuffdiff visualization package providing plots and tables related to QC and Global Stats.\n\n### 2. Parameters\nThe module exposes 8 parameters:\n- Required: cuffdiff.input, output.format, feature.level, report.as.aggregate, log.transform, pca.x, pca.y, attempt.to.merge.names\n- Optional: none\n\n### 3. Command Line\n```\n<R2.15_Rscript> --no-save --quiet --slave --no-restore <libdir>run_gp_cummerbund_qc_report.R <libdir> --cuffdiff.input\\=<cuffdiff.input> --output.format\\=<output.format> --feature.level\\=<feature.level> --report.as.aggregate\\=<report.as.aggregate> --log.transform\\=<log.transform> --pca.x\\=<pca.x> --pca.y\\=<pca.y> --attempt.to.merge.names\\=<attempt.to.merge.names>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_gp_cummerbund_qc_report.R",
+  "command_line": "<R2.15_Rscript> --no-save --quiet --slave --no-restore <libdir>run_gp_cummerbund_qc_report.R <libdir> --cuffdiff.input=<cuffdiff.input> --output.format=<output.format> --feature.level=<feature.level> --report.as.aggregate=<report.as.aggregate> --log.transform=<log.transform> --pca.x=<pca.x> --pca.y=<pca.y> --attempt.to.merge.names=<attempt.to.merge.names>",
+  "parameters": [
+    {
+      "name": "cuffdiff.input",
+      "description": "A Cuffdiff job, a previous CummeRbund job, or a cuffData.db file from a previous CummeRbund job.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "directory",
+        "db"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cuffdiff.input",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.format",
+      "description": "The output file format.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "pdf",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "pdf",
+          "value": "pdf"
+        },
+        {
+          "display": "svg",
+          "value": "svg"
+        },
+        {
+          "display": "png",
+          "value": "png"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "feature.level",
+      "description": "Feature level for the report",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "genes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "genes",
+          "value": "genes"
+        },
+        {
+          "display": "isoforms",
+          "value": "isoforms"
+        },
+        {
+          "display": "transcription start site (TSS)",
+          "value": "TSS"
+        },
+        {
+          "display": "coding sequence (CDS)",
+          "value": "CDS"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--feature.level",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "report.as.aggregate",
+      "description": "Controls whether reporting should be done for individual replicates or aggregate condition/sample values.  The default is to use aggregate sample values.  Controls whether reporting should be done for individual replicates or aggregate condition/sample values.  The default is to use aggregate sample values.  Note that the Dispersion, FPKM.SCV, and MA plots always show aggregate samples.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--report.as.aggregate",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "log.transform",
+      "description": "Whether or not to log transform FPKM values.  Note that the FPKM values are always log transformed for the FPKM.SCV plot.  Log transformation does not apply to the Dispersion, MDS, and PCA plots.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--log.transform",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "pca.x",
+      "description": "Indicates which principal component is to be presented on the x-axis of the PCA plot.  Must differ from pca.y.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "PC2",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "first principal component",
+          "value": "PC1"
+        },
+        {
+          "display": "second principal component",
+          "value": "PC2"
+        },
+        {
+          "display": "third principal component",
+          "value": "PC3"
+        },
+        {
+          "display": "fourth principal component",
+          "value": "PC4"
+        },
+        {
+          "display": "fifth principal component",
+          "value": "PC5"
+        },
+        {
+          "display": "sixth principal component",
+          "value": "PC6"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--pca.x",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "pca.y",
+      "description": "Indicates which principal component is to be presented on the y-axis of the PCA plot.  Must differ from pca.x.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "PC3",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "first principal component",
+          "value": "PC1"
+        },
+        {
+          "display": "second principal component",
+          "value": "PC2"
+        },
+        {
+          "display": "third principal component",
+          "value": "PC3"
+        },
+        {
+          "display": "fourth principal component",
+          "value": "PC4"
+        },
+        {
+          "display": "fifth principal component",
+          "value": "PC5"
+        },
+        {
+          "display": "sixth principal component",
+          "value": "PC6"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--pca.y",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "attempt.to.merge.names",
+      "description": "Should the module attempt to merge gene names into the text reports?  Depending on the GTF file used in the Cuffdiff run, the text reports may instead contain tracking ID references, particularly if a Cuffmerge merged.gtf file was used.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--attempt.to.merge.names",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

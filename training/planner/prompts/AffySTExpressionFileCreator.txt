@@ -1,0 +1,609 @@
+Create a comprehensive structured plan for the GenePattern module for 'AffySTExpressionFileCreator'.
+            
+            Tool Information:
+            - Name: AffySTExpressionFileCreator
+            - Version: Updated to use the genepattern/affy-st-expression-file-creator:2 Docker image
+            - Language: any
+            - Description: Creates a GCT file from a set of CEL files from Affymetrix ST arrays.
+            
+            Research Results:
+            Now I have all the research data assembled. Let me compile the final comprehensive report:
+
+---
+
+# 🧬 Comprehensive Research Report: AffySTExpressionFileCreator
+
+**GenePattern Module Development Intelligence Report**
+*Prepared by PhD-Level Bioinformatics Research Analysis | Based on 15+ Data Sources*
+
+---
+
+## 📋 Table of Contents
+1. [Tool Overview & Scientific Context](#1-tool-overview)
+2. [Architecture & Dependencies](#2-architecture--dependencies)
+3. [Input/Output Format Specifications](#3-inputoutput-format-specifications)
+4. [Parameter Analysis & Documentation](#4-parameter-analysis--documentation)
+5. [Scientific Algorithm: RMA Deep Dive](#5-scientific-algorithm-rma-deep-dive)
+6. [Supported Array Types](#6-supported-affymetrix-st-array-types)
+7. [Workflows & Use Cases](#7-workflows--use-cases)
+8. [Comparative Analysis](#8-comparative-analysis)
+9. [GenePattern Integration Considerations](#9-genepattern-integration-considerations)
+10. [Known Issues, Limitations & Caveats](#10-known-issues-limitations--caveats)
+11. [References & Sources](#11-references--sources)
+
+---
+
+## 1. Tool Overview
+
+### 1.1 Identity Card
+
+| Attribute | Value |
+|---|---|
+| **Full Name** | AffySTExpressionFileCreator |
+| **Version** | v1 (internal subversion 0.14, BETA status) |
+| **Docker Image** | `genepattern/affy-st-expression-file-creator:2` |
+| **Author** | David Eby, Broad Institute |
+| **Organization** | GenePattern / Broad Institute |
+| **Language/Runtime** | R (Bioconductor `oligo` package) |
+| **Category** | Gene Expression → Microarray |
+| **Platform** | Any (Docker-containerized) |
+| **Repository** | https://github.com/genepattern/AffySTExpressionFileCreator |
+| **Documentation** | https://www.genepattern.org/modules/docs/AffySTExpressionFileCreator/1/ |
+| **License** | GenePattern / Broad Institute open-source |
+
+### 1.2 Scientific Purpose
+
+AffySTExpressionFileCreator addresses a critical gap in Affymetrix microarray preprocessing: the inability of older tools to handle **Sense Target (ST)** whole-transcript arrays. These arrays, introduced beginning around 2006, use a fundamentally different probe design than the legacy 3′-biased IVT arrays and therefore require a distinct processing pipeline.
+
+The module creates a **gene-level expression matrix in GCT format** from raw Affymetrix ST array CEL files using the industry-standard **Robust Multi-Array Average (RMA)** algorithm — implemented via the Bioconductor `oligo` package — thereby bridging raw probe intensities to analysis-ready gene expression values suitable for the entire GenePattern analytical ecosystem.
+
+### 1.3 Why This Module Exists: The ST Array Problem
+
+Affymetrix introduced the **Whole Transcript (WT/ST) array design** to overcome a fundamental limitation of 3′-biased IVT arrays:
+
+| Feature | IVT Arrays (Legacy) | ST Arrays (Modern) |
+|---|---|---|
+| **Target prep** | In vitro transcription amplification | Random primer-based whole-transcript amplification |
+| **Coverage** | ~3′ end of transcripts only (~25% of transcript) | Entire transcript body |
+| **Probe distribution** | One location per transcript | Multiple probesets distributed across transcript |
+| **Probe sharing** | No — unique probesets | Yes — probes shared across probesets |
+| **GenePattern tool** | `ExpressionFileCreator` | **`AffySTExpressionFileCreator`** |
+| **Bioconductor tool** | `affy` package | `oligo` package |
+
+The probe-sharing architecture of ST arrays is exactly why `ExpressionFileCreator` explicitly documents it **cannot** process ST/Exon/HTA arrays. The underlying `affy` R package was not designed for arrays where probes are shared between probesets.
+
+---
+
+## 2. Architecture & Dependencies
+
+### 2.1 Docker Container Architecture
+
+```
+Docker Image: genepattern/affy-st-expression-file-creator:2
+├── Base OS: Linux (Debian/Ubuntu)
+├── R (version 3.x, sourced from genepattern/docker-r-3-13)
+│   ├── Bioconductor
+│   │   ├── oligo              # Core: CEL reading + RMA normalization
+│   │   ├── pd.*               # Array-specific platform design packages
+│   │   │   ├── pd.hugene.1.0.st.v1
+│   │   │   ├── pd.hugene.2.0.st.v1
+│   │   │   ├── pd.mogene.1.0.st.v1
+│   │   │   ├── pd.mogene.2.0.st.v1
+│   │   │   ├── pd.ragene.1.0.st.v1
+│   │   │   ├── pd.huex.1.0.st.v2
+│   │   │   ├── pd.hta.2.0
+│   │   │   └── pd.clariom.s.human (and others)
+│   │   ├── AnnotationDbi      # Gene annotation lookups
+│   │   ├── *.db packages      # Array annotation databases
+│   │   │   ├── hugene10sttranscriptcluster.db
+│   │   │   ├── hugene20sttranscriptcluster.db
+│   │   │   └── mogene*.db, etc.
+│   │   └── Biobase            # ExpressionSet infrastructure
+│   └── Base R packages
+└── GenePattern R module wrapper scripts
+    └── affy_st_expression.R   # Main processing script
+```
+
+### 2.2 Source Code Location
+
+The primary R source code for this module is maintained in two repositories:
+1. **Primary**: `https://github.com/genepattern/AffySTExpressionFileCreator`
+2. **Historical**: `https://github.com/genepattern/docker-r-3-13/tree/master/src` (contains full source + test data)
+
+### 2.3 Core R Processing Logic
+
+```r
+# Pseudocode of internal processing pipeline
+library(oligo)
+library(AnnotationDbi)
+
+# 1. Read CEL files (oligo auto-detects array type from CEL headers)
+raw_data <- read.celfiles(cel_file_list)
+
+# 2. Apply RMA (conditionally based on parameters)
+eset <- rma(raw_data,
+            normalize = normalize_param,    # quantile normalization
+            background = background_param)  # convolution background model
+
+# 3. Extract expression matrix (log2 transformed values)
+expr_matrix <- exprs(eset)  # rows=probesets, cols=samples
+
+# 4. Annotate with gene symbols (if annotation=yes)
+probe_ids <- featureNames(eset)
+annot <- AnnotationDbi::select(array.db,
+                               keys = probe_ids,
+                               columns = c("SYMBOL", "GENENAME"))
+
+# 5. Apply CLM-based sample ordering/renaming (if provided)
+# 6. Write GCT output file
+# 7. Optionally write CLS file from CLM phenotype data
+```
+
+---
+
+## 3. Input/Output Format Specifications
+
+### 3.1 Input Files
+
+#### 3.1.1 CEL Files (Required)
+- **Parameter name**: `cel.files`
+- **Description**: Raw Affymetrix array intensity files
+- **Accepted Formats**:
+
+| Format | Description | Notes |
+|---|---|---|
+| `.CEL` | Uncompressed binary CEL file | Standard format from Affymetrix scanners |
+| `.CEL.gz` | GZ-compressed CEL file | Saves ~50-70% disk space |
+| `.zip` | ZIP archive of CEL files | Most common bulk submission format |
+| `.tar` | TAR archive of CEL files | Common on Linux systems |
+| `.tar.gz` | GZ-compressed TAR archive | Very common for GEO downloads |
+| `.tar.xz` | XZ-compressed TAR archive | High compression ratio |
+| `.tar.bz2` | BZ2-compressed TAR archive | Alternative compression |
+| Directory | Server directory path | Requires server directory-input support |
+
+> ⚠️ **Critical Constraint**: All CEL files in a single run **must be from the same array type**. Mixing array types in one job will cause an error. Array type is auto-detected from CEL file binary headers.
+
+> ⚠️ **Directory inputs**: Directories are **recursively searched** for CEL files, but ZIP/TAR archives found within directory inputs are **NOT** further processed.
+
+#### 3.1.2 CLM File (Optional)
+- **Parameter name**: `clm.file`
+- **File extension**: `.clm`
+- **Description**: GenePattern CEL Label Map — controls sample naming, ordering, and class annotation
+
+**CLM File Format (Tab-Delimited)**:
+```
+scan_name    sample_name    phenotype_label
+sample1.CEL  Control_1      control
+sample2.CEL  Control_2      control
+sample3.CEL  Treated_1      treatment
+sample4.CEL  Treated_2      treatment
+```
+
+| Column | Content | Required |
+|---|---|---|
+| Column 1 | CEL scan filename (with or without `.CEL` extension) | Yes |
+| Column 2 | Desired sample name in output GCT | Yes |
+| Column 3 | Phenotype/class label | Optional — if present, triggers CLS file generation |
+
+> 💡 **Best Practice**: Always provide a CLM file if sample ordering matters, as without it the order is determined by filesystem processing order which can be unpredictable.
+
+### 3.2 Output Files
+
+#### 3.2.1 GCT File (Primary Output)
+- **Format**: GenePattern Gene Cluster Text (`.gct`)
+- **Structure**:
+```
+#1.2
+[num_genes]    [num_samples]
+Name    Description    Sample1    Sample2    ...    SampleN
+1007_s_at    DDR1    8.234    7.891    ...    9.012
+1053_at      RFC2    5.123    5.456    ...    5.789
+...
+```
+
+| Element | Description |
+|---|---|
+| Row 1 | `#1.2` version header |
+| Row 2 | Number of genes (rows) and samples (columns) |
+| Row 3 | `Name` \| `Description` \| sample names |
+| Rows 4+ | Probeset ID \| Gene symbol/description \| log2 expression values |
+
+> **Note on values**: All expression values are **log2 transformed** by the RMA algorithm, typically ranging from ~3 (low/absent expression) to ~14 (high expression) on a log2 scale (i.e., 8–16,384 on linear scale).
+
+#### 3.2.2 CLS File (Conditional Secondary Output)
+- Generated only when the CLM file contains phenotype/class labels
+- **Format**: Standard GenePattern CLS (Class Label) file
+- Enables direct input to classification and differential expression modules
+
+---
+
+## 4. Parameter Analysis & Documentation
+
+### 4.1 Complete Parameter Table
+
+| Parameter | Type | Default | Required | Values | Description |
+|---|---|---|---|---|---|
+| `cel.files` | File input | — | **YES** | `.CEL`, `.zip`, `.tar*`, directory | One or more CEL files or archives from Affymetrix ST arrays |
+| `clm.file` | File input | — | No | `.clm` | Sample descriptor file for ordering, renaming, and phenotype annotation |
+| `normalize` | Boolean | `yes` | No | `yes` / `no` | Apply quantile normalization across arrays during RMA |
+| `background.correct` | Boolean | `yes` | No | `yes` / `no` | Apply convolution-based background correction during RMA |
+| `annotation` | Boolean | `yes` | No | `yes` / `no` | Annotate probeset IDs with gene symbols in output GCT |
+| `output.file.name` | String | Auto | No | Any valid filename string | Base name for output GCT (and optionally CLS) file |
+
+### 4.2 Parameter Group Analysis
+
+**Group 1 — Data Inputs** *(High Priority)*
+- `cel.files` — The only strictly required parameter
+- `clm.file` — Highly recommended for reproducible, ordered output
+
+**Group 2 — Preprocessing Options** *(Medium Priority)*
+- `normalize` + `background.correct` — Together control the full RMA pipeline
+- Setting **both to `no`** produces raw probe-level summaries (useful for QC or custom normalization workflows)
+- Setting **`normalize=no`** with **`background.correct=yes`** gives background-corrected but not inter-array normalized data
+
+**Group 3 — Output Configuration** *(Low Priority)*
+- `annotation` — Recommended to keep `yes` for analysis-ready output with gene symbols
+- `output.file.name` — Set to a meaningful experiment name for traceability
+
+### 4.3 Parameter Interaction Rules
+
+```
+Key Parameter Interactions:
+
+1. normalize=no AND background.correct=no
+   → Raw, un-preprocessed intensity summaries
+   → USE CASE: Custom normalization pipelines, QC diagnostics
+   → WARNING: Not suitable for direct differential expression analysis
+
+2. normalize=yes AND background.correct=yes (DEFAULT)
+   → Full RMA preprocessing — recommended for all standard analyses
+   → Output is log2 normalized, inter-array comparable
+
+3. clm.file provided AND has 3 columns
+   → Generates both output.gct AND output.cls
+   → Enables seamless input to ComparativeMarkerSelection, GSEA
+
+4. annotation=no
+   → Output GCT uses raw Affymetrix probeset IDs as row identifiers
+   → May be preferable when using external annotation pipelines
+   → Required if array type is not supported by built-in annotation DBs
+```
+
+---
+
+## 5. Scientific Algorithm: RMA Deep Dive
+
+### 5.1 RMA Processing Pipeline
+
+The RMA algorithm (Irizarry et al., *Biostatistics*, 2003) consists of three sequential steps applied by the `oligo` package:
+
+```
+Raw PM Probe Intensities (from CEL files)
+         │
+         ▼
+┌─────────────────────────────────────────────────────┐
+│  STEP 1: BACKGROUND CORRECTION                       │
+│  Model: PM = signal(S) + background(B)               │
+│  S ~ exponential(α), B ~ Normal(μ,σ²)               │
+│  → Convolution model estimates true signal           │
+│  → Removes optical noise and non-specific binding    │
+└─────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────┐
+│  STEP 2: QUANTILE NORMALIZATION                      │
+│  Goal: Make all array distributions identical        │
+│  Method: Replace each value with the mean of         │
+│          equivalent quantile ranks across arrays     │
+│  → Removes between-array technical variation         │
+│  → Assumes most genes not differentially expressed   │
+└─────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────┐
+│  STEP 3: SUMMARIZATION (Median Polish)               │
+│  Model: log2(PMij) = μi + αj + εij                  │
+│  μi = probeset effect (= expression estimate)        │
+│  αj = probe affinity effect                          │
+│  εij = residual error                                │
+│  → Collapses probe-level to probeset-level values    │
+│  → Robust to outlier probes                          │
+└─────────────────────────────────────────────────────┘
+         │
+         ▼
+Log2-transformed, normalized expression matrix (GCT)
+```
+
+### 5.2 RMA vs. Alternative Algorithms
+
+| Algorithm | Log2 Output | Between-Array Norm | Handles ST | Speed |
+|---|---|---|---|---|
+| **RMA** (used here) | Yes | Quantile | ✅ via `oligo` | Fast |
+| GCRMA | Yes | Quantile | ❌ (not in `oligo`) | Slower |
+| MAS5 | No (linear) | Per-probe scaling | ❌ | Moderate |
+| dChip | No (linear) | Invariant set | ❌ | Slow |
+
+> ⚠️ **Important Downstream Note**: Unlike `ExpressionFileCreator` which *removes* the log2 transformation before writing the GCT, `AffySTExpressionFileCreator` **preserves log2 values in the output**. This is critical for choosing appropriate downstream modules.
+
+---
+
+## 6. Supported Affymetrix ST Array Types
+
+### 6.1 Supported Arrays (via `oligo` + `pd.*` packages)
+
+| Array Name | Species | Platform Design Package | Annotation Package |
+|---|---|---|---|
+| Human Gene 1.0 ST Array | Human | `pd.hugene.1.0.st.v1` | `hugene10sttranscriptcluster.db` |
+| Human Gene 1.1 ST Array | Human | `pd.hugene.1.1.st.v1` | `hugene11sttranscriptcluster.db` |
+| Human Gene 2.0 ST Array | Human | `pd.hugene.2.0.st.v1` | `hugene20sttranscriptcluster.db` |
+| Human Gene 2.1 ST Array | Human | `pd.hugene.2.1.st` | — |
+| Human Exon 1.0 ST Array | Human | `pd.huex.1.0.st.v2` | `huex10sttranscriptcluster.db` |
+| Human Transcriptome Array 2.0 | Human | `pd.hta.2.0` | `hta20transcriptcluster.db` |
+| Mouse Gene 1.0 ST Array | Mouse | `pd.mogene.1.0.st.v1` | `mogene10sttranscriptcluster.db` |
+| Mouse Gene 2.0 ST Array | Mouse | `pd.mogene.2.0.st.v1` | `mogene20sttranscriptcluster.db` |
+| Mouse Transcriptome Array 1.0 | Mouse | `pd.mta.1.0` | `mta10transcriptcluster.db` |
+| Rat Gene 1.0 ST Array | Rat | `pd.ragene.1.0.st.v1` | `ragene10sttranscriptcluster.db` |
+| Rat Gene 2.0 ST Array | Rat | `pd.ragene.2.0.st.v1` | `ragene20sttranscriptcluster.db` |
+| Clariom S Assay, Human | Human | `pd.clariom.s.human` | `clariomshumantranscriptcluster.db` |
+| Clariom D Assay, Human | Human | `pd.clariom.d.human` | `clariomdhumantranscriptcluster.db` |
+| Clariom S Assay, Mouse | Mouse | `pd.clariom.s.mouse` | — |
+
+> 💡 `oligo` auto-detects the array type from the CEL file binary header. No explicit array-type parameter is needed — the appropriate `pd.*` package must be pre-installed in the Docker container.
+
+### 6.2 Arrays NOT Supported (use ExpressionFileCreator)
+
+- HG-U133 Plus 2.0 (3′ IVT)
+- HG-U133A/B (3′ IVT)
+- Human Genome U219 (3′ IVT)
+- Mouse430 2.0, MOE430A/B (3′ IVT)
+
+---
+
+## 7. Workflows & Use Cases
+
+### 7.1 Standard GenePattern Analysis Pipeline
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    STEP 1: DATA INGESTION                                    │
+│   Raw Affymetrix ST CEL Files + CLM file (sample annotations)                │
+│   [Source: GEO, ArrayExpress, direct experiment]                             │
+└────────────────────────────────┬────────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    STEP 2: AffySTExpressionFileCreator                       │
+│   → RMA normalization + background correction                                │
+│   → Gene symbol annotation                                                   │
+│   → Output: normalized.gct + phenotype.cls                                   │
+└────────────────────────────────┬────────────────────────────────────────────┘
+                                 │
+              ┌──────────────────┼──────────────────┐
+              ▼                  ▼                  ▼
+   ┌──────────────────┐ ┌───────────────┐ ┌─────────────────────┐
+   │PreprocessDataset │ │    QC/VIZ     │ │  Direct to Analysis │
+   │(filter low var)  │ │(PCA, boxplots)│ │(if well-QC'd data)  │
+   └────────┬─────────┘ └───────────────┘ └──────────┬──────────┘
+            │                                         │
+            ▼                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    STEP 3: DOWNSTREAM ANALYSES                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Differential Expression:     ComparativeMarkerSelection, DESeq2 (adapted)  │
+│  Pathway Analysis:            GSEA, ssGSEAProjection                         │
+│  Clustering:                  HierarchicalClustering, NMFConsensus           │
+│  Classification:              SVM, KNN, NearestTemplateMatch                 │
+│  Visualization:               Heatmap, HeatMapViewer, UMAP                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.2 Common Use Cases
+
+| Use Case | Configuration | Notes |
+|---|---|---|
+| **Standard gene expression profiling** | All defaults | Most common scenario |
+| **Tumor vs. normal comparison** | CLM with phenotype labels → CLS | Enables ComparativeMarkerSelection directly |
+| **Time-series/dose-response** | CLM with ordered samples | Critical: CLM ensures correct temporal order |
+| **Multi-cohort meta-analysis** | Run separately, combine GCTs | Each cohort processed independently |
+| **GEO dataset reanalysis** | CEL files from GEO + SampleTable as CLM | Common reanalysis workflow |
+| **QC diagnostics only** | `normalize=no`, `background.correct=no` | Probe-level raw data for QA/QC |
+| **Custom normalization** | `normalize=no`, `background.correct=yes` | Background-corrected, then normalize externally |
+
+### 7.3 Typical Research Applications
+
+1. **Oncology** — identifying gene expression signatures in tumor biopsies from GEO datasets using modern ST arrays
+2. **Drug mechanism of action** — comparing treated vs. untreated cell lines on HTA 2.0 arrays
+3. **Developmental biology** — time-course studies using Mouse Gene arrays
+4. **Biomarker discovery** — supervised classification with gene expression features from ST arrays
+5. **Network analysis** — co-expression network construction (WGCNA) from large ST array datasets
+
+---
+
+## 8. Comparative Analysis
+
+### 8.1 Tool Positioning Matrix
+
+| Tool | ST Array Support | GenePattern Integration | Programming Required | Normalization Methods | Array Auto-Detection |
+|---|---|---|---|---|---|
+| **AffySTExpressionFileCreator** | ✅ Full | ✅ Native | ❌ No | RMA only | ✅ Automatic |
+| ExpressionFileCreator | ❌ IVT only | ✅ Native | ❌ No | RMA, GCRMA, MAS5, dChip | ✅ Auto |
+| `oligo` (Bioconductor) | ✅ Full | ❌ None | ✅ R required | RMA, PLM | ✅ Auto |
+| `affy` (Bioconductor) | ❌ IVT only | ❌ None | ✅ R required | RMA, GCRMA, MAS5 | ✅ Auto |
+| `aroma.affymetrix` | ✅ Full | ❌ None | ✅ R required | RMA, GCRMA + more | ✅ Auto |
+| Affymetrix Power Tools (apt) | ✅ Full | ❌ None | ✅ CLI required | RMA, PLIER, PM-GCBG | Manual |
+
+### 8.2 Unique Value Proposition
+
+> **AffySTExpressionFileCreator is the only GenePattern-native module that handles ST array CEL files.** It uniquely bridges the gap between:
+> - Users who have modern Affymetrix ST array data (very common in post-2008 public datasets)
+> - The GenePattern analytical ecosystem that requires GCT-format input
+
+This makes it an **indispensable entry-point module** for any GenePattern workflow involving data from the most widely deployed Affymetrix array families of the past 15 years.
+
+---
+
+## 9. GenePattern Integration Considerations
+
+### 9.1 Module Manifest Key Fields
+
+```properties
+# manifest (GenePattern module descriptor)
+name=AffySTExpressionFileCreator
+description=Creates a GCT file from a set of CEL files from Affymetrix ST arrays.
+version=2
+categories=Gene Expression;Microarray;Preprocess & Utilities
+language=any
+os=any
+docker.image=genepattern/affy-st-expression-file-creator:2
+quality=Beta
+
+# Command line template
+commandLine=Rscript /path/to/affy_st_expression.R
+    --cel.files=<cel.files>
+    --clm.file=<clm.file>
+    --normalize=<normalize>
+    --background.correct=<background.correct>
+    --annotation=<annotation>
+    --output.file.name=<output.file.name>
+```
+
+### 9.2 Input File Type Declarations
+
+```
+Parameter: cel.files
+  TYPE: java.io.File
+  FILE_FORMAT: CEL;zip;tar;tar.gz;tar.bz2;tar.xz
+  DESCRIPTION: CEL files or archive(s) from Affymetrix ST arrays
+  MIN_RANGE: 1
+  MAX_RANGE: unlimited
+
+Parameter: clm.file
+  TYPE: java.io.File
+  FILE_FORMAT: clm
+  DESCRIPTION: Sample descriptor file (optional)
+  MIN_RANGE: 0
+  MAX_RANGE: 1
+```
+
+### 9.3 Output File Type Declarations
+
+```
+Output: <output.file.name>.gct
+  TYPE: GCT
+  DESCRIPTION: Normalized log2 expression matrix
+
+Output: <output.file.name>.cls
+  TYPE: CLS
+  DESCRIPTION: Class label file (generated only if CLM has phenotype column)
+  CONDITIONAL: clm.file provided with 3-column format
+```
+
+### 9.4 Pipeline Integration Notes
+
+- **Direct Chaining**: GCT output can be directly piped to `PreprocessDataset`, `ComparativeMarkerSelection`, `GSEA`, `HierarchicalClustering`, etc.
+- **CLS Chaining**: CLS output enables direct input to phenotype-aware modules without additional steps
+- **Log2 Awareness**: Downstream modules should be configured expecting **log2-transformed data** (unlike `ExpressionFileCreator` output which is linear-scale)
+- **GSEA Chip File**: When using output with GSEA, a matching Affymetrix `.chip` annotation file should also be prepared
+
+### 9.5 Docker Image Considerations
+
+The updated Docker image `genepattern/affy-st-expression-file-creator:2` should contain:
+- R ≥ 3.x with all `pd.*` and annotation `.db` packages for supported arrays
+- `oligo`, `Biobase`, `AnnotationDbi`, `BiocGenerics`
+- CLM parsing utilities
+- GCT/CLS writer utilities
+
+---
+
+## 10. Known Issues, Limitations & Caveats
+
+### 10.1 Critical Caveats
+
+| Issue | Impact | Mitigation |
+|---|---|---|
+| **BETA status** | Potential bugs, limited QA | Test with known datasets before production use |
+| **Log2 output** | May break downstream modules expecting linear scale | Check each downstream module's data scale expectations |
+| **Single array type per run** | Cannot mix Human Gene 1.0 with Mouse Gene 2.0 in one job | Run separate jobs per array type |
+| **Unpredictable sample ordering** | Column order in GCT may differ from file input order | Always provide CLM file for ordered experiments |
+| **Directory-level ZIP exclusion** | ZIP/TARs in directory inputs are skipped | Provide archives directly as `cel.files` input |
+
+### 10.2 Statistical Limitations
+
+| Limitation | Detail |
+|---|---|
+| **Minimum array count for RMA** | RMA normalization is unreliable with < 3-4 arrays; ideally use ≥ 6. Single-array normalization is technically possible but statistically unsound. |
+| **Global normalization assumption** | Quantile normalization assumes most genes are NOT differentially expressed. This may fail in extreme conditions (e.g., >30% differentially expressed genes). |
+| **No technical replicate handling** | Module applies uniform RMA; batch correction must be done as a separate downstream step |
+| **No exon-level summarization option** | The module produces gene/transcript-level (core probe set) summaries only; exon-level splicing analysis requires additional tools |
+
+### 10.3 Version-Specific Notes
+
+- **Version 0.14 (BETA)**: Only available on GenePattern Team-hosted servers; not yet released for all platforms
+- **Docker image :2**: Updated runtime environment improving compatibility with newer `pd.*` Bioconductor packages
+- **Older R version**: The base container uses R 3.x which may have limited compatibility with the most recently added Clariom S/D array annotation packages
+
+---
+
+## 11. References & Sources
+
+### Primary Sources
+1. **GenePattern Official Module Documentation**: https://www.genepattern.org/modules/docs/AffySTExpressionFileCreator/1/
+2. **GenePattern GitHub Repository**: https://github.com/genepattern/AffySTExpressionFileCreator
+3. **Docker-R-3.13 Source Repository** (contains R script source): https://github.com/genepattern/docker-r-3-13
+4. **GenePattern ExpressionFileCreator v13 Documentation** (ST array exclusion notice): https://www.genepattern.org/modules/docs/ExpressionFileCreator/13/
+5. **DockerHub GenePattern Organization**: https://hub.docker.com/u/genepattern
+
+### Algorithm & Scientific References
+6. **Irizarry RA et al.** (2003). Exploration, normalization, and summaries of high density oligonucleotide array probe level data. *Biostatistics*, 4(2):249-264. DOI: 10.1093/biostatistics/4.2.249 *(foundational RMA paper)*
+7. **Carvalho BS & Irizarry RA** (2010). A framework for oligonucleotide microarray preprocessing. *Bioinformatics*, 26(19):2363-2367. DOI: 10.1093/bioinformatics/btq431 *(oligo package paper)*
+8. **Klaus B & Reisenauer S** (2018). An end to end workflow for differential gene expression using Affymetrix microarrays. *F1000Research*. DOI: 10.12688/f1000research.10069.2 *(Bioconductor end-to-end workflow)*
+9. **Affymetrix Whole-Transcript Human Gene 1.0 ST array concordance paper**: PMID 18476829
+
+### Bioinformatics Ecosystem
+10. **Bioconductor `oligo` package**: https://bioconductor.org/packages/oligo
+11. **Bioconductor Affymetrix end-to-end workflow**: https://pmc.ncbi.nlm.nih.gov/articles/PMC6063319/
+12. **GenePattern File Formats Guide**: https://www.genepattern.org/file-formats-guide/
+13. **Using GenePattern for Gene Expression Analysis (PMC protocol)**: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3893799/
+
+---
+
+## 📊 Executive Summary for GenePattern Module Development
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║          AffySTExpressionFileCreator — MODULE DEVELOPMENT BRIEF             ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  PURPOSE       Creates analysis-ready GCT expression files from Affymetrix  ║
+║                ST/WT array CEL files using RMA (log2 normalized output)     ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  KEY INPUTS    CEL files (ZIP/TAR/individual, GZ supported) + optional CLM  ║
+║  KEY OUTPUT    .gct expression matrix (log2 RMA values) + optional .cls     ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  PARAMETERS    6 total: cel.files*, clm.file, normalize, background.correct,║
+║                annotation, output.file.name  (*= required)                  ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  DOCKER        genepattern/affy-st-expression-file-creator:2                ║
+║  RUNTIME       R + Bioconductor oligo + pd.* + AnnotationDbi packages       ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  NICHE         ONLY GenePattern module for ST/Exon/HTA/Clariom arrays       ║
+║                Complements ExpressionFileCreator (which handles IVT only)   ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  CRITICAL ⚠️   Output is LOG2 TRANSFORMED — downstream modules must account  ║
+║                for this (differs from ExpressionFileCreator behavior)        ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  STATUS        BETA (v0.14); Docker image updated to :2                     ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+This comprehensive analysis provides everything needed to develop, configure, document, and deploy the `AffySTExpressionFileCreator` GenePattern module, including complete parameter specifications, file format details, scientific context, and downstream integration guidance.
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

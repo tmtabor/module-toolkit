@@ -1,0 +1,623 @@
+Create a comprehensive structured plan for the GenePattern module for 'Salmon.Alevin.Quant'.
+            
+            Tool Information:
+            - Name: Salmon.Alevin.Quant
+            - Version: Alevin 1.5.2 - beta release
+            - Language: any
+            - Description: Quantification and analysis of 3' tagged-end single-cell sequencing data using Salmon's Alevin (v1.5.2) function.<br>\n\nSee: <a href="https://salmon.readthedocs.io/en/latest/alevin.html" target="_blank">The Alevin Documentation</a>\nfor detailed usage guidelines.
+            
+            Research Results:
+            Now I have all the research data needed to compile a comprehensive, authoritative report:
+
+---
+
+# 🔬 Comprehensive Research Report: Salmon.Alevin.Quant
+
+---
+
+## 📋 Executive Summary
+
+**Salmon.Alevin.Quant** is a GenePattern module (v0.6, beta) wrapping **Salmon's Alevin algorithm (v1.5.2)** — a mature, peer-reviewed, end-to-end pipeline for processing **3′ tagged-end droplet-based single-cell RNA sequencing (dscRNA-seq) data**. Developed by the COMBINE-lab (Rob Patro et al.) and integrated into GenePattern by Anthony S. Castanza (Mesirov Lab, UCSD), the module transforms raw FASTQ files into a cell-by-gene count matrix, the foundational input for virtually all downstream single-cell analyses. The underlying algorithm's key innovation is a **Bayesian UMI deduplication framework** that correctly handles gene-multimapping reads — a class of reads (14–23% of typical data) that competing tools entirely discard.
+
+- **Source Publication:** Srivastava A, Malik L, Smith T, Sudbery I, Patro R. *Alevin efficiently estimates accurate gene abundances from dscRNA-seq data.* **Genome Biology (2019) 20:65.** DOI: [10.1186/s13059-019-1670-y](https://doi.org/10.1186/s13059-019-1670-y) — *284+ citations*
+- **GenePattern LSID:** `urn:lsid:genepattern.org:module.analysis:00418:0.6`
+- **Module Repository:** [github.com/genepattern/Salmon.Alevin.Quant/tree/v0.6](https://github.com/genepattern/Salmon.Alevin.Quant/tree/v0.6)
+- **Upstream Tool:** [github.com/COMBINE-lab/salmon](https://github.com/COMBINE-lab/salmon)
+
+---
+
+## 1. Tool Purpose and Scientific Applications
+
+### 1.1 Core Scientific Purpose
+
+Alevin is an **integrated end-to-end scRNA-seq preprocessing pipeline** that performs six sequential operations in a single command:
+
+| Step | Operation | Description |
+|------|-----------|-------------|
+| 1 | **CB Detection** | Scans reads for cell barcode (CB) sequences; identifies valid CBs using a knee-point detection algorithm on the CB frequency histogram |
+| 2 | **Read Mapping** | Maps cDNA reads to the reference transcriptome using Salmon's quasi-mapping or selective alignment algorithm |
+| 3 | **UMI Processing** | Applies graph-based UMI deduplication with PCR/sequencing error correction |
+| 4 | **Gene Count Estimation** | Generates gene-level counts using transcript-level equivalence classes via a Bayesian framework |
+| 5 | **Multi-mapping Resolution** | Resolves gene-ambiguous reads (unlike STARsolo/kallisto which discard them), accounting for the **14–23% of reads** in 3′ scRNA-seq data that map to multiple genes |
+| 6 | **CB Whitelisting** | Post-quantification filtering to remove empty droplets and low-quality cells |
+
+### 1.2 Target Data Types
+
+The tool is specifically designed for **3′-biased, droplet-based** scRNA-seq protocols where:
+- **Read 1 (R1):** Contains the **cell barcode + UMI** (short, fixed-length, no biological sequence)
+- **Read 2 (R2):** Contains the actual **cDNA sequence** from the 3′ end of a transcript
+
+### 1.3 Supported Sequencing Protocols
+
+| Protocol Flag | Chemistry | CB Length | UMI Length | Notes |
+|--------------|-----------|-----------|------------|-------|
+| `--chromium` | 10x Chromium v1/v2 | 16 bp | 10 bp | Most common; 2018-present |
+| `--chromiumV3` | 10x Chromium v3 | 16 bp | 12 bp | Current standard (2019+); deeper UMI saturation |
+| `--dropseq` | Drop-seq | 10 bp | 8 bp | Academic droplet protocol (Macosko et al.) |
+| `--gemcode` | GemCode | 14 bp | 10 bp | Legacy 10x Genomics platform |
+| `--celseq` | CEL-seq | 8 bp | 4 bp | Plate-based; less common |
+| `--celseq2` | CEL-seq2 | 6 bp | 6 bp | Improved CEL-seq |
+| `--splitseqV1` | SPLiT-seq v1 | Combined barcodes | 10 bp | Split-pool ligation-based |
+| `--splitseqV2` | SPLiT-seq v2 | Combined barcodes | 10 bp | Updated SPLiT-seq |
+| `--quartzseq2` | Quartz-seq2 | 15 bp | 8 bp | Japanese high-throughput protocol |
+
+### 1.4 Scientific Applications and Use Cases
+
+- **Cell type identification and clustering** — count matrices used directly in Seurat, Scanpy, Monocle3
+- **Differential gene expression** — across cell types or conditions (DESeq2, edgeR via tximeta)
+- **RNA velocity analysis** — with alevin-fry's spliced/unspliced counting extension
+- **Trajectory inference** — pseudotime analysis of developmental processes
+- **Multi-modal integration** — CITE-seq (protein + RNA), feature barcoding experiments
+- **Batch integration** — cross-sample and cross-experiment normalization studies
+- **Uncertainty-aware analysis** — bootstrap replicates (`--numCellBootstraps`) enable fishpond differential expression with inferential uncertainty
+
+---
+
+## 2. Input/Output Formats and Requirements
+
+### 2.1 Required Inputs
+
+#### A. FASTQ Files (Mandatory)
+```
+-1: R1 FASTQ file(s)  → Cell Barcode + UMI reads
+-2: R2 FASTQ file(s)  → cDNA sequence reads
+```
+- Compressed (`.fastq.gz`) or uncompressed (`.fastq`) accepted
+- **Multi-lane experiments:** Space-separated file lists for `-1` and `-2`
+- Files must be ordered so that R1[i] and R2[i] correspond to the same library
+- R1 is typically **28 bp** (10x v2) or **28 bp** (10x v3), R2 is standard read length (75-150 bp)
+
+#### B. Salmon Transcriptome Index (Mandatory)
+```
+-i: Directory containing pre-built Salmon index
+```
+Built with:
+```bash
+# Standard index (transcriptome only)
+salmon index -t transcriptome.fa -i index_dir
+
+# Recommended: Decoy-aware index (genome as decoy reduces spurious mappings)
+cat transcriptome.fa genome.fa > gentrome.fa
+grep "^>" genome.fa | cut -d " " -f 1 | sed 's/>//g' > decoys.txt
+salmon index -t gentrome.fa -d decoys.txt -i index_dir --gencode
+```
+> ⚠️ **Important:** Using `--gencode` flag when building the index is recommended for GENCODE-formatted FASTA headers.
+
+#### C. Transcript-to-Gene Mapping File (Mandatory)
+```
+--tgMap: TSV file, no header
+```
+Format:
+```
+ENST00000456328.2    ENSG00000223972.5
+ENST00000450305.2    ENSG00000223972.5
+ENST00000488147.1    ENSG00000227232.5
+```
+> **Column 1:** Transcript ID (must exactly match index sequences); **Column 2:** Gene ID
+
+Generation from GTF:
+```bash
+zless -S genome.gtf | grep -v "#" | awk '$3=="transcript"' | cut -f9 | \
+  tr -s ";" " " | awk '{print$6"."$8"\t"$2"."$4}' | sort | uniq | \
+  sed 's/"//g' > txp2gene.tsv
+```
+Or via Bioconductor `tximeta`/`fishpond` helper functions.
+
+#### D. Optional Cell Barcode Whitelist
+```
+--whitelist: Plain text file, one barcode per line (uncompressed)
+```
+- Can be the **technology-level** barcode list (e.g., 10x Genomics 3M whitelist)
+- Or **experiment-level** barcodes (e.g., CellRanger `barcodes.tsv` output)
+
+### 2.2 Output Files — Complete Specification
+
+```
+alevin_output/
+├── alevin/                              ← PRIMARY OUTPUT SUBDIRECTORY
+│   ├── quants_mat.gz                   ← [ALWAYS] Compressed binary cell×gene count matrix
+│   ├── quants_mat_cols.txt             ← [ALWAYS] Gene IDs (column headers)
+│   ├── quants_mat_rows.txt             ← [ALWAYS] Cell barcodes (row headers)
+│   ├── quants_tier_mat.gz              ← [ALWAYS] Confidence tier matrix for each count
+│   ├── whitelist.txt                   ← [ALWAYS] Accepted/filtered cell barcodes
+│   ├── filtered_cb_frequency.txt       ← [ALWAYS] Post-filter CB frequency
+│   ├── raw_cb_frequency.txt            ← [ALWAYS] Pre-filter CB frequency histogram
+│   ├── MappedUmi.txt                   ← [ALWAYS] UMI count per accepted CB
+│   ├── featureDump.txt                 ← [--dumpFeatures] Required for alevinQC
+│   ├── quants_mat.mtx.gz               ← [--dumpMtx] Sparse MatrixMarket format
+│   ├── quants_mat.csv                  ← [--dumpCsv] Dense CSV matrix
+│   └── quants_boot_mat.gz              ← [--numCellBootstraps] Bootstrap replicates
+├── aux_info/
+│   ├── meta_info.json                  ← Salmon run statistics
+│   └── alevin_meta_info.json           ← Alevin-specific QC statistics
+├── cmd_info.json                       ← Exact command used (reproducibility)
+└── logs/
+    └── salmon_quant.log               ← Mapping rate and detailed run log
+```
+
+#### Key Output File: `alevin_meta_info.json`
+Contains critical QC metrics:
+```json
+{
+  "total_reads": 38822848,
+  "reads_with_N": 9413,
+  "noisy_cb_reads": 24866100,
+  "noisy_umi_reads": 638,
+  "used_reads": 13946059,
+  "mapping_rate": 35.93,
+  "reads_in_eqclasses": 1526182,
+  "total_cbs": 1785900,
+  "used_cbs": 20514,
+  "initial_whitelist": 1277,
+  "low_conf_cbs": 638,
+  "final_num_cbs": 647,
+  "deduplicated_umis": 391074,
+  "mean_umis_per_cell": 604,
+  "mean_genes_per_cell": 431
+}
+```
+
+### 2.3 Downstream Data Import
+
+| Tool | Language | Import Method | Output Object |
+|------|----------|--------------|---------------|
+| **tximeta** | R | `tximeta::tximeta(coldata, type="alevin")` | `SingleCellExperiment` / `SummarizedExperiment` |
+| **tximport** | R | `tximport::tximport(path, type="alevin")` | Matrix list |
+| **fishpond** | R | Via tximeta; uses bootstrap replicates | DE testing |
+| **alevinQC** | R | `alevinQC::alevinQCReport(baseDir)` | HTML QC Report |
+| **vpolo** | Python | `vpolo.alevin.parser.read_quants_bin()` | pandas DataFrame |
+| **Seurat** | R | `Read10X()` after MTX export or `ReadMtx()` | Seurat Object |
+
+---
+
+## 3. Parameter Analysis and Usage Patterns
+
+### 3.1 Parameter Groups for GenePattern Module Design
+
+#### Group 1: Protocol Configuration (Required)
+| Parameter | Type | Values | Default | Biological Significance |
+|-----------|------|--------|---------|------------------------|
+| `-l` / `--libType` | String | `ISR`, `IU`, `SF`, etc. | None | Read orientation/strandedness. **ISR recommended for all 3′ scRNA-seq** |
+| `--chromium` | Flag | Boolean | Off | 10x Chromium v2 chemistry |
+| `--chromiumV3` | Flag | Boolean | Off | 10x Chromium v3 chemistry (current standard) |
+| `--dropseq` | Flag | Boolean | Off | Drop-seq chemistry |
+| `--gemcode` | Flag | Boolean | Off | Legacy GemCode chemistry |
+| `--celseq` | Flag | Boolean | Off | CEL-seq chemistry |
+| `--celseq2` | Flag | Boolean | Off | CEL-seq2 chemistry |
+| `--splitseqV1/V2` | Flag | Boolean | Off | SPLiT-seq protocols |
+| `--quartzseq2` | Flag | Boolean | Off | Quartz-seq2 protocol |
+
+#### Group 2: Input Files (Required)
+| Parameter | Type | Format | Required |
+|-----------|------|--------|----------|
+| `-1` / `--mates1` | File(s) | `.fastq` / `.fastq.gz` | **Yes** |
+| `-2` / `--mates2` | File(s) | `.fastq` / `.fastq.gz` | **Yes** |
+| `-i` / `--index` | Directory | Salmon index dir | **Yes** |
+| `--tgMap` | File | TSV (no header) | **Yes** |
+
+#### Group 3: Cell Barcode Management (Optional)
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `--whitelist` | File | Auto-generated | Known barcode list |
+| `--forceCells` | Integer | None | Override knee-point; force N cells |
+| `--expectCells` | Integer | None | Hint for knee-point detection |
+| `--keepCBFraction` | Float [0-1] | 1.0 | Fraction of CBs to retain |
+| `--freqThreshold` | Integer | 10 | Min CB frequency threshold |
+
+#### Group 4: Computational Settings (Optional)
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `-p` / `--numThreads` | Integer | All CPUs | Threads (recommend 10) |
+
+#### Group 5: Output Control (Optional)
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `-o` / `--output` | Directory | None | Output path |
+| `--dumpMtx` | Flag | Off | Export sparse MTX matrix |
+| `--dumpCsv` | Flag | Off | Export CSV matrix |
+| `--dumpFeatures` | Flag | Off | Export intermediate features (needed for alevinQC) |
+| `--dumpBfh` | Flag | Off | Full barcode frequency histogram |
+| `--dumpfq` | Flag | Off | CB-corrected FASTQ |
+
+#### Group 6: Uncertainty Quantification (Advanced)
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `--numCellBootstraps` | Integer | 0 | Bootstrap iterations (pairs with `--dumpFeatures`) |
+| `--numGibbsSamples` | Integer | 0 | Gibbs sampling chains |
+
+#### Group 7: Processing Flags (Advanced)
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `--noQuant` | Flag | Off | CB detection only, skip quantification |
+| `--noDedup` | Flag | Off | Skip UMI deduplication |
+| `--mrna` | File | None | mRNA gene list for CB-level statistics |
+| `--rrna` | File | None | rRNA gene list for CB-level statistics |
+| `--sketch` | Flag | Off | Use quasi-mapping (faster, less accurate) |
+| `--rad` | Flag | Off | Generate RAD file for alevin-fry |
+
+### 3.2 Canonical Usage Examples
+
+```bash
+# === Example 1: Standard 10x Chromium v3 (most common use case) ===
+salmon alevin -l ISR \
+  -1 sample_L001_R1_001.fastq.gz sample_L002_R1_001.fastq.gz \
+  -2 sample_L001_R2_001.fastq.gz sample_L002_R2_001.fastq.gz \
+  --chromiumV3 \
+  -i /path/to/salmon_index \
+  -p 16 \
+  -o alevin_output \
+  --tgMap txp2gene.tsv \
+  --expectCells 5000 \
+  --dumpMtx \
+  --dumpFeatures
+
+# === Example 2: Drop-seq with user whitelist ===
+salmon alevin -l ISR \
+  -1 barcodes_R1.fastq.gz \
+  -2 cDNA_R2.fastq.gz \
+  --dropseq \
+  -i /path/to/salmon_index \
+  -p 10 \
+  -o alevin_dropseq_output \
+  --tgMap txp2gene.tsv \
+  --whitelist barcodes.tsv \
+  --freqThreshold 3 \
+  --keepCBFraction 1
+
+# === Example 3: With bootstrap uncertainty estimation ===
+salmon alevin -l ISR \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  --chromiumV3 \
+  -i /path/to/salmon_index \
+  -p 12 \
+  -o alevin_bootstrapped \
+  --tgMap txp2gene.tsv \
+  --numCellBootstraps 30 \
+  --dumpFeatures
+
+# === Example 4: Quick pre-analysis (sketch mode) ===
+salmon alevin -l ISR \
+  -1 sample_R1.fastq.gz \
+  -2 sample_R2.fastq.gz \
+  --chromiumV3 \
+  -i /path/to/salmon_index \
+  -p 8 \
+  -o alevin_quick \
+  --tgMap txp2gene.tsv \
+  --sketch
+```
+
+---
+
+## 4. Installation and Dependency Requirements
+
+### 4.1 Bioconda Installation (Recommended)
+
+```bash
+# Add channels and install (specific version for reproducibility)
+conda config --add channels conda-forge
+conda config --add channels bioconda
+conda create -n alevin_env salmon=1.5.2
+conda activate alevin_env
+
+# Verify installation
+salmon --version  # Should output: salmon 1.5.2
+```
+
+### 4.2 Docker Container (GenePattern Module)
+
+```dockerfile
+# Base image used by GenePattern module
+FROM quay.io/biocontainers/salmon:1.5.2--h84f40af_0
+
+# GenePattern-specific additions
+# - Python/R wrappers
+# - Input/output handling scripts
+# - Module manifest compliance
+```
+
+### 4.3 Build-from-Source Dependencies
+
+| Dependency | Minimum Version | Purpose |
+|------------|-----------------|---------|
+| C++ compiler | C++14 | Core compilation |
+| CMake | ≥ 3.9 | Build system |
+| Boost | ≥ 1.66 | C++ utilities |
+| Intel TBB | Any recent | Multi-threading |
+| libbz2 | Any | Compression |
+| liblzma | Any | Compression |
+| libz | Any | Compression |
+| libcrypto | Any | Hash computation |
+| jemalloc | Optional | Memory optimization |
+
+### 4.4 System Requirements
+
+| Resource | Minimum | Recommended | Notes |
+|----------|---------|-------------|-------|
+| **CPU** | 4 cores | 10–16 cores | Best memory-time tradeoff at ~10 threads |
+| **RAM** | 8 GB | 16–32 GB | Human genome index ~8–12 GB; mouse ~6–10 GB |
+| **Storage (Index)** | 3 GB | 5–8 GB | Decoy-aware index is larger |
+| **Storage (Output)** | 500 MB | 1–5 GB | Depends on cell count and features |
+| **OS** | Linux x86_64 | Linux x86_64 | macOS supported; Windows via WSL |
+
+### 4.5 Pre-built Index Resources
+
+Pre-built Salmon indexes are available for common organisms:
+- **Human (GRCh38/hg38):** GENCODE v38+ transcriptome
+- **Mouse (GRCm39/mm39):** GENCODE vM27+ transcriptome
+- Available via the [refgenie](http://refgenie.databio.org/) resource manager
+
+---
+
+## 5. Common Workflows and Use Cases
+
+### 5.1 Complete Standard Workflow
+
+```
+Step 1: Reference Preparation
+├── Download reference transcriptome FASTA (Ensembl/GENCODE)
+├── Download genome FASTA (for decoy)
+├── Build decoy-aware Salmon index
+└── Generate txp2gene TSV mapping file
+
+Step 2: Salmon.Alevin.Quant (THIS MODULE)
+├── Input: FASTQ files (R1=CB+UMI, R2=cDNA), Index, tgMap
+├── Processing: CB detection → mapping → UMI dedup → quantification → whitelisting
+└── Output: Cell×gene count matrix + QC statistics
+
+Step 3: Quality Control
+├── alevinQC::alevinQCReport() - HTML report from featureDump.txt
+├── Check: mapping rate (>50% is good), mean genes/cell, final_num_cbs
+└── Review CB frequency knee-plot
+
+Step 4: Import to R/Python
+├── tximeta::tximeta() → SingleCellExperiment object
+├── vpolo → pandas DataFrame (Python)
+└── Seurat::Read10X() after MTX export
+
+Step 5: Downstream Analysis
+├── Normalization (scran, Seurat)
+├── Feature selection (highly variable genes)
+├── Dimensionality reduction (PCA, UMAP)
+├── Clustering (Louvain/Leiden)
+└── Differential expression (DESeq2, edgeR, fishpond)
+```
+
+### 5.2 Specific Use Case Scenarios
+
+#### Scenario A: 10x Chromium v3 PBMC Data
+```
+Input:  ~500M reads, 2-4 lanes, ~5,000 expected cells
+Time:   60-90 min with 16 threads
+RAM:    ~16 GB peak
+Output: ~3,000-5,000 cells × ~33,000 genes
+```
+
+#### Scenario B: Drop-seq Neural Data
+```
+Input:  Custom droplets, known barcode list from prior sequencing
+Key parameters: --dropseq --whitelist known_barcodes.txt --freqThreshold 3
+Output: Variable cell count, same gene dimensions
+```
+
+#### Scenario C: Multi-sample Batch Analysis
+```
+Run Alevin separately per sample
+Merge count matrices in tximeta with shared SummarizedExperiment
+Downstream: scran/harmony/BBKNN batch correction
+```
+
+#### Scenario D: Uncertainty-Aware DE Analysis
+```
+Add: --numCellBootstraps 30 --dumpFeatures
+Import: tximeta → fishpond::labelKeep() → fishpond::swish()
+Result: Calibrated p-values accounting for quantification uncertainty
+```
+
+---
+
+## 6. Comparative Analysis
+
+### 6.1 Tool Comparison Matrix
+
+| Feature | **Alevin (v1.5.2)** | CellRanger 6 | STARsolo | kallisto\|bustools |
+|---------|---------------------|--------------|----------|-------------------|
+| **License** | GPL-3.0 (Open) | Proprietary | MIT (Open) | BSD (Open) |
+| **Speed** | ~60-200 min* | ~45-90 min | ~35 min | ~35 min |
+| **Memory** | 8-16 GB | 16-64 GB | 8-32 GB | 4-8 GB |
+| **Multi-mapping** | ✅ Bayesian resolution | ✅ Distributed | ❌ Discards | ❌ Discards |
+| **Bootstraps** | ✅ Yes | ❌ No | ❌ No | ✅ Yes |
+| **Protocol support** | 9 protocols | 10x only | Many | Many |
+| **10x best practice** | ✅ Recommended | ✅ Gold std | ✅ Good | ✅ Good |
+| **Drop-seq support** | ✅ Native | ❌ No | ✅ Yes | ✅ Yes |
+| **Output format** | Binary+MTX+CSV | HDF5+MTX | MTX+HDF5 | BUS+MTX |
+| **QC reporting** | Via alevinQC | ✅ Built-in | Via STARsolo | Via kb-python |
+| **GenePattern avail** | ✅ Module 00418 | ❌ No | ❌ No | ❌ No |
+
+*Speed advantage depends on filtered whitelist usage
+
+### 6.2 Key Differentiators of Alevin
+
+1. **Multimapping-aware UMI deduplication**: The single most important technical advantage. Gene families (e.g., immunoglobulins, olfactory receptors) are significantly better quantified vs tools that discard multimapping reads.
+2. **Inferential uncertainty output**: Bootstrap replicates enable downstream uncertainty-propagating differential expression, a unique capability in the open-source ecosystem.
+3. **Transcript-level equivalence classes**: Internal use improves accuracy for genes with multiple isoforms.
+4. **Open-source and bioconda-available**: Fully reproducible environments, unlike CellRanger.
+5. **GenePattern integration**: Only major scRNA-seq quantifier available natively in GenePattern.
+
+### 6.3 Known Limitations
+
+- **Speed**: Slower than STARsolo/kallisto|bustools (~2–5× longer runtime); partially mitigated by `--sketch` mode
+- **Version**: GenePattern module wraps v1.5.2; upstream Alevin has since been largely superseded by **alevin-fry** for new analyses
+- **Memory**: Comparable to or slightly higher than STARsolo for large datasets
+- **No built-in QC report**: Requires separate alevinQC package (can be bundled)
+- **Transcriptome-only mapping**: Cannot distinguish reads from unannotated genomic loci without decoy index
+- **No multi-modal native support**: CITE-seq ADT quantification requires a separate Alevin run
+
+---
+
+## 7. GenePattern Module Integration Considerations
+
+### 7.1 Module Architecture Recommendations
+
+```yaml
+# Suggested GenePattern Module Structure
+module:
+  name: Salmon.Alevin.Quant
+  lsid: urn:lsid:genepattern.org:module.analysis:00418
+  version: 0.6
+  language: any
+  cpu: 8-16 (configurable)
+  memory: 16 GB (configurable)
+  category: Single Cell/RNA-seq
+  
+  container:
+    image: quay.io/biocontainers/salmon:1.5.2--h84f40af_0
+    
+  parameters:
+    - name: reads1.files       # -1; required; file list
+    - name: reads2.files       # -2; required; file list
+    - name: salmon.index       # -i; required; directory/zip
+    - name: tg.map.file        # --tgMap; required; tsv
+    - name: protocol           # --chromiumV3 etc; required; dropdown
+    - name: library.type       # -l; default ISR; text
+    - name: whitelist.file     # --whitelist; optional; file
+    - name: expect.cells       # --expectCells; optional; integer
+    - name: force.cells        # --forceCells; optional; integer
+    - name: freq.threshold     # --freqThreshold; default 10; integer
+    - name: keep.cb.fraction   # --keepCBFraction; default 1.0; float
+    - name: num.threads        # -p; default 10; integer
+    - name: dump.mtx           # --dumpMtx; default false; boolean
+    - name: dump.csv           # --dumpCsv; default false; boolean
+    - name: dump.features      # --dumpFeatures; default false; boolean
+    - name: num.bootstraps     # --numCellBootstraps; default 0; integer
+    - name: no.dedup           # --noDedup; default false; boolean
+    - name: sketch.mode        # --sketch; default false; boolean
+    
+  output:
+    - name: alevin_output.zip  # Compressed output directory
+```
+
+### 7.2 Critical Implementation Notes
+
+1. **Index Handling**: Salmon indexes are directories, not single files. GenePattern should accept a `.zip` archive of the index directory and unpack it before running. Pre-built indexes for hg38/mm10 should be referenced or bundled.
+
+2. **Multi-file FASTQ Input**: The `-1` and `-2` arguments accept space-separated file lists. GenePattern's multi-file input widgets must be configured to produce space-separated paths.
+
+3. **Protocol Mutex**: The protocol flags (`--chromium`, `--chromiumV3`, `--dropseq`, etc.) are mutually exclusive. A dropdown selector in the GenePattern UI should map to the appropriate flag.
+
+4. **tgMap Generation Guidance**: Users often struggle creating the tgMap file. The module documentation should include a recipe for generating this from a GTF file or point to Bioconductor helper functions.
+
+5. **Output Packaging**: The output directory should be packaged as a ZIP file for downstream GenePattern modules to consume, maintaining the required directory structure (critical for alevinQC and tximeta compatibility).
+
+6. **Memory Safeguards**: Implement a memory check or warning when genome size is large; alert users when estimated RAM usage approaches container limits.
+
+7. **Bootstrap Dependency**: `--numCellBootstraps` **must** be paired with `--dumpFeatures` to generate `quants_boot_mat.gz`. Implement parameter dependency validation.
+
+8. **Downstream Module Compatibility**: Output ZIP should be designed to feed directly into:
+   - A GenePattern `alevinQC` module (HTML report generation)
+   - Seurat/Scanpy preprocessing modules
+
+### 7.3 Suggested Parameter Validation Rules
+
+| Rule | Condition | Action |
+|------|-----------|--------|
+| Protocol required | No protocol flag set | Error: "Select one sequencing protocol" |
+| Read file count match | `len(reads1) != len(reads2)` | Error: "Unequal number of R1 and R2 files" |
+| Bootstrap+features | `numCellBootstraps > 0` | Auto-enable `--dumpFeatures` |
+| keepCBFraction range | Value not in [0,1] | Error: "Must be between 0 and 1" |
+| freqThreshold positive | Value ≤ 0 | Error: "Must be a positive integer" |
+| forceCells vs expectCells | Both set | Warning: "forceCells overrides expectCells" |
+| libType for protocols | `ISR` default | Auto-set ISR unless user overrides |
+
+### 7.4 Documentation for Module Users
+
+The GenePattern module documentation should include:
+1. **Step-by-step index building guide** (or links to pre-built indexes)
+2. **tgMap file creation recipe** with organism-specific examples
+3. **Protocol selection guide** with visual comparison of chemistries
+4. **QC metric interpretation** (what mapping rate is acceptable, etc.)
+5. **Downstream workflow guidance** (link to Seurat/Monocle modules)
+
+---
+
+## 8. Scientific Literature and Citation Context
+
+### 8.1 Primary References
+
+| Reference | Details |
+|-----------|---------|
+| **Srivastava et al. 2019** | *Alevin efficiently estimates accurate gene abundances from dscRNA-seq data.* Genome Biology 20:65. **Core paper. 284+ citations.** |
+| **He et al. 2022** | *Alevin-fry unlocks rapid, accurate, and memory-frugal quantification of single-cell RNA-seq data.* Nature Methods 19, 316–322. Successor tool paper. |
+| **Schulze Brüning et al. 2022** | *Comparative analysis of common alignment tools for single-cell RNA sequencing.* GigaScience 11:giac001. Benchmarking vs CellRanger/STARsolo/kallisto. |
+| **Love et al. 2020** | *Tximeta: Reference sequence checksums for provenance identification in RNA-seq.* PLOS Computational Biology. Downstream import tool. |
+| **Zakeri et al. 2022** | *Bayesian framework for inter-cellular information sharing improves dscRNA-seq quantification.* Bioinformatics 36(Supp 1):i292. Extended Alevin theory. |
+
+### 8.2 Validation Summary
+
+- **Benchmarked on:** 10x PBMC 4k and 8k datasets, multiple simulated datasets with ground truth
+- **Key finding:** Alevin's multimapping-aware approach reduces bias in gene families by statistically significant margins
+- **Comparison:** Comparable accuracy to CellRanger 6 while being fully open-source
+- **Community adoption:** Widely used in published single-cell studies; recommended by Bioconductor workflows
+
+---
+
+## 9. Summary and Recommendations for GenePattern Module Development
+
+### ✅ Strengths to Emphasize
+- Open-source, fully reproducible, bioconda-installable
+- Superior multimapping resolution for gene families
+- Bootstrap uncertainty quantification (unique feature)
+- 9 supported protocols covering the vast majority of 3′ scRNA-seq experiments
+- Native integration with R/Bioconductor ecosystem (tximeta, fishpond)
+- Already published as GenePattern module 00418 at UCSD Mesirov Lab
+
+### ⚠️ Caveats to Address
+- Tool is v1.5.2 (2021); upstream Salmon has moved to v1.10+ and recommends alevin-fry for new workflows
+- Slower than kallisto/STARsolo — important to communicate to users
+- Index building is a separate prerequisite step that adds friction for new users
+- tgMap file generation requires bioinformatics expertise; automation or helper tools needed in module
+
+### 🚀 Priority Development Actions
+1. **Dropdown menu** for protocol selection (map to correct `--` flag)
+2. **Multi-file input** for FASTQ files (critical for multi-lane experiments)
+3. **ZIP-based index handling** with helper function to create/extract
+4. **Auto-coupling** of `--dumpFeatures` with bootstrap options
+5. **Comprehensive documentation** with step-by-step index building and tgMap creation guides
+6. **Example data** (small PBMC test dataset) for module validation
+7. **Output viewer** or link to alevinQC module for immediate QC assessment
+
+---
+
+*Research compiled from: Official Salmon/Alevin Documentation (salmon.readthedocs.io), COMBINE-lab GitHub repositories, Genome Biology (2019) publication, GigaScience (2022) benchmark study, Bioconductor alevinQC/tximeta documentation, Alevin Tutorial website (combine-lab.github.io/alevin-tutorial), GenePattern Cloud Module Registry, and Bioconda package registry. All information current as of v1.5.2 (GenePattern module) and v1.10.2 (upstream Salmon).*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

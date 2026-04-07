@@ -1,0 +1,444 @@
+Create a comprehensive structured plan for the GenePattern module for 'tfsites.FindTfSitesAlteredBySequenceVariation'.
+            
+            Tool Information:
+            - Name: tfsites.FindTfSitesAlteredBySequenceVariation
+            - Version: Added ability to generate motif DB then run all in one module (optionally).
+            - Language: any
+            - Description: FindTfSitesAlteredBySequenceVariation reports the effects of all possible in silico single-nucleotide variants (SNVs) in a given sequence, for one transcription factor. Possible SNV effects include increasing (or optimizing) the affinity/score of a binding site, decreasing the affinity/score of a binding site, deleting a binding site, or creating a binding site.
+            
+            Research Results:
+            I now have all the information needed to compile a comprehensive, structured research report. Let me deliver the full analysis:
+
+---
+
+# 🧬 Comprehensive Research Report: `tfsites.FindTfSitesAlteredBySequenceVariation`
+
+**GenePattern Module Development Research**
+**Prepared by:** PhD Bioinformatics Research Specialist
+**Research Scope:** Tool discovery, technical specifications, parameter analysis, workflow integration, literature review
+
+---
+
+## 1. 📋 TOOL OVERVIEW & SCIENTIFIC PURPOSE
+
+### 1.1 Identity and Attribution
+
+| Field | Value |
+|---|---|
+| **Full Module Name** | `tfsites.FindTfSitesAlteredBySequenceVariation` |
+| **Parent Suite** | tfsites (Transcription Factor Sites) Toolkit |
+| **Developed By** | Emma Farley Lab, University of California San Diego (UCSD) + GenePattern/Broad Institute |
+| **Primary Repository** | `https://github.com/genepattern/tfsites.AnnotateAndVisualizeInSilicoSNVAnalysis` |
+| **Web Portal** | https://tfsites.org/ |
+| **Docker Image** | `genepattern/tfsites` |
+| **Language** | Python (containerized, language-agnostic GenePattern interface) |
+| **Version Notes** | Added ability to generate motif DB then run all in one module (optionally) |
+| **License** | Academic use; tfsites.org Terms and Conditions; **Not for Protected Health Information (PHI)** |
+
+### 1.2 Primary Scientific Function
+
+`tfsites.FindTfSitesAlteredBySequenceVariation` performs **exhaustive in silico single-nucleotide variant (SNV) scanning** of a user-provided DNA sequence against a scored motif database for **one transcription factor (TF)**. For every position in the input sequence, the tool tests all three possible nucleotide substitutions and classifies each resulting SNV into one of four biological effect categories:
+
+| Effect Category | Biological Meaning | Research Relevance |
+|---|---|---|
+| **OPTIMIZING** | SNV *increases* affinity/score of an existing binding site | Gain-of-function, potential disease cause |
+| **DECREASING** | SNV *reduces* affinity/score of an existing binding site | Partial loss of binding |
+| **DELETING** | SNV *eliminates* a binding site entirely (score drops below threshold) | Loss-of-function, classical pathogenic variant |
+| **CREATING** | SNV *creates* a new binding site where none existed | De novo binding, ectopic TF recruitment |
+
+### 1.3 Scientific Rationale and Novelty
+
+This tool is built upon a paradigm-shifting discovery from the Farley Lab: **enhancers deliberately use LOW-affinity TF binding sites** to achieve tissue-specific, precise, and time-controlled gene expression. This "suboptimization" principle (Farley et al., 2015, *Science*) means that:
+
+- SNVs that **INCREASE** binding affinity (optimizing variants) are often **MORE pathogenic** than those that decrease it — the opposite of classical expectation
+- Even tiny affinity gains (e.g., from score 0.15 to 0.25) can dramatically disrupt developmental gene expression
+- These optimizing variants cause **gain-of-function (GOF)** expression patterns, not loss-of-function
+
+> *"The prevalence of low-affinity binding sites within enhancers creates a vulnerability in genomes whereby single nucleotide variants that optimize binding affinity, even slightly, can be pathogenic."* — Farley Lab, Featured Papers
+
+---
+
+## 2. 🔬 SCIENTIFIC APPLICATIONS AND USE CASES
+
+### 2.1 Core Research Applications
+
+| Application | Description | Example |
+|---|---|---|
+| **Enhancer Vulnerability Mapping** | Identify all positions in an enhancer where SNVs could alter TF binding | Map all ETS-site-altering variants in the cardiac SCN5A enhancer |
+| **GWAS/WGS Variant Interpretation** | Determine biological effect of non-coding variants on TF binding in regulatory regions | Assess whether a GWAS hit in a promoter disrupts or optimizes GATA binding |
+| **Disease Variant Screening** | Identify affinity-optimizing variants that may cause GOF enhancer activity | Screen limb enhancer variants for Sonic Hedgehog pathway disruption |
+| **Synthetic Enhancer Design** | Predict SNVs that would alter designed enhancer elements | Design synthetic sequences resistant to affinity optimization |
+| **Comparative Enhancer Analysis** | Understand SNV landscape differences between species/populations | Compare human vs. mouse enhancer variant vulnerability |
+| **Developmental Biology** | Investigate transcription factor binding changes across developmental contexts | Study Notch/ETS/GATA interactions in Ciona cardiac development |
+
+### 2.2 Validated Disease Contexts
+
+Based on Farley lab publications, this analysis framework has been applied to:
+
+1. **Cardiac Development & Disease**
+   - SCN5A enhancer (ETS binding sites → cardiac sodium channel expression)
+   - GATA4 enhancer (GOF SNVs cause extra beating hearts in Ciona models)
+   - Validated via iPSC-cardiomyocyte reporter assays and EMSA
+
+2. **Limb Development (Polydactyly)**
+   - ZRS enhancer (Zone of Polarizing Activity Regulatory Sequence — controls *Shh* in limb buds)
+   - Affinity-optimizing variants cause extra digits in mouse models
+   - Validated via transgenic mouse reporter assays
+
+3. **General GWAS Variant Interpretation**
+   - Analysis of massively parallel reporter assay (MPRA) datasets
+   - Re-analysis of published GWAS hits for non-coding variant functional effects
+
+---
+
+## 3. 📥📤 INPUT/OUTPUT FORMATS AND REQUIREMENTS
+
+### 3.1 Input Files
+
+| Input | Format | Description | Required? |
+|---|---|---|---|
+| **DNA Sequence File** | FASTA (`.fa`, `.fasta`) | The enhancer/regulatory sequence to scan | ✅ Required |
+| **Motif Database File** | TSV/custom k-mer DB (`.db`, `.txt`, `.tsv`) | Pre-generated k-mer affinity scoring database for the TF of interest | ✅ Required (unless combined mode) |
+| **JASPAR PFM File** | JASPAR format (`.jaspar`, `.pfm`, `.txt`) | Position Frequency Matrix — only needed in **combined mode** | 🔵 Optional (combined mode) |
+
+#### DNA Sequence File Requirements
+```
+>MyEnhancer_sequence
+ATCGGATCGATCGATCGATCGATCGATCG...
+```
+- Single or multi-FASTA accepted
+- Typically 100–2,000 bp enhancer/regulatory sequences
+- Standard IUPAC DNA alphabet (A, T, G, C)
+- Both strands analyzed depending on parameter settings
+
+#### Motif Database File
+- Generated by companion module `tfsites.GenerateMotifDatabase` (also known as `tfsites.DefineTfBindingSitesFromPFM`)
+- Contains all k-mer sequences and their normalized MFI (Median Fluorescence Intensity) affinity scores for a specific TF
+- Scores are normalized 0.0–1.0 (1.0 = highest affinity k-mer conforming to IUPAC consensus)
+- Derived from JASPAR PFMs, HT-SELEX data, or protein binding microarray (PBM) data
+
+### 3.2 Output Files
+
+| Output | Format | Description |
+|---|---|---|
+| **SNV Effects Table** | TSV (`.tsv`) | Main results table — one row per possible SNV |
+| **Visualization Image** | PNG/SVG (`.png`, `.svg`) | Heatmap or annotated sequence plot showing SNV effect landscape |
+| **Summary Statistics** | TXT/JSON | Counts of each SNV effect category |
+| **Motif DB** *(combined mode)* | TSV/custom | Generated motif database (if combined mode enabled) |
+
+#### SNV Effects Table Schema (Expected Columns)
+
+| Column | Type | Description |
+|---|---|---|
+| `position` | Integer | 1-based position in the input sequence |
+| `original_nucleotide` | Char | Reference/wild-type nucleotide |
+| `mutant_nucleotide` | Char | Substituted nucleotide |
+| `original_score` | Float | Affinity score at this position with wild-type sequence |
+| `mutant_score` | Float | Affinity score at this position with the SNV |
+| `score_delta` | Float | Change in score (mutant - original) |
+| `effect_category` | String | OPTIMIZING / DECREASING / DELETING / CREATING |
+| `site_coordinates` | String | Genomic coordinates of affected binding site window |
+
+> **Scale note:** For a 500 bp sequence, the table contains ~1,500 rows (3 substitutions × 500 positions), enabling visualization as a comprehensive mutational heatmap.
+
+---
+
+## 4. ⚙️ PARAMETER ANALYSIS AND USAGE PATTERNS
+
+### 4.1 Recommended GenePattern Parameter Groups
+
+#### **Group 1: Required Inputs**
+| Parameter Name | Type | Default | Description |
+|---|---|---|---|
+| `input.sequence.file` | File | — | FASTA file with DNA sequence(s) to analyze |
+| `motif.database.file` | File | — | Pre-generated k-mer affinity scoring database for TF |
+
+#### **Group 2: Combined Mode (Generate Motif DB + Analyze — Optional)**
+| Parameter Name | Type | Default | Description |
+|---|---|---|---|
+| `enable.combined.mode` | Boolean | `false` | Generate motif DB then run analysis in one step |
+| `jaspar.pfm.file` | File | — | JASPAR Position Frequency Matrix (required if combined mode = true) |
+| `tf.name` | String | — | Transcription factor name/identifier (JASPAR lookup) |
+
+#### **Group 3: Analysis Parameters**
+| Parameter Name | Type | Default | Recommended Range | Description |
+|---|---|---|---|---|
+| `binding.site.threshold` | Float | `0.25` | 0.1–0.5 | Minimum affinity score to classify a k-mer as a binding site |
+| `optimizing.threshold` | Float | `0.05` | 0.01–0.2 | Minimum score increase to classify SNV as OPTIMIZING |
+| `creating.threshold` | Float | `0.25` | 0.1–0.5 | Minimum score for a new site to be classified as CREATING |
+| `strand` | Choice | `both` | `+`, `-`, `both` | Which strand(s) to scan |
+
+#### **Group 4: Output Options**
+| Parameter Name | Type | Default | Description |
+|---|---|---|---|
+| `output.prefix` | String | `tfsites_snv` | Prefix for all output file names |
+| `sequence.name` | String | (from FASTA header) | Label for the sequence in output files |
+| `color.scheme` | Choice | `default` | Color palette for visualization plot |
+| `visualization.format` | Choice | `PNG` | `PNG` or `SVG` |
+
+### 4.2 Threshold Parameter Significance
+
+The `binding.site.threshold` is biologically critical:
+- **Lower thresholds** (e.g., 0.1) detect very low-affinity sites — important based on Farley lab research showing even 0.15-affinity sites are functional
+- **Higher thresholds** (e.g., 0.5) focus only on canonical high-affinity sites
+- **Recommended default of 0.25** is consistent with Farley lab findings that 0.25-affinity sites can be sufficient to drive expression and disrupt development when optimized
+
+### 4.3 Combined Mode (New Feature)
+
+The added "generate motif DB then run all in one module" feature is significant for usability:
+- **Before:** User required two separate module runs: `tfsites.GenerateMotifDatabase` → `tfsites.FindTfSitesAlteredBySequenceVariation`
+- **After (combined mode):** Single module run with JASPAR PFM as input; motif DB generated internally and then used immediately
+- Ideal for **first-time users** or **one-off analyses**; pre-generating DB remains preferable for **repeated analyses** of the same TF across multiple sequences
+
+---
+
+## 5. 🔧 INSTALLATION AND DEPENDENCY REQUIREMENTS
+
+### 5.1 Docker Architecture
+
+```
+Docker Image: genepattern/tfsites
+Source: https://github.com/genepattern/tfsites.common_docker
+Last Updated: March 2025
+Purpose: Shared base container for ALL Farley lab tfsites.* modules
+          Also serves as the backend for the tfsites.org web portal
+```
+
+### 5.2 Inferred Python Dependencies
+
+Based on the nature of the analysis (sequence scanning, k-mer lookup, tabular output, visualization):
+
+| Package | Purpose | Likely Version |
+|---|---|---|
+| `Python` | Core runtime | 3.8+ |
+| `NumPy` | Numerical operations, k-mer affinity scoring matrices | ≥1.21 |
+| `Pandas` | Tabular results management, TSV I/O | ≥1.3 |
+| `Matplotlib` / `Seaborn` | Heatmap and sequence visualization | ≥3.4 |
+| `Biopython` | FASTA parsing, sequence handling, IUPAC alphabet | ≥1.79 |
+| `SciPy` | Statistical calculations (if p-value scoring used) | ≥1.7 |
+
+### 5.3 GenePattern Module Configuration
+
+```properties
+# manifest file entries (inferred)
+name=tfsites.FindTfSitesAlteredBySequenceVariation
+job.docker.image=genepattern/tfsites
+taskType=Analysis
+categories=Sequence Analysis;Transcription Factor Analysis;Variant Analysis
+os=any
+language=any
+```
+
+---
+
+## 6. 🔄 COMMON WORKFLOWS AND USE CASES
+
+### 6.1 Standard tfsites Analysis Workflow
+
+```
+Step 1: [tfsites.NormalizeTfDNAAffinityData]
+        Normalize raw TF-DNA affinity measurements (if using experimental data)
+           ↓
+Step 2: [tfsites.GenerateMotifDatabase / tfsites.DefineTfBindingSitesFromPFM]
+        Generate k-mer scoring database from JASPAR PFM or experimental data
+           ↓
+Step 3: [tfsites.FindTfSitesAlteredBySequenceVariation]  ← THIS MODULE
+        Scan input sequence for all possible SNV effects
+           ↓
+Step 4: [tfsites.AnnotateAndVisualizeInSilicoSNVAnalysis]
+        Visualize and annotate SNV analysis results
+           ↓
+Step 5: [tfsites.PerturbTfSiteWithoutSideEffects]
+        Design ablating mutations for experimental follow-up
+           ↓
+Step 6: [tfsites.AffinityScan]
+        Affinity-based scanning of reference/variant sequences
+```
+
+### 6.2 Combined One-Step Workflow (New Feature)
+
+```
+Input: FASTA sequence + JASPAR PFM
+           ↓
+[tfsites.FindTfSitesAlteredBySequenceVariation]
+  → (internal) Generate motif DB from PFM
+  → Run SNV analysis
+  → Output: SNV table + visualization
+```
+
+### 6.3 Multi-TF Analysis Pattern
+
+Since each run handles one TF, multi-TF analysis requires running the module in parallel for each TF of interest:
+
+```
+For each TF in [ETS, GATA, FOG, ZIC, HAND]:
+    Run FindTfSitesAlteredBySequenceVariation(sequence, motifDB_TF)
+    → Collect per-TF SNV effect tables
+    
+→ Integrate results for composite enhancer vulnerability map
+```
+
+### 6.4 Typical Research Scenarios
+
+| Scenario | Input | Analysis Goal |
+|---|---|---|
+| **Enhancer variant scanning** | 500 bp cardiac enhancer, ETS motif DB | Find all ETS-optimizing SNVs that could cause GOF expression |
+| **GWAS hit interpretation** | 200 bp window around GWAS SNP, target TF | Classify whether the GWAS SNP creates/destroys/optimizes a binding site |
+| **Patient variant prioritization** | Sequenced enhancer from patient, disease-relevant TF | Identify which patient-specific variants are affinity-optimizing |
+| **Synthetic biology design** | Designed regulatory sequence, multiple TFs | Map binding site vulnerabilities before experimental deployment |
+
+---
+
+## 7. 🔗 COMPLETE tfsites MODULE ECOSYSTEM
+
+| Module | Function | Workflow Step |
+|---|---|---|
+| `tfsites.GenerateMotifDatabase` | Generate k-mer DB from JASPAR PFM + normalize MFI values | Pre-processing |
+| `tfsites.NormalizeTfDNAAffinityData` | Normalize raw TF-DNA affinity measurements | Pre-processing |
+| `tfsites.LoadGenome` | Convert genome FASTA → pickled dictionary for fast lookup | Pre-processing |
+| **`tfsites.FindTfSitesAlteredBySequenceVariation`** | **In silico SNV analysis — ALL possible variants** | **Core Analysis** |
+| `tfsites.AnnotateAndVisualizeInSilicoSNVAnalysis` | Visualize SNV analysis output | Post-processing |
+| `tfsites.VisualizeTfSitesOnSequences` | Predict and visualize TF sites on enhancer sequences | Analysis/Visualization |
+| `tfsites.PerturbTfSiteWithoutSideEffects` | Design minimal mutations to ablate binding sites | Experimental Design |
+| `tfsites.CompareAcrossSeqsFromDNA` | Compare TF site landscapes across multiple sequences | Comparative Analysis |
+| `tfsites.AffinityScan` | Affinity-based scanning (Step 6 of workflow) | Specialized Analysis |
+| `tfsites.AnalyzeGenomeMPRA` | Analyze genome-wide MPRA/GWAS variant data | Genome-scale Analysis |
+
+---
+
+## 8. ⚖️ COMPARATIVE ANALYSIS
+
+### 8.1 Key Differentiators vs. Similar Tools
+
+| Feature | `FindTfSitesAlteredBySequenceVariation` | `motifbreakR` | `FIMO` | `RegulomeDB` |
+|---|---|---|---|---|
+| **SNV scope** | ALL possible SNVs (exhaustive) | Known/supplied SNPs only | Not SNV-focused | Known database variants |
+| **Scoring basis** | Experimental k-mer affinity (MFI-normalized) | PWM-based (JASPAR/MotifDb) | PWM log-likelihood | Multi-omics annotation |
+| **Effect categories** | 4 categories (optimizing/decreasing/deleting/creating) | Strong/Weak disruption | N/A | Functional annotation |
+| **Affinity-optimizing detection** | ✅ Core feature | ⚠️ Limited | ❌ None | ❌ None |
+| **GenePattern native** | ✅ Yes | ❌ R/Bioconductor only | ❌ Command-line | ❌ Web only |
+| **Combined DB generation** | ✅ Optional inline | ❌ Requires separate step | ❌ Requires separate step | N/A |
+| **Experimental validation** | ✅ Farley lab publications | ✅ Published | ✅ Published | ✅ Published |
+
+### 8.2 Critical Unique Advantage
+
+> 🔑 **The most significant differentiator is detection of AFFINITY-OPTIMIZING (gain-of-function) variants.** Most existing tools are designed around the assumption that pathogenic regulatory variants disrupt or eliminate TF binding. `tfsites.FindTfSitesAlteredBySequenceVariation` is explicitly designed to find variants that INCREASE binding affinity — a mechanistically distinct class of pathogenic variants demonstrated in high-impact publications (Nature 2024, Developmental Cell 2023).
+
+---
+
+## 9. 📚 KEY LITERATURE REFERENCES
+
+| Citation | Relevance |
+|---|---|
+| **Lim F, Solvason JJ, Ryan GE et al. (2024)** *Nature* 626:151-159. "Affinity-optimizing enhancer variants disrupt development." DOI: 10.1038/s41586-023-06922-8 | Primary validation paper for tfsites methodology; demonstrates ZRS/limb and cardiac enhancer SNV effects |
+| **Jindal GA et al. (2023)** *Developmental Cell*. "Single-nucleotide variants within heart enhancers increase binding affinity and disrupt heart development." PMID: 37848026 | Cardiac-specific validation of ETS affinity-optimizing SNVs using tfsites analysis |
+| **Farley EK et al. (2015)** *Science* 350(6258):325-328. "Suboptimization of developmental enhancers." | Foundational paper establishing the low-affinity binding site paradigm the tool is built upon |
+| **Farley EK et al. (2016)** *PNAS*. "Syntax compensates for poor binding sites to encode tissue specificity of developmental enhancers." | Further mechanistic support for the enhancer grammar and suboptimization model |
+| **Lim F, Ryan GE et al. (2022)** *bioRxiv*. "Affinity-optimizing variants within the ZRS enhancer disrupt limb development." | Preprint supporting polydactyly variant analysis using tfsites |
+
+---
+
+## 10. 🏗️ GENEPATTERN MODULE INTEGRATION CONSIDERATIONS
+
+### 10.1 Implementation Checklist
+
+- [x] **Docker container exists** — `genepattern/tfsites` (shared, current as of March 2025)
+- [x] **Python-based implementation** — compatible with GenePattern job execution
+- [x] **FASTA input** — standard bioinformatics file format, well-supported
+- [x] **Tabular output** — TSV results compatible with GenePattern viewers
+- [x] **Combined mode feature** — reduces multi-step pipeline friction for new users
+- [ ] **Specific manifest parameters** — require direct repository inspection to confirm exact command-line flags
+- [ ] **Exact output file naming conventions** — verify from source code
+- [ ] **Error handling for malformed FASTA** — confirm existing validation logic
+
+### 10.2 Parameter Organization Recommendations
+
+```
+GenePattern Parameter Groups:
+├── 📁 Input Files (Required)
+│   ├── input.sequence.file [FILE, FASTA]
+│   └── motif.database.file [FILE, TSV/DB]
+├── ⚡ Combined Mode (Optional)
+│   ├── enable.combined.mode [BOOLEAN, default: false]
+│   ├── jaspar.pfm.file [FILE, .jaspar/.pfm]
+│   └── tf.name [STRING]
+├── 🎛️ Analysis Parameters
+│   ├── binding.site.threshold [FLOAT, 0.0-1.0, default: 0.25]
+│   ├── optimizing.threshold [FLOAT, 0.0-1.0, default: 0.05]
+│   └── strand [CHOICE: +/-/both, default: both]
+└── 📊 Output Options
+    ├── output.prefix [STRING, default: "snv_analysis"]
+    ├── visualization.format [CHOICE: PNG/SVG, default: PNG]
+    └── color.scheme [CHOICE, default: default]
+```
+
+### 10.3 Known Limitations and Caveats
+
+1. **Single TF per run** — multi-TF analyses require multiple module executions; consider pipeline/workflow wrapping
+2. **PHI Restriction** — module Terms and Conditions prohibit use with Protected Health Information
+3. **Experimental affinity data dependency** — quality of results directly depends on availability and quality of the motif database (which depends on experimental TF binding data)
+4. **In silico only** — all predictions require experimental validation; tool provides candidates, not definitive pathogenicity calls
+5. **Sequence context not modeled** — k-mer scoring does not account for DNA shape, chromatin context, or cooperative TF binding (addressed in broader tfsites workflow)
+6. **Sequence length scalability** — suitable for enhancer/regulatory region scale (100–5,000 bp); genome-scale scanning requires `tfsites.AnalyzeGenomeMPRA`
+
+### 10.4 Recommended Documentation Structure
+
+```
+Module Documentation:
+├── Overview (scientific purpose, Farley lab context)
+├── Algorithm (k-mer scoring, SNV classification logic)
+├── Input Requirements (FASTA format, motif DB format)
+├── Parameter Descriptions (with biological significance)
+├── Output Description (table schema, visualization legend)
+├── Tutorial (step-by-step with example cardiac enhancer)
+├── Citation Requirements (Lim et al. 2024 Nature; Farley 2015 Science)
+└── FAQ (threshold selection, combined mode, multi-TF analysis)
+```
+
+---
+
+## 11. 🔗 AUTHORITATIVE SOURCES
+
+| Source | URL |
+|---|---|
+| Primary Module Repository | https://github.com/genepattern/tfsites.AnnotateAndVisualizeInSilicoSNVAnalysis |
+| tfsites.org Portal | https://tfsites.org/ |
+| tfsites Tools Page | https://tfsites.org/tools/ |
+| tfsites Tutorials | https://tfsites.org/tutorials/ |
+| Docker Hub Image | https://hub.docker.com/r/genepattern/tfsites |
+| Common Docker Source | https://github.com/genepattern/tfsites.common_docker |
+| GenerateMotifDatabase Module | https://github.com/genepattern/tfsites.GenerateMotifDatabase |
+| AffinityScan Module | https://github.com/genepattern/tfsites.AffinityScan |
+| Farley Lab Website | https://farleylab.com/ |
+| Farley Lab Publications | https://farleylab.com/publications/ |
+| GenePattern Organization | https://github.com/genepattern |
+| Nature 2024 Primary Paper | https://www.nature.com/articles/s41586-023-06922-8 |
+| Developmental Cell 2023 | https://pubmed.ncbi.nlm.nih.gov/37848026/ |
+| Science 2015 Foundation | https://doi.org/10.1126/science.aac7982 |
+
+---
+
+## 12. 🚀 RESEARCH SUMMARY AND ACTION ITEMS
+
+### Summary
+`tfsites.FindTfSitesAlteredBySequenceVariation` is a scientifically rigorous, experimentally-validated GenePattern module from the Farley Lab (UCSD) that performs **exhaustive in silico SNV mutagenesis** on DNA regulatory sequences for a single TF. Its unique strength is the detection of **affinity-optimizing (gain-of-function) variants** — a biologically important class of pathogenic non-coding variants that most comparable tools cannot identify. It is backed by high-impact publications in *Nature* (2024) and *Developmental Cell* (2023) and is part of a coherent, containerized bioinformatics toolkit with a public web portal.
+
+### Priority Action Items for GenePattern Module Completion
+
+1. **🔴 HIGH** — Access repository source code to extract exact command-line parameter names and flags for the GenePattern manifest
+2. **🔴 HIGH** — Confirm output file naming conventions from Python script
+3. **🟡 MEDIUM** — Validate binding site threshold defaults against Farley lab publications (0.25 recommended)
+4. **🟡 MEDIUM** — Document combined mode parameter dependencies in manifest (conditional required fields)
+5. **🟢 LOW** — Create tutorial using a well-characterized enhancer (e.g., ZRS or GATA4 cardiac enhancer) as example dataset
+6. **🟢 LOW** — Document module citation requirements (at minimum: Lim et al. 2024 *Nature*)
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

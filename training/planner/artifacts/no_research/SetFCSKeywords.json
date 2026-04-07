@@ -1,0 +1,67 @@
+{
+  "module_name": "SetFCSKeywords",
+  "description": "Sets keyword/value(s) in a Flow Cytometry Standard (FCS) file.",
+  "author": "Josef Spidlen, BC Cancer Agency",
+  "input_file_formats": [
+    "csv",
+    "fcs",
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:57622:1",
+  "plan": "## SetFCSKeywords GenePattern Module — Implementation Plan\n\n### 1. Overview\nSetFCSKeywords is a GenePattern module that Sets keyword/value(s) in a Flow Cytometry Standard (FCS) file.\n\n### 2. Parameters\nThe module exposes 3 parameters:\n- Required: Input.FCS.data.file, Keywords.input.file\n- Optional: Output.fcs.file.name\n\n### 3. Command Line\n```\n<java> <java_flags> -jar <libdir>setfcskeywords.jar <Input.FCS.data.file> <Keywords.input.file> <Output.fcs.file.name>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "setfcskeywords.jar",
+  "command_line": "<java> <java_flags> -jar <libdir>setfcskeywords.jar <Input.FCS.data.file> <Keywords.input.file> <Output.fcs.file.name>",
+  "parameters": [
+    {
+      "name": "Input.FCS.data.file",
+      "description": "The input FCS data file in which to set keyword/value pairs.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fcs"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-InputFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Keywords.input.file",
+      "description": "The file with keyword/value pairs to add (or change values of existing keywords). The keyword/value pairs can be submitted either as an CSV file with two columns\\: \"Keyword\" and \"Value\" (heading is optional) or as a text file with a chunk of FCS TEXT segment, e.g., /$P3S/MUC 1 APC/$P4S/Thy1 PE/BD$CUSTOM_VALUE23/12/.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "csv",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-KeywordsFile\\:",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "Output.fcs.file.name",
+      "description": "The file name for the output FCS data file.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-OutputFile\\:",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

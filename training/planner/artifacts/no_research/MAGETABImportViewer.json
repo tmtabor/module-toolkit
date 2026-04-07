@@ -1,0 +1,52 @@
+{
+  "module_name": "MAGETABImportViewer",
+  "description": "A visualizer to import data in MAGE-TAB format into GenePattern",
+  "author": "Marc-Danie Nazaire(Broad Institute)",
+  "input_file_formats": [
+    "txt",
+    "zip"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:35005:1",
+  "plan": "## MAGETABImportViewer GenePattern Module — Implementation Plan\n\n### 1. Overview\nMAGETABImportViewer is a GenePattern module that A visualizer to import data in MAGE-TAB format into GenePattern\n\n### 2. Parameters\nThe module exposes 2 parameters:\n- Required: sdrf.file, data.files\n- Optional: none\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>jargs.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>trove.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>ant.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>limpopo-1.0-beta-20100420.jar<path.separator><libdir>MAGETABImportViewer.jar org.broadinstitute.mage.MAGETABImportViewer -s <sdrf.file> -z <data.files>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "jargs.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>trove.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>ant.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>limpopo-1.0-beta-20100420.jar<path.separator><libdir>MAGETABImportViewer.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>jargs.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>trove.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>ant.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>limpopo-1.0-beta-20100420.jar<path.separator><libdir>MAGETABImportViewer.jar org.broadinstitute.mage.MAGETABImportViewer -s <sdrf.file> -z <data.files>",
+  "parameters": [
+    {
+      "name": "sdrf.file",
+      "description": "The sdrf file - .txt",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sdrf.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "data.files",
+      "description": "A zip file containing MAGE-TAB data matrix files - .zip",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.files",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

@@ -1,0 +1,60 @@
+{
+  "module_name": "FileSplitter",
+  "description": "Splits a file into equal-sized chunks, given the number of lines per output file",
+  "author": "Peter Carr, Broad Institute",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:28421:1",
+  "plan": "## FileSplitter GenePattern Module — Implementation Plan\n\n### 1. Overview\nFileSplitter is a GenePattern module that Splits a file into equal-sized chunks, given the number of lines per output file\n\n### 2. Parameters\nThe module exposes 3 parameters:\n- Required: inputFile\n- Optional: numFiles, numLines\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>FileSplitter.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar org.genepattern.module.filesplitter.FileSplitter <inputFile> <numFiles> <numLines>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "FileSplitter.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>FileSplitter.jar<path.separator><libdir>gp-annotations.jar<path.separator><libdir>jopt-simple-3.3.jar org.genepattern.module.filesplitter.FileSplitter <inputFile> <numFiles> <numLines>",
+  "parameters": [
+    {
+      "name": "inputFile",
+      "description": "The input file, to be split into chunks",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--inputFile\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "numFiles",
+      "description": "[Integer, >\\=1], The maximum number of output files to split the file into. When both 'numFiles' and 'numLines' are set, treat this as the maximum number of output files to create, even if the files have more than the requested number of lines",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--numFiles\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "numLines",
+      "description": "[Integer, >\\=1], The number of lines in each output file.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--numLines\\=",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

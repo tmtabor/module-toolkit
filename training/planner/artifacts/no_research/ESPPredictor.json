@@ -1,0 +1,38 @@
+{
+  "module_name": "ESPPredictor",
+  "description": "Determine which tryptic peptides will generate the highest signal in ESI-MS",
+  "author": "Vincent Fusaro, Broad Institute, updated by Ted Liefeld, UCSD School of Medicine.",
+  "input_file_formats": [
+    "csv",
+    "txt"
+  ],
+  "language": "MATLAB, R, Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:29470:1",
+  "plan": "## ESPPredictor GenePattern Module — Implementation Plan\n\n### 1. Overview\nESPPredictor is a GenePattern module that Determine which tryptic peptides will generate the highest signal in ESI-MS\n\n### 2. Parameters\nThe module exposes 1 parameters:\n- Required: input.file\n- Optional: none\n\n### 3. Command Line\n```\nsh /ESPPredictor/esp_module.sh <input.file>\n```\n\n### 4. Docker Image\nDocker image: genepattern/esppredictor\\:0.1\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "esp_module.sh",
+  "command_line": "sh /ESPPredictor/esp_module.sh <input.file>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "List of peptide sequences (one per line, no column header)",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt",
+        "csv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/esppredictor:0.1"
+}

@@ -1,0 +1,87 @@
+{
+  "module_name": "SelectFeaturesColumns",
+  "description": "Takes a 'column slice' from a .res, .gct, .snp, .cn, .loh, .odf, or .cls file.",
+  "author": "Joshua Gould, Broad Institute",
+  "input_file_formats": [
+    "Dataset",
+    "cls",
+    "cn",
+    "gct",
+    "loh",
+    "res",
+    "snp"
+  ],
+  "language": "Java",
+  "categories": [
+    "Variant Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:60132:1",
+  "plan": "## SelectFeaturesColumns GenePattern Module — Implementation Plan\n\n### 1. Overview\nSelectFeaturesColumns is a GenePattern module that Takes a 'column slice' from a .res, .gct, .snp, .cn, .loh, .odf, or .cls file.\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: input.filename, output\n- Optional: columns, list.filename\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>SelectFeaturesColumns.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.selectfeaturescolumns.SelectFeaturesColumns <input.filename> <output> -t<columns> -f<list.filename>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "SelectFeaturesColumns.jar<path.separator><libdir>gp-modules.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>SelectFeaturesColumns.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.selectfeaturescolumns.SelectFeaturesColumns <input.filename> <output> -t<columns> -f<list.filename>",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "description": "input file - .res, .gct, .snp, .cn, .loh, .odf, or .cls file from which the slice is extracted",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "res",
+        "Dataset",
+        "snp",
+        "cn",
+        "loh",
+        "cls"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "columns",
+      "description": "columns to select (e.g. 0-3, 5, 9). Either columns or a list file must be provided.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--columns",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "list.filename",
+      "description": "text file containing one identifier per line that specifies the columns to select. Either columns or a list file must be provided.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--list.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output",
+      "description": "output filename - .res, .gct, .snp, .cn, .loh, .odf, .cls",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.filename_basename>.slice",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

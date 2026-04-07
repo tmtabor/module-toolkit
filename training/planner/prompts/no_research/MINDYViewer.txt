@@ -1,0 +1,48 @@
+Create a comprehensive structured plan for the GenePattern module for 'MINDYViewer'.
+            
+            Tool Information:
+            - Name: MINDYViewer
+            - Version: Visualizes the results of MINDY
+            - Language: Java
+            - Description: Visualizes the results of MINDY
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "MINDYViewer",
+  "parameters": [
+    {
+      "name": "dataset.file",
+      "type": "FILE",
+      "description": "The dataset file - .res, .gct",
+      "required": true,
+      "default_value": "",
+      "file_format": "res;gct"
+    },
+    {
+      "name": "mindy.file",
+      "type": "FILE",
+      "description": "Output from MINDY- .mindy",
+      "required": false,
+      "default_value": "",
+      "file_format": "mindy"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Visualizer",
+  "author": "Marc-Danie Nazaire",
+  "command_line": "<java> <java_flags> -cp <libdir>swingx-0.9.1.jar<path.separator><libdir>jargs.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>jama-1.0.1.jar<path.separator><libdir>trove.jar<path.separator><libdir>collections-generic-4.0.jar<path.separator><libdir>commons-logging.jar<path.separator><libdir>ostermillerutils_1_04_03_for_kaffe.jar<path.separator><libdir>geworkbench-mindy.jar<path.separator><libdir>mindy-viewer.jar org.genepattern.modules.mindy.MINDYViewer -i <dataset.file> -m <mindy.file>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

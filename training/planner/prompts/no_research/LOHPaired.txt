@@ -1,0 +1,55 @@
+Create a comprehensive structured plan for the GenePattern module for 'LOHPaired'.
+            
+            Tool Information:
+            - Name: LOHPaired
+            - Version: Pairings based on array name instead of sample name
+            - Language: Java
+            - Description: Computes LOH for paired samples
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "LOHPaired",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "A .snp file that contains genotypes",
+      "required": true,
+      "default_value": "",
+      "file_format": "snp"
+    },
+    {
+      "name": "sample.info.filename",
+      "type": "FILE",
+      "description": "A sample info file with the paired information",
+      "required": true,
+      "default_value": "",
+      "file_format": "txt"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "Output file",
+      "required": true,
+      "default_value": "<input.filename_basename>.loh"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "SNP Analysis",
+  "author": "Jim Robinson, David Twomey, Joshua Gould",
+  "command_line": "<java> <java_flags> -cp <libdir>snp.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>opencsv-1.7.jar  edu.mit.broad.cg.visualization.LOHComputation <input.filename> <sample.info.filename> <output.file>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

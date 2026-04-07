@@ -1,0 +1,112 @@
+{
+  "module_name": "Picard.CreateSequenceDictionary",
+  "description": "Reads FASTA or FASTA.GZ files containing reference sequences, and writes them as a SAM file containing a sequence dictionary",
+  "author": "GenePattern",
+  "input_file_formats": [
+    "fa",
+    "fasta"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:96160:1",
+  "plan": "## Picard.CreateSequenceDictionary GenePattern Module — Implementation Plan\n\n### 1. Overview\nPicard.CreateSequenceDictionary is a GenePattern module that Reads FASTA or FASTA.GZ files containing reference sequences, and writes them as a SAM file containing a sequence dictionary\n\n### 2. Parameters\nThe module exposes 6 parameters:\n- Required: reference.sequence.file, output.file\n- Optional: genome.assembly, uri, truncate.names.at.white.space, num.sequences\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>CreateSequenceDictionary.jar<path.separator><libdir>gp-CreateSequenceDictionary.jar org.genepattern.sam.CreateSeqDictWrapper -r<reference.sequence.file> -g<genome.assembly> -u<uri> -t<truncate.names.at.white.space> -n<num.sequences> -o<output.file>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "CreateSequenceDictionary.jar<path.separator><libdir>gp-CreateSequenceDictionary.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>CreateSequenceDictionary.jar<path.separator><libdir>gp-CreateSequenceDictionary.jar org.genepattern.sam.CreateSeqDictWrapper -r<reference.sequence.file> -g<genome.assembly> -u<uri> -t<truncate.names.at.white.space> -n<num.sequences> -o<output.file>",
+  "parameters": [
+    {
+      "name": "reference.sequence.file",
+      "description": "Input reference fasta or fasta.gz",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "fasta",
+        "fa"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reference.sequence.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "genome.assembly",
+      "description": "The genome assembly to put into AS field of sequence dictionary entry",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--genome.assembly",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "uri",
+      "description": "The uri to put into UR field of sequence dictionary entry",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--uri",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "truncate.names.at.white.space",
+      "description": "Make sequence name the first word from the > line in the reference file",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "true"
+        },
+        {
+          "display": "no",
+          "value": "false"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--truncate.names.at.white.space",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.sequences",
+      "description": "Stop after writing this many sequences",
+      "required": false,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.sequences",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "The name of the output file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<reference.sequence.file_basename>.dict",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

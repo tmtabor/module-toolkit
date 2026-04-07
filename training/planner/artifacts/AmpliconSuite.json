@@ -1,0 +1,644 @@
+{
+  "module_name": "AmpliconSuite",
+  "description": "A multithread-enabled quickstart tool for AmpliconArchitect. Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. PrepareAA supports hg19 (or GRCh37), hg38 as well as mouse genome mm10 (or GRCm38). PrepareAA can also be invoked to start at intermediate stages of the data preparation process.\\n<br>\\nAll credits go to\\: <a href\\=\"https\\://github.com/AmpliconSuite/AmpliconSuite-pipeline\">https\\://github.com/AmpliconSuite/AmpliconSuite-pipeline</a> \\n<br>\\nView licenses here\\: <a href\\=\"https\\://github.com/genepattern/AmpliconSuite\\#licenses\">https\\://github.com/genepattern/AmpliconSuite\\#licenses</a>\\n<br/>\\n<p>\\nTo increase your GenePattern disk space quote so you can more easily upload the input bam files, <b><a href\\=\"https\\://forms.gle/23tkh98vwkhtCeKM7\">click here to join the AmpliconSuiteUsers group on this server.</b> </a> </p>\\n \\nTo run multiple samples at once, simply drag and drop multiple samples into the input options. There is no need to check the \"Batch\" box. \\n\\n<br>\\nCurrently using Amplicon Suite version 1.3.8.",
+  "author": "Edwin Huang;Mesirov Lab",
+  "input_file_formats": [
+    "BAM",
+    "bam",
+    "bed",
+    "fastq.gz",
+    "gz",
+    "tar.gz",
+    "zip"
+  ],
+  "language": "Python",
+  "categories": [
+    "ecdna"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:13661:1",
+  "plan": "## AmpliconSuite GenePattern Module — Implementation Plan\n\n### 1. Overview\nAmpliconSuite is a GenePattern module that A multithread-enabled quickstart tool for AmpliconArchitect. Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. PrepareAA supports hg19 (or GRCh37), hg38 as well as mouse genome mm10 (or GRCm38). PrepareAA can also be invoked to start at intermediate stages of the data preparation process.\\n<br>\\nAll credits go to\\: <a href\\=\"https\\://github.com/AmpliconSuite/AmpliconSuite-pipeline\">https\\://github.com/AmpliconSuite/AmpliconSuite-pipeline</a> \\n<br>\\nView licenses here\\: <a href\\=\"https\\://github.com/genepattern/AmpliconSuite\\#licenses\">https\\://github.com/genepattern/AmpliconSuite\\#licenses</a>\\n<br/>\\n<p>\\nTo increase your GenePattern disk space quote so you can more easily upload the input bam files, <b><a href\\=\"https\\://forms.gle/23tkh98vwkhtCeKM7\">click here to join the AmpliconSuiteUsers group on this server.</b> </a> </p>\\n \\nTo run multiple samples at once, simply drag and drop multiple samples into the input options. There is no need to check the \"Batch\" box. \\n\\n<br>\\nCurrently using Amplicon Suite version 1.3.8.\n\n### 2. Parameters\nThe module exposes 35 parameters:\n- Required: Sample.Name, RUN.AA, RUN.AC, reference, AA.std.of.insert.size, upload.server\n- Optional: bam.file, fastq.r1, fastq.r2, cnvkit.segmentation, project.key, cnv.bed, AA.seed, normal_bam, VCF.file, VCF.no.filter, CN.gain, Minimum.copy.number.size, Downsample.Argument, AA.runmode, AA.extend.mode, no.filter, skip.QC, ploidy, purity, sample_metadata, sample_type, sample_source, tissue_of_origin, sample_description, AA_zipped_output, foldback.pair.support.min, upload.to.amplicon.repository, amplicon.repository.username, project.id\n\n### 3. Command Line\n```\npython3 /opt/genepatt/run_aa.py  <AA_zipped_output> <bam.file> <fastq.r1> <fastq.r2> --n_threads <job.cpuCount>  <no.filter>  <skip.QC>  <VCF.no.filter> --reference <reference> --file_prefix <Sample.Name> --RUN_AA <RUN.AA> --RUN_AC <RUN.AC>  <ploidy>  <purity>  <cnvkit.segmentation>  <AA.seed>  <CN.gain>  <Minimum.copy.number.size>   <Downsample.Argument>  <AA.runmode>  <AA.extend.mode>  <AA.std.of.insert.size>  <cnv.bed>  <normal_bam>  <VCF.file>   <sample_metadata>  <sample_type>  <tissue_of_origin>  <sample_description>    <sample_source>   <foldback.pair.support.min> <upload.to.amplicon.repository> <project.id> <project.key> <amplicon.repository.username>  <upload.server>  --mosek_server_license <mosek_server_license>\n```\n\n### 4. Docker Image\nDocker image: genepattern/amplicon-architect\\:v3.13.0\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_aa.py",
+  "command_line": "python3 /opt/genepatt/run_aa.py  <AA_zipped_output> <bam.file> <fastq.r1> <fastq.r2> --n_threads <job.cpuCount>  <no.filter>  <skip.QC>  <VCF.no.filter> --reference <reference> --file_prefix <Sample.Name> --RUN_AA <RUN.AA> --RUN_AC <RUN.AC>  <ploidy>  <purity>  <cnvkit.segmentation>  <AA.seed>  <CN.gain>  <Minimum.copy.number.size>   <Downsample.Argument>  <AA.runmode>  <AA.extend.mode>  <AA.std.of.insert.size>  <cnv.bed>  <normal_bam>  <VCF.file>   <sample_metadata>  <sample_type>  <tissue_of_origin>  <sample_description>    <sample_source>   <foldback.pair.support.min> <upload.to.amplicon.repository> <project.id> <project.key> <amplicon.repository.username>  <upload.server>  --mosek_server_license <mosek_server_license>",
+  "parameters": [
+    {
+      "name": "bam.file",
+      "description": "Please provide the BAM file. There should only be one of a single bam file, 2 fastqs or a single zipped output from a previous run.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "BAM",
+        "bam"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--bam",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "fastq.r1",
+      "description": "First FASTQ file. There should only be one of a single bam file, 2 fastqs or a single zipped output from a previous run.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "fastq.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--fastqs",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "fastq.r2",
+      "description": "Second FASTQ file. There should only be one of a single bam file, 2 fastqs or a single zipped output from a previous run.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "fastq.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--fastq.r2",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Sample.Name",
+      "description": "Name of the sample being run. Also used as the output prefix.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--Sample.Name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "RUN.AA",
+      "description": "Would you like to run AA at the end? Will return AA results at the end if Yes. If no, will return files necessary to input to AA. Default to \"Yes\", user can select \"No\".",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "Yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes",
+          "value": "Yes"
+        },
+        {
+          "display": "No",
+          "value": "No"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--RUN.AA",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "RUN.AC",
+      "description": "Whether or not to run Amplicon Classifier. Default to \"Yes\", user can select \"No\".",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "Yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes",
+          "value": "Yes"
+        },
+        {
+          "display": "No",
+          "value": "No"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--RUN.AC",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reference",
+      "description": "Reference genome. Please use drop down to select.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "GRCh38",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "hg19",
+          "value": "hg19"
+        },
+        {
+          "display": "GRCh37",
+          "value": "GRCh37"
+        },
+        {
+          "display": "GRCh38",
+          "value": "GRCh38"
+        },
+        {
+          "display": "mm10",
+          "value": "mm10"
+        },
+        {
+          "display": "GRCh38_viral",
+          "value": "GRCh38_viral"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--reference",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cnvkit.segmentation",
+      "description": "Segmentation method for CNVKit (if used), defaults to CNVKit default segmentation method (cbs). Use drop down menu to select.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "cbs",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "cbs",
+          "value": "cbs"
+        },
+        {
+          "display": "haar",
+          "value": "haar"
+        },
+        {
+          "display": "hmm",
+          "value": "hmm"
+        },
+        {
+          "display": "hmm-tumor",
+          "value": "hmm-tumor"
+        },
+        {
+          "display": "hmm-germline",
+          "value": "hmm-germline"
+        },
+        {
+          "display": "none",
+          "value": "none"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--cnvkit_segmentation",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "project.key",
+      "description": "Project key on ampliconrepository.org, found under the key icon on the project page for project owners.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--project_key",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "cnv.bed",
+      "description": "BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should be\\: chr start end name cngain",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "bed"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cnv_bed",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "AA.seed",
+      "description": "The seed that sets randomness for Amplicon Architect",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--AA_seed",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "normal_bam",
+      "description": "Path to a matched normal bam for CNVKit (optional).",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "bam"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--normal_bam",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "VCF.file",
+      "description": "Provide a VCF file of externally-called SVs to augment SVs identified by AA internally.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sv_vcf",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "VCF.no.filter",
+      "description": "Use all external SV calls from the VCF file, even those without 'PASS' in the FILTER column.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "No",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes",
+          "value": "Yes"
+        },
+        {
+          "display": "No",
+          "value": "No"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--sv_vcf_no_filter",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "CN.gain",
+      "description": "Copy number gain threshold to consider for AA seeding.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "4.5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cngain",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Minimum.copy.number.size",
+      "description": "CN interval size (in bp) to consider for AA seeding",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "50000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cnsize_min",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Downsample.Argument",
+      "description": "Set a custom threshold for bam coverage downsampling during AA. Does not affect coverage in analyses outside of AA.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--downsample",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "AA.runmode",
+      "description": "If --run_AA selected, set the --runmode argument to AA. Refer to AA documentation\\: https\\://github.com/AmpliconSuite/AmpliconArchitect\\#optional-arguments.  Default mode is FULL.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "FULL",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FULL",
+          "value": "FULL"
+        },
+        {
+          "display": "BPGRAPH",
+          "value": "BPGRAPH"
+        },
+        {
+          "display": "CYCLES",
+          "value": "CYCLES"
+        },
+        {
+          "display": "SVVIEW",
+          "value": "SVVIEW"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--AA_runmode",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "AA.extend.mode",
+      "description": "If running Amplicon Architect, set extendmode for AA. Refer to AA documentation\\: https\\://github.com/AmpliconSuite/AmpliconArchitect\\#optional-arguments Default is EXPLORE.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "EXPLORE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "EXPLORE",
+          "value": "EXPLORE"
+        },
+        {
+          "display": "CLUSTERED",
+          "value": "CLUSTERED"
+        },
+        {
+          "display": "UNCLUSTERED",
+          "value": "UNCLUSTERED"
+        },
+        {
+          "display": "VIRAL",
+          "value": "VIRAL"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--AA_extendmode",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "AA.std.of.insert.size",
+      "description": "Number of standard deviations around the insert size. May need to increase for sequencing runs with high variance after insert size selection step. Default is 3.0",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "3.0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--AA_insert_sdevs",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "no.filter",
+      "description": "Do not run amplified_intervals.py to identify amplified seeds. Default \\= No",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "No",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "No",
+          "value": "No"
+        },
+        {
+          "display": "Yes",
+          "value": "Yes"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--no_filter",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "skip.QC",
+      "description": "Skip QC on the BAM file. Do not adjust AA insert_sdevs for poor-quality insert size distribution. Default \\= No.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "No",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "No",
+          "value": "No"
+        },
+        {
+          "display": "Yes",
+          "value": "Yes"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--no_QC",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "ploidy",
+      "description": "**NOT RECOMMENDED TO SET unless required** <br> Specify a ploidy estimate of the genome for CNVKit. Not used by AA itself.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--ploidy",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "purity",
+      "description": "**NOT RECOMMENDED TO SET unless required** <br>\\nSpecify a tumor purity estimate for CNVKit. Not used by AA itself. Note that specifying low purity may lead to many high copy number seed regions after rescaling is applied consider setting a higher --cn_gain threshold for low purity samples undergoing correction.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--purity",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "sample_metadata",
+      "description": "A .json file containing metadata information. Example metadata json\\: <a href \\= \"https\\://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/paalib/sample_metadata_skeleton.json\"> here </a>",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": "https\\://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/refs/heads/master/paalib/sample_metadata_skeleton.json",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--metadata",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "sample_type",
+      "description": "",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--metadata_sample_type",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "sample_source",
+      "description": "",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--metadata_sample_source",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "tissue_of_origin",
+      "description": "",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--metadata_tissue_of_origin",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "sample_description",
+      "description": "",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--metadata_sample_description",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "AA_zipped_output",
+      "description": "Output directly from Amplicon Architect. should be a zipped file, containing AA_results. There should only be one of a single bam file, 2 fastqs or a single zipped output from a previous run.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gz",
+        "tar.gz",
+        "zip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--AA_zipped_output",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "foldback.pair.support.min",
+      "description": "Minimum number of read-pairs required to support foldback-type SVs",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--foldback_pair_support_min",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "upload.to.amplicon.repository",
+      "description": "Upload to ampliconrepository.org, appending to the specified project",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Yes",
+          "value": "--upload"
+        },
+        {
+          "display": "No upload",
+          "value": ""
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--upload",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "amplicon.repository.username",
+      "description": "Username or email used for your ampliconrepository.org account",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--username",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "project.id",
+      "description": "Project uuid on ampliconrepository.org, found under the key icon on the project page for project owners.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--project_uuid",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "upload.server",
+      "description": "Developer only argument for which server to upload to. Allowed calues are prod, dev and local",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "prod",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "prod",
+          "value": "prod"
+        },
+        {
+          "display": "dev",
+          "value": "dev"
+        },
+        {
+          "display": "local",
+          "value": "local"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--upload_server",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/amplicon-architect:v3.13.0"
+}

@@ -1,0 +1,153 @@
+{
+  "module_name": "Peaks",
+  "description": "Determine peaks in the spectrum using a series of digital filters.",
+  "author": "D.R. Mani, Broad Institute",
+  "input_file_formats": [
+    "csv"
+  ],
+  "language": "R",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:10744:1",
+  "plan": "## Peaks GenePattern Module — Implementation Plan\n\n### 1. Overview\nPeaks is a GenePattern module that Determine peaks in the spectrum using a series of digital filters.\n\n### 2. Parameters\nThe module exposes 10 parameters:\n- Required: spectrum.filename, percentile, smoothing.size, adaptive.background.correction.strength, adaptive.background.correction.size, high.pass.filter.strength, high.pass.filter.factor, output.file\n- Optional: low.Da, high.Da\n\n### 3. Command Line\n```\n<R2.5> <libdir>pipeline.wrapper.R peaks.wrapper <spectrum.filename> <output.file> <libdir> -l<low.Da> -h<high.Da> -p<percentile> -a<smoothing.size> -b<adaptive.background.correction.strength> -c<adaptive.background.correction.size> -d<high.pass.filter.strength> -e<high.pass.filter.factor>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "pipeline.wrapper.R",
+  "command_line": "<R2.5> <libdir>pipeline.wrapper.R peaks.wrapper <spectrum.filename> <output.file> <libdir> -l<low.Da> -h<high.Da> -p<percentile> -a<smoothing.size> -b<adaptive.background.correction.strength> -c<adaptive.background.correction.size> -d<high.pass.filter.strength> -e<high.pass.filter.factor>",
+  "parameters": [
+    {
+      "name": "spectrum.filename",
+      "description": "spectrum data file - .csv",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "csv"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--spectrum.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "low.Da",
+      "description": "Minimum M/Z to include",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--low.Da",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "high.Da",
+      "description": "Maximum M/Z to include",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--high.Da",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "percentile",
+      "description": "After applying filters, threshold above which peaks are located",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.65",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--percentile",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "smoothing.size",
+      "description": "Size of the smoothing filter",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "21",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--smoothing.size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "adaptive.background.correction.strength",
+      "description": "Strength of the adaptive background correction filter",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0.75",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--adaptive.background.correction.strength",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "adaptive.background.correction.size",
+      "description": "Size of the adaptive background correction filter",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "21",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--adaptive.background.correction.size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "high.pass.filter.strength",
+      "description": "Strength of the high pass filter",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--high.pass.filter.strength",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "high.pass.filter.factor",
+      "description": "Filter factor for the high pass filter",
+      "required": true,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--high.pass.filter.factor",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<spectrum.filename_basename>.peaks.odf",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

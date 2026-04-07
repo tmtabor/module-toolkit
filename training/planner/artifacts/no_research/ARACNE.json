@@ -1,0 +1,173 @@
+{
+  "module_name": "ARACNE",
+  "description": "Runs the ARACNE algorithm for reverse engineering cellular networks",
+  "author": "Marc-Danie Nazaire, gp-help@broad.mit.edu, Broad Institute",
+  "input_file_formats": [
+    "gct",
+    "res",
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:17141:1",
+  "plan": "## ARACNE GenePattern Module — Implementation Plan\n\n### 1. Overview\nARACNE is a GenePattern module that Runs the ARACNE algorithm for reverse engineering cellular networks\n\n### 2. Parameters\nThe module exposes 11 parameters:\n- Required: dataset.file\n- Optional: hub.gene, hub.genes.file, transcription.factor.file, kernel.width, mi.threshold, p.value, dpi.tolerance, mean.filter, cv.filter, output.file\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>aracne-java.jar<path.separator><libdir>aracne-main.jar<path.separator><libdir>commons-cli.jar<path.separator><libdir>commons-logging-1.0.3.jar<path.separator><libdir>workbook-0.9.jar<path.separator><libdir>log4j-1.2.8.jar<path.separator><libdir>collections-generic-4.0.jar<path.separator><libdir>commons-math-1.0.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.aracne.ARACNE -i <dataset.file> -o <output.file> -h <hub.gene> -s <hub.genes.file> -l <transcription.factor.file> -k <kernel.width> -t <mi.threshold> -p <p.value> -e <dpi.tolerance> -f <mean.filter> <cv.filter>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "aracne-java.jar<path.separator><libdir>aracne-main.jar<path.separator><libdir>commons-cli.jar<path.separator><libdir>commons-logging-1.0.3.jar<path.separator><libdir>workbook-0.9.jar<path.separator><libdir>log4j-1.2.8.jar<path.separator><libdir>collections-generic-4.0.jar<path.separator><libdir>commons-math-1.0.jar<path.separator><libdir>gp-modules.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>aracne-java.jar<path.separator><libdir>aracne-main.jar<path.separator><libdir>commons-cli.jar<path.separator><libdir>commons-logging-1.0.3.jar<path.separator><libdir>workbook-0.9.jar<path.separator><libdir>log4j-1.2.8.jar<path.separator><libdir>collections-generic-4.0.jar<path.separator><libdir>commons-math-1.0.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.aracne.ARACNE -i <dataset.file> -o <output.file> -h <hub.gene> -s <hub.genes.file> -l <transcription.factor.file> -k <kernel.width> -t <mi.threshold> -p <p.value> -e <dpi.tolerance> -f <mean.filter> <cv.filter>",
+  "parameters": [
+    {
+      "name": "dataset.file",
+      "description": "Dataset file - .res, .gct",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "res"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dataset.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "hub.gene",
+      "description": "The name of a gene whose network interactions you want to reconstruct",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--hub.gene",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "hub.genes.file",
+      "description": "A file containing a list of hub genes with one gene per line - .txt",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--hub.genes.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "transcription.factor.file",
+      "description": "A file containing a list of genes with one gene per line that encode transcription factors - .txt",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--transcription.factor.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "kernel.width",
+      "description": "The kernel width (or window width) of the Gaussian Kernel Estimator",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--kernel.width",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "mi.threshold",
+      "description": "Threshold for the mutual information (MI) estimate to be considered statistically significant",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--mi.threshold",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "p.value",
+      "description": "Threshold for the p-value of a MI estimate to be considered statistically significant",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--p.value",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "dpi.tolerance",
+      "description": "The percentage of MI estimation considered as sampling error",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dpi.tolerance",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "mean.filter",
+      "description": "Filter out non-informative genes whose mean expression value is smaller than mean filter",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--mean.filter",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cv.filter",
+      "description": "Filter out non-informative genes whose coefficient of variance is smaller than cv filter",
+      "required": false,
+      "type": "float",
+      "value_count": "1..1",
+      "default_value": "0",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cv.filter",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file",
+      "description": "Output file name",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<dataset.file_basename>.output.adj",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.file",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

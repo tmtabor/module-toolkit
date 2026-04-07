@@ -1,0 +1,301 @@
+{
+  "module_name": "HeatMapImage",
+  "description": "Creates a heat map from a dataset",
+  "author": "Joshua Gould, Broad Institute",
+  "input_file_formats": [
+    "Dataset",
+    "gct",
+    "res"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:65909:1",
+  "plan": "## HeatMapImage GenePattern Module — Implementation Plan\n\n### 1. Overview\nHeatMapImage is a GenePattern module that Creates a heat map from a dataset\n\n### 2. Parameters\nThe module exposes 14 parameters:\n- Required: input.dataset, output, output.format, column.size, row.size\n- Optional: show.grid, grid.color, show.row.descriptions, show.row.names, rows.to.highlight, row.highlight.color, color.scheme, color.palette, use.color.gradient\n\n### 3. Command Line\n```\n<java> -Djava.awt.headless\\=true <java_flags> -jar <libdir>heatmapimage-o.jar <input.dataset> <output> <output.format> -c<row.size> -r<column.size> -g<show.grid> -l<grid.color> -a<show.row.descriptions> -s<show.row.names> -f<rows.to.highlight> -h<row.highlight.color> -n<color.scheme> -m<color.palette> -u<use.color.gradient>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "heatmapimage-o.jar",
+  "command_line": "<java> -Djava.awt.headless=true <java_flags> -jar <libdir>heatmapimage-o.jar <input.dataset> <output> <output.format> -c<row.size> -r<column.size> -g<show.grid> -l<grid.color> -a<show.row.descriptions> -s<show.row.names> -f<rows.to.highlight> -h<row.highlight.color> -n<color.scheme> -m<color.palette> -u<use.color.gradient>",
+  "parameters": [
+    {
+      "name": "input.dataset",
+      "description": "The input dataset - .res, .gct, .odf",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gct",
+        "res",
+        "Dataset"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.dataset",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output",
+      "description": "The output file name -.jpeg, .png, .tiff, .bmp, .eps",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.dataset_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.format",
+      "description": "The output file format",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "jpeg",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "jpeg",
+          "value": "jpeg"
+        },
+        {
+          "display": "png",
+          "value": "png"
+        },
+        {
+          "display": "tiff",
+          "value": "tiff"
+        },
+        {
+          "display": "bmp",
+          "value": "bmp"
+        },
+        {
+          "display": "eps",
+          "value": "eps"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "column.size",
+      "description": "The size in pixels of an element along the horizontal axis",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--column.size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "row.size",
+      "description": "The size in pixels of an element along the vertical axis",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--row.size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "show.grid",
+      "description": "Whether to show a grid between elements",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--show.grid",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "grid.color",
+      "description": "The grid color",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "black",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "black",
+          "value": "0:0:0"
+        },
+        {
+          "display": "grey",
+          "value": "128:128:128"
+        },
+        {
+          "display": "white",
+          "value": "255:255:255"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--grid.color",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "show.row.descriptions",
+      "description": "Whether to show row descriptions",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--show.row.descriptions",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "show.row.names",
+      "description": "Whether to show row names",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--show.row.names",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "rows.to.highlight",
+      "description": "Rows to highlight in the heat map",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--rows.to.highlight",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "row.highlight.color",
+      "description": "The color to highlight the rows if a rows to highlight file is provided",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "red",
+          "value": "255:0:0"
+        },
+        {
+          "display": "yellow",
+          "value": "255:255:0"
+        },
+        {
+          "display": "blue",
+          "value": "0:0:255"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--row.highlight.color",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "color.scheme",
+      "description": "The color scheme",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "row normalized",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "row normalized",
+          "value": "row normalized"
+        },
+        {
+          "display": "global",
+          "value": "global"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--color.scheme",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "color.palette",
+      "description": "Color palette consisting of one r\\:g\\:b triplet or one hex value per line",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--color.palette",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "use.color.gradient",
+      "description": "Whether to use a linear color gradient or discrete colors",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--use.color.gradient",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

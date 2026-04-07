@@ -1,0 +1,75 @@
+{
+  "module_name": "PclToGct",
+  "description": "Convert Stanford preclustering file (.pcl) to .gct",
+  "author": "Jeremy Hubble, Stanford University, gp-help@broad.mit.edu",
+  "input_file_formats": [
+    "pcl"
+  ],
+  "language": "Perl",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:85387:1",
+  "plan": "## PclToGct GenePattern Module — Implementation Plan\n\n### 1. Overview\nPclToGct is a GenePattern module that Convert Stanford preclustering file (.pcl) to .gct\n\n### 2. Parameters\nThe module exposes 3 parameters:\n- Required: input.filename, output.filename, weight.handling\n- Optional: none\n\n### 3. Command Line\n```\n<perl> <libdir>pclToGct.pl -w <weight.handling> -o <output.filename> <input.filename>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "pclToGct.pl",
+  "command_line": "<perl> <libdir>pclToGct.pl -w <weight.handling> -o <output.filename> <input.filename>",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "description": "pcl file to convert",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "pcl"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "output gct file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.filename_basename>.gct",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "weight.handling",
+      "description": "How to handle manually edited weights (weights not equal to 1) present in PCL file",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "3",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "ignore weights",
+          "value": "1"
+        },
+        {
+          "display": "multiply values by weights (altering biological data)",
+          "value": "2"
+        },
+        {
+          "display": "print error if weights not equal to 1 present",
+          "value": "3"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--weight.handling",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

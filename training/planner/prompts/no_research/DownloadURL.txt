@@ -1,0 +1,46 @@
+Create a comprehensive structured plan for the GenePattern module for 'DownloadURL'.
+            
+            Tool Information:
+            - Name: DownloadURL
+            - Version: Added email address to owner contact
+            - Language: Java
+            - Description: Downloads a file from a URL
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "DownloadURL",
+  "parameters": [
+    {
+      "name": "URL",
+      "type": "java.lang.String",
+      "description": "The URL to retrieve the file from",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "The name of the output file",
+      "required": true,
+      "default_value": ""
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Joshua Gould",
+  "command_line": "<java> <java_flags> -cp <libdir>download.jar DownloadFile <URL> <output.file>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

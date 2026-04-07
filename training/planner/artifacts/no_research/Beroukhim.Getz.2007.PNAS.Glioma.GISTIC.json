@@ -1,0 +1,20 @@
+{
+  "module_name": "Beroukhim.Getz.2007.PNAS.Glioma.GISTIC",
+  "description": "- Repository:",
+  "author": "Rameen Beroukhim, Broad Institute",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:85923:1",
+  "plan": "## Beroukhim.Getz.2007.PNAS.Glioma.GISTIC GenePattern Module — Implementation Plan\n\n### 1. Overview\nBeroukhim.Getz.2007.PNAS.Glioma.GISTIC is a GenePattern module that - Repository:\n\n### 2. Parameters\nThe module exposes 0 parameters:\n- Required: none\n- Optional: none\n\n### 3. Command Line\n```\n<java>  -Dgenepattern.properties\\=<resources> -DLSID\\=<LSID> -DPIPELINE_ARG.StopAfterTask\\=<PIPELINE_ARG.StopAfterTask> -DGenePatternURL\\=<GenePatternURL>  org.genepattern.server.webapp.RunPipelineSoap <GenePatternURL>getPipelineModel.jsp?name\\=<LSID>&userid\\=<userid> <userid>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.sh",
+  "command_line": "<java>  -Dgenepattern.properties=<resources> -DLSID=<LSID> -DPIPELINE_ARG.StopAfterTask=<PIPELINE_ARG.StopAfterTask> -DGenePatternURL=<GenePatternURL>  org.genepattern.server.webapp.RunPipelineSoap <GenePatternURL>getPipelineModel.jsp?name=<LSID>&userid=<userid> <userid>",
+  "parameters": [],
+  "docker_image_tag": ""
+}

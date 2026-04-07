@@ -1,0 +1,274 @@
+{
+  "module_name": "OutSplice",
+  "description": "OutSplice is a package that compares alternative splicing events between tumor and normal samples. This package is specifically designed for analyzing the gene and junction information from RNA sequencing data provided by the user, or from the TCGA. This package generates a matrix of splicing outliers, which are junctions that are either significantly over or under-expressed compared to a control sample. OutSplice further designates observed outliers as skipping, insertion, or deletion events. Overall, OutSplice is novel in that it determines differential splicing burdens between tumors and normal samples and characterizes the nature of splicing outliers.",
+  "author": "Joseph Bendik;UCSD",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "R",
+  "categories": [
+    "alternative splicing"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:41249:1",
+  "plan": "## OutSplice GenePattern Module — Implementation Plan\n\n### 1. Overview\nOutSplice is a GenePattern module that OutSplice is a package that compares alternative splicing events between tumor and normal samples. This package is specifically designed for analyzing the gene and junction information from RNA sequencing data provided by the user, or from the TCGA. This package generates a matrix of splicing outliers, which are junctions that are either significantly over or under-expressed compared to a control sample. OutSplice further designates observed outliers as skipping, insertion, or deletion events. Overall, OutSplice is novel in that it determines differential splicing burdens between tumors and normal samples and characterizes the nature of splicing outliers.\n\n### 2. Parameters\nThe module exposes 14 parameters:\n- Required: junction.file, gene.expression.file, rawcounts.file, out.file.prefix, filter.sex, offsets.value, correction.setting, p.value, genome.annotations, use_junc_col, use_gene_col, use_rc_col, use_labels_col\n- Optional: sample.labels.file\n\n### 3. Command Line\n```\nRscript /build/source/outsplice_wrapper.R <junction.file> <gene.expression.file> <rawcounts.file>     <out.file.prefix> <filter.sex>    <offsets.value> <correction.setting> <p.value>   <sample.labels.file>   <genome.annotations> <use_junc_col> <use_gene_col> <use_rc_col> <use_labels_col>\n```\n\n### 4. Docker Image\nDocker image: genepattern/outsplice\\:0.4\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "outsplice_wrapper.R",
+  "command_line": "Rscript /build/source/outsplice_wrapper.R <junction.file> <gene.expression.file> <rawcounts.file>     <out.file.prefix> <filter.sex>    <offsets.value> <correction.setting> <p.value>   <sample.labels.file>   <genome.annotations> <use_junc_col> <use_gene_col> <use_rc_col> <use_labels_col>",
+  "parameters": [
+    {
+      "name": "junction.file",
+      "description": "Matrix of junction raw read counts",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--junction.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gene.expression.file",
+      "description": "Matrix of normalized gene expression data. RSEM quartile normalized data is recommended.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--rsem.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "rawcounts.file",
+      "description": "Matrix of raw read counts for each gene. Can either be per gene, or a summed total for each sample.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--rawcounts.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "sample.labels.file",
+      "description": "Matrix of phenotypes, 2 columns with sample name in column 1 and either T or N in column two (for tumor or normal).",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--sample.labels.file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "out.file.prefix",
+      "description": "Prefix that will be used for all output files.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "<gene.expression.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--out.file.prefix",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "filter.sex",
+      "description": "Ignores sex chromosomes when generating results. True by default.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "True",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--filter.sex",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "offsets.value",
+      "description": "The normalized junction expression threshold. Uses 0.00001 by default.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "0.00001",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--offsets.value",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "correction.setting",
+      "description": "The correction value to be used for p-value adjustment during Fisher analyses. Uses fdr by default. Allowed values are fdr, holm, hochberg, hommel, bonferonni, BY.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "fdr",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "fdr",
+          "value": "fdr"
+        },
+        {
+          "display": "holm",
+          "value": "holm"
+        },
+        {
+          "display": "hochberg",
+          "value": "hochberg"
+        },
+        {
+          "display": "hommel",
+          "value": "hommel"
+        },
+        {
+          "display": "bonferroni",
+          "value": "bonferroni"
+        },
+        {
+          "display": "BY",
+          "value": "BY"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--correction.setting",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "p.value",
+      "description": "The final corrected significance threshold to use during Fisher analyses. Uses 0.05 by default.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": ".05",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--p.value",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "genome.annotations",
+      "description": "Genome and transcript annotations to use.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "Hg19",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Hg19",
+          "value": "Hg19"
+        },
+        {
+          "display": "Hg38",
+          "value": "Hg38"
+        },
+        {
+          "display": "mm39",
+          "value": "mm39"
+        },
+        {
+          "display": "mm10",
+          "value": "mm10"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--preset.genome.annotation",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "use_junc_col",
+      "description": "An integer indicating which column in the junction matrix contains the junction regions in your matrices. Uses 1 by default.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "1",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--use_junc_col",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "use_gene_col",
+      "description": ".An integer indicating which column in the gene_expr matrix contains the entrez ids of your genes Uses 1 by default.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "1",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--use_gene_col",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "use_rc_col",
+      "description": "An integer indicating which column in the rawcounts matrix contains the row names. Uses 1 by default.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "1",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--use_rc_col",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "use_labels_col",
+      "description": "An integer indicating which column in the sample_labels matrix contains the sample names. Uses 1 by default.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "1",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "1",
+          "value": "1"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--use_labels_col",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/outsplice:0.4"
+}

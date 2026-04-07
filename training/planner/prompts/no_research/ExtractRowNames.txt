@@ -1,0 +1,47 @@
+Create a comprehensive structured plan for the GenePattern module for 'ExtractRowNames'.
+            
+            Tool Information:
+            - Name: ExtractRowNames
+            - Version: Added support for gct and odf files
+            - Language: Java
+            - Description: Extracts the row names from a .res, .gct, or .odf file.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ExtractRowNames",
+  "parameters": [
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "input file - .res, .gct, .odf, file from which the row names are extracted",
+      "required": true,
+      "default_value": "",
+      "file_format": "res;gct;Dataset"
+    },
+    {
+      "name": "output",
+      "type": "java.lang.String",
+      "description": "output filename containing the row names - .txt",
+      "required": true,
+      "default_value": "<input.filename_basename>.row.names.txt"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Joshua Gould, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>ExtractRowNames.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.extractrows.ExtractRowNames <input.filename> <output>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

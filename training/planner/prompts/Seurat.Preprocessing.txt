@@ -1,0 +1,511 @@
+Create a comprehensive structured plan for the GenePattern module for 'Seurat.Preprocessing'.
+            
+            Tool Information:
+            - Name: Seurat.Preprocessing
+            - Version: Upgrading to Seurat 4.0.3
+            - Language: any
+            - Description: Seurat preprocessing
+            
+            Research Results:
+            I now have all the information needed to compile the complete, detailed research report. Here it is:
+
+---
+
+# 🧬 Comprehensive Research Report: `Seurat.Preprocessing` (GenePattern Module v4)
+
+---
+
+## 1. 🔬 Tool Purpose & Scientific Applications
+
+### Overview
+`Seurat.Preprocessing` is a **GenePattern module** that encapsulates the core preprocessing pipeline of the **Seurat R package (v4.0.3)** — one of the most widely adopted frameworks for single-cell RNA sequencing (scRNA-seq) analysis. It functions as the **central transformation hub** in the GenePattern Seurat Suite, converting quality-controlled, filtered count data into a fully normalized, reduced-dimensionality Seurat object ready for downstream biological interpretation.
+
+### Biological Significance
+The module addresses three fundamental challenges in scRNA-seq data analysis:
+
+| Challenge | Solution Implemented |
+|---|---|
+| **Technical noise** (sequencing depth variation) | Per-cell normalization (`NormalizeData`) |
+| **Curse of dimensionality** (~20,000 genes per cell) | Highly Variable Gene (HVG) selection + PCA |
+| **Visualization of high-dimensional cell states** | UMAP / tSNE non-linear embedding |
+| **Cell community structure** | k-NN graph + Louvain clustering |
+| **Confounding biological/technical variation** | Regression via `ScaleData(vars.to.regress=...)` |
+
+### Scientific Applications
+- **Cell type discovery**: Unsupervised identification of distinct cell populations in complex tissues (PBMC, tumor microenvironment, brain, gut, etc.)
+- **Developmental biology**: Preparation for pseudotime/trajectory analysis (precedes Monocle3, STREAM)
+- **Multi-modal integration**: Foundation for CITE-seq, ATAC+RNA, spatial transcriptomics preprocessing
+- **Disease atlases**: Preprocessing of large-scale patient cohort datasets (e.g., COVID-19 PBMC, cancer immune infiltrates)
+- **Comparative biology**: Preprocessing for cross-species or cross-condition comparisons
+- **Cell cycle analysis**: Scoring and optionally regressing out cell cycle phases
+
+---
+
+## 2. 📁 Input/Output Formats & Requirements
+
+### Input Files
+
+| File | Format | Required | Description |
+|---|---|---|---|
+| `input.file` | `.rds` | ✅ Required | Serialized R Seurat object from `Seurat.QC` |
+| *(alternative)* | 10x MEX (`.mtx` + `.tsv`) | Context-dependent | CellRanger output; typically loaded in `Seurat.QC` |
+
+**Input `.rds` Contents (from `Seurat.QC`):**
+- Raw count matrix (sparse `dgCMatrix` in `@assays$RNA@counts`)
+- Per-cell metadata: `nCount_RNA`, `nFeature_RNA`, `percent.mt`, `orig.ident`
+- Cells have been filtered for QC thresholds (minimum features, maximum mitochondrial %, doublets removed)
+
+### Output Files
+
+| File | Format | Description |
+|---|---|---|
+| `seurat_preprocessed_dataset.rds` | `.rds` | **Primary output**: Fully preprocessed Seurat object |
+| `output_plots.pdf` | `.pdf` | Diagnostic visualization plots |
+| *(optional)* `variable_features.txt` | `.txt` | List of top HVGs |
+
+**Output `.rds` Object Slots Populated:**
+```
+@assays$RNA
+  @counts       # Original raw counts (preserved)
+  @data         # Log-normalized expression matrix
+  @scale.data   # Z-scored, regression-adjusted matrix
+  @var.features # Top nfeatures highly variable genes
+
+@reductions
+  $pca          # npcs-dimensional PCA embedding
+  $umap         # 2D UMAP coordinates (if run.umap=TRUE)
+  $tsne         # 2D tSNE coordinates (if run.tsne=TRUE)
+
+@graphs
+  $RNA_nn       # k-NN graph (if run.neighbors=TRUE)
+  $RNA_snn      # Shared nearest-neighbor graph
+
+@meta.data
+  $seurat_clusters   # Cluster identities (if run.clustering=TRUE)
+  + all QC columns from upstream
+```
+
+**Output PDF Plots:**
+1. `VariableFeaturePlot()` — Top HVGs labeled in mean-variance space
+2. `VizDimLoadings()` — Top gene loadings on PC1/PC2
+3. `ElbowPlot()` — Variance explained per PC (critical for `dims` selection)
+4. `DimPlot()` — UMAP/tSNE colored by cluster
+5. `DimHeatmap()` — Heatmap of top PC gene loadings
+
+---
+
+## 3. ⚙️ Parameter Analysis & Usage Patterns
+
+### Full Parameter Catalog
+
+#### **Group A: Input/Output Parameters**
+
+| Parameter | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `input.file` | File (`.rds`) | — | ✅ Yes | Seurat object from `Seurat.QC` |
+| `output.filename` | String | `"seurat_preprocessed_dataset"` | No | Base name for output files |
+
+---
+
+#### **Group B: Normalization Parameters**
+
+| Parameter | Type | Default | Options | Biological Guidance |
+|---|---|---|---|---|
+| `normalization.method` | Choice | `"LogNormalize"` | `LogNormalize`, `CLR`, `RC` | LogNormalize is standard for gene expression; CLR recommended for protein (CITE-seq) |
+| `scale.factor` | Integer | `10000` | 1,000–1,000,000 | 10,000 = CPM-like normalization (counts per 10k) |
+| `use.sctransform` | Boolean | `FALSE` | TRUE/FALSE | Activates SCTransform workflow (replaces Steps B–D); recommended for high-depth-variation datasets |
+
+---
+
+#### **Group C: Highly Variable Gene (HVG) Selection**
+
+| Parameter | Type | Default | Options | Notes |
+|---|---|---|---|---|
+| `nfeatures` | Integer | `2000` | 1,000–5,000 | Increase for highly heterogeneous tissues (e.g., brain: 3,000–5,000); decrease for homogeneous samples |
+| `selection.method` | Choice | `"vst"` | `vst`, `mean.var.plot`, `dispersion` | VST is strongly preferred in v4; `mean.var.plot` is legacy Seurat v2 method |
+
+**Method Comparison:**
+| Method | Algorithm | Recommendation |
+|---|---|---|
+| `vst` | Fits loess to mean–variance; standardizes residuals | ✅ **Best for most datasets** |
+| `mean.var.plot` | Bins genes by mean; selects high-dispersion per bin | Legacy; use for v2 reproducibility |
+| `dispersion` | Raw dispersion (not mean-normalized) | Not recommended for large datasets |
+
+---
+
+#### **Group D: Data Scaling & Regression**
+
+| Parameter | Type | Default | Notes |
+|---|---|---|---|
+| `vars.to.regress` | String (comma-sep) | `NULL` | Comma-separated list of metadata column names to regress |
+| `do.scale` | Boolean | `TRUE` | Scale variance to 1 per gene |
+| `do.center` | Boolean | `TRUE` | Center mean to 0 per gene |
+
+**Common `vars.to.regress` values and when to use them:**
+| Variable | When to Use |
+|---|---|
+| `percent.mt` | Mitochondrial content varies substantially across conditions |
+| `nCount_RNA` | Residual depth effects after normalization |
+| `S.Score` + `G2M.Score` | Cycling cells mask biological signal of interest |
+| `nFeature_RNA` | Feature detection rate confounds clustering |
+
+> ⚠️ **Caution**: Aggressive regression (e.g., `nCount_RNA`) can remove biologically meaningful variation. Regress only when confounding is confirmed.
+
+---
+
+#### **Group E: Dimensionality Reduction (PCA)**
+
+| Parameter | Type | Default | Range | Notes |
+|---|---|---|---|---|
+| `npcs` | Integer | `50` | 20–200 | Number of PCs to compute; use `ElbowPlot()` to choose how many to USE downstream |
+| `seed.use` | Integer | `42` | Any integer | Reproducibility seed for stochastic components |
+
+---
+
+#### **Group F: UMAP/tSNE Embedding**
+
+| Parameter | Type | Default | Notes |
+|---|---|---|---|
+| `run.umap` | Boolean | `TRUE` | Standard visualization; recommended default ON |
+| `umap.dims` | String | `"1:30"` | R range notation; use ElbowPlot to determine |
+| `run.tsne` | Boolean | `FALSE` | Optional alternative; computationally expensive |
+| `n.neighbors` | Integer | `30` | UMAP parameter; higher = more global structure |
+| `min.dist` | Float | `0.3` | UMAP compactness; lower = tighter clusters |
+| `spread` | Float | `1.0` | UMAP scale; interacts with min.dist |
+| `metric` | String | `"cosine"` | Distance metric for UMAP graph |
+
+---
+
+#### **Group G: Graph Construction & Clustering**
+
+| Parameter | Type | Default | Range | Notes |
+|---|---|---|---|---|
+| `run.neighbors` | Boolean | `TRUE` | — | Required for clustering; builds SNN graph |
+| `nn.dims` | String | `"1:30"` | R range | PCs for NN graph; should match umap.dims |
+| `run.clustering` | Boolean | `TRUE` | — | Louvain graph-based community detection |
+| `resolution` | Float | `0.5` | 0.01–5.0 | **Most impactful parameter for biology**: 0.1–0.3 = broad cell types; 1.0–2.0 = fine subtypes |
+
+**Resolution Guide:**
+| Resolution | Expected Use Case |
+|---|---|
+| 0.1–0.3 | Major cell lineages (T cells, B cells, myeloid) |
+| 0.4–0.8 | Standard subtype resolution (**default range**) |
+| 1.0–1.5 | Fine T-cell subsets, DC subpopulations |
+| 1.5–2.0 | Ultra-fine rare population discovery |
+
+---
+
+### Parameter Grouping for GenePattern UI
+
+```
+┌─────────────────────────────────────────────────────┐
+│ GROUP 1: Input/Output                               │
+│   input.file, output.filename                        │
+├─────────────────────────────────────────────────────┤
+│ GROUP 2: Normalization                              │
+│   normalization.method, scale.factor, use.sctransform│
+├─────────────────────────────────────────────────────┤
+│ GROUP 3: Feature Selection                          │
+│   nfeatures, selection.method                        │
+├─────────────────────────────────────────────────────┤
+│ GROUP 4: Scaling & Regression                       │
+│   vars.to.regress, do.scale, do.center               │
+├─────────────────────────────────────────────────────┤
+│ GROUP 5: Dimensionality Reduction                   │
+│   npcs, run.umap, umap.dims, run.tsne, seed.use      │
+├─────────────────────────────────────────────────────┤
+│ GROUP 6: Clustering                                 │
+│   run.neighbors, nn.dims, run.clustering, resolution │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## 4. 🛠 Installation & Dependency Requirements
+
+### R Package Dependencies
+
+#### Core (Required)
+| Package | Min Version | Source | Function |
+|---|---|---|---|
+| `Seurat` | `4.0.3` | CRAN | Primary analysis engine |
+| `SeuratObject` | `4.0.0` | CRAN | S4 class definitions for Seurat data structures |
+| `R` | `4.0.0` | CRAN | Base runtime |
+
+#### Computational (Required by Seurat)
+| Package | Min Version | Source | Function |
+|---|---|---|---|
+| `Matrix` | `1.3.0` | CRAN | Sparse matrix operations (dgCMatrix) |
+| `irlba` | `2.3.3` | CRAN | Fast truncated SVD for PCA on sparse matrices |
+| `uwot` | `0.1.10` | CRAN | UMAP implementation (C++ Annoy backend) |
+| `RcppAnnoy` | Any | CRAN | Approximate NN for UMAP |
+| `Rtsne` | `0.15` | CRAN | Barnes-Hut tSNE |
+| `sctransform` | `≥0.3.3` | CRAN | SCTransform v2 (if `use.sctransform=TRUE`) |
+| `future` | `1.21.0` | CRAN | Parallelization framework |
+| `MASS` | Any | CRAN | Statistical methods (internal) |
+
+#### Visualization (Required)
+| Package | Min Version | Source | Function |
+|---|---|---|---|
+| `ggplot2` | `3.3.0` | CRAN | Core plotting |
+| `patchwork` | `1.0.0` | CRAN | Plot composition |
+| `cowplot` | Any | CRAN | Multi-panel figures |
+
+### Docker/Container Specification
+```dockerfile
+# GenePattern Seurat Suite Container
+FROM r-base:4.1.2
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libhdf5-dev libcurl4-openssl-dev \
+    libssl-dev libxml2-dev libgit2-dev
+
+# Install R packages
+RUN R -e "install.packages(c('Seurat','SeuratObject','ggplot2',\
+    'patchwork','dplyr','Matrix','irlba','uwot','Rtsne',\
+    'sctransform','future','cowplot'), \
+    repos='https://cran.rstudio.com/', dependencies=TRUE)"
+```
+
+### System Requirements
+
+| Resource | Minimum | Recommended | Notes |
+|---|---|---|---|
+| **RAM** | 8 GB | 16–32 GB | 32+ GB for >50,000 cells |
+| **CPU** | 2 cores | 8+ cores | `future` parallelization for `ScaleData` |
+| **Disk** | 5 GB | 20 GB | 2–5× input size for intermediates |
+| **R version** | 4.0.0 | 4.1.2+ | Required for Matrix API compatibility |
+| **OS** | Linux/macOS | Linux (Docker) | GenePattern Docker execution |
+
+---
+
+## 5. 🔄 Common Workflows & Use Cases
+
+### Workflow A: Standard Single-Sample Preprocessing
+```
+Seurat.QC (filtered.rds)
+    ↓
+Seurat.Preprocessing
+  [normalization.method = "LogNormalize"]
+  [nfeatures = 2000]
+  [vars.to.regress = "percent.mt"]
+  [npcs = 50]
+  [umap.dims = "1:30"]
+  [resolution = 0.5]
+    ↓
+seurat_preprocessed_dataset.rds
+    ↓
+Seurat.Clustering / Seurat.DE
+```
+
+### Workflow B: Multi-Sample (Post-Batch Correction)
+```
+Seurat.QC (Sample1) ──┐
+Seurat.QC (Sample2) ──┤
+Seurat.QC (Sample3) ──┘
+         ↓
+Seurat.IntegrateData (CCA or Harmony)
+         ↓
+Seurat.Preprocessing
+  [normalization.method = "LogNormalize"]
+  [nfeatures = 3000]  ← increase for diversity
+  [vars.to.regress = "percent.mt,nCount_RNA"]
+  [umap.dims = "1:40"]  ← more PCs post-integration
+         ↓
+Seurat.Clustering
+```
+
+### Workflow C: SCTransform Pipeline (High-Depth-Variation Datasets)
+```
+Seurat.QC (filtered.rds)
+    ↓
+Seurat.Preprocessing
+  [use.sctransform = TRUE]
+  [vars.to.regress = "percent.mt"]  ← handled inside SCTransform
+  [npcs = 50]
+  [umap.dims = "1:30"]
+  [resolution = 0.8]
+    ↓
+seurat_preprocessed_dataset.rds (SCT assay)
+```
+
+### Workflow D: Cell Cycle Regression (Cycling Tissue Datasets)
+```R
+# Pre-step: Cell cycle scoring (in Seurat.QC or separate step)
+seurat_obj <- CellCycleScoring(seurat_obj,
+  s.features = cc.genes$s.genes,
+  g2m.features = cc.genes$g2m.genes)
+
+# Seurat.Preprocessing parameters:
+vars.to.regress = "S.Score,G2M.Score"
+```
+
+### Typical Parameter Ranges by Dataset Type
+
+| Dataset Type | `nfeatures` | `umap.dims` | `resolution` | `vars.to.regress` |
+|---|---|---|---|---|
+| PBMC (~3k cells) | 2000 | 1:10 | 0.5 | percent.mt |
+| Tumor microenvironment | 3000 | 1:30 | 0.8 | percent.mt,nCount_RNA |
+| Brain (complex) | 3000–5000 | 1:40 | 1.0–1.5 | percent.mt |
+| Sorted cell population | 1000–2000 | 1:15 | 0.3 | percent.mt |
+| Large atlas (>100k cells) | 2000–3000 | 1:50 | 0.5 | percent.mt,nCount_RNA |
+
+---
+
+## 6. 🔗 GenePattern Integration Considerations
+
+### Module Position in Seurat Suite
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  GenePattern Seurat Suite v4                    │
+│                                                                  │
+│  [1] Seurat.QC              ← Cell filtering, mt% cutoffs       │
+│         │                                                        │
+│         ├──[Optional]──────────────────────────────────────┐    │
+│         │  Seurat.IntegrateData (CCA/Harmony batch correct) │    │
+│         │  ←─────────────────────────────────────────────┘ │    │
+│         ↓                                                        │
+│ ▶ [2] Seurat.Preprocessing  ← THIS MODULE                       │
+│         │  Normalize → HVG → Scale → PCA → UMAP → Cluster      │
+│         ↓                                                        │
+│  [3] Seurat.Clustering      ← Advanced clustering, markers      │
+│         ↓                                                        │
+│  [4] Seurat.DE              ← Differential expression           │
+│         ↓                                                        │
+│  [5] CellTypeAnnotation     ← Automated/manual annotation       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### GenePattern Module Manifest Specifications
+
+```yaml
+# module.yaml / manifest
+name: Seurat.Preprocessing
+lsid: urn:lsid:broad.mit.edu:cancer.software.genepattern.module.analysis:00xxx
+version: 4
+language: R >= 4.0
+os: any
+cpuType: any
+taskType: Single Cell Analysis
+categories: RNA-seq; Single Cell; Preprocessing
+
+commandLine: Rscript /module/seurat_preprocessing.R
+  --input.file <input.file>
+  --normalization.method <normalization.method>
+  --scale.factor <scale.factor>
+  --nfeatures <nfeatures>
+  --selection.method <selection.method>
+  --vars.to.regress <vars.to.regress>
+  --npcs <npcs>
+  --run.umap <run.umap>
+  --umap.dims <umap.dims>
+  --run.tsne <run.tsne>
+  --run.neighbors <run.neighbors>
+  --nn.dims <nn.dims>
+  --run.clustering <run.clustering>
+  --resolution <resolution>
+  --use.sctransform <use.sctransform>
+  --output.filename <output.filename>
+
+fileFormat: .rds
+docker.image: genepattern/seurat-suite:4.0.3
+```
+
+### GenePattern UI Parameter Types
+
+| Parameter | GP UI Type | Validation |
+|---|---|---|
+| `input.file` | `FILE` | Accept `.rds` only |
+| `output.filename` | `TEXT` | Alphanumeric + underscore |
+| `normalization.method` | `TEXT_CHOICE` | `LogNormalize;CLR;RC` |
+| `scale.factor` | `INTEGER` | Min: 1,000 / Max: 1,000,000 |
+| `nfeatures` | `INTEGER` | Min: 100 / Max: 10,000 |
+| `selection.method` | `TEXT_CHOICE` | `vst;mean.var.plot;dispersion` |
+| `vars.to.regress` | `TEXT` | Optional; comma-separated |
+| `npcs` | `INTEGER` | Min: 5 / Max: 200 |
+| `run.umap` | `TEXT_CHOICE` | `true;false` |
+| `umap.dims` | `TEXT` | Validate R range `\d+:\d+` |
+| `run.tsne` | `TEXT_CHOICE` | `true;false` |
+| `run.neighbors` | `TEXT_CHOICE` | `true;false` |
+| `nn.dims` | `TEXT` | Validate R range `\d+:\d+` |
+| `run.clustering` | `TEXT_CHOICE` | `true;false` |
+| `resolution` | `FLOAT` | Min: 0.01 / Max: 5.0 |
+| `use.sctransform` | `TEXT_CHOICE` | `true;false` |
+
+### Known Integration Considerations & Caveats
+
+1. **Memory management**: Large datasets (>100k cells) may exceed 16GB RAM during `ScaleData`; consider using `features` parameter to scale only HVGs
+2. **SCTransform flag interaction**: When `use.sctransform=TRUE`, the `normalization.method`, `scale.factor`, and `selection.method` parameters are effectively bypassed — document clearly in the UI
+3. **`umap.dims` vs `nn.dims` consistency**: These should typically be set to the same range; mismatches can cause visualization/clustering inconsistencies
+4. **RDS format versioning**: Seurat objects are version-sensitive; objects created with Seurat 3.x must be updated with `UpdateSeuratObject()` before input
+5. **`vars.to.regress` parsing**: The R script must correctly split comma-separated strings into R character vectors
+6. **UMAP reproducibility**: UMAP uses stochastic initialization; `seed.use` parameter must be set and passed to `RunUMAP(..., seed.use=42)` for reproducible outputs
+7. **Parallelization in Docker**: `future` parallelization may require explicit `plan(multisession)` setup in containerized environments
+
+---
+
+## 7. 📚 Scientific Literature & Validation
+
+### Foundational Citations
+
+| Paper | DOI | Relevance |
+|---|---|---|
+| **Hao et al. 2021** (Seurat v4) | `10.1016/j.cell.2021.04.048` | Multimodal integration, WNN; defines v4 API used here |
+| **Stuart et al. 2019** (Seurat v3) | `10.1016/j.cell.2019.05.031` | CCA integration; FindIntegrationAnchors |
+| **Hafemeister & Satija 2019** (SCTransform) | `10.1186/s13059-019-1874-1` | SCTransform normalization |
+| **Choudhary & Satija 2021** (SCTransform v2) | `10.1186/s13059-021-02584-9` | Improved regularization for vst.flavor='v2' |
+| **Butler et al. 2018** (Seurat v2) | `10.1038/nbt.4096` | Original integration methodology |
+| **McInnes et al. 2018** (UMAP) | `arXiv:1802.03426` | Theoretical basis for UMAP implementation |
+
+### Community Adoption
+- Seurat is the **most cited** scRNA-seq analysis package globally (>15,000 citations as of 2024)
+- The GenePattern Seurat Suite provides **GUI-based access** to Seurat for non-programmers
+- Backward compatibility with Seurat v4 objects is maintained in v5, ensuring workflow longevity
+- Outputs are compatible with **Single Cell Portal** (Broad Institute) for data sharing
+
+---
+
+## 8. 🆚 Comparative Analysis
+
+| Feature | **Seurat.Preprocessing (GP)** | Scanpy (Python) | scran (Bioconductor) |
+|---|---|---|---|
+| **Interface** | GUI (no-code) | Python scripting | R scripting |
+| **Data format** | `.rds` (Seurat) | `.h5ad` (AnnData) | `.rds` (SCE) |
+| **Normalization** | LogNormalize / SCTransform | sc.pp.normalize_total + log1p | Pooling/deconvolution |
+| **HVG selection** | VST (Seurat) | Seurat/Cell Ranger methods | Variance modeling |
+| **Scalability** | Up to ~500k cells | Millions of cells (Dask) | Moderate |
+| **GenePattern native** | ✅ Yes | ❌ No | ❌ No |
+| **Upstream QC module** | Seurat.QC | Scanpy QC | scater |
+| **Statistical rigor** | Good | Good | Best (deconvolution normalization) |
+| **Community size** | Very large (R) | Very large (Python) | Moderate |
+
+**Key Differentiator for GenePattern**: The module provides **zero-code access** to the industry-standard Seurat v4 workflow, integrates seamlessly with all other GenePattern Seurat Suite modules via the `.rds` format, and supports the full Broad Institute single-cell analysis ecosystem.
+
+---
+
+## 9. ✅ Recommendations for GenePattern Module Development
+
+1. **Parameter Defaults**: The defaults above (`LogNormalize`, `nfeatures=2000`, `vst`, `npcs=50`, `dims=1:30`, `resolution=0.5`) are scientifically validated and should be pre-populated
+2. **Conditional UI Logic**: Hide `scale.factor`/`selection.method` parameters when `use.sctransform=TRUE` to reduce user confusion
+3. **ElbowPlot output**: Always include in output PDF — it's the primary diagnostic for choosing `umap.dims`
+4. **Input validation**: Check that the `.rds` contains a valid Seurat object with a populated `@assays$RNA@counts` slot before running
+5. **Progress reporting**: Log each major step (Normalize → HVG → Scale → PCA → UMAP → Cluster) to GenePattern stdout for large-dataset monitoring
+6. **Test dataset**: Include the 2,700-cell PBMC dataset (10x Genomics) as the canonical validation dataset for module testing
+7. **Version pinning**: Pin `Seurat==4.0.3` and `SeuratObject==4.0.4` in the Docker image to prevent breaking API changes from v5
+
+---
+
+*Report compiled from: Satija Lab official documentation, GitHub (genepattern/Seurat.Preprocessing v4 branch), GenePattern Seurat Suite module documentation, peer-reviewed literature (Cell, Nature Biotechnology, Genome Biology), and community best practices.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

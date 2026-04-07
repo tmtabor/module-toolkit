@@ -1,0 +1,238 @@
+{
+  "module_name": "Seurat.Preprocessing",
+  "description": "Seurat preprocessing",
+  "author": "Edwin F. Juarez;UCSD - Mesirov Lab",
+  "input_file_formats": [
+    "rds"
+  ],
+  "language": "R",
+  "categories": [
+    "preprocess & utilities",
+    "single-cell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:54011:1",
+  "plan": "## Seurat.Preprocessing GenePattern Module — Implementation Plan\n\n### 1. Overview\nSeurat.Preprocessing is a GenePattern module that Seurat preprocessing\n\n### 2. Parameters\nThe module exposes 15 parameters:\n- Required: input_rds, file_name, min_n_features, max_n_features, max_percent_mitochondrial, norm_method, scale_factor, feat_sel_method, num_features, num_to_label, vdl_num_dims, vdhm_num_dims, cells, keep_scale_data, numpcs\n- Optional: none\n\n### 3. Command Line\n```\nRscript --no-save --quiet --no-restore <libdir>seurat_preprocess.R --input_rds <input_rds> --min_n_features <min_n_features> --max_n_features <max_n_features> --max_percent_mitochondrial <max_percent_mitochondrial> --norm_method <norm_method> --scale_factor <scale_factor> --feat_sel_method <feat_sel_method> --num_features <num_features> --num_to_label <num_to_label> --vdl_num_dims <vdl_num_dims> --vdhm_num_dims <vdhm_num_dims> --cells <cells> --file_name <file_name> --keep_scale_data <keep_scale_data> --numpcs <numpcs>\n```\n\n### 4. Docker Image\nDocker image: genepattern/seurat-suite\\:4.0.3\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "seurat_preprocess.R",
+  "command_line": "Rscript --no-save --quiet --no-restore <libdir>seurat_preprocess.R --input_rds <input_rds> --min_n_features <min_n_features> --max_n_features <max_n_features> --max_percent_mitochondrial <max_percent_mitochondrial> --norm_method <norm_method> --scale_factor <scale_factor> --feat_sel_method <feat_sel_method> --num_features <num_features> --num_to_label <num_to_label> --vdl_num_dims <vdl_num_dims> --vdhm_num_dims <vdhm_num_dims> --cells <cells> --file_name <file_name> --keep_scale_data <keep_scale_data> --numpcs <numpcs>",
+  "parameters": [
+    {
+      "name": "input_rds",
+      "description": "RDS file created by Seurat.QC",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "rds"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input_rds",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "file_name",
+      "description": "Basename of the file to be saved.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "seurat_preprocessed_dataset",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--file_name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min_n_features",
+      "description": "Min number of Genes that need to be expressed in a cell to be included [you can estimate this value from the violin plots that Seurat.QC generated].",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "100",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min_n_features",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max_n_features",
+      "description": "Max number of Genes that can to be expressed in a cell to be included [you can estimate this value from the violin plots that Seurat.QC generated].",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "20000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max_n_features",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max_percent_mitochondrial",
+      "description": "Maximum percent of Genes that are labeled as mitochondrial a cell to be included [you can estimate this value from the violin plots that Seurat.QC generated].",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "5",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max_percent_mitochondrial",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "norm_method",
+      "description": "Method for normalization.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "LogNormalize",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "LogNormalize",
+          "value": "LogNormalize"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--norm_method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "scale_factor",
+      "description": "Scaling to be applied after normalization.",
+      "required": true,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "10000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--scale_factor",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "feat_sel_method",
+      "description": "Method for feature selection. You should probably not change this unless you really know what you are doing.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "vst",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "vst",
+          "value": "vst"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--feat_sel_method",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num_features",
+      "description": "Number of top features color during feature selection.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "2000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num_features",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num_to_label",
+      "description": "Number of top features to label.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "10",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num_to_label",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "vdl_num_dims",
+      "description": "Number of PCA dimensions to visualize (for elbow plot and heatmaps).",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "2",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--vdl_num_dims",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "vdhm_num_dims",
+      "description": "Number of dimensions for the dimensional reduction heatmap.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "15",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--vdhm_num_dims",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "cells",
+      "description": "Number of top cells to plot.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "500",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cells",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "keep_scale_data",
+      "description": "Whether to keep (or prune) scaling data. If you are unsure, leave it as TRUE.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--keep_scale_data",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "numpcs",
+      "description": "Number of principal components to compute (default\\=50).",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": "50",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--numpcs",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/seurat-suite:4.0.3"
+}

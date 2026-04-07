@@ -1,0 +1,156 @@
+Create a comprehensive structured plan for the GenePattern module for 'BWA.bwasw'.
+            
+            Tool Information:
+            - Name: BWA.bwasw
+            - Version: Update BWA.index to new index location (datasets.genepattern.org) and update dockerfile, to production
+            - Language: any
+            - Description: Aligns long sequences (>200 bp) to a sequence database using BWA 0.7.4 bwasw.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "BWA.bwasw",
+  "parameters": [
+    {
+      "name": "BWA.index",
+      "type": "FILE",
+      "description": "A zip file or directory containing BWA index files.",
+      "required": true,
+      "default_value": "",
+      "file_format": "zip",
+      "num_values": "1..1"
+    },
+    {
+      "name": "read.file",
+      "type": "FILE",
+      "description": "Single-end or first paired-end reads file in FASTA or FASTQ format.  For paired-end data, this should be the forward (\"*_1\" or \"left\") input file.",
+      "required": true,
+      "default_value": "",
+      "file_format": "fa;fasta;fastq;fn;fq",
+      "num_values": "1..1"
+    },
+    {
+      "name": "mate.read.file",
+      "type": "FILE",
+      "description": "The reverse (\"*_2\" or \"right\") reads file for paired-end reads in FASTA or FASTQ format.",
+      "required": false,
+      "default_value": "",
+      "file_format": "fa;fasta;fastq;fn;fq",
+      "num_values": "0..1"
+    },
+    {
+      "name": "match.score",
+      "type": "Integer",
+      "description": "The score of the match",
+      "required": false,
+      "default_value": "",
+      "num_values": "0..1"
+    },
+    {
+      "name": "mismatch.penalty",
+      "type": "Integer",
+      "description": "Specifies the mismatch penalty.",
+      "required": false,
+      "default_value": "",
+      "num_values": "0..1"
+    },
+    {
+      "name": "gap.open.penalty",
+      "type": "Integer",
+      "description": "Gap open penalty.  The gap open penalty is the score taken away for the initiation of the gap in sequence. To make the match more significant you can try to make the gap penalty larger.",
+      "required": false,
+      "default_value": "",
+      "num_values": "0..1"
+    },
+    {
+      "name": "gap.extension.penalty",
+      "type": "Integer",
+      "description": "Gap extension penalty.  The gap extension penalty is added to the standard gap penalty for each base or residue in the gap.  To reduce long gaps, increase the extension gap penalty.",
+      "required": false,
+      "default_value": "",
+      "num_values": "0..1"
+    },
+    {
+      "name": "band.width",
+      "type": "Integer",
+      "description": "band width in the banded alignment",
+      "required": false,
+      "default_value": "",
+      "num_values": "0..1"
+    },
+    {
+      "name": "min.score.threshold",
+      "type": "Integer",
+      "description": "Minimum score threshold divided by the match score",
+      "required": false,
+      "default_value": "",
+      "num_values": "0..1"
+    },
+    {
+      "name": "threshold.coefficient",
+      "type": "Floating Point",
+      "description": "Coefficient for threshold adjustment according to query length",
+      "required": false,
+      "default_value": "",
+      "num_values": "0..1"
+    },
+    {
+      "name": "z.best.heuristics",
+      "type": "Integer",
+      "description": "Z-best heuristics. Specifying a higher number increases accuracy at the cost of speed",
+      "required": false,
+      "default_value": "",
+      "num_values": "0..1"
+    },
+    {
+      "name": "max.sa.interval.size",
+      "type": "Integer",
+      "description": "Maximum SA interval size for initiating a seed. Specifying a higher number increases accuracy at the cost of speed.",
+      "required": false,
+      "default_value": "",
+      "num_values": "0..1"
+    },
+    {
+      "name": "min.num.seeds",
+      "type": "Integer",
+      "description": "The minimum number of seeds contained in the best alignment from the forward-forward alignment process that allows the algorithm to skip performing the reverse alignment. BWA.bwasw tends to be faster and more accurate if the alignment is supported by more seeds.",
+      "required": false,
+      "default_value": "",
+      "num_values": "0..1"
+    },
+    {
+      "name": "num.threads",
+      "type": "Integer",
+      "description": "Number of threads",
+      "required": false,
+      "default_value": "1",
+      "choices": "1;4",
+      "num_values": "0..1"
+    },
+    {
+      "name": "output.prefix",
+      "type": "TEXT",
+      "description": "Prefix to use for the output file name",
+      "required": true,
+      "default_value": "<read.file_basename>",
+      "num_values": "1..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/bwa_modules\\:v0.2",
+  "categories": "rna-seq",
+  "task_type": "rna-seq",
+  "author": "Heng Li, Broad Institute",
+  "command_line": "perl /opt/genepatt/BWA.bwasw/src/bwa_bwasw_wrapper.pl -bwa <BWA_0.7.4>/bwa -libdir <libdir> -w1 <BWA.index> -p <read.file> -m <mate.read.file> -a <match.score> -b <mismatch.penalty> -q <gap.open.penalty> -r <gap.extension.penalty> -w <band.width> -t2 <min.score.threshold> -c <threshold.coefficient> -z <z.best.heuristics> -s <max.sa.interval.size> -n <min.num.seeds> -t1 <num.threads> -o <output.prefix>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

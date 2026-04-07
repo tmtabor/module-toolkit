@@ -1,0 +1,53 @@
+Create a comprehensive structured plan for the GenePattern module for 'KSscore'.
+            
+            Tool Information:
+            - Name: KSscore
+            - Version: Added email address to owner contact
+            - Language: Perl
+            - Description: Computes the Kolmogorov-Smirnov score for a set of genes within an ordered list.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "KSscore",
+  "parameters": [
+    {
+      "name": "query.filename",
+      "type": "FILE",
+      "description": "query gene set file containing one identifier per line",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "input.filename",
+      "type": "FILE",
+      "description": "file containing an ordered list of genes (.pol format)",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "output",
+      "type": "java.lang.String",
+      "description": "output file name (a .pol extension will be appended)",
+      "required": true,
+      "default_value": "<query.filename_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Statistical Methods",
+  "author": "Justin Lamb",
+  "command_line": "<perl> <libdir>KSscore.pl <input.filename> <query.filename> <output>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

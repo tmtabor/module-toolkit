@@ -1,0 +1,377 @@
+{
+  "module_name": "GSEAPreranked",
+  "description": "Runs the gene set enrichment analysis against a user-supplied ranked list of genes.",
+  "author": "Chet Birger, David Eby; Broad Institute",
+  "input_file_formats": [
+    "chip",
+    "gmt",
+    "gmx",
+    "grp",
+    "rnk"
+  ],
+  "language": "Java",
+  "categories": [
+    "gsea",
+    "pathway analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:78184:1",
+  "plan": "## GSEAPreranked GenePattern Module — Implementation Plan\n\n### 1. Overview\nGSEAPreranked is a GenePattern module that Runs the gene set enrichment analysis against a user-supplied ranked list of genes.\n\n### 2. Parameters\nThe module exposes 19 parameters:\n- Required: ranked.list, gene.sets.database, number.of.permutations, collapse.dataset, scoring.scheme, max.gene.set.size, min.gene.set.size, collapsing.mode.for.probe.sets.with.more.than.one.match, normalization.mode, omit.features.with.no.symbol.match, make.detailed.gene.set.report, num.top.sets, random.seed, create.svgs, dev.mode\n- Optional: chip.platform.file, output.file.name, selected.gene.sets, alt.delim\n\n### 3. Command Line\n```\n/opt/gsea/GSEA_4.3.2/gsea-cli.sh GSEAPreranked -gmx_list <gene.sets.database> -norm <normalization.mode> -nperm <number.of.permutations> -rnk <ranked.list> -collapse <collapse.dataset> <chip.platform.file> -mode <collapsing.mode.for.probe.sets.with.more.than.one.match> -scoring_scheme <scoring.scheme> -include_only_symbols <omit.features.with.no.symbol.match> -make_sets <make.detailed.gene.set.report> -plot_top_x <num.top.sets> -rnd_seed <random.seed> -set_max <max.gene.set.size> -set_min <min.gene.set.size> -create_svgs <create.svgs> <selected.gene.sets> <output.file.name> <alt.delim> -dev_mode <dev.mode> -zip_report true -run_as_genepattern true\n```\n\n### 4. Docker Image\nDocker image: genepattern/gsea_4.3.2\\:0.1\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "gsea-cli.sh",
+  "command_line": "/opt/gsea/GSEA_4.3.2/gsea-cli.sh GSEAPreranked -gmx_list <gene.sets.database> -norm <normalization.mode> -nperm <number.of.permutations> -rnk <ranked.list> -collapse <collapse.dataset> <chip.platform.file> -mode <collapsing.mode.for.probe.sets.with.more.than.one.match> -scoring_scheme <scoring.scheme> -include_only_symbols <omit.features.with.no.symbol.match> -make_sets <make.detailed.gene.set.report> -plot_top_x <num.top.sets> -rnd_seed <random.seed> -set_max <max.gene.set.size> -set_min <min.gene.set.size> -create_svgs <create.svgs> <selected.gene.sets> <output.file.name> <alt.delim> -dev_mode <dev.mode> -zip_report true -run_as_genepattern true",
+  "parameters": [
+    {
+      "name": "ranked.list",
+      "description": "Rank ordered gene list - .rnk",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "rnk"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--ranked.list",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gene.sets.database",
+      "description": "Gene sets database from GSEA website.",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": [
+        "gmt",
+        "gmx",
+        "grp"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gene.sets.database",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "number.of.permutations",
+      "description": "Number of permutations to perform",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "1000",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--number.of.permutations",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "collapse.dataset",
+      "description": "Select whether to collapse each probe set in the expression dataset into a single vector for the gene, which gets identified by its gene symbol.  It is also possible to remap symbols from one namespace to another without collapsing (an error will occur if multiple source genes map to a single destination gene).  No_Collapse will use the dataset as-is.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "Remap_Only",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "No_Collapse",
+          "value": "No_Collapse"
+        },
+        {
+          "display": "Collapse",
+          "value": "Collapse"
+        },
+        {
+          "display": "Remap_Only",
+          "value": "Remap_Only"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--collapse.dataset",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "chip.platform.file",
+      "description": "DNA Chip (array) annotation file from GSEA website.  Upload your own chip file if the one corresponding to your DNA Microarray platform is not listed in the drop-down menu.  A chip file is only required if collapse dataset is set to true.",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "chip"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-chip",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "scoring.scheme",
+      "description": "The statistic used to score hits (gene set members) and misses (non-members)",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "weighted",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "classic Kolmogorov-Smirnov",
+          "value": "classic"
+        },
+        {
+          "display": "weighted",
+          "value": "weighted"
+        },
+        {
+          "display": "weighted_p2",
+          "value": "weighted_p2"
+        },
+        {
+          "display": "weighted_p1.5",
+          "value": "weighted_p1.5"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--scoring.scheme",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "max.gene.set.size",
+      "description": "Gene sets larger than this are excluded from the analysis",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "500",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.gene.set.size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "min.gene.set.size",
+      "description": "Gene sets smaller than this are excluded from the analysis",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "15",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--min.gene.set.size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "collapsing.mode.for.probe.sets.with.more.than.one.match",
+      "description": "Collapsing mode.  This has no effect when remapping symbols.  For custom ranking metrics, be very cautious when selecting any of these modes to be sure it is compatible with your metric.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "Abs_max_of_probes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Abs_max_of_probes",
+          "value": "Abs_max_of_probes"
+        },
+        {
+          "display": "Max_probe",
+          "value": "Max_probe"
+        },
+        {
+          "display": "Median_of_probes",
+          "value": "Median_of_probes"
+        },
+        {
+          "display": "Mean_of_probes",
+          "value": "Mean_of_probes"
+        },
+        {
+          "display": "Sum_of_probes",
+          "value": "Sum_of_probes"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--collapsing.mode.for.probe.sets.with.more.than.one.match",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "normalization.mode",
+      "description": "Normalization mode",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "meandiv",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "meandiv",
+          "value": "meandiv"
+        },
+        {
+          "display": "None",
+          "value": "None"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--normalization.mode",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "omit.features.with.no.symbol.match",
+      "description": "If there is no known gene symbol match for a probe set, omit it from the collapsed dataset",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "true",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "false",
+          "value": "false"
+        },
+        {
+          "display": "true",
+          "value": "true"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--omit.features.with.no.symbol.match",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "make.detailed.gene.set.report",
+      "description": "Create detailed gene set report (heat map, mountain plot, etc.) for every enriched gene set",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "true",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "false",
+          "value": "false"
+        },
+        {
+          "display": "true",
+          "value": "true"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--make.detailed.gene.set.report",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "num.top.sets",
+      "description": "Plot GSEA mountain and related plots for the top sets of each phenotype",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "20",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--num.top.sets",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "random.seed",
+      "description": "Seed to use for generating random permutations.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "timestamp",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--random.seed",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "create.svgs",
+      "description": "Whether to create SVG images (compressed) along with PNGs",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "false",
+          "value": "false"
+        },
+        {
+          "display": "true",
+          "value": "true"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--create.svgs",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.file.name",
+      "description": "Name of the output ZIP file.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<ranked.list_basename>.zip",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-output_file_name",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "selected.gene.sets",
+      "description": "Semicolon-separated list of gene sets from the provided gene sets database files (GMT/GMX/GRP).  If you are using multiple files then you *must* prefix each selected gene set with its file name followed by '\\#' (like \"my_file1.gmt\\#selected_gene_set1,my_file2.gmt\\#selected_gene_set2\").  With a single file only the names are necessary.  Leave this blank to select all gene sets.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-selected_gene_sets",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "alt.delim",
+      "description": "Optional alternate delimiter character for gene set names instead of comma for use with selected.gene.sets.  If used, a semicolon is recommended.",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--altDelim\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "dev.mode",
+      "description": "Enable developer mode.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "false",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "false",
+          "value": "false"
+        },
+        {
+          "display": "true",
+          "value": "true"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--dev.mode",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/gsea_4.3.2:0.1"
+}

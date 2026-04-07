@@ -1,0 +1,70 @@
+{
+  "module_name": "VennDiagram",
+  "description": "Displays a Venn diagram",
+  "author": "GenePattern",
+  "input_file_formats": [
+    "grp",
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:18907:1",
+  "plan": "## VennDiagram GenePattern Module — Implementation Plan\n\n### 1. Overview\nVennDiagram is a GenePattern module that Displays a Venn diagram\n\n### 2. Parameters\nThe module exposes 3 parameters:\n- Required: feature.list.one, feature.list.two\n- Optional: feature.list.three\n\n### 3. Command Line\n```\n<java> <java_flags> -cp <libdir>gp-modules.jar org.genepattern.gui.venn.VennDiagram <feature.list.one> <feature.list.two> <feature.list.three>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "gp-modules.jar",
+  "command_line": "<java> <java_flags> -cp <libdir>gp-modules.jar org.genepattern.gui.venn.VennDiagram <feature.list.one> <feature.list.two> <feature.list.three>",
+  "parameters": [
+    {
+      "name": "feature.list.one",
+      "description": "Feature list one - .grp, .txt",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "grp",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--feature.list.one",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "feature.list.two",
+      "description": "Feature list two - .grp, .txt",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "grp",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--feature.list.two",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "feature.list.three",
+      "description": "Feature list three - .grp, .txt",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "grp",
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--feature.list.three",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

@@ -1,0 +1,622 @@
+Create a comprehensive structured plan for the GenePattern module for 'spatialGE.Preprocessing'.
+            
+            Tool Information:
+            - Name: spatialGE.Preprocessing
+            - Version: Strip .tar from output filenames if its part of the input filename. Stop putting .rds on the rds file twice.
+            - Language: R
+            - Description: The package spatialGE provides a collection of tools for the visualization of gene expression from spatially-resolved transcriptomic experiments. The data input methods have been designed so that any data can be analyzed as long as it contains gene expression counts per region of interest (ROI), spot, or cell, and the spatial coordinates of those ROIs, spots, or cells, as it is generated in platforms such as GeoMx, Visium, and CosMx-SMI. The spatialge.Preprocessing module performs initial data ingestion, filtering, transform and pseudo-bulk operations to prepare data for further processing. Order of operations are: ingestion, filter, pseudobulk, transform.
+            
+            Research Results:
+            Now I have all the research data needed to compile the comprehensive final report. Let me deliver it:
+
+---
+
+# 🧬 Comprehensive Research Report: `spatialGE.Preprocessing`
+
+**GenePattern Module Development Reference**
+*Bioinformatics Research Division | Spatial Transcriptomics Analysis Suite*
+
+---
+
+## 1. 🔬 Tool Purpose and Scientific Applications
+
+### 1.1 Overview
+
+`spatialGE.Preprocessing` is a GenePattern module implementing the entry-point preprocessing pipeline of the **spatialGE R package**, developed by Dr. Oscar E. Ospina and the Fridley Lab at **Moffitt Cancer Center**. It is the mandatory first module in the GenePattern spatialGE spatial transcriptomics analysis suite.
+
+The module consolidates four sequential bioinformatics operations into a single workflow step:
+1. **Data Ingestion** — Load raw count matrices and spatial coordinates into an STlist S4 object
+2. **Filtering** — Remove low-quality spots/cells and lowly-expressed/unwanted genes
+3. **Pseudo-bulk Aggregation** — Optionally aggregate spot-level counts to sample-level profiles
+4. **Normalization & Transformation** — Apply library-size normalization and transformation
+
+### 1.2 Scientific Applications
+
+| Application Domain | Description |
+|---|---|
+| **Tumor Microenvironment (TME)** | Characterizing spatial organization of immune infiltrates, cancer cell heterogeneity, and stromal interactions within tumor tissue sections |
+| **Tissue Domain Analysis** | Identifying distinct tissue compartments (tumor core, invasive margin, stroma, necrosis) through spatially-resolved expression |
+| **Developmental Biology** | Mapping gene expression gradients across developing tissues with preserved spatial context |
+| **Multi-sample Cohort Studies** | Harmonizing and normalizing data across multiple tissue sections, patients, or platforms for comparative spatial analysis |
+| **Platform-Agnostic Analysis** | Providing a unified preprocessing entry point regardless of whether data originates from Visium, CosMx-SMI, GeoMx, or generic count matrices |
+
+### 1.3 Supported Spatial Transcriptomics Platforms
+
+| Platform | Technology | Resolution | Data Mode |
+|---|---|---|---|
+| **10x Genomics Visium** | Barcoded oligonucleotide capture array | ~55 µm spots | Sequencing-based |
+| **NanoString CosMx-SMI** | In situ hybridization (single-molecule imaging) | Single-cell | Imaging-based |
+| **NanoString GeoMx DSP** | UV-cleaved barcodes from ROI selection | ~200–600 µm ROIs | Sequencing-based |
+| **Generic CSV/TSV** | Any platform producing count matrices + coordinates | User-defined | Any |
+| **Seurat Objects** | Can ingest pre-existing Seurat objects with spatial data | Inherited | Any |
+
+---
+
+## 2. 📂 Input/Output Formats and Requirements
+
+### 2.1 Input File Types by Platform
+
+#### ▸ Generic CSV/TSV (Most Flexible)
+```
+Required:
+  rnacounts: gene_expression.csv
+    - Rows = genes, Columns = spot/cell identifiers
+    - OR Rows = spots/cells, Columns = genes
+    - Tab-separated (.tsv) or comma-separated (.csv)
+  
+  spotcoords: coordinates.csv
+    - Columns: spot_id, x_coord, y_coord (minimum)
+    - Must match spot identifiers in expression matrix
+
+Optional:
+  samples: metadata.csv
+    - One row per sample/tissue section
+    - Sample name column must match filenames or vector entries
+    - Any additional clinical/experimental covariates
+```
+
+#### ▸ 10x Genomics Visium (Space Ranger Output)
+```
+Option A - HDF5 (Recommended):
+  rnacounts: /path/to/spaceranger_output/filtered_feature_bc_matrix.h5
+  spotcoords: NULL (auto-detected from spatial/tissue_positions.csv or .parquet)
+
+Option B - Separate Files:
+  rnacounts: filtered_feature_bc_matrix.csv
+  spotcoords: tissue_positions_list.csv
+    - Columns: barcode, in_tissue, array_row, array_col, pxl_col_in_fullres, pxl_row_in_fullres
+
+Supplemental (optional, for STplot tissue image overlay):
+  CellComposite.zip or tissue_hires_image.png + scalefactors_json.json
+```
+
+#### ▸ NanoString CosMx-SMI
+```
+Required:
+  rnacounts: exprMat_file.csv (cells × genes; includes cell_ID and fov columns)
+  samples: metadata_file.csv
+    - REQUIRED columns: fov, cell_ID, CenterX_local_px, CenterY_local_px
+    - Analysis is conducted at the FOV (Field of View) level
+  spotcoords: NULL (coordinates extracted from metadata)
+```
+
+#### ▸ NanoString GeoMx DSP
+```
+Required:
+  rnacounts: expression_matrix.tsv (genes × ROIs)
+  spotcoords: roi_coordinates.csv (ROI_id, x, y)
+  samples: sample_annotation.csv (ROI metadata, patient info, etc.)
+```
+
+### 2.2 Output Files
+
+| File | Format | Description |
+|---|---|---|
+| **`<prefix>.rds`** | RDS (binary R) | Primary output: serialized STlist S4 object |
+
+#### STlist S4 Object Internal Structure
+
+```
+STlist
+├── @counts          List of sparse matrices (genes × spots/cells) — one per sample; RAW counts
+├── @norm_counts     List of normalized/transformed matrices — populated after transform_data()
+├── @spatial_meta    List of data frames with spatial coordinates and spot-level metadata per sample
+├── @sample_meta     Data frame with sample-level clinical/experimental metadata
+├── @pseudobulk      Data frame with aggregated pseudo-bulk counts — populated after pseudobulk_samples()
+└── @misc            Named list for miscellaneous results from downstream analyses (clustering, etc.)
+```
+
+> **⚠️ Key Note on RDS Naming**: The module version note explicitly addresses a bug fix: *"Strip .tar from output filenames if it's part of the input filename. Stop putting .rds on the rds file twice."* This means the output is a clean `<sample_name>.rds`, not `<sample_name>.tar.rds` or `<sample_name>.rds.rds`.
+
+---
+
+## 3. 🔧 Parameter Analysis and Usage Patterns
+
+### 3.1 Complete Parameter Catalog
+
+The module's parameters map to four underlying spatialGE R functions executed sequentially:
+
+---
+
+#### **GROUP 1: Data Ingestion Parameters** (`STlist()`)
+
+| Parameter | R Argument | Type | Default | Description |
+|---|---|---|---|---|
+| `expression_files` | `rnacounts` | File/Path(s) | *Required* | Gene expression count matrix/matrices. Accepts: file path(s) to CSV/TSV/H5 files, Space Ranger directory paths, or CosMx expression matrix. Multi-sample: pass a vector of file paths |
+| `coordinate_files` | `spotcoords` | File/Path(s) | NULL | Spatial coordinate file(s). NULL for Visium (auto-detected) and CosMx (from metadata). For generic: CSV/TSV with spot_id, x, y columns |
+| `metadata_file` | `samples` | File | NULL | Sample-level metadata CSV/TSV. One row per sample. Required for CosMx. Enables downstream clinical correlations |
+| `cores` | `cores` | Integer | NULL | Parallel processing cores. Uses fork-based parallelization. **Not available on Windows** (falls back to single-core) |
+| `verbose` | `verbose` | Logical | TRUE | Print progress messages during ingestion |
+
+---
+
+#### **GROUP 2: Filtering Parameters** (`filter_data()`)
+
+| Parameter | R Argument | Type | Default | Valid Range | Description |
+|---|---|---|---|---|---|
+| `spot_pct` | `spot_pct` | Numeric | 0.1 | 0–1 | Min fraction of spots where a gene must be detected to retain that gene. E.g., 0.1 = gene must appear in ≥10% of spots |
+| `genes_pct` | `genes_pct` | Numeric | 0.1 | 0–1 | Min fraction of genes that must be expressed in a spot to retain that spot. E.g., 0.1 = spot must express ≥10% of all genes |
+| `rm_genes` | `rm_genes` | Character | NULL | — | Gene names or regex patterns to exclude. Common uses: `"^MT-"` (human mitochondrial), `"^mt-"` (mouse mitochondrial), `"^RP[SL]"` (ribosomal), `"NegControlProbe"` (GeoMx negative controls) |
+| `min_gene_exp` | `min_gene_exp` | Numeric | 0 | ≥0 | Expression threshold: counts ≤ this value are treated as "not expressed" for percentage calculations |
+| `filter_samples` | `sample_names` | Character | NULL | — | Process only named samples; NULL = process all samples in STlist |
+
+---
+
+#### **GROUP 3: Pseudo-bulk Parameters** (`pseudobulk_samples()`)
+
+| Parameter | R Argument | Type | Default | Options | Description |
+|---|---|---|---|---|---|
+| `pseudobulk_aggregate` | `aggregate` | Character | "sum" | "sum", "mean" | Aggregation method for collapsing all spots per sample into one pseudo-bulk profile. "sum" = total counts; "mean" = average counts |
+| `run_pseudobulk` | — | Logical | FALSE | TRUE/FALSE | GenePattern-level flag to enable/disable the pseudobulk step (optional step in pipeline) |
+
+---
+
+#### **GROUP 4: Transformation Parameters** (`transform_data()`)
+
+| Parameter | R Argument | Type | Default | Options | Description |
+|---|---|---|---|---|---|
+| `transform_method` | `method` | Character | "log" | "log", "sct" | **"log"**: log1p(counts/library_size × scale_f) — recommended general-purpose method. **"sct"**: SCTransform via Seurat — negative binomial regression-based variance stabilization; filters additional low-expression genes |
+| `scale_f` | `scale_f` | Numeric | 10000 | Any positive number | Scaling factor applied before log transformation. Default 10,000 ≈ "counts per 10K" (CPM-like). Only applies when `method = "log"` |
+| `transform_cores` | `cores` | Integer | NULL | ≥1 | Parallel cores for transformation (especially relevant for 'sct' method). Not available on Windows |
+
+---
+
+### 3.2 Recommended Parameter Configurations by Platform
+
+```r
+# ── VISIUM (Space Ranger HDF5 input) ─────────────────────────────────────────
+stl <- STlist(
+  rnacounts = c("sample1/filtered_feature_bc_matrix.h5",
+                "sample2/filtered_feature_bc_matrix.h5"),
+  spotcoords = NULL,           # Auto-detected from spatial/ directory
+  samples    = "clinical.csv", # Sample metadata
+  cores      = 4
+)
+stl <- filter_data(stl,
+  spot_pct    = 0.1,      # Keep genes in ≥10% of spots
+  genes_pct   = 0.05,     # Keep spots expressing ≥5% of genes
+  rm_genes    = "^MT-",   # Remove mitochondrial genes
+  min_gene_exp = 1        # Count threshold: must have ≥1 count to be "expressed"
+)
+stl <- transform_data(stl, method = "log", scale_f = 10000)
+
+# ── CosMx-SMI ─────────────────────────────────────────────────────────────────
+stl <- STlist(
+  rnacounts = "exprMat_file.csv",
+  spotcoords = NULL,
+  samples    = "metadata_file.csv",  # REQUIRED; must have fov, cell_ID, CenterX_local_px, CenterY_local_px
+  cores      = 4
+)
+
+# ── GeoMx DSP ─────────────────────────────────────────────────────────────────
+stl <- STlist(
+  rnacounts = c("ROI_counts_S1.tsv", "ROI_counts_S2.tsv"),
+  spotcoords = c("ROI_coords_S1.csv", "ROI_coords_S2.csv"),
+  samples    = "sample_annotation.csv"
+)
+stl <- filter_data(stl,
+  rm_genes = "NegControlProbe"  # Remove GeoMx negative control features
+)
+stl <- transform_data(stl, method = "log")
+```
+
+### 3.3 Order of Operations — Critical Constraint
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│    REQUIRED OPERATION ORDER IN spatialGE.Preprocessing                   │
+│                                                                          │
+│  1. STlist()             ── Data ingestion                              │
+│         ↓                                                                │
+│  2. filter_data()        ── QC filtering (before normalization!)         │
+│         ↓                                                                │
+│  3. pseudobulk_samples() ── [OPTIONAL] Sample-level aggregation          │
+│         ↓                                                                │
+│  4. transform_data()     ── Normalization/transformation                 │
+│         ↓                                                                │
+│  Output: RDS (STlist)                                                   │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+> **⚠️ Important**: Filtering MUST be applied before transformation. Running `transform_data()` before `filter_data()` would normalize based on library sizes that include technical noise genes (e.g., mitochondrial genes), producing suboptimal results.
+
+---
+
+## 4. 📦 Installation and Dependency Requirements
+
+### 4.1 R Package Dependencies
+
+| Dependency | Version Requirement | Purpose | Critical? |
+|---|---|---|---|
+| **R** | ≥ 4.1.0 | Runtime environment | ✅ Required |
+| **Seurat** | ≥ 4.x | SCTransform normalization, FindVariableFeatures | ✅ Required for `method='sct'` |
+| **SeuratObject** | ≥ 4.x | Seurat object I/O | ✅ Required |
+| **Matrix** | ≥ 1.4 | Sparse matrix representation (dgCMatrix) | ✅ Required |
+| **ggplot2** | ≥ 3.3 | Visualization outputs | ✅ Required |
+| **magrittr** | ≥ 2.0 | Pipe operators (`%>%`) | ✅ Required |
+| **dplyr** | ≥ 1.0 | Data manipulation | ✅ Required |
+| **tidyr** | ≥ 1.1 | Data reshaping | ✅ Required |
+| **stringr** | ≥ 1.4 | String/regex operations (for `rm_genes`) | ✅ Required |
+| **hdf5r** | ≥ 1.3 | Reading Space Ranger `.h5` files | ✅ Required for Visium HDF5 |
+| **jsonlite** | ≥ 1.7 | Reading `scalefactors_json.json` (Visium) | ✅ Required for Visium |
+| **methods** | Base R | S4 class system for STlist | ✅ Required |
+| **pbapply** | ≥ 1.5 | Progress bars in apply functions | ⚠️ Suggested |
+| **spatstat.geom** | ≥ 2.x | Spatial statistics geometry | ✅ Required for spatial ops |
+| **fields** | ≥ 14.x | Spatial interpolation (Kriging) | ⚠️ For downstream modules |
+| **sctransform** | ≥ 0.3 | SCTransform backend (Seurat dependency) | ✅ Required for `method='sct'` |
+
+### 4.2 Installation Commands
+
+```r
+# Install from CRAN (stable release):
+install.packages("spatialGE")
+
+# Install development version from GitHub:
+if (!requireNamespace("remotes", quietly = TRUE))
+  install.packages("remotes")
+remotes::install_github("FridleyLab/spatialGE")
+
+# Install with all dependencies including HDF5 support:
+install.packages(c("spatialGE", "hdf5r", "Seurat"))
+
+# Conda/Docker environment (recommended for GenePattern):
+# conda install -c bioconda r-spatialge r-seurat r-hdf5r
+```
+
+### 4.3 System Requirements
+
+| Resource | Minimum | Recommended | Notes |
+|---|---|---|---|
+| **OS** | Linux/macOS/Windows | Linux/macOS | Parallel processing unavailable on Windows |
+| **RAM** | 8 GB | 32–64 GB | Sparse matrices help; large CosMx datasets (millions of cells) need more |
+| **CPU** | 2 cores | 8–16 cores | `cores` parameter enables parallelism on Linux/macOS |
+| **Storage** | 5 GB | 20+ GB | HDF5 files + R package dependencies |
+| **R Version** | 4.1.0 | 4.3.x+ | S4 class compatibility |
+
+### 4.4 GenePattern Docker Container Configuration
+
+```dockerfile
+# Recommended base image for GenePattern spatialGE modules:
+FROM r-base:4.3.2
+
+# System dependencies for HDF5 and spatial libraries
+RUN apt-get update && apt-get install -y \
+    libhdf5-dev \
+    libgdal-dev \
+    libgeos-dev \
+    libproj-dev \
+    libssl-dev \
+    libcurl4-openssl-dev
+
+# Install R packages
+RUN Rscript -e "install.packages(c('spatialGE', 'Seurat', 'hdf5r', \
+    'Matrix', 'ggplot2', 'magrittr', 'dplyr', 'tidyr', 'stringr', \
+    'jsonlite', 'pbapply', 'fields', 'spatstat.geom'), \
+    repos='https://cran.r-project.org')"
+```
+
+---
+
+## 5. 🔄 Common Workflows and Use Cases
+
+### 5.1 Standard GenePattern Module Workflow
+
+```
+                        spatialGE Suite Pipeline
+                        ═══════════════════════
+
+Input Files                Module                    Output
+────────────────────────────────────────────────────────────────
+ .h5 / .csv / .tsv  ──►  spatialGE.Preprocessing  ──► .rds (STlist)
+ coordinates.csv              ↓                          │
+ metadata.csv          [ingestion → filter                │
+                         → pseudobulk → transform]        │
+                                                          ▼
+                         spatialGE.STplot  ◄────────── .rds (STlist)
+                                ↓                         │
+                         (Quilt plots, expression         │
+                          surface visualization)          ▼
+                                                   spatialGE.STclust
+                                                          ↓
+                                                   (Tissue domain
+                                                    clustering)
+                                                          ↓
+                                                   spatialGE.SThet
+                                                          ↓
+                                                   (Moran's I / Geary's C
+                                                    spatial heterogeneity)
+                                                          ↓
+                                                   spatialGE.STdiff
+                                                          ↓
+                                                   (Differential expression
+                                                    with spatial models)
+```
+
+### 5.2 Use Case Scenarios
+
+#### **Use Case 1: Single-Patient Visium Study (Minimal Pipeline)**
+```r
+# Scenario: Single tissue section, standard preprocessing
+stl <- STlist(rnacounts = "filtered_feature_bc_matrix.h5",
+              spotcoords = NULL, samples = "patient_meta.csv")
+stl <- filter_data(stl, spot_pct = 0.1, genes_pct = 0.05, rm_genes = "^MT-")
+stl <- transform_data(stl, method = "log", scale_f = 10000)
+saveRDS(stl, file = "patient01_preprocessed.rds")
+```
+
+#### **Use Case 2: Multi-Sample Cohort with Pseudo-bulk QC**
+```r
+# Scenario: 10-patient TNBC cohort; need sample-level QC before clustering
+count_files <- list.files("spaceranger_outputs/", pattern="\\.h5$", full.names=TRUE)
+stl <- STlist(rnacounts = count_files, spotcoords = NULL,
+              samples = "clinical_annotation.csv", cores = 8)
+stl <- filter_data(stl, spot_pct = 0.1, genes_pct = 0.1, rm_genes = "^MT-")
+stl <- pseudobulk_samples(stl, aggregate = "sum")  # Enables PCA for batch detection
+stl <- transform_data(stl, method = "log", scale_f = 10000, cores = 8)
+saveRDS(stl, file = "TNBC_cohort_preprocessed.rds")
+```
+
+#### **Use Case 3: CosMx Single-Cell Spatial Analysis**
+```r
+# Scenario: Single-cell resolution lung cancer CosMx data
+stl <- STlist(rnacounts = "lung_cancer_exprMat.csv",
+              spotcoords = NULL,
+              samples    = "lung_cancer_metadata.csv")  # Contains FOV coordinates
+stl <- filter_data(stl, spot_pct = 0.05, genes_pct = 0.05)  # Less strict for single-cell
+stl <- transform_data(stl, method = "sct")  # SCTransform for single-cell data
+saveRDS(stl, file = "lung_cancer_cosmx.rds")
+```
+
+#### **Use Case 4: GeoMx DSP ROI Analysis with Control Probe Removal**
+```r
+# Scenario: GeoMx kidney disease study; remove negative control probes
+stl <- STlist(rnacounts = c("kidney_counts_S1.tsv", "kidney_counts_S2.tsv"),
+              spotcoords = c("kidney_coords_S1.csv", "kidney_coords_S2.csv"),
+              samples    = "kidney_annotation.csv")
+stl <- filter_data(stl,
+  spot_pct = 0.1,
+  rm_genes = "NegControlProbe",  # Remove GeoMx negative control probes
+  min_gene_exp = 1)
+stl <- transform_data(stl, method = "log")
+saveRDS(stl, file = "kidney_geomx.rds")
+```
+
+### 5.3 Quality Control Metrics
+
+After preprocessing, the following QC metrics can be assessed:
+- **Spots per sample**: Number of spots/cells retained after filtering
+- **Genes per sample**: Number of genes detected after filtering
+- **Library size distribution**: Per-spot total counts (via `distribution_plots()`)
+- **Pseudo-bulk PCA**: Inter-sample variation and potential batch effects (via `pseudobulk_pca_plot()`)
+- **Pseudo-bulk heatmap**: Gene expression clustering across samples (via `pseudobulk_heatmap()`)
+
+---
+
+## 6. 🔗 GenePattern Integration Considerations
+
+### 6.1 Module Manifest Parameters
+
+Based on the research findings, the following parameter structure is recommended for the GenePattern module manifest (`module.yaml` or equivalent):
+
+```yaml
+name: spatialGE.Preprocessing
+description: >
+  Performs initial data ingestion, filtering, transformation, and pseudo-bulk 
+  operations to prepare spatial transcriptomics data for further analysis. Supports 
+  GeoMx, Visium, CosMx-SMI, and generic CSV/TSV formats. Order of operations: 
+  ingestion → filter → pseudobulk → transform.
+language: R
+version: "1.2.2"
+categories: [Spatial Transcriptomics, Preprocessing]
+
+parameters:
+  # --- INGESTION GROUP ---
+  - name: expression.files
+    description: Gene expression count matrix file(s). CSV/TSV/H5 format or Space Ranger directory paths.
+    type: FILE
+    required: true
+    fileFormat: [csv, tsv, h5]
+  
+  - name: coordinate.files
+    description: Spatial coordinate file(s). Leave blank for Visium (auto-detected) and CosMx (from metadata).
+    type: FILE
+    required: false
+    fileFormat: [csv, tsv]
+
+  - name: metadata.file
+    description: Sample-level metadata file (CSV/TSV). Required for CosMx; recommended for all platforms.
+    type: FILE
+    required: false
+    fileFormat: [csv, tsv]
+
+  - name: num.cores
+    description: Number of CPU cores for parallel processing. Not available on Windows.
+    type: INTEGER
+    default: 1
+    range: [1, 64]
+
+  # --- FILTERING GROUP ---
+  - name: spot.pct
+    description: "Minimum fraction of spots where a gene must be detected to be retained (0-1). Default: 0.1"
+    type: FLOAT
+    default: 0.1
+    range: [0, 1]
+
+  - name: genes.pct
+    description: "Minimum fraction of genes a spot must express to be retained (0-1). Default: 0.1"
+    type: FLOAT
+    default: 0.1
+    range: [0, 1]
+
+  - name: remove.genes
+    description: "Comma-separated gene names or regex patterns to exclude (e.g., ^MT- for mitochondrial genes)"
+    type: TEXT
+    required: false
+
+  - name: min.gene.exp
+    description: "Minimum expression value to count a gene as expressed in a spot. Default: 0"
+    type: FLOAT
+    default: 0
+
+  # --- PSEUDOBULK GROUP ---
+  - name: run.pseudobulk
+    description: Whether to run pseudo-bulk aggregation step (recommended for multi-sample QC)
+    type: BOOLEAN
+    default: false
+
+  - name: pseudobulk.aggregate
+    description: "Aggregation method for pseudo-bulk: sum or mean"
+    type: TEXT
+    default: "sum"
+    choices: [sum, mean]
+
+  # --- TRANSFORMATION GROUP ---
+  - name: transform.method
+    description: "Normalization method: log (log1p after library size normalization) or sct (SCTransform)"
+    type: TEXT
+    default: "log"
+    choices: [log, sct]
+
+  - name: scale.factor
+    description: "Scaling factor for library size normalization (only for method=log). Default: 10000"
+    type: FLOAT
+    default: 10000
+
+  # --- OUTPUT ---
+  - name: output.prefix
+    description: "Prefix for output RDS filename (e.g., 'sample_name' → 'sample_name.rds')"
+    type: TEXT
+    default: "spatialGE_preprocessed"
+```
+
+### 6.2 Input/Output File Handoff Between Modules
+
+```
+spatialGE.Preprocessing → outputs → <prefix>.rds (STlist S4 object)
+    │
+    ▼ [passed as input.RDS to downstream modules]
+    ├── spatialGE.STplot    (required: input.RDS)
+    ├── spatialGE.STclust   (required: input.RDS; optional: CellComposite.zip)
+    ├── spatialGE.SThet     (required: input.RDS)
+    ├── spatialGE.STdiff    (required: input.RDS; required: cluster assignments)
+    ├── spatialGE.STenrich  (required: input.RDS; required: gene set files)
+    └── spatialGE.STgradient (required: input.RDS)
+```
+
+### 6.3 Known Issues and Caveats
+
+| Issue | Impact | Mitigation |
+|---|---|---|
+| **Windows parallelism** | `cores` parameter is silently ignored on Windows; only single-core execution | Document clearly; ensure fallback works correctly |
+| **`method='sct'` gene reduction** | SCTransform removes additional low-expression genes beyond `filter_data` thresholds | Warn users that `sct` produces fewer genes in `@norm_counts` than `log` |
+| **CosMx FOV separation** | STlist automatically splits CosMx data by FOV — one "sample" per FOV in STlist | Users expecting whole-slide analysis need to understand FOV-level structure |
+| **HDF5 system dependency** | `hdf5r` requires system-level HDF5 library (`libhdf5-dev`) | Must be pre-installed in Docker container |
+| **RDS file naming bug** | Version note indicates a fixed bug where `.tar` in input names propagated to output, and `.rds` was appended twice | Resolved in current version; document expected output filename format |
+| **Memory for large datasets** | CosMx datasets with millions of cells can exhaust memory | Recommend ≥64 GB RAM; consider chunked processing |
+| **Coordinate auto-detection** | Visium coordinate auto-detection requires Space Ranger standard directory structure | If directory structure is non-standard, explicit coordinate files are needed |
+
+### 6.4 Validation and Testing Recommendations
+
+```r
+# Test data included in the spatialGE package:
+library(spatialGE)
+data_files  <- list.files(system.file("extdata", package="spatialGE"),
+                          recursive=TRUE, full.names=TRUE)
+count_files <- grep("counts", data_files, value=TRUE)
+coord_files <- grep("mapping", data_files, value=TRUE)
+clin_file   <- grep("thrane_clinical", data_files, value=TRUE)
+
+# Melanoma dataset (Thrane et al. - 4 Visium-like samples)
+melanoma <- STlist(rnacounts = count_files[c(1,3)],
+                   spotcoords = coord_files[c(1,3)],
+                   samples    = clin_file)
+melanoma <- filter_data(melanoma, spot_pct=0.1, genes_pct=0.05)
+melanoma <- transform_data(melanoma, method='log')
+# Verify: length(melanoma@counts) should equal number of samples
+# Verify: dim(melanoma@norm_counts[[1]]) should be smaller than dim(melanoma@counts[[1]])
+```
+
+---
+
+## 7. 📚 Literature Summary and Citations
+
+| Publication | Key Contribution | Relevance |
+|---|---|---|
+| **Ospina OE et al. (2022)** *Bioinformatics* [PMC9890305] | Original spatialGE paper introducing STlist, spatial visualization, Moran's I/Geary's C, STclust; validated on melanoma Visium data | Core methodology reference |
+| **Ospina OE et al. (2024)** *bioRxiv/PMC11244876* | Web application paper; added STgradient, STenrich, STdiff; updated input handling | Extended functionality |
+| **Ospina OE et al. (2025)** *Cancer Research* 85(5):848 [PMC11873723] | Full web app paper; confirms two normalization methods (log/SCTransform); supports Visium .h5, CosMx, generic CSV | Platform support confirmation |
+| **CBIIT/NCI Webinar (March 2025)** | Dr. Ospina presented spatialGE at NCI; highlights growing adoption in cancer research community | Community adoption |
+
+---
+
+## 8. 🏆 Comparative Analysis: spatialGE.Preprocessing vs. Alternatives
+
+| Feature | spatialGE.Preprocessing | Seurat Spatial | Squidpy (Python) | BayesSpace |
+|---|---|---|---|---|
+| **Multi-platform support** | ✅ GeoMx + Visium + CosMx + Generic | ⚠️ Visium/Xenium/MERFISH | ✅ Most imaging platforms | ⚠️ Visium-focused |
+| **R-native** | ✅ | ✅ | ❌ Python | ✅ Bioconductor |
+| **GeoMx support** | ✅ | ❌ | ❌ | ❌ |
+| **Normalization methods** | log, SCTransform | Multiple | Scanpy-based | Manual |
+| **Multi-sample object** | ✅ STlist (multi-sample) | ✅ Seurat object | ✅ AnnData | ⚠️ Single sample focus |
+| **GenePattern integration** | ✅ Native | ⚠️ Separate module | ❌ | ❌ |
+| **Pseudo-bulk QC** | ✅ Built-in | ❌ Manual | ❌ | ❌ |
+| **Learning curve** | Low–Medium | Medium–High | Medium | High |
+
+**Key Competitive Advantages of spatialGE.Preprocessing:**
+1. **Only R-based tool with native GeoMx support** — critically important for DSP users
+2. **Unified multi-platform input** — one function handles Visium/CosMx/GeoMx/Generic
+3. **Built-in pseudo-bulk QC** — sample-level PCA immediately after ingestion
+4. **Seamless GenePattern pipeline** — designed as entry point with clean RDS handoff
+5. **Tumor microenvironment focus** — explicitly designed and validated for cancer research applications
+
+---
+
+## 9. 📋 Summary Recommendations for GenePattern Module Development
+
+| Priority | Recommendation |
+|---|---|
+| 🔴 **Critical** | Ensure Docker container includes `libhdf5-dev` system library and `hdf5r` R package for Visium .h5 support |
+| 🔴 **Critical** | Validate the RDS output naming convention (no `.tar` propagation, no double `.rds`) per the version fix note |
+| 🔴 **Critical** | Enforce and document the strict operation order: ingest → filter → pseudobulk → transform |
+| 🟡 **Important** | Add a `platform` selector parameter (Visium / CosMx / GeoMx / Generic) to guide users on required input files |
+| 🟡 **Important** | Warn users that `method='sct'` uses significant memory and may reduce output gene count |
+| 🟡 **Important** | Document Windows `cores` limitation explicitly in the module UI |
+| 🟢 **Recommended** | Include the built-in melanoma test dataset as a sample data option for module testing |
+| 🟢 **Recommended** | Add parameter validation: `spot_pct` and `genes_pct` must be between 0 and 1 |
+| 🟢 **Recommended** | Make `run.pseudobulk` a boolean toggle rather than always running `pseudobulk_samples()` |
+| 🟢 **Recommended** | Output a QC summary text file alongside the RDS with per-sample spot/gene counts before and after filtering |
+
+---
+
+*Report compiled from: CRAN Package Documentation (spatialGE v1.2.2), FridleyLab GitHub Repository, GenePattern Spatial Transcriptomics Portal, Published Literature (PMC9890305, PMC11244876, PMC11873723), rdrr.io Function Documentation, and comparative analysis of the spatialGE.STclust module for pipeline context.*
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

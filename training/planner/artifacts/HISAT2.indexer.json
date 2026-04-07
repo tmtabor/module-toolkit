@@ -1,0 +1,87 @@
+{
+  "module_name": "HISAT2.indexer",
+  "description": "Indexes one or more Fasta files for use in the HISAT2.aligner.",
+  "author": "Ted Liefeld;UCSD",
+  "input_file_formats": [
+    "fasta",
+    "gtf"
+  ],
+  "language": "Python",
+  "categories": [
+    "RNA-Seq"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:94252:1",
+  "plan": "## HISAT2.indexer GenePattern Module — Implementation Plan\n\n### 1. Overview\nHISAT2.indexer is a GenePattern module that Indexes one or more Fasta files for use in the HISAT2.aligner.\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: index.name.prefix, fasta.file, dry.run\n- Optional: gtf.file\n\n### 3. Command Line\n```\npython <libdir>/hisat_indexer_wrapper.py <gtf.file> -fasta <fasta.file> -indexname <index.name.prefix> -dryRun <dry.run>\n```\n\n### 4. Docker Image\nDocker image: genepattern/docker-hisat2\\:v0.12\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "/hisat_indexer_wrapper.py",
+  "command_line": "python <libdir>/hisat_indexer_wrapper.py <gtf.file> -fasta <fasta.file> -indexname <index.name.prefix> -dryRun <dry.run>",
+  "parameters": [
+    {
+      "name": "index.name.prefix",
+      "description": "The name prefix of the resulting index files and of the zip file which contains them.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "genome",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--index.name.prefix",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "fasta.file",
+      "description": "One or more FASTA files (or a zip file containing one or more FASTA files) containing the reference sequences to be aligned to. E.g., <reference_in> might be chr1.fa,chr2.fa,chrX.fa,chrY.fa.",
+      "required": true,
+      "type": "file",
+      "value_count": "1+",
+      "default_value": null,
+      "file_formats": [
+        "fasta"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--fasta.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gtf.file",
+      "description": "Optional GTF file with information about exons.  If present this will run extract_exons.py and extrac_splice_sites.py on the GTF file and then add the splice sites and exons to the index",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gtf"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-gtf",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "dry.run",
+      "description": "If true, this just generates the hisat2 command lines and exits without executing.",
+      "required": true,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": "False",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "True",
+          "value": "True"
+        },
+        {
+          "display": "False",
+          "value": "False"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--dry.run",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/docker-hisat2:v0.12"
+}

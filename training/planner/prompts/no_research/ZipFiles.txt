@@ -1,0 +1,53 @@
+Create a comprehensive structured plan for the GenePattern module for 'ZipFiles'.
+            
+            Tool Information:
+            - Name: ZipFiles
+            - Version: latest
+            - Language: Java
+            - Description: Zips files
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ZipFiles",
+  "parameters": [
+    {
+      "name": "file.one",
+      "type": "FILE",
+      "description": "File one",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "file.two",
+      "type": "FILE",
+      "description": "File two",
+      "required": true,
+      "default_value": ""
+    },
+    {
+      "name": "output.file.name",
+      "type": "java.lang.String",
+      "description": "output file format",
+      "required": true,
+      "default_value": "<file.one_basename>.<file.two_basename>.zip"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Preprocess & Utilities",
+  "author": "Joshua Gould, Broad Institute",
+  "command_line": "<java> <java_flags> -cp <libdir>ant.jar<path.separator><libdir>ZipFiles.jar org.genepattern.zip.Main <file.one> <file.two> <output.file.name>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

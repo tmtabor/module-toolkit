@@ -1,0 +1,31 @@
+Create a comprehensive structured plan for the GenePattern module for 'Beroukhim.Getz.2007.PNAS.Glioma.GISTIC'.
+            
+            Tool Information:
+            - Name: Beroukhim.Getz.2007.PNAS.Glioma.GISTIC
+            - Version: latest
+            - Language: Java
+            - Description: - Repository:
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "Beroukhim.Getz.2007.PNAS.Glioma.GISTIC",
+  "parameters": [],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "pipeline",
+  "author": "Rameen Beroukhim, Broad Institute",
+  "command_line": "<java>  -Dgenepattern.properties\\=<resources> -DLSID\\=<LSID> -DPIPELINE_ARG.StopAfterTask\\=<PIPELINE_ARG.StopAfterTask> -DGenePatternURL\\=<GenePatternURL>  org.genepattern.server.webapp.RunPipelineSoap <GenePatternURL>getPipelineModel.jsp?name\\=<LSID>&userid\\=<userid> <userid>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

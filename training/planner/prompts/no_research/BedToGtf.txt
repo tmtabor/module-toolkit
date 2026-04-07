@@ -1,0 +1,55 @@
+Create a comprehensive structured plan for the GenePattern module for 'BedToGtf'.
+            
+            Tool Information:
+            - Name: BedToGtf
+            - Version: latest
+            - Language: Java
+            - Description: Converts BED files to GFF or GTF format
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "BedToGtf",
+  "parameters": [
+    {
+      "name": "bed.file",
+      "type": "FILE",
+      "description": "A bed file",
+      "required": true,
+      "default_value": "",
+      "file_format": "bed"
+    },
+    {
+      "name": "output.format",
+      "type": "java.lang.String",
+      "description": "Whether to output a gff file or exon only gtf file. The bed file must contain at least 12 columns in order to generate a gtf file.",
+      "required": true,
+      "default_value": "gtf",
+      "choices": "gff;gtf"
+    },
+    {
+      "name": "output.prefix",
+      "type": "java.land.String",
+      "description": "The prefix for the output file",
+      "required": true,
+      "default_value": "<bed.file_basename>"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Data Format Conversion",
+  "author": "GenePattern",
+  "command_line": "<java> <java_flags> -cp <libdir>bedToGtf.jar org.genepattern.gtf.BedToGtf <bed.file> <output.prefix> <output.format>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

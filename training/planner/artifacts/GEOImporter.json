@@ -1,0 +1,178 @@
+{
+  "module_name": "GEOImporter",
+  "description": "Imports data from the Gene Expression Omnibus (GEO)",
+  "author": "Joshua Gould, Broad Institute; Anthony Castanza, UCSD",
+  "input_file_formats": [
+    "gz",
+    "soft"
+  ],
+  "language": "R",
+  "categories": [
+    "preprocess & utilities",
+    "preprocess & utilities"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:66833:1",
+  "plan": "## GEOImporter GenePattern Module — Implementation Plan\n\n### 1. Overview\nGEOImporter is a GenePattern module that Imports data from the Gene Expression Omnibus (GEO)\n\n### 2. Parameters\nThe module exposes 11 parameters:\n- Required: Drop.NA.Rows, output.filename\n- Optional: GEO.accession, GEO.SOFT.file, data.column.name, ftp.proxy.server, ftp.proxy.username, ftp.proxy.password, http.proxy.server, http.proxy.username, http.proxy.password\n\n### 3. Command Line\n```\nRscript --no-save --quiet --slave --no-restore /GEOImporter/main.R /GEOImporter/ -n<Drop.NA.Rows> -d<data.column.name> -o<output.filename> -a<GEO.accession> -f<GEO.SOFT.file> -1<ftp.proxy.server> -2<ftp.proxy.username> -3<ftp.proxy.password> -4<http.proxy.server> -5<http.proxy.username> -6<http.proxy.password>\n```\n\n### 4. Docker Image\nDocker image: genepattern/geoimporter\\:1\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "main.R",
+  "command_line": "Rscript --no-save --quiet --slave --no-restore /GEOImporter/main.R /GEOImporter/ -n<Drop.NA.Rows> -d<data.column.name> -o<output.filename> -a<GEO.accession> -f<GEO.SOFT.file> -1<ftp.proxy.server> -2<ftp.proxy.username> -3<ftp.proxy.password> -4<http.proxy.server> -5<http.proxy.username> -6<http.proxy.password>",
+  "parameters": [
+    {
+      "name": "GEO.accession",
+      "description": "GEO Series record (GSExxx) or a GEO Dataset (GDSxxx). Either a GEO accession or a GEO SOFT file must be given.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--GEO.accession",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "GEO.SOFT.file",
+      "description": "A previously downloaded GEO SOFT file or its gzipped representation. Either a GEO SOFT file or a GEO accession must be given.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "gz",
+        "soft"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--GEO.SOFT.file",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Drop.NA.Rows",
+      "description": "Omit rows containing all \"NA\" values from GSExxx data series.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "false",
+          "value": "FALSE"
+        },
+        {
+          "display": "true",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Drop.NA.Rows",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "data.column.name",
+      "description": "The name of the column that contains the expression values",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": "VALUE",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.column.name",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.filename",
+      "description": "The name of the output file",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<GEO.accession><GEO.SOFT.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "ftp.proxy.server",
+      "description": "FTP Proxy server",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--ftp.proxy.server",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "ftp.proxy.username",
+      "description": "FTP Proxy username",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--ftp.proxy.username",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "ftp.proxy.password",
+      "description": "FTP Proxy password",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--ftp.proxy.password",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "http.proxy.server",
+      "description": "HTTP Proxy server",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--http.proxy.server",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "http.proxy.username",
+      "description": "HTTP Proxy username",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--http.proxy.username",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "http.proxy.password",
+      "description": "HTTP Proxy password",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--http.proxy.password",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/geoimporter:1"
+}

@@ -1,0 +1,48 @@
+Create a comprehensive structured plan for the GenePattern module for 'MultiplotStudio'.
+            
+            Tool Information:
+            - Name: MultiplotStudio
+            - Version: Completely rewritten and vastly improved replacement for Multiplot
+            - Language: Java
+            - Description: Scatterplot visualization tool for analyzing differential gene expression.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "MultiplotStudio",
+  "parameters": [
+    {
+      "name": "dataFile",
+      "type": "FILE",
+      "description": "GenePattern dataset (*.gct), Multiplot Studio Workspace file (*.msdata) or CSV (see help for format requirements).",
+      "required": true,
+      "default_value": "",
+      "file_format": "gct;csv;msdata"
+    },
+    {
+      "name": "classFile",
+      "type": "FILE",
+      "description": "Class file (*.cls). Not required, but lack of a class file will result in fewer calculation options. Ignored if dataFile is a Workspace.",
+      "required": false,
+      "default_value": "",
+      "file_format": "cls"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Visualizer",
+  "author": "Scott Davis (GlaxoSmithKline)",
+  "command_line": "<java> -Dfile.encoding\\=UTF8 -Dsun.java2d.d3d\\=true -Dsun.java2d.dpiaware\\=true -Dsun.java2d.ddscale\\=true -Dsun.java2d.translaccel\\=true -Xms192m -XX\\:+UseG1GC -jar <libdir>MultiplotStudio.jar <dataFile> <classFile>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

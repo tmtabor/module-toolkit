@@ -1,0 +1,47 @@
+{
+  "module_name": "UploadFile",
+  "description": "A utility for users to upload and share a common input file for use by modules within a pipeline.",
+  "author": "Adrian Png, BC Cancer Research Centre",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:66504:1",
+  "plan": "## UploadFile GenePattern Module — Implementation Plan\n\n### 1. Overview\nUploadFile is a GenePattern module that A utility for users to upload and share a common input file for use by modules within a pipeline.\n\n### 2. Parameters\nThe module exposes 2 parameters:\n- Required: input.file, output.filename\n- Optional: none\n\n### 3. Command Line\n```\n<java> -cp <libdir>uploadfile.jar net.sf.flowcyt.gp.module.StageFiles -in <input.file> -out <output.filename>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "uploadfile.jar",
+  "command_line": "<java> -cp <libdir>uploadfile.jar net.sf.flowcyt.gp.module.StageFiles -in <input.file> -out <output.filename>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "Please specify the file you wish to upload.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "Please specify the new filename if required.",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<input.file_file>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.filename",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

@@ -1,0 +1,143 @@
+{
+  "module_name": "ListFiles",
+  "description": "a helper module which outputs a filelist, the list of all files in the input directory, similar to the unix 'ls' command",
+  "author": "Peter Carr, Broad Institute",
+  "input_file_formats": [
+    "txt"
+  ],
+  "language": "any",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:54468:1",
+  "plan": "## ListFiles GenePattern Module — Implementation Plan\n\n### 1. Overview\nListFiles is a GenePattern module that a helper module which outputs a filelist, the list of all files in the input directory, similar to the unix 'ls' command\n\n### 2. Parameters\nThe module exposes 7 parameters:\n- Required: dir\n- Optional: recursive, includePattern, pruneDir, order.by, type, output.filename\n\n### 3. Command Line\n```\n<java> -cp <libdir>ListFiles.jar<path.separator><libdir>jopt-simple-3.3.jar<path.separator><libdir>jakarta-oro-2.0.8.jar org.genepattern.module.find.FindCommand <dir> <recursive> <includePattern> <pruneDir> <type> <order.by> <output.filename>\n```\n\n### 4. Docker Image\nDocker image: \n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "ListFiles.jar<path.separator><libdir>jopt-simple-3.3.jar<path.separator><libdir>jakarta-oro-2.0.8.jar",
+  "command_line": "<java> -cp <libdir>ListFiles.jar<path.separator><libdir>jopt-simple-3.3.jar<path.separator><libdir>jakarta-oro-2.0.8.jar org.genepattern.module.find.FindCommand <dir> <recursive> <includePattern> <pruneDir> <type> <order.by> <output.filename>",
+  "parameters": [
+    {
+      "name": "dir",
+      "description": "a directory",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--dir\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "recursive",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "no, default",
+          "value": ""
+        },
+        {
+          "display": "yes",
+          "value": "-R"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--recursive",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "includePattern",
+      "description": "an optional list of filename patterns, e.g. *.cls,*.gct",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--include-file\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "pruneDir",
+      "description": "an optional list of directory name patterns to ignore, e.g. *.svn",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--prune-dir\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "order.by",
+      "description": "an optional flag for how to order the files",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "alphabetical, default",
+          "value": ""
+        },
+        {
+          "display": "timestamp",
+          "value": "-t"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--order.by",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "type",
+      "description": "",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "all, default",
+          "value": ""
+        },
+        {
+          "display": "file",
+          "value": "f"
+        },
+        {
+          "display": "dir",
+          "value": "d"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--type\\=",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.filename",
+      "description": "the name of the output file, if none specified, write to stdout",
+      "required": false,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--o\\=",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": ""
+}

@@ -1,0 +1,286 @@
+{
+  "module_name": "HierarchicalClusteringImage",
+  "description": "Creates an image of the dendrogram generated from HierarchicalClustering",
+  "author": "Joshua Gould, Broad Institute",
+  "input_file_formats": [
+    "atr",
+    "cdt",
+    "gtr"
+  ],
+  "language": "Java",
+  "categories": [
+    "Analysis"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:27840:1",
+  "plan": "## HierarchicalClusteringImage GenePattern Module — Implementation Plan\n\n### 1. Overview\nHierarchicalClusteringImage is a GenePattern module that Creates an image of the dendrogram generated from HierarchicalClustering\n\n### 2. Parameters\nThe module exposes 14 parameters:\n- Required: cdt, output, output.format, column.size, row.size\n- Optional: gtr, atr, show.grid, grid.color, show.row.descriptions, show.row.names, color.scheme, color.palette, use.color.gradient\n\n### 3. Command Line\n```\n<java> -Djava.awt.headless\\=true <java_flags> -jar <libdir>hclimage-o.jar <cdt> <output> <output.format> -r<row.size> -c<column.size> -g<show.grid> -l<grid.color> -a<show.row.descriptions> -s<show.row.names> -n<color.scheme> -m<color.palette> -x<gtr> -y<atr> -u<use.color.gradient>\n```\n\n### 4. Docker Image\nDocker image: genepattern/docker-java17\\:0.12\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "hclimage-o.jar",
+  "command_line": "<java> -Djava.awt.headless=true <java_flags> -jar <libdir>hclimage-o.jar <cdt> <output> <output.format> -r<row.size> -c<column.size> -g<show.grid> -l<grid.color> -a<show.row.descriptions> -s<show.row.names> -n<color.scheme> -m<color.palette> -x<gtr> -y<atr> -u<use.color.gradient>",
+  "parameters": [
+    {
+      "name": "cdt",
+      "description": "Clustered data table, contains the original data, but reordered",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "cdt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--cdt",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "gtr",
+      "description": "Gene Tree file, records the order in which genes (rows) were joined (at least one of gtr and atr files are required)",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "gtr"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gtr",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "atr",
+      "description": "Array Tree file, records the order in which samples (columns) were joined (at least one of gtr and atr files are required)",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "atr"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--atr",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output",
+      "description": "The output file name - .bmp, .jpeg, .png, .tiff",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<cdt_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "output.format",
+      "description": "The output file format",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "jpeg",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "bmp",
+          "value": "bmp"
+        },
+        {
+          "display": "jpeg",
+          "value": "jpeg"
+        },
+        {
+          "display": "png",
+          "value": "png"
+        },
+        {
+          "display": "tiff",
+          "value": "tiff"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--output.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "column.size",
+      "description": "The size in pixels of an element along the horizontal axis",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--column.size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "row.size",
+      "description": "The size in pixels of an element along the vertical axis",
+      "required": true,
+      "type": "integer",
+      "value_count": "1..1",
+      "default_value": "8",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--row.size",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "show.grid",
+      "description": "Whether to show a grid between elements",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--show.grid",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "grid.color",
+      "description": "The grid color",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "0\\:0\\:0",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "black",
+          "value": "0:0:0"
+        },
+        {
+          "display": "grey",
+          "value": "128:128:128"
+        },
+        {
+          "display": "white",
+          "value": "255:255:255"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--grid.color",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "show.row.descriptions",
+      "description": "Whether to show row descriptions",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--show.row.descriptions",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "show.row.names",
+      "description": "Whether to show row names",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "yes",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--show.row.names",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "color.scheme",
+      "description": "The color scheme",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "row normalized",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "row normalized",
+          "value": "row normalized"
+        },
+        {
+          "display": "global",
+          "value": "global"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--color.scheme",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "color.palette",
+      "description": "Color palette consisting of one r\\:g\\:b triplet or one hex value per line",
+      "required": false,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--color.palette",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "use.color.gradient",
+      "description": "Whether to use a linear color gradient or discrete colors",
+      "required": false,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--use.color.gradient",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/docker-java17:0.12"
+}

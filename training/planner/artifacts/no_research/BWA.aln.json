@@ -1,0 +1,406 @@
+{
+  "module_name": "BWA.aln",
+  "description": "A fast and accurate short-read alignment tool that allows for mismatches and gaps. Alignments are output in a SAM format file, which provides Phred-scale quality scores for each alignment.  Uses BWA 0.7.4 aln and samse/sampe.",
+  "author": "Heng Li, Broad Institute",
+  "input_file_formats": [
+    "bam",
+    "fa",
+    "fa.gz",
+    "fasta",
+    "fasta.gz",
+    "fastq",
+    "fastq.gz",
+    "fn",
+    "fq",
+    "fq.gz",
+    "zip"
+  ],
+  "language": "Perl",
+  "categories": [
+    "rna-seq"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:62013:1",
+  "plan": "## BWA.aln GenePattern Module — Implementation Plan\n\n### 1. Overview\nBWA.aln is a GenePattern module that A fast and accurate short-read alignment tool that allows for mismatches and gaps. Alignments are output in a SAM format file, which provides Phred-scale quality scores for each alignment.  Uses BWA 0.7.4 aln and samse/sampe.\n\n### 2. Parameters\nThe module exposes 24 parameters:\n- Required: BWA.index, reads.pair.1, iterative.search, Illumina.1.3.format, output.prefix\n- Optional: reads.pair.2, bam.mapping, max.edit.distance, max.num.gap, max.gap.extension, max.deletion.length, max.indel.length, seed.length, max.seed.edit.distance, mismatch.penalty, gap.open.penalty, gap.extension.penalty, max.best.hits, trim.reads, barcode.length, max.insert.size, max.occurrences, max.alignments, max.dc.alignments\n\n### 3. Command Line\n```\nperl /opt/genepatt/BWA.aln/src/bwa_aln_wrapper.pl -bwa <BWA_0.7.4>/bwa -libdir <libdir> -w1 <BWA.index> -p1 <reads.pair.1> -p2 <reads.pair.2> -bm <bam.mapping> -n1 <max.edit.distance> -g <max.num.gap> <max.gap.extension> -d <max.deletion.length> -idl <max.indel.length> -l <seed.length> -k <max.seed.edit.distance> -m <mismatch.penalty>  -o1 <gap.open.penalty> -E <gap.extension.penalty> -r <max.best.hits> -n2 <iterative.search> -q <trim.reads> -ilmn <Illumina.1.3.format> -B <barcode.length> -a <max.insert.size> -u <max.occurrences> -x1 <max.alignments> -x2 <max.dc.alignments> -t 4 -o2 <output.prefix>\n```\n\n### 4. Docker Image\nDocker image: genepattern/bwa_modules\\:v0.2\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "bwa_aln_wrapper.pl",
+  "command_line": "perl /opt/genepatt/BWA.aln/src/bwa_aln_wrapper.pl -bwa <BWA_0.7.4>/bwa -libdir <libdir> -w1 <BWA.index> -p1 <reads.pair.1> -p2 <reads.pair.2> -bm <bam.mapping> -n1 <max.edit.distance> -g <max.num.gap> <max.gap.extension> -d <max.deletion.length> -idl <max.indel.length> -l <seed.length> -k <max.seed.edit.distance> -m <mismatch.penalty>  -o1 <gap.open.penalty> -E <gap.extension.penalty> -r <max.best.hits> -n2 <iterative.search> -q <trim.reads> -ilmn <Illumina.1.3.format> -B <barcode.length> -a <max.insert.size> -u <max.occurrences> -x1 <max.alignments> -x2 <max.dc.alignments> -t 4 -o2 <output.prefix>",
+  "parameters": [
+    {
+      "name": "BWA.index",
+      "description": "A zip file or directory containing BWA index files.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "zip",
+        "DIRECTORY"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--BWA.index",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reads.pair.1",
+      "description": "Single-end or first paired-end reads file in FASTA, FASTQ, or BAM format.  For paired-end data, this should be the forward (\"*_1\" or \"left\") input file.  Note\\: the FASTA or FASTQ can be gzipped.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "bam",
+        "fa",
+        "fa.gz",
+        "fasta",
+        "fasta.gz",
+        "fastq",
+        "fastq.gz",
+        "fn",
+        "fq",
+        "fq.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reads.pair.1",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "reads.pair.2",
+      "description": "The reverse (\"*_2\" or \"right\") input file for paired-end reads in FASTA, FASTQ, or BAM format. Note\\: the FASTA or FASTQ can be gzipped.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "fa",
+        "fa.gz",
+        "fasta",
+        "fasta.gz",
+        "fastq",
+        "fastq.gz",
+        "fn",
+        "fq",
+        "fq.gz"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--reads.pair.2",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "bam.mapping",
+      "description": "Specifies how to map BAM input. This is only required if input file is in BAM format.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "Not set...",
+          "value": ""
+        },
+        {
+          "display": "single",
+          "value": "single"
+        },
+        {
+          "display": "first",
+          "value": "first"
+        },
+        {
+          "display": "second",
+          "value": "second"
+        },
+        {
+          "display": "paired",
+          "value": "paired"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--bam.mapping",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.edit.distance",
+      "description": "The max edit distance. This specifies a threshold of the maximum number of deletions, insertions, and substitutions needed to transform the reference sequence into the read sequence.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.edit.distance",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.num.gap",
+      "description": "Maximum number of gap opens. This specifies a threshold of the maximum number of gaps that can be initiated to match a given read to the reference.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.num.gap",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.gap.extension",
+      "description": "Maximum number of gap extensions. This specifies a threshold of the maximum number of bases by which gaps in a read can be extended.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-e\\=",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.deletion.length",
+      "description": "Disallow a long deletion within this many bp of the 3' end.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.deletion.length",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.indel.length",
+      "description": "Disallow an indel within this many bp of the ends",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.indel.length",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "seed.length",
+      "description": "The set of bases determined by this option in the high-quality (left) end of the read is the seed.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--seed.length",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.seed.edit.distance",
+      "description": "Maximum edit distance in the seed; that is, the maximum number of changes required to transform the reference sequence of the seed into the read sequence of the seed.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.seed.edit.distance",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "mismatch.penalty",
+      "description": "Mismatch penalty",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--mismatch.penalty",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gap.open.penalty",
+      "description": "Gap open penalty.  The gap open penalty is the score taken away for the initiation of the gap in sequence. To make the match more significant you can try to make the gap penalty larger.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gap.open.penalty",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "gap.extension.penalty",
+      "description": "Gap extension penalty.  The gap extension penalty is added to the standard gap penalty for each base or residue in the gap.  To reduce long gaps, increase the extension gap penalty.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--gap.extension.penalty",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.best.hits",
+      "description": "Proceed with suboptimal alignments if there are no more than this many equally best hits. This option only affects paired-end mapping.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.best.hits",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "iterative.search",
+      "description": "Whether to disable iterative search",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--iterative.search",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "trim.reads",
+      "description": "Specifies a quality threshold for read trimming",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--trim.reads",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "Illumina.1.3.format",
+      "description": "The input is in the Illumina 1.3+ read format",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "no",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "yes",
+          "value": "yes"
+        },
+        {
+          "display": "no",
+          "value": "no"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--Illumina.1.3.format",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "barcode.length",
+      "description": "Length of barcode starting from the 5' end",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--barcode.length",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.insert.size",
+      "description": "Specifies the maximum insert size for a read pair to be considered to be mapped properly",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.insert.size",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.occurrences",
+      "description": "Specifies the maximum occurrences of a read for pairing",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.occurrences",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.alignments",
+      "description": "Maximum number of alignments to output in the XA tag for reads paired properly",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.alignments",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "max.dc.alignments",
+      "description": "Maximum number of alignments to output in the XA tag for disconcordant read pairs (excluding singletons)",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--max.dc.alignments",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.prefix",
+      "description": "Prefix to use for output file name",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<reads.pair.1_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.prefix",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/bwa_modules:v0.2"
+}

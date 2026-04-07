@@ -1,0 +1,240 @@
+Create a comprehensive structured plan for the GenePattern module for 'ScanpyUtilities'.
+            
+            Tool Information:
+            - Name: ScanpyUtilities
+            - Version: Updated h5ad version and added mitochondrial filtering support on 10/04/2021
+            - Language: any
+            - Description: Scanpy preprocessing of an h5 single cell RNASeq dataset
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "ScanpyUtilities",
+  "parameters": [
+    {
+      "name": "data.file",
+      "type": "FILE",
+      "description": "A file containing single-cell data. h5ad, loom and mtx file formats are accepted. A 10x formatted hdf5 file may also be provided along with the 'genome' argument. The file will be internally converted to an h5ad file before proceeding.",
+      "required": true,
+      "default_value": "",
+      "file_format": "h5ad;loom;mtx;h5",
+      "num_values": "1..1"
+    },
+    {
+      "name": "mtGenes",
+      "type": "FILE",
+      "description": "A file containing a list of the gene ids for mitochondrial genes. Optional, used for filtering by mitochondrial abundance.",
+      "required": false,
+      "default_value": "",
+      "file_format": "txt",
+      "prefix": "--mito.file\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "output.basename",
+      "type": "TEXT",
+      "description": "Base filename for the output file",
+      "required": true,
+      "default_value": "<data.file_basename>",
+      "num_values": "1..1"
+    },
+    {
+      "name": "genome",
+      "type": "TEXT",
+      "description": "When converting a 10x formated HDF5 file, the module will internally call read_10x_h5 from the scanpy package. This function expects a genome argument which specifies the name of the data set in the HDF5 file. e.g. 'GRCh38'",
+      "required": false,
+      "default_value": "",
+      "prefix": "--genome\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "cells.min.counts",
+      "type": "TEXT",
+      "description": "Filter out cells with fewer total counts than min counts",
+      "required": false,
+      "default_value": "",
+      "prefix": "--cells.min.counts\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "cells.max.counts",
+      "type": "TEXT",
+      "description": "Filter out cells with more total counts than max counts",
+      "required": false,
+      "default_value": "",
+      "prefix": "--cells.max.counts\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "cells.min.genes",
+      "type": "TEXT",
+      "description": "Filter out cells with fewer than min genes expressed",
+      "required": false,
+      "default_value": "",
+      "prefix": "--cells.min.genes\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "cells.max.genes",
+      "type": "TEXT",
+      "description": "Filter out cells with more than max genes expressed",
+      "required": false,
+      "default_value": "",
+      "prefix": "--cells.max.genes\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "cells.max.mt.pct",
+      "type": "TEXT",
+      "description": "Filter out cells with more than max mitochondrial percentage",
+      "required": false,
+      "default_value": "",
+      "prefix": "--cells.max.mt.pct\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "genes.min.counts",
+      "type": "TEXT",
+      "description": "Filter out genes with fewer total counts than min counts",
+      "required": false,
+      "default_value": "",
+      "prefix": "--genes.min.counts\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "genes.max.counts",
+      "type": "TEXT",
+      "description": "Filter out genes with more total counts than max counts",
+      "required": false,
+      "default_value": "",
+      "prefix": "--genes.max.counts\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "genes.min.cells",
+      "type": "TEXT",
+      "description": "Filter out genes expressed in fewer than min cells",
+      "required": false,
+      "default_value": "",
+      "prefix": "--genes.min.cells\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "genes.max.cells",
+      "type": "TEXT",
+      "description": "Filter out genes expressed in more than max cells",
+      "required": false,
+      "default_value": "",
+      "prefix": "--genes.max.cells\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "cell.type.marker.file",
+      "type": "FILE",
+      "description": "A text file describing the marker genes for each cell type. This should be in the format accepted by the R package garnett as defined in https\\://cole-trapnell-lab.github.io/garnett/docs/. Alternatively, a pre-trained garnett classifier in .RDS format can be supplied.",
+      "required": false,
+      "default_value": "",
+      "file_format": "txt",
+      "prefix": "--cell.type.marker.file\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "cell.type.marker.id.type",
+      "type": "TEXT",
+      "description": "Choose whether the genes in the cell type marker file are given as Gene Symbols or Ensembl Gene IDs",
+      "required": true,
+      "default_value": "SYMBOL",
+      "choices": "SYMBOL\\=Gene Symbol;ENSEMBL\\=Ensembl Gene ID",
+      "prefix": "--cell.type.marker.id\\=",
+      "num_values": "1..1"
+    },
+    {
+      "name": "gene.annotation.database",
+      "type": "TEXT",
+      "description": "This can be either \"org.Hs.eg.db\" (https\\://bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html) or \"org.Mm.eg.db\" (https\\://bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html). This annotation database is used to convert the gene names we've provided in the marker file to the gene ids we've used as the index in our data. If this is left blank, an exact match between the marker file and the gene indices is expected.",
+      "required": false,
+      "default_value": "",
+      "prefix": "--gene.annotation.database\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "compute.umap",
+      "type": "TEXT",
+      "description": "Whether to compute UMAP True/False.",
+      "required": true,
+      "default_value": "0",
+      "choices": "0\\=no;1\\=yes",
+      "num_values": "1..1"
+    },
+    {
+      "name": "compute.tsne",
+      "type": "TEXT",
+      "description": "Whether to compute TSNE True/False.",
+      "required": true,
+      "default_value": "0",
+      "choices": "0\\=no;1\\=yes",
+      "num_values": "1..1"
+    },
+    {
+      "name": "n.high.variance.genes",
+      "type": "TEXT",
+      "description": "Subset to the top N highly variable genes",
+      "required": false,
+      "default_value": "",
+      "prefix": "--n.high.variance.genes\\=",
+      "num_values": "0..1"
+    },
+    {
+      "name": "normalize",
+      "type": "TEXT",
+      "description": "Whether to perform normalization True/False. This step is performed after filtering if filtering is on",
+      "required": true,
+      "default_value": "0",
+      "choices": "0\\=no;1\\=yes",
+      "num_values": "1..1"
+    },
+    {
+      "name": "annotate",
+      "type": "TEXT",
+      "description": "Whether to perform annotation True/False.",
+      "required": true,
+      "default_value": "0",
+      "choices": "0\\=no;1\\=yes",
+      "num_values": "1..1"
+    },
+    {
+      "name": "clustering.resolution",
+      "type": "Floating Point",
+      "description": "Resolution to use if running leiden or louvain clustering on the dataset.",
+      "required": true,
+      "default_value": "1.0",
+      "num_values": "1..1"
+    },
+    {
+      "name": "compute.clustering",
+      "type": "TEXT",
+      "description": "Whether to and type of clustering to perform (leiden, louvain, none) .",
+      "required": false,
+      "default_value": "\\",
+      "choices": "\\ \\=none;leiden\\=leiden;louvain\\=louvain",
+      "num_values": "1..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/scanpyutilities\\:0.101",
+  "categories": "Single-Cell",
+  "task_type": "Single-Cell",
+  "author": "Tom Sherman, Johns Hopkins University, modified by Anthony Castanza, UCSD, wrapped as a module by Ted Liefeld, UCSD School of Medicine.",
+  "command_line": "bash /build/run_module.sh --python.executable\\=python --src.path\\=/build --data.file\\=<data.file> <mtGenes> --output.basename\\=<output.basename> <genome> --annotate\\=<annotate> <cells.min.counts> <cells.max.counts> <cells.min.genes> <cells.max.genes> <cells.max.mt.pct> <genes.min.counts> <genes.max.counts> <genes.min.cells> <genes.max.cells> <cell.type.marker.file> <gene.annotation.database> <cell.type.marker.id.type> --normalize\\=<normalize> <n.high.variance.genes> --compute.umap\\=<compute.umap> --compute.tsne\\=<compute.tsne> --compute.clustering\\=<compute.clustering> --clustering.resolution\\=<clustering.resolution>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

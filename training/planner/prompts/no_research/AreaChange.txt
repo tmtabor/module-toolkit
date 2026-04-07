@@ -1,0 +1,90 @@
+Create a comprehensive structured plan for the GenePattern module for 'AreaChange'.
+            
+            Tool Information:
+            - Name: AreaChange
+            - Version: Updated for R 2.5.0
+            - Language: R
+            - Description: Calculates fraction of area under the spectrum that is attributable to signal (area after noise removal / original area)
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "AreaChange",
+  "parameters": [
+    {
+      "name": "spectrum.filename",
+      "type": "FILE",
+      "description": "spectrum data file - .csv",
+      "required": true,
+      "default_value": "",
+      "file_format": "csv"
+    },
+    {
+      "name": "low.Da",
+      "type": "java.lang.Float",
+      "description": "minimum M/Z to include",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "high.Da",
+      "type": "java.lang.Float",
+      "description": "maximum M/Z to include",
+      "required": false,
+      "default_value": ""
+    },
+    {
+      "name": "quality.threshold",
+      "type": "java.lang.Float",
+      "description": "discard spectra with quality < quality threshold",
+      "required": true,
+      "default_value": "0.45"
+    },
+    {
+      "name": "window.filter",
+      "type": "java.lang.Float",
+      "description": "window filter size",
+      "required": false,
+      "default_value": "5"
+    },
+    {
+      "name": "factor",
+      "type": "java.lang.Float",
+      "description": "factor to multiply standard deviation by",
+      "required": false,
+      "default_value": "3"
+    },
+    {
+      "name": "smooth",
+      "type": "java.lang.String",
+      "description": "averaging function",
+      "required": false,
+      "default_value": "median",
+      "choices": "median;mean"
+    },
+    {
+      "name": "output.file",
+      "type": "java.lang.String",
+      "description": "output file",
+      "required": true,
+      "default_value": "<spectrum.filename_basename>.area.odf"
+    }
+  ],
+  "docker_image_tag": "",
+  "categories": "",
+  "task_type": "Proteomics",
+  "author": "D.R. Mani, Broad Institute",
+  "command_line": "<R2.5> <libdir>pipeline.wrapper.R areachange.wrapper <spectrum.filename> <output.file> <quality.threshold> <libdir> -l<low.Da> -h<high.Da> -w<window.filter> -f<factor> -s<smooth>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

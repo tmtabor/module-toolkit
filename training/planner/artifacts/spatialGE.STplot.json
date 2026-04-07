@@ -1,0 +1,305 @@
+{
+  "module_name": "spatialGE.STplot",
+  "description": "Plots of gene expression, cluster memberships, and metadata in spatial context",
+  "author": "Thorin Tabor;UCSD - Mesirov Lab",
+  "input_file_formats": [
+    "rds"
+  ],
+  "language": "R",
+  "categories": [
+    "spatial transcriptomics"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:52302:1",
+  "plan": "## spatialGE.STplot GenePattern Module — Implementation Plan\n\n### 1. Overview\nspatialGE.STplot is a GenePattern module that Plots of gene expression, cluster memberships, and metadata in spatial context\n\n### 2. Parameters\nThe module exposes 16 parameters:\n- Required: input.file, display.in.grid, grid.rows, grid.columns, common.legend, legend.location\n- Optional: genes, samples, color.palette, colors, point.size, spatial.weights, dynamic.tree.cut, minimum.clusters, maximum.clusters, deep.split\n\n### 3. Command Line\n```\nRscript /spatialGE/wrapper.R -f <input.file> <genes> <samples> <color.palette> <colors> <point.size> <spatial.weights> <dynamic.tree.cut> <minimum.clusters> <maximum.clusters> <deep.split> -j <display.in.grid> <grid.rows> <grid.columns> -m <common.legend> -n <legend.location>\n```\n\n### 4. Docker Image\nDocker image: genepattern/spatialge-stplot\\:0.1\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "wrapper.R",
+  "command_line": "Rscript /spatialGE/wrapper.R -f <input.file> <genes> <samples> <color.palette> <colors> <point.size> <spatial.weights> <dynamic.tree.cut> <minimum.clusters> <maximum.clusters> <deep.split> -j <display.in.grid> <grid.rows> <grid.columns> -m <common.legend> -n <legend.location>",
+  "parameters": [
+    {
+      "name": "input.file",
+      "description": "Spatial transcriptomics data coming from spatialGE.Preprocessing or another spatialGE module.",
+      "required": true,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "rds"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--input.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "genes",
+      "description": "Comma-separated list of gene names to plot. If left blank, all genes will be used.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-g",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "samples",
+      "description": "Comma-separated list of sample names to include. If left blank, all samples will be used.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-s",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "color.palette",
+      "description": "Alternative color palette to use when generating the plot.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "BuRd",
+          "value": "BuRd"
+        },
+        {
+          "display": "highcontrast",
+          "value": "highcontrast"
+        },
+        {
+          "display": "YlOrBr",
+          "value": "YlOrBr"
+        },
+        {
+          "display": "discreterainbow",
+          "value": "discreterainbow"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-p",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "colors",
+      "description": "A comma separated list of specific colors to use when generating the plot.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-c",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "point.size",
+      "description": "Alternative size of points marked by the plot, provided as a floating point number.",
+      "required": false,
+      "type": "float",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-q",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "spatial.weights",
+      "description": "Plot tissue domains for clusters created using the following spatial weights. Provide as a comma separated list. Must match spatial weights previously used in spatialGE.STclust.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-w",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "dynamic.tree.cut",
+      "description": "Whether the number of clusters was determined using Dynamic Tree Cut in the earlier spatialGE.STclust step. If you have not previously run spatialGE.STclust with this data, leave the value blank.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "",
+          "value": ""
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        },
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-d",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "minimum.clusters",
+      "description": "The minimum number of clusters (tissue domains) to plot. Must match one of of the clusterings previously run in spatialGE.STclust. Only used if Dynamic Tree Cut is false.",
+      "required": false,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-l",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "maximum.clusters",
+      "description": "The maximum number of clusters (tissue domains) to plot. Must match one of of the clusterings previously run in spatialGE.STclust. Only used if Dynamic Tree Cut is false.",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-i",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "deep.split",
+      "description": "Whether deepSplit was used in the earlier spatialGE.STclust step. If you have not previously run spatialGE.STclust with this data, leave the value blank.",
+      "required": false,
+      "type": "choice",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        },
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "-e",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "display.in.grid",
+      "description": "Whether to display the results in a singular grid containing all plots. If set to false, each plot will be saved as its own image file.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "FALSE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        },
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--display.in.grid",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "grid.rows",
+      "description": "The number of rows in the grid containing all plots. Ignored unless <em>display in grid</em> is set to true.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-r",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "grid.columns",
+      "description": "The number of columns in the grid containing all plots. Ignored unless <em>display in grid</em> is set to true.",
+      "required": true,
+      "type": "integer",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "-k",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "common.legend",
+      "description": "Whether the grid of plots should share a common legend. If set to false, each grid will have its own accompanying legend. Ignored unless <em>display in grid</em> is set to true.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "TRUE",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "TRUE",
+          "value": "TRUE"
+        },
+        {
+          "display": "FALSE",
+          "value": "FALSE"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--common.legend",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "legend.location",
+      "description": "The location of the legend accompanying the plots.",
+      "required": true,
+      "type": "choice",
+      "value_count": "1..1",
+      "default_value": "bottom",
+      "file_formats": null,
+      "choices": [
+        {
+          "display": "bottom",
+          "value": "bottom"
+        },
+        {
+          "display": "top",
+          "value": "top"
+        },
+        {
+          "display": "right",
+          "value": "right"
+        },
+        {
+          "display": "left",
+          "value": "left"
+        }
+      ],
+      "accept_user_values": null,
+      "prefix": "--legend.location",
+      "prefix_only_if_value": false
+    }
+  ],
+  "docker_image_tag": "genepattern/spatialge-stplot:0.1"
+}

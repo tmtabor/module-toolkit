@@ -1,0 +1,158 @@
+Create a comprehensive structured plan for the GenePattern module for 'STREAM.SeedEPGStructure'.
+            
+            Tool Information:
+            - Name: STREAM.SeedEPGStructure
+            - Version: inital revision
+            - Language: any
+            - Description: Seeding the initial elastic principal graph prior to starting the trajectory learning process.
+            
+            Research Results:
+            The following planning data has been gathered from existing module specifications:
+
+{
+  "module_name": "STREAM.SeedEPGStructure",
+  "parameters": [
+    {
+      "name": "data.file",
+      "type": "FILE",
+      "description": "A STREAM pkl file containing annotated and preprocessed gene expression data",
+      "required": true,
+      "default_value": "",
+      "file_format": "pkl",
+      "num_values": "1..1"
+    },
+    {
+      "name": "num.components",
+      "type": "TEXT",
+      "description": "Number of components to be plotted.",
+      "required": true,
+      "default_value": "3",
+      "prefix": "-n_comp",
+      "num_values": "1..1"
+    },
+    {
+      "name": "percent.neighbor.cells",
+      "type": "java.lang.String",
+      "description": "Neighbor percentage. The percentage of points used as neighbors for spectral clustering.",
+      "required": false,
+      "default_value": "0.1",
+      "prefix": "-nb_pct",
+      "num_values": "0..1"
+    },
+    {
+      "name": "num.clusters",
+      "type": "java.lang.String",
+      "description": "Number of clusters (only valid once 'clustering' is specificed as 'sc' or 'kmeans').",
+      "required": true,
+      "default_value": "10",
+      "prefix": "-n_clusters",
+      "num_values": "1..1"
+    },
+    {
+      "name": "damping",
+      "type": "java.lang.String",
+      "description": "Damping factor (between 0.5 and 1) for affinity propagation.",
+      "required": false,
+      "default_value": "0.75",
+      "prefix": "-damping",
+      "num_values": "1..1"
+    },
+    {
+      "name": "preference.percentile",
+      "type": "CHOICE",
+      "description": "Preference percentile (between 0 and 100). The percentile of the input similarities for affinity propagation.",
+      "required": true,
+      "default_value": "50",
+      "prefix": "-pref_perc",
+      "num_values": "1..1"
+    },
+    {
+      "name": "max.clusters",
+      "type": "java.lang.String",
+      "description": "Number of clusters (only valid once 'clustering' is specificed as 'sc' or 'kmeans').",
+      "required": true,
+      "default_value": "200",
+      "prefix": "-max_n_clusters",
+      "num_values": "1..1"
+    },
+    {
+      "name": "figure.width",
+      "type": "TEXT",
+      "description": "figure width",
+      "required": false,
+      "default_value": "8",
+      "prefix": "-fig_width",
+      "num_values": "0..1"
+    },
+    {
+      "name": "figure.legend.num.columns",
+      "type": "TEXT",
+      "description": "The number of columns that the legend has.",
+      "required": true,
+      "default_value": "3",
+      "prefix": "-fig_legend_ncol",
+      "num_values": "1..1"
+    },
+    {
+      "name": "figure.height",
+      "type": "TEXT",
+      "description": "figure height",
+      "required": false,
+      "default_value": "8",
+      "prefix": "-fig_height",
+      "num_values": "0..1"
+    },
+    {
+      "name": "output.filename",
+      "type": "TEXT",
+      "description": "output file name prefix",
+      "required": true,
+      "default_value": "",
+      "num_values": "1..1"
+    },
+    {
+      "name": "clustering",
+      "type": "TEXT",
+      "description": "Clustering method used to infer the initial nodes. Choose from affinity propagation, K-Means clustering, spectral clustering",
+      "required": true,
+      "default_value": "kmeans",
+      "choices": "kmeans\\=KMeans Clustering;ap\\=Affinity Propagation;sc\\=Spectral Clustering",
+      "prefix": "-clustering",
+      "num_values": "1..1"
+    },
+    {
+      "name": "component.x",
+      "type": "TEXT",
+      "description": "Component used for x axis.",
+      "required": true,
+      "default_value": "0",
+      "prefix": "-comp1",
+      "num_values": "1..1"
+    },
+    {
+      "name": "component.y",
+      "type": "TEXT",
+      "description": "Component used for y axis.",
+      "required": true,
+      "default_value": "1",
+      "prefix": "-comp2",
+      "num_values": "1..1"
+    }
+  ],
+  "docker_image_tag": "genepattern/stream_seedepgstructure\\:0.2",
+  "categories": "Single-Cell",
+  "task_type": "Single-cell",
+  "author": "Ted Liefeld, UCSD School of Medicine.",
+  "command_line": "python /stream/structure_command_line.py -m <data.file> -of <output.filename> <percent.neighbor.cells> <figure.width> <figure.height> <figure.legend.num.columns> <num.clusters> <damping> <preference.percentile> <max.clusters> <clustering> <component.x> <component.y> <num.components>"
+}
+            
+            Please create a structured ModulePlan with:
+            1. Detailed parameter definitions with types and descriptions
+            2. Module architecture recommendations
+            3. Integration strategy for GenePattern
+            4. Validation and testing approach
+            5. Implementation roadmap
+            
+            If an author name is not provided, use 'GenePattern Team'.
+            
+            Focus on creating actionable specifications for module development.

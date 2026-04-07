@@ -1,0 +1,84 @@
+{
+  "module_name": "ScanpyQC",
+  "description": "Create Scanpy Quality Control Plots to enable unblinded dataset filtering with ScanpyUtilities",
+  "author": "Anthony S. Castanza",
+  "input_file_formats": [
+    "h5",
+    "h5ad",
+    "loom",
+    "mtx",
+    "txt"
+  ],
+  "language": "Python",
+  "categories": [
+    "singlecell"
+  ],
+  "cpu_cores": 4,
+  "memory": "8GB",
+  "lsid": "urn:lsid:broad.mit.edu:cancer.software.genepattern.module.generated:89201:1",
+  "plan": "## ScanpyQC GenePattern Module — Implementation Plan\n\n### 1. Overview\nScanpyQC is a GenePattern module that Create Scanpy Quality Control Plots to enable unblinded dataset filtering with ScanpyUtilities\n\n### 2. Parameters\nThe module exposes 4 parameters:\n- Required: data.file, output.basename\n- Optional: mtGenes, genome\n\n### 3. Command Line\n```\nbash /scanpyqc/run_module.sh --python.executable\\=python --src.path\\=/scanpyqc/ --data.file\\=<data.file> <mtGenes> --output.basename\\=<output.basename> <genome>\n```\n\n### 4. Docker Image\nDocker image: genepattern/scanpyqc\\:0.100\n\n### 5. Validation Strategy\n- Validate all required parameters are provided\n- Validate file formats match expected extensions\n- Check parameter value ranges where applicable\n\n### 6. Implementation Roadmap\nPhase 1: Wrapper script implementation\nPhase 2: Docker container setup\nPhase 3: Parameter validation and error handling\nPhase 4: Testing and documentation",
+  "wrapper_script": "run_module.sh",
+  "command_line": "bash /scanpyqc/run_module.sh --python.executable=python --src.path=/scanpyqc/ --data.file=<data.file> <mtGenes> --output.basename=<output.basename> <genome>",
+  "parameters": [
+    {
+      "name": "data.file",
+      "description": "A file containing single-cell data. h5ad, loom and mtx file formats are accepted. A 10x formatted hdf5 file may also be provided along with the 'genome' argument. The file will be internally converted to an h5ad file before proceeding.",
+      "required": true,
+      "type": "file",
+      "value_count": "1..1",
+      "default_value": null,
+      "file_formats": [
+        "h5",
+        "h5ad",
+        "loom",
+        "mtx"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--data.file",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "mtGenes",
+      "description": "A file containing a list of the gene ids for mitochondrial genes. Optional, used for filtering by mitochondrial abundance.",
+      "required": false,
+      "type": "file",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": [
+        "txt"
+      ],
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--mito.file\\=",
+      "prefix_only_if_value": true
+    },
+    {
+      "name": "output.basename",
+      "description": "Base filename used for labeling output files",
+      "required": true,
+      "type": "text",
+      "value_count": "1..1",
+      "default_value": "<data.file_basename>",
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--output.basename",
+      "prefix_only_if_value": false
+    },
+    {
+      "name": "genome",
+      "description": "When converting a 10x formated HDF5 file, the module will internally call read_10x_h5 from the scanpy package. This function expects a genome argument which specifies the name of the data set in the HDF5 file. e.g. 'GRCh38'",
+      "required": false,
+      "type": "text",
+      "value_count": "0..1",
+      "default_value": null,
+      "file_formats": null,
+      "choices": null,
+      "accept_user_values": null,
+      "prefix": "--genome\\=",
+      "prefix_only_if_value": true
+    }
+  ],
+  "docker_image_tag": "genepattern/scanpyqc:0.100"
+}

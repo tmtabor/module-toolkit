@@ -348,6 +348,50 @@ class TestStatusPersistence:
         assert loaded.input_tokens == 1234
         assert loaded.output_tokens == 567
 
+    def test_model_dump_round_trip(self, sample_status):
+        """ModuleGenerationStatus.model_dump() must produce a serialisable dict."""
+        data = sample_status.to_dict()
+        assert isinstance(data, dict)
+        assert data['tool_name'] == "TestTool"
+        assert 'research_complete' in data
+        assert 'planning_complete' in data
+        assert 'estimated_cost' in data
+
+    def test_status_is_pydantic_base_model(self, sample_status):
+        """ModuleGenerationStatus must be a Pydantic BaseModel (Refactor 6)."""
+        from pydantic import BaseModel
+        assert isinstance(sample_status, BaseModel)
+
+    def test_to_dict_still_works(self, sample_status):
+        """to_dict() convenience method must remain functional after BaseModel migration."""
+        d = sample_status.to_dict()
+        assert d['tool_name'] == 'TestTool'
+        assert isinstance(d['artifacts_status'], dict)
+
+
+# ---------------------------------------------------------------------------
+# ArtifactResult BaseModel (Refactor 6)
+# ---------------------------------------------------------------------------
+
+class TestArtifactResultBaseModel:
+
+    def test_is_pydantic_base_model(self):
+        """ArtifactResult must be a Pydantic BaseModel (Refactor 6)."""
+        from pydantic import BaseModel
+        result = ArtifactResult(success=True, artifact_name="wrapper")
+        assert isinstance(result, BaseModel)
+
+    def test_model_dump(self):
+        result = ArtifactResult(success=False, artifact_name="manifest", error_text="linter fail")
+        d = result.model_dump()
+        assert d['success'] is False
+        assert d['artifact_name'] == "manifest"
+        assert d['error_text'] == "linter fail"
+
+    def test_default_error_text_is_empty_string(self):
+        result = ArtifactResult(success=True, artifact_name="gpunit")
+        assert result.error_text == ""
+
 
 # ---------------------------------------------------------------------------
 # generate_all_artifacts() — high-level orchestration

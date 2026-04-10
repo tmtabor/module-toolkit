@@ -9,6 +9,7 @@ import pytest
 from pydantic_ai.models.test import TestModel
 
 from agents.models import (
+    ArtifactDeps,
     ArtifactModel,
     ModulePlan,
     Parameter,
@@ -80,13 +81,17 @@ def sample_plan(sample_parameter):
 
 @pytest.fixture
 def sample_deps_context(sample_tool_info, sample_plan):
-    """The deps dict that module.py passes to every artifact agent run_sync call."""
-    return {
-        "tool_info": sample_tool_info,
-        "planning_data": sample_plan.model_dump(mode="json"),
-        "error_report": "",
-        "attempt": 1,
-    }
+    """The ArtifactDeps instance that module.py passes to every artifact agent run_sync call."""
+    return ArtifactDeps(
+        tool_info=sample_tool_info,
+        planning_data=sample_plan.model_dump(mode="json"),
+        error_report="",
+        attempt=1,
+        max_loops=5,
+        example_data=[],
+        downstream_error_context="",
+        error_history=[],
+    )
 
 
 @pytest.fixture

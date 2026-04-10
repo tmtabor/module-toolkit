@@ -140,7 +140,7 @@ any user-provided instructions.
 """
 
 # Create agent with structured output support
-planner_agent = Agent(configured_llm_model(), system_prompt=system_prompt, output_type=ModulePlan, retries=MAX_ARTIFACT_LOOPS)
+planner_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ModulePlan, retries=MAX_ARTIFACT_LOOPS)
 
 
 @planner_agent.tool

@@ -2,8 +2,8 @@ import json
 from typing import List, Dict, Any
 from pydantic_ai import Agent, RunContext
 from dotenv import load_dotenv
-from agents.models import configured_llm_model
-from agents.planner import ModulePlan
+from agents.models import configured_llm_model, ArtifactDeps
+from paramgroups.models import ParamgroupsModel
 
 
 # Load environment variables from .env file
@@ -47,11 +47,56 @@ REMEMBER: Output ONLY valid JSON. No explanations, no markdown, no additional te
 """
 
 # Create agent without MCP dependency
-paramgroups_agent = Agent(configured_llm_model(), system_prompt=system_prompt)
+paramgroups_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ParamgroupsModel, deps_type=ArtifactDeps)
+
+
+@paramgroups_agent.instructions
+def paramgroups_context_instructions(ctx: RunContext[ArtifactDeps]) -> str:
+    """Inject per-call context into the paramgroups agent's instructions."""
+    deps = ctx.deps
+    tool_info = deps.tool_info
+    planning_data = deps.planning_data or {}
+
+    lines = []
+    lines.append(
+        f"You are generating the PARAMGROUPS artifact for GenePattern module '{tool_info.get('name', 'unknown')}'. "
+        f"This is attempt {deps.attempt} of {deps.max_loops}."
+    )
+
+    if tool_info.get('instructions'):
+        lines.append(f"\nIMPORTANT — Additional Instructions:\n{tool_info['instructions']}")
+
+    if deps.example_data:
+        distinct_exts = list(dict.fromkeys(
+            item.get('extension', '') for item in deps.example_data if item.get('extension')
+        ))
+        if len(distinct_exts) >= 2:
+            ex_lines = ["\nExample Data Provided:"]
+            for item in deps.example_data:
+                kind = "URL" if item.get('is_url') else "local file"
+                hint = f" [hint: {item['hint']}]" if item.get('hint') else ""
+                ex_lines.append(f"- {item.get('filename', '')} ({item.get('extension', '')}) — {kind}{hint}")
+            ex_lines.append("These files represent distinct input roles. Keep related parameters in the same group.")
+            lines.append("\n".join(ex_lines))
+
+    if deps.error_history:
+        history_lines = ["Previous attempt errors (avoid repeating these mistakes):"]
+        for i, err in enumerate(deps.error_history, 1):
+            history_lines.append(f"\nAttempt {i} error:\n{err}")
+        lines.append("\n" + "\n".join(history_lines))
+
+    if deps.downstream_error_context:
+        lines.append(
+            "\n⚠️  CROSS-ARTIFACT ESCALATION — READ CAREFULLY ⚠️\n"
+            + deps.downstream_error_context
+            + "\n\nYou MUST address the issue described above."
+        )
+
+    return "\n".join(lines)
 
 
 @paramgroups_agent.tool
-def validate_paramgroups(context: RunContext[str], path: str, parameters: List[str] = None) -> str:
+def validate_paramgroups(context: RunContext[ArtifactDeps], path: str, parameters: List[str] = None) -> str:
     """
     Validate GenePattern paramgroups.json files.
 
@@ -115,7 +160,7 @@ def validate_paramgroups(context: RunContext[str], path: str, parameters: List[s
 
 
 @paramgroups_agent.tool
-def analyze_parameter_groupings(context: RunContext[str], parameters: List[Dict[str, Any]], group_strategy: str = "functional") -> str:
+def analyze_parameter_groupings(context: RunContext[ArtifactDeps], parameters: List[Dict[str, Any]], group_strategy: str = "functional") -> str:
     """
     Analyze a list of parameters and suggest optimal groupings for paramgroups.json.
     
@@ -269,7 +314,7 @@ def analyze_parameter_groupings(context: RunContext[str], parameters: List[Dict[
 
 
 @paramgroups_agent.tool
-def create_paramgroups(context: RunContext[str]) -> str:
+def create_paramgroups(context: RunContext[ArtifactDeps]) -> str:
     """
     Generate a valid paramgroups.json file based on the provided tool information and planning data.
 
@@ -280,10 +325,10 @@ def create_paramgroups(context: RunContext[str]) -> str:
         A string containing the complete and valid paramgroups.json content.
     """
     # Extract data from context dependencies
-    tool_info = context.deps.get('tool_info', {})
-    planning_data_raw = context.deps.get('planning_data', {})
-    error_report = context.deps.get('error_report', '')
-    attempt = context.deps.get('attempt', 1)
+    tool_info = context.deps.tool_info
+    planning_data_raw = context.deps.planning_data or {}
+    error_report = context.deps.error_report
+    attempt = context.deps.attempt
 
     print(f"📋 PARAMGROUPS TOOL: Running create_paramgroups for {tool_info.get('name', 'Unknown Tool')} (attempt {attempt})")
 
@@ -293,24 +338,12 @@ def create_paramgroups(context: RunContext[str]) -> str:
     if tool_instructions:
         print(f"✓ User provided instructions: {tool_instructions[:100]}...")
 
-    # Handle both ModulePlan object and dict
-    if hasattr(planning_data_raw, 'parameters'):
-        # It's a ModulePlan object
-        if not planning_data_raw.parameters:
-            print("⚠️ PARAMGROUPS TOOL: No parameters found in planning_data. Generating empty paramgroups.")
-            return "[]"
-        parameters = [p.model_dump() for p in planning_data_raw.parameters]
-        planning_data_dict = planning_data_raw.model_dump()
-    elif isinstance(planning_data_raw, dict):
-        # It's already a dict
-        if not planning_data_raw.get('parameters'):
-            print("⚠️ PARAMGROUPS TOOL: No parameters found in planning_data. Generating empty paramgroups.")
-            return "[]"
-        parameters = planning_data_raw['parameters']
-        planning_data_dict = planning_data_raw
-    else:
-        print("⚠️ PARAMGROUPS TOOL: Invalid planning_data format. Generating empty paramgroups.")
+    # planning_data is always a dict (or None) via ArtifactDeps
+    planning_data_dict: Dict[str, Any] = planning_data_raw if isinstance(planning_data_raw, dict) else {}
+    if not planning_data_dict.get('parameters'):
+        print("⚠️ PARAMGROUPS TOOL: No parameters found in planning_data. Generating empty paramgroups.")
         return "[]"
+    parameters = planning_data_dict['parameters']
 
     # Use the analyze_parameter_groupings tool to get a suggested structure
     grouping_analysis = analyze_parameter_groupings(context, parameters)

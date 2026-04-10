@@ -112,7 +112,7 @@ Include references and maintain scientific rigor in all analyses.
 """
 
 # Create agent with MCP tools access
-researcher_agent = Agent(configured_llm_model(), system_prompt=system_prompt)
+researcher_agent = Agent(configured_llm_model(), instructions=system_prompt)
 
 @researcher_agent.tool
 def web_search(context: RunContext[str], query: str, num_results: int = 5) -> str:

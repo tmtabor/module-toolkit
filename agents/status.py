@@ -4,13 +4,14 @@ Status tracking for the module generation pipeline.
 ModuleGenerationStatus is the central state object threaded through the
 entire pipeline.  It holds research/planning results, per-artifact progress,
 token usage, and escalation history, and can be serialised to / from JSON
-for resume support.
+via Pydantic's model_dump() / model_validate().
 
 ArtifactResult is the structured return value from artifact_creation_loop.
 """
 import os
-from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 from agents.example_data import ExampleDataItem
 
@@ -19,42 +20,36 @@ INPUT_TOKEN_COST_PER_1000 = float(os.getenv('INPUT_TOKEN_COST_PER_1000', '0.003'
 OUTPUT_TOKEN_COST_PER_1000 = float(os.getenv('OUTPUT_TOKEN_COST_PER_1000', '0.015'))
 
 
-@dataclass
-class ArtifactResult:
+class ArtifactResult(BaseModel):
     """Structured result from an artifact_creation_loop call."""
     success: bool
     artifact_name: str
     error_text: str = ""
-    # populated when classification is available; imported lazily to avoid circular deps
+    # populated when classification is available; typed Any to avoid hard import
     root_cause: Optional[Any] = None
 
+    model_config = {"arbitrary_types_allowed": True}
 
-@dataclass
-class ModuleGenerationStatus:
+
+class ModuleGenerationStatus(BaseModel):
     """Track the status of module generation process."""
     tool_name: str
     module_directory: str
-    research_data: Dict[str, Any] = None
+    research_data: Dict[str, Any] = Field(default_factory=dict)
     # ModulePlan is set at runtime; typed as Any to avoid a hard import cycle
-    planning_data: Any = None
-    artifacts_status: Dict[str, Dict[str, Any]] = None
-    error_messages: List[str] = None
-    example_data: List[ExampleDataItem] = None
+    planning_data: Optional[Any] = None
+    artifacts_status: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    error_messages: List[str] = Field(default_factory=list)
+    example_data: List[ExampleDataItem] = Field(default_factory=list)
     # Token tracking fields
     input_tokens: int = 0
     output_tokens: int = 0
     # Cross-artifact escalation tracking: artifact_name -> count
-    escalation_counts: Dict[str, int] = None
+    escalation_counts: Dict[str, int] = Field(default_factory=dict)
     # Log of escalation events for debugging / reporting
-    escalation_log: List[Dict[str, str]] = None
+    escalation_log: List[Dict[str, str]] = Field(default_factory=list)
 
-    def __post_init__(self):
-        if self.artifacts_status is None: self.artifacts_status = {}
-        if self.error_messages is None: self.error_messages = []
-        if self.research_data is None: self.research_data = {}
-        if self.example_data is None: self.example_data = []
-        if self.escalation_counts is None: self.escalation_counts = {}
-        if self.escalation_log is None: self.escalation_log = []
+    model_config = {"arbitrary_types_allowed": True}
 
     @property
     def research_complete(self) -> bool:
@@ -88,27 +83,21 @@ class ModuleGenerationStatus:
         return input_cost + output_cost
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert status to a JSON-serialisable dictionary."""
-        data: Dict[str, Any] = {
-            'tool_name': self.tool_name,
-            'module_directory': self.module_directory,
-            'research_complete': self.research_complete,
-            'planning_complete': self.planning_complete,
-            'research_data': self.research_data,
-            'artifacts_status': self.artifacts_status,
-            'error_messages': self.error_messages,
-            'input_tokens': self.input_tokens,
-            'output_tokens': self.output_tokens,
-            'estimated_cost': self.get_estimated_cost(),
-            'example_data': [item.to_dict() for item in (self.example_data or [])],
-            'escalation_counts': self.escalation_counts or {},
-            'escalation_log': self.escalation_log or [],
-        }
-        # Serialize planning_data if present (it's a Pydantic model)
+        """
+        Serialise status to a JSON-serialisable dictionary.
+        Delegates to model_dump() and adds derived/computed fields.
+        """
+        data = self.model_dump(
+            mode='json',
+            exclude={'planning_data', 'example_data'},
+        )
+        data['research_complete'] = self.research_complete
+        data['planning_complete'] = self.planning_complete
+        data['estimated_cost'] = self.get_estimated_cost()
+        data['example_data'] = [item.to_dict() for item in (self.example_data or [])]
         if self.planning_data:
             data['planning_data'] = self.planning_data.model_dump(mode='json')
         else:
             data['planning_data'] = {}
         return data
-
 

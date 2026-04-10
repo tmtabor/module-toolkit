@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from pydantic_ai import Agent, RunContext
 from dotenv import load_dotenv
-from agents.models import configured_llm_model
+from agents.models import configured_llm_model, ArtifactDeps, ArtifactModel
 
 
 # Load environment variables from .env file
@@ -96,11 +96,66 @@ Provide clear comments explaining each section and any complex installation step
 """
 
 # Create agent without MCP dependency
-dockerfile_agent = Agent(configured_llm_model(), system_prompt=system_prompt)
+dockerfile_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ArtifactModel, deps_type=ArtifactDeps)
+
+
+@dockerfile_agent.instructions
+def dockerfile_context_instructions(ctx: RunContext[ArtifactDeps]) -> str:
+    """Inject per-call context into the dockerfile agent's instructions."""
+    deps = ctx.deps
+    tool_info = deps.tool_info
+    planning_data = deps.planning_data or {}
+
+    lines = []
+    lines.append(
+        f"You are generating the DOCKERFILE artifact for GenePattern module '{tool_info.get('name', 'unknown')}'. "
+        f"This is attempt {deps.attempt} of {deps.max_loops}."
+    )
+
+    if tool_info.get('instructions'):
+        lines.append(f"\nIMPORTANT — Additional Instructions:\n{tool_info['instructions']}")
+
+    if deps.example_data:
+        local_items = [item for item in deps.example_data if item.get('local_path')]
+        if local_items:
+            ex_lines = ["\nExample Data for Runtime Validation:"]
+            for item in local_items:
+                hint = f"  # role: {item['hint']}" if item.get('hint') else ""
+                ex_lines.append(
+                    f"- {item['local_path']} "
+                    f"(will be bind-mounted into the container as /data/{item.get('filename', '')}){hint}"
+                )
+            ex_lines.append("After the image is built, a runtime command will be run using these files.")
+            ex_lines.append("Ensure all dependencies needed to process these file types are installed.")
+            lines.append("\n".join(ex_lines))
+
+    if tool_info.get('base_image'):
+        lines.append(
+            f"\n\n🚫 IMMUTABLE BASE IMAGE CONSTRAINT 🚫\n"
+            f"The user has explicitly specified the base Docker image:\n"
+            f"  FROM {tool_info['base_image']}\n"
+            f"You MUST use this EXACT image in the FROM instruction.\n"
+            f"Do NOT substitute a different version. Fix failures by other means."
+        )
+
+    if deps.error_history:
+        history_lines = ["Previous attempt errors (do NOT repeat these mistakes):"]
+        for i, err in enumerate(deps.error_history, 1):
+            history_lines.append(f"\n--- Attempt {i} error ---\n{err}")
+        lines.append("\n" + "\n".join(history_lines))
+
+    if deps.downstream_error_context:
+        lines.append(
+            "\n⚠️  CROSS-ARTIFACT ESCALATION — READ CAREFULLY ⚠️\n"
+            + deps.downstream_error_context
+            + "\n\nYou MUST address the issue described above."
+        )
+
+    return "\n".join(lines)
 
 
 @dockerfile_agent.tool
-def validate_dockerfile(context: RunContext[str], path: str, tag: str = None, cmd: str = None, cleanup: bool = True) -> str:
+def validate_dockerfile(context: RunContext[ArtifactDeps], path: str, tag: str = None, cmd: str = None, cleanup: bool = True) -> str:
     """
     Validate Dockerfiles for GenePattern modules.
 
@@ -168,7 +223,7 @@ def validate_dockerfile(context: RunContext[str], path: str, tag: str = None, cm
 
 
 @dockerfile_agent.tool
-def analyze_tool_requirements(context: RunContext[str], tool_name: str, language: str = None, dependencies: str = None) -> str:
+def analyze_tool_requirements(context: RunContext[ArtifactDeps], tool_name: str, language: str = None, dependencies: str = None) -> str:
     """
     Analyze the requirements for a bioinformatics tool to determine appropriate Dockerfile base image and dependencies.
     
@@ -220,7 +275,7 @@ def analyze_tool_requirements(context: RunContext[str], tool_name: str, language
 
 
 @dockerfile_agent.tool
-def suggest_optimizations(context: RunContext[str], dockerfile_content: str) -> str:
+def suggest_optimizations(context: RunContext[ArtifactDeps], dockerfile_content: str) -> str:
     """
     Suggest optimizations for a Dockerfile to reduce size and improve performance.
     
@@ -262,7 +317,7 @@ def suggest_optimizations(context: RunContext[str], dockerfile_content: str) -> 
 
 
 @dockerfile_agent.tool
-def verify_apt_packages(context: RunContext[str], packages: list[str], base_image: str = 'debian:bookworm-slim') -> str:
+def verify_apt_packages(context: RunContext[ArtifactDeps], packages: list[str], base_image: str = 'debian:bookworm-slim') -> str:
     """
     Verify that apt package names exist in the given base image before writing a Dockerfile.
     For any package that cannot be found, apt-cache search is run to suggest correct alternatives.
@@ -445,7 +500,7 @@ def _infer_pip_packages(imports: list[str]) -> list[str]:
 
 @dockerfile_agent.tool
 def create_dockerfile(
-    context: RunContext[str],
+    context: RunContext[ArtifactDeps],
     wrapper_source: str = "",
 ) -> str:
     """
@@ -456,27 +511,25 @@ def create_dockerfile(
     planning_data, error_report, attempt).
 
     Args:
-        context: RunContext with dependencies containing tool_info, error_report, and attempt.
+        context: RunContext with dependencies containing tool_info, planning_data,
+                 error_report, and attempt. To pin the base Docker image, set one
+                 of these keys in planning_data (checked in order):
+                   - ``docker_image_tag``  e.g. "broadinstitute/gatk:4.5.0.0"
+                   - ``base_image``        e.g. "python:3.11-slim"
+                   - ``base_docker_image`` e.g. "ubuntu:22.04"
+                 If none are set, the base image is inferred from the wrapper language.
         wrapper_source: Full source code of the wrapper script (wrapper.py / wrapper.R / etc.).
                         Pass an empty string when the wrapper has not been generated yet.
-        planning_data: Dictionary with module plan fields (wrapper_script, parameters,
-                       input_file_formats, cpu_cores, memory, docker_image_tag, …).
-                       When omitted the tool falls back to context.deps['planning_data'].
-                       To pin the base Docker image, set one of these keys (checked in order):
-                         - ``docker_image_tag``  e.g. "broadinstitute/gatk:4.5.0.0"
-                         - ``base_image``        e.g. "python:3.11-slim"
-                         - ``base_docker_image`` e.g. "ubuntu:22.04"
-                       If none are set, the base image is inferred from the wrapper language.
 
     Returns:
         Complete Dockerfile content ready for validation
     """
     # Extract data from context dependencies — planning_data always comes
     # from deps so it reflects the corrected wrapper_script name.
-    tool_info = context.deps.get('tool_info', {})
-    planning_data = context.deps.get('planning_data', {}) or {}
-    error_report = context.deps.get('error_report', '')
-    attempt = context.deps.get('attempt', 1)
+    tool_info = context.deps.tool_info
+    planning_data = context.deps.planning_data or {}
+    error_report = context.deps.error_report
+    attempt = context.deps.attempt
 
     print(f"🐳 DOCKERFILE TOOL: Running create_dockerfile for '{tool_info.get('name', 'unknown')}' (attempt {attempt})")
     

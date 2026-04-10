@@ -2,8 +2,9 @@ import re
 from typing import Dict, Any, List
 from pathlib import Path
 from pydantic_ai import Agent, RunContext
+from pydantic_ai_skills import SkillsToolset
 from dotenv import load_dotenv
-from agents.models import configured_llm_model
+from agents.models import configured_llm_model, ArtifactDeps, ArtifactModel
 
 
 # Load environment variables from .env file
@@ -130,12 +131,103 @@ Always generate complete, production-ready wrapper scripts that provide reliable
 integration between GenePattern and bioinformatics tools with excellent user experience.
 """
 
+# Skills toolset: loads only the gp-wrapper skill
+_WRAPPER_SKILL_DIR = Path(__file__).parent.parent / "skills" / "gp-wrapper"
+_wrapper_skills = SkillsToolset(directories=[str(_WRAPPER_SKILL_DIR)], exclude_tools={'list_skills', 'read_skill_resource', 'run_skill_script'})
+
 # Create agent without MCP dependency
-wrapper_agent = Agent(configured_llm_model(), system_prompt=system_prompt)
+wrapper_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ArtifactModel, deps_type=ArtifactDeps, toolsets=[_wrapper_skills])
+
+
+@wrapper_agent.instructions
+def wrapper_context_instructions(ctx: RunContext[ArtifactDeps]) -> str:
+    """Inject per-call context into the wrapper agent's instructions."""
+    deps = ctx.deps
+    tool_info = deps.tool_info
+    planning_data = deps.planning_data or {}
+
+    lines = []
+
+    # Attempt header
+    lines.append(
+        f"You are generating the WRAPPER artifact for GenePattern module '{tool_info.get('name', 'unknown')}'. "
+        f"This is attempt {deps.attempt} of {deps.max_loops}."
+    )
+
+    # Additional user instructions
+    if tool_info.get('instructions'):
+        lines.append(f"\nIMPORTANT — Additional Instructions:\n{tool_info['instructions']}")
+
+    # Wrapper language lock
+    _tool_lang = tool_info.get('language', 'python').lower()
+    _jvm_langs = {'java', 'scala', 'groovy', 'kotlin'}
+    if _tool_lang in _jvm_langs:
+        _wrapper_lang = 'bash'
+        _rationale = (
+            f"The tool is implemented in {tool_info.get('language', 'Java')}. "
+            "GenePattern wrappers for JVM-based tools MUST be written as bash scripts "
+            "that invoke the tool via its CLI (e.g. `gatk`, `java -jar`). "
+            "Do NOT write a Java, Python, or any other language wrapper."
+        )
+    elif _tool_lang == 'r':
+        _wrapper_lang = 'R'
+        _rationale = "The tool is R-based; write an R wrapper script."
+    elif _tool_lang in ('bash', 'shell'):
+        _wrapper_lang = 'bash'
+        _rationale = "The tool is shell-based; write a bash wrapper script."
+    else:
+        _wrapper_lang = 'python'
+        _rationale = "Write a Python wrapper script using argparse and subprocess."
+
+    _wrapper_script_name = planning_data.get('wrapper_script', 'wrapper.py')
+    lines.append(
+        f"\n\n🔒 WRAPPER LANGUAGE IS FIXED — DO NOT CHANGE THIS 🔒\n"
+        f"You MUST write this wrapper as a {_wrapper_lang.upper()} script.\n"
+        f"Rationale: {_rationale}\n"
+        f"The output file will be saved as '{_wrapper_script_name}'. "
+        f"Its shebang line and syntax MUST match {_wrapper_lang.upper()}.\n"
+        f"This constraint applies to ALL retry attempts — do not switch languages to fix errors."
+    )
+
+    # Parameter names lock
+    planned_params = planning_data.get('parameters', [])
+    if planned_params:
+        param_lines = []
+        for p in planned_params:
+            pname = p.get('name', '?') if isinstance(p, dict) else getattr(p, 'name', '?')
+            ptype = p.get('type', 'text') if isinstance(p, dict) else getattr(p, 'type', 'text')
+            preq = p.get('required', False) if isinstance(p, dict) else getattr(p, 'required', False)
+            param_lines.append(f"  - {pname} ({ptype}, {'required' if preq else 'optional'})")
+        lines.append(
+            "\n\n⚠️  PARAMETER NAMES ARE FIXED — DO NOT RENAME THEM ⚠️\n"
+            "The wrapper MUST use EXACTLY the following parameter names as CLI flags. "
+            "These names come from the planning data and must match the manifest exactly:\n"
+            + "\n".join(param_lines)
+            + "\n\nDo NOT add a prefix like 'input.' or rename any parameter for any reason."
+        )
+
+    # Error history
+    if deps.error_history:
+        history_lines = ["Previous attempt errors (avoid repeating these mistakes):"]
+        for i, err in enumerate(deps.error_history, 1):
+            history_lines.append(f"\nAttempt {i} error:\n{err}")
+        lines.append("\n\n" + "\n".join(history_lines))
+
+    # Downstream escalation
+    if deps.downstream_error_context:
+        lines.append(
+            "\n\n⚠️  CROSS-ARTIFACT ESCALATION — READ CAREFULLY ⚠️\n"
+            "This artifact is being RE-GENERATED because a DOWNSTREAM artifact failed "
+            "with an error traced back to THIS artifact as the root cause.\n\n"
+            + deps.downstream_error_context
+            + "\n\nYou MUST address the issue described above. Do NOT reproduce the previous version."
+        )
+
+    return "\n".join(lines)
 
 
 @wrapper_agent.tool
-def validate_wrapper(context: RunContext[str], script_path: str, parameters: List[str] = None) -> str:
+def validate_wrapper(context: RunContext[ArtifactDeps], script_path: str, parameters: List[str] = None) -> str:
     """
     Validate GenePattern wrapper scripts.
 
@@ -200,7 +292,7 @@ def validate_wrapper(context: RunContext[str], script_path: str, parameters: Lis
 
 
 @wrapper_agent.tool
-def analyze_wrapper_requirements(context: RunContext[str], tool_info: Dict[str, Any], parameters: List[Dict[str, Any]] = None, execution_environment: str = "container") -> str:
+def analyze_wrapper_requirements(context: RunContext[ArtifactDeps], tool_info: Dict[str, Any], parameters: List[Dict[str, Any]] = None, execution_environment: str = "container") -> str:
     """
     Analyze tool information to determine optimal wrapper script requirements and implementation strategy.
     
@@ -389,7 +481,7 @@ def analyze_wrapper_requirements(context: RunContext[str], tool_info: Dict[str, 
 
 
 @wrapper_agent.tool
-def generate_wrapper_structure(context: RunContext[str], language: str, parameters: List[Dict[str, Any]], tool_command: str) -> str:
+def generate_wrapper_structure(context: RunContext[ArtifactDeps], language: str, parameters: List[Dict[str, Any]], tool_command: str) -> str:
     """
     Generate the basic structure and key components for a wrapper script in the specified language.
     
@@ -649,7 +741,7 @@ def generate_wrapper_structure(context: RunContext[str], language: str, paramete
 
 
 @wrapper_agent.tool
-def optimize_wrapper_performance(context: RunContext[str], wrapper_content: str, performance_goals: List[str] = None) -> str:
+def optimize_wrapper_performance(context: RunContext[ArtifactDeps], wrapper_content: str, performance_goals: List[str] = None) -> str:
     """
     Analyze wrapper script content and suggest performance optimizations and best practices.
     
@@ -830,7 +922,7 @@ def optimize_wrapper_performance(context: RunContext[str], wrapper_content: str,
 
 
 @wrapper_agent.tool
-def create_wrapper(context: RunContext[str]) -> str:
+def create_wrapper(context: RunContext[ArtifactDeps]) -> str:
     """
     Generate a comprehensive wrapper script for the GenePattern module using planning data.
 
@@ -848,10 +940,10 @@ def create_wrapper(context: RunContext[str]) -> str:
         in this scaffold must be preserved verbatim in the final wrapper.
     """
     # Extract data from context dependencies
-    tool_info = context.deps.get('tool_info', {})
-    planning_data = context.deps.get('planning_data', {})
-    error_report = context.deps.get('error_report', '')
-    attempt = context.deps.get('attempt', 1)
+    tool_info = context.deps.tool_info
+    planning_data = context.deps.planning_data or {}
+    error_report = context.deps.error_report
+    attempt = context.deps.attempt
 
     print(f"🔧 WRAPPER TOOL: Running create_wrapper (attempt {attempt})")
 

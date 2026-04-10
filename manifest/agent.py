@@ -1,8 +1,11 @@
 import re
+from pathlib import Path
 from typing import Dict, Any, List
 from pydantic_ai import Agent, RunContext
+from pydantic_ai_skills import SkillsToolset
 from dotenv import load_dotenv
-from agents.models import configured_llm_model
+from agents.models import configured_llm_model, ArtifactDeps
+from manifest.models import ManifestModel
 
 
 # Load environment variables from .env file
@@ -93,12 +96,66 @@ CRITICAL FLAG NAMING RULE:
   instead of dots causes a fatal mismatch at runtime.
 """
 
+# Skills toolset: loads only the gp-manifest skill
+_MANIFEST_SKILL_DIR = Path(__file__).parent.parent / "skills" / "gp-manifest"
+_manifest_skills = SkillsToolset(directories=[str(_MANIFEST_SKILL_DIR)], exclude_tools={'list_skills', 'read_skill_resource', 'run_skill_script'})
+
 # Create agent without MCP toolsets - validation happens separately via generate-module.py
-manifest_agent = Agent(configured_llm_model(), system_prompt=system_prompt)
+manifest_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ManifestModel, deps_type=ArtifactDeps, toolsets=[_manifest_skills])
+
+
+@manifest_agent.instructions
+def manifest_context_instructions(ctx: RunContext[ArtifactDeps]) -> str:
+    """Inject per-call context into the manifest agent's instructions."""
+    deps = ctx.deps
+    tool_info = deps.tool_info
+    planning_data = deps.planning_data or {}
+
+    lines = []
+    lines.append(
+        f"You are generating the MANIFEST artifact for GenePattern module '{tool_info.get('name', 'unknown')}'. "
+        f"This is attempt {deps.attempt} of {deps.max_loops}.\n\n"
+        f"Tool Information:\n"
+        f"- Name: {tool_info.get('name', 'unknown')}\n"
+        f"- Version: {tool_info.get('version', '1.0')}\n"
+        f"- Language: {tool_info.get('language', 'unknown')}\n"
+        f"- Description: {tool_info.get('description', 'Bioinformatics analysis tool')}\n"
+        f"- Repository: {tool_info.get('repository_url', '')}"
+    )
+
+    if tool_info.get('instructions'):
+        lines.append(f"\nAdditional Instructions (IMPORTANT):\n{tool_info['instructions']}")
+
+    if deps.example_data:
+        ex_lines = ["\nExample Data Provided (for cross-check only):"]
+        for item in deps.example_data:
+            kind = "URL" if item.get('is_url') else "local file"
+            hint = f" [hint: {item['hint']}]" if item.get('hint') else ""
+            ex_lines.append(f"- {item.get('filename', '')} ({item.get('extension', '')}) — {kind}{hint}")
+        ex_lines.append("Confirm that the fileFormat field on the relevant input parameter(s) includes this extension.")
+        ex_lines.append("Where a [hint: ...] is shown, match each file to the correct parameter.")
+        lines.append("\n".join(ex_lines))
+
+    if deps.error_history:
+        history_lines = ["Previous attempt errors (avoid repeating these mistakes):"]
+        for i, err in enumerate(deps.error_history, 1):
+            history_lines.append(f"\nAttempt {i} error:\n{err}")
+        lines.append("\n" + "\n".join(history_lines))
+
+    if deps.downstream_error_context:
+        lines.append(
+            "\n⚠️  CROSS-ARTIFACT ESCALATION — READ CAREFULLY ⚠️\n"
+            "This artifact is being RE-GENERATED because a DOWNSTREAM artifact failed "
+            "with an error traced back to THIS artifact as the root cause.\n\n"
+            + deps.downstream_error_context
+            + "\n\nYou MUST address the issue described above. Do NOT reproduce the previous version."
+        )
+
+    return "\n".join(lines)
 
 
 @manifest_agent.tool
-def validate_manifest(context: RunContext[str], path: str) -> str:
+def validate_manifest(context: RunContext[ArtifactDeps], path: str) -> str:
     """
     Validate GenePattern manifest files.
 
@@ -152,7 +209,7 @@ def validate_manifest(context: RunContext[str], path: str) -> str:
 
 
 @manifest_agent.tool
-def analyze_module_metadata(context: RunContext[str], tool_name: str, tool_info: Dict[str, Any], parameters: List[Dict[str, Any]] = None) -> str:
+def analyze_module_metadata(context: RunContext[ArtifactDeps], tool_name: str, tool_info: Dict[str, Any], parameters: List[Dict[str, Any]] = None) -> str:
     """
     Analyze module information to determine appropriate manifest metadata and structure.
     
@@ -279,7 +336,7 @@ def analyze_module_metadata(context: RunContext[str], tool_name: str, tool_info:
 
 
 @manifest_agent.tool
-def generate_manifest_content(context: RunContext[str], manifest_data: Dict[str, str]) -> str:
+def generate_manifest_content(context: RunContext[ArtifactDeps], manifest_data: Dict[str, str]) -> str:
     """
     Generate a complete manifest file content from provided key-value data.
     
@@ -369,7 +426,7 @@ def generate_manifest_content(context: RunContext[str], manifest_data: Dict[str,
 
 
 @manifest_agent.tool
-def optimize_command_line_template(context: RunContext[str], current_command: str, parameters: List[Dict[str, Any]], tool_info: Dict[str, Any] = None) -> str:
+def optimize_command_line_template(context: RunContext[ArtifactDeps], current_command: str, parameters: List[Dict[str, Any]], tool_info: Dict[str, Any] = None) -> str:
     """
     Analyze and optimize a command line template for better GenePattern integration.
     
@@ -505,7 +562,7 @@ def optimize_command_line_template(context: RunContext[str], current_command: st
 
 
 @manifest_agent.tool
-def create_manifest(context: RunContext[str]) -> Dict[str, Any]:
+def create_manifest(context: RunContext[ArtifactDeps]) -> Dict[str, Any]:
     """
     Generate a complete manifest file for the GenePattern module.
     
@@ -516,10 +573,10 @@ def create_manifest(context: RunContext[str]) -> Dict[str, Any]:
         Dictionary with manifest fields ready to be converted to ManifestModel
     """
     # Extract data from context dependencies
-    tool_info = context.deps.get('tool_info', {})
-    planning_data = context.deps.get('planning_data', {})
-    error_report = context.deps.get('error_report', '')
-    attempt = context.deps.get('attempt', 1)
+    tool_info = context.deps.tool_info
+    planning_data = context.deps.planning_data or {}
+    error_report = context.deps.error_report
+    attempt = context.deps.attempt
 
     print(f"📋 MANIFEST TOOL: Running create_manifest (attempt {attempt})")
     
@@ -537,69 +594,16 @@ def create_manifest(context: RunContext[str]) -> Dict[str, Any]:
             print(f"✓ User provided instructions: {tool_instructions[:100]}...")
 
         # Parse planning_data to extract structured information
-        planning_dict = {}
-        if planning_data:
-            # Handle both dict and string inputs
-            if isinstance(planning_data, dict):
-                planning_dict = planning_data
-                print("✓ Using planning_data as dict")
-            elif isinstance(planning_data, str):
-                # Try multiple parsing strategies
-                try:
-                    planning_dict = json.loads(planning_data)
-                    print("✓ Parsed planning_data as JSON")
-                except:
-                    try:
-                        planning_dict = ast.literal_eval(planning_data)
-                        print("✓ Parsed planning_data as Python literal")
-                    except:
-                        try:
-                            # More robust quote replacement
-                            fixed = planning_data.replace("'", '"')
-                            # Handle None, True, False
-                            fixed = fixed.replace('None', 'null').replace('True', 'true').replace('False', 'false')
-                            planning_dict = json.loads(fixed)
-                            print("✓ Parsed planning_data as fixed JSON")
-                        except Exception as e:
-                            print(f"⚠️ MANIFEST TOOL: All parsing strategies failed: {str(e)[:100]}")
-                            planning_dict = {}
+        planning_dict: Dict[str, Any] = planning_data if isinstance(planning_data, dict) else {}
+        if not planning_dict:
+            print("⚠️ MANIFEST TOOL: planning_data is empty or None")
 
-        # Extract tool info - handle both dict and string
-        if isinstance(tool_info, dict):
-            tool_name = tool_info.get('name', 'UnknownTool')
-            tool_version = tool_info.get('version', '1.0')
-            tool_language = tool_info.get('language', 'unknown')
-            tool_description = tool_info.get('description', 'Bioinformatics analysis tool')
-        elif isinstance(tool_info, str):
-            # Try to parse as dict first
-            try:
-                if tool_info.startswith('{'):
-                    tool_info_dict = ast.literal_eval(tool_info)
-                    tool_name = tool_info_dict.get('name', 'UnknownTool')
-                    tool_version = tool_info_dict.get('version', '1.0')
-                    tool_language = tool_info_dict.get('language', 'unknown')
-                    tool_description = tool_info_dict.get('description', 'Bioinformatics analysis tool')
-                else:
-                    raise ValueError("Not a dict")
-            except:
-                # Fall back to regex
-                tool_name = re.search(r"'name':\s*'([^']+)'", tool_info)
-                tool_name = tool_name.group(1) if tool_name else "UnknownTool"
+        # Extract tool info from the typed dict
+        tool_name = tool_info.get('name', 'UnknownTool')
+        tool_version = tool_info.get('version', '1.0')
+        tool_language = tool_info.get('language', 'unknown')
+        tool_description = tool_info.get('description', 'Bioinformatics analysis tool')
 
-                tool_version = re.search(r"'version':\s*'([^']+)'", tool_info)
-                tool_version = tool_version.group(1) if tool_version else "1.0"
-
-                tool_language = re.search(r"'language':\s*'([^']+)'", tool_info)
-                tool_language = tool_language.group(1) if tool_language else "unknown"
-
-                tool_description = re.search(r"'description':\s*'([^']+)'", tool_info)
-                tool_description = tool_description.group(1) if tool_description else "Bioinformatics analysis tool"
-        else:
-            tool_name = "UnknownTool"
-            tool_version = "1.0"
-            tool_language = "unknown"
-            tool_description = "Bioinformatics analysis tool"
-        
         # USE PLANNING DATA - Override with planning data if available
         if planning_dict:
             # Use module_name from planning_data if available

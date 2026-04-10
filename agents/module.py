@@ -20,9 +20,30 @@ from agents.error_classifier import (
     classify_error, should_escalate,
     get_upstream_dependencies, _sanitize_error_line, RootCause,
 )
+
+# Shared list of error indicator strings used when extracting key errors from
+# verbose build/runtime output.  Single definition eliminates the copy-paste
+# that previously appeared in multiple places inside artifact_creation_loop.
+ERROR_INDICATORS = [
+    'E: Unable to locate package', 'E: Package',
+    'ERROR:', 'error:', 'No such file or directory',
+    'ModuleNotFoundError', 'ImportError', 'command not found',
+    'exit code:', 'executor failed', 'FAILED',
+    'the following arguments are required:', 'usage:',
+    'unrecognized arguments', 'TypeError:',
+    'has no matching flag',
+    'unexpected end of statement', 'failed to process',
+    'file not found in build context',
+    'file does not exist',
+    'COPY failed:',
+    'failed to solve:',
+    'USER ERROR', 'A USER ERROR has occurred',
+    'Exception in thread', 'java.lang.', 'java.io.',
+    'htsjdk.', 'org.broadinstitute.',
+]
 from agents.example_data import ExampleDataItem
 from agents.logger import Logger
-from agents.models import ArtifactModel
+from agents.models import ArtifactModel, ArtifactDeps
 from agents.planner import planner_agent, ModulePlan
 from agents.researcher import researcher_agent
 from agents.status import ArtifactResult, ModuleGenerationStatus
@@ -210,25 +231,28 @@ class ModuleAgent:
             with open(status_path, 'r') as f:
                 data = json.load(f)
 
-            # Reconstruct ModulePlan from dict if present
+            # Reconstruct ModulePlan from dict if present, then inject it after validation
             planning_data = None
             if data.get('planning_data') and data['planning_data']:
                 planning_data = ModulePlan(**data['planning_data'])
 
-            # Create status object with token counts
-            status = ModuleGenerationStatus(
-                tool_name=data['tool_name'],
-                module_directory=data['module_directory'],
-                research_data=data.get('research_data'),
-                planning_data=planning_data,
-                artifacts_status=data.get('artifacts_status', {}),
-                error_messages=data.get('error_messages', []),
-                input_tokens=data.get('input_tokens', 0),
-                output_tokens=data.get('output_tokens', 0),
-                example_data=[ExampleDataItem.from_dict(d) for d in data.get('example_data', [])],
-                escalation_counts=data.get('escalation_counts', {}),
-                escalation_log=data.get('escalation_log', []),
-            )
+            # Reconstruct ExampleDataItem objects
+            example_data = [ExampleDataItem.from_dict(d) for d in data.get('example_data', [])]
+
+            # Build the status via model_validate, then fix up non-JSON-native fields
+            status = ModuleGenerationStatus.model_validate({
+                'tool_name': data['tool_name'],
+                'module_directory': data['module_directory'],
+                'research_data': data.get('research_data', {}),
+                'artifacts_status': data.get('artifacts_status', {}),
+                'error_messages': data.get('error_messages', []),
+                'input_tokens': data.get('input_tokens', 0),
+                'output_tokens': data.get('output_tokens', 0),
+                'escalation_counts': data.get('escalation_counts', {}),
+                'escalation_log': data.get('escalation_log', []),
+            })
+            status.planning_data = planning_data
+            status.example_data = example_data
 
             self.logger.print_status(f"Loaded status from {status_path}")
             return status
@@ -451,21 +475,6 @@ class ModuleAgent:
                 lines.append(f"\nAttempt {i} error:\n{err}")
             return "\n".join(lines)
 
-        def build_downstream_error_section() -> str:
-            """Build a prompt section explaining why this artifact is being re-generated
-            due to a downstream failure (cross-artifact escalation)."""
-            if not downstream_error_context:
-                return ""
-            return (
-                "\n\n⚠️  CROSS-ARTIFACT ESCALATION — READ CAREFULLY ⚠️\n"
-                "This artifact is being RE-GENERATED because a DOWNSTREAM artifact failed "
-                "with an error that was traced back to THIS artifact as the root cause.\n\n"
-                f"{downstream_error_context}\n\n"
-                "You MUST address the issue described above in your new version of this artifact. "
-                "Do NOT simply reproduce the previous version — make targeted changes to fix "
-                "the downstream failure.\n"
-            )
-
         for attempt in range(1, max_loops + 1):
             try:
                 self.logger.print_status(f"Generating {artifact_name} (attempt {attempt}/{max_loops})")
@@ -479,173 +488,20 @@ class ModuleAgent:
                 # always reflected in what the LLM tool receives.
                 planning_data_dict = planning_data.model_dump(mode='json')
                 example_data: List[ExampleDataItem] = status.example_data or []
-                downstream_section = build_downstream_error_section()
 
-                if artifact_name == 'manifest':
-                    instructions_section = ""
-                    if tool_info.get('instructions'):
-                        instructions_section = f"\n\nAdditional Instructions (IMPORTANT):\n{tool_info['instructions']}\n"
+                # Serialize example_data for ArtifactDeps
+                example_data_dicts = [item.to_dict() for item in example_data]
 
-                    example_data_section = ""
-                    if example_data:
-                        lines = ["\nExample Data Provided (for cross-check only):"]
-                        for item in example_data:
-                            kind = "URL" if item.is_url else "local file"
-                            lines.append(f"- {item.filename} ({item.extension}) — {kind}{item.hint_label}")
-                        lines.append("Confirm that the fileFormat field on the relevant input parameter(s) includes")
-                        lines.append("this extension. Do NOT replace the full format list with only this extension —")
-                        lines.append("all formats the tool legitimately supports must remain present.")
-                        lines.append("Where a [hint: ...] is shown, use it to match each file to the correct")
-                        lines.append("parameter (e.g. 'tumor_sample' → tumor BAM parameter, 'reference' → reference")
-                        lines.append("FASTA parameter, 'germline_resource' → germline VCF parameter).")
-                        example_data_section = "\n".join(lines)
+                # Build error history list for this artifact
+                all_errors = status.artifacts_status[artifact_name].get('errors', [])
 
-                    error_history = build_error_history()
-                    prompt = f"""Generate a complete GenePattern module manifest for {tool_info['name']}.
-
-Tool Information:
-- Name: {tool_info['name']}
-- Version: {tool_info.get('version', '1.0')}
-- Language: {tool_info.get('language', 'unknown')}
-- Description: {tool_info.get('description', 'Bioinformatics analysis tool')}
-- Repository: {tool_info.get('repository_url', '')}{instructions_section}
-
-Planning Data:
-{planning_data_dict}
-
-{error_history if error_history else ""}
-{downstream_section}
-This is attempt {attempt} of {max_loops}.
-{example_data_section}
-Generate a complete, valid manifest file in key=value format."""
-
-                elif artifact_name == 'gpunit':
-                    instructions_section = ""
-                    if tool_info.get('instructions'):
-                        instructions_section = f"\n\nIMPORTANT - Additional Instructions:\n{tool_info['instructions']}\n"
-
-                    example_data_section = ""
-                    if example_data:
-                        local_items = [item for item in example_data if item.has_local]
-                        if local_items:
-                            lines = ["\nExample Data for Test Parameters:"]
-                            for item in local_items:
-                                hint_suffix = f"  # {item.hint}" if item.hint else ""
-                                lines.append(f"- {item.local_path}  (use as the value for the matching file input parameter){hint_suffix}")
-                            lines.append("Use these exact local paths as parameter values in the test YAML.")
-                            lines.append("Where a comment shows a hint (e.g. '# tumor_sample'), use it to identify")
-                            lines.append("which parameter this file corresponds to.")
-                            lines.append("For all other parameters (numeric, text, choice), use sensible default or")
-                            lines.append("representative values. Do not invent placeholder strings like '<path_to_input>'.")
-                            example_data_section = "\n".join(lines)
-
-                    error_history = build_error_history()
-                    prompt = f"""Generate the {artifact_name} artifact for the GenePattern module '{tool_info['name']}'.
-
-{error_history if error_history else ""}
-{downstream_section}
-This is attempt {attempt} of {max_loops}.{instructions_section}{example_data_section}
-
-Call the {create_method} tool with the following parameters:
-- tool_info: Use the tool information provided
-- planning_data: Use the planning data provided
-- error_report: {repr(error_report)}
-- attempt: {attempt}.
-Make sure the generated artifact follows all guidelines, key requirements and critical rules and edit what the tool gave you as needed."""
-
-                elif artifact_name == 'paramgroups':
-                    instructions_section = ""
-                    if tool_info.get('instructions'):
-                        instructions_section = f"\n\nIMPORTANT - Additional Instructions:\n{tool_info['instructions']}\n"
-
-                    example_data_section = ""
-                    distinct_exts = list(dict.fromkeys(
-                        item.extension for item in example_data if item.extension
-                    ))
-                    if len(distinct_exts) >= 2:
-                        lines = ["\nExample Data Provided:"]
-                        for item in example_data:
-                            kind = "URL" if item.is_url else "local file"
-                            lines.append(f"- {item.filename} ({item.extension}) — {kind}{item.hint_label}")
-                        lines.append("These files represent distinct input roles. When grouping parameters, keep")
-                        lines.append("parameters that correspond to related input files in the same logical group")
-                        lines.append("(e.g., place a counts matrix and metadata file parameters together in an")
-                        lines.append("'Input Files' group rather than splitting them across unrelated groups).")
-                        lines.append("Where a [hint: ...] is shown, use it to understand the semantic role of each")
-                        lines.append("file when deciding how to group its corresponding parameter.")
-                        example_data_section = "\n".join(lines)
-
-                    error_history = build_error_history()
-                    prompt = f"""Generate the {artifact_name} artifact for the GenePattern module '{tool_info['name']}'.
-
-{error_history if error_history else ""}
-{downstream_section}
-This is attempt {attempt} of {max_loops}.{instructions_section}{example_data_section}
-
-Call the {create_method} tool with the following parameters:
-- tool_info: Use the tool information provided
-- planning_data: Use the planning data provided
-- error_report: {repr(error_report)}
-- attempt: {attempt}.
-Make sure the generated artifact follows all guidelines, key requirements and critical rules and edit what the tool gave you as needed."""
-
-                elif artifact_name == 'dockerfile':
-                    instructions_section = ""
-                    if tool_info.get('instructions'):
-                        instructions_section = f"\n\nIMPORTANT - Additional Instructions:\n{tool_info['instructions']}\n"
-
-                    example_data_section = ""
-                    local_items = [item for item in example_data if item.has_local]
-                    if local_items:
-                        lines = ["\nExample Data for Runtime Validation:"]
-                        for item in local_items:
-                            hint_suffix = f"  # role: {item.hint}" if item.hint else ""
-                            lines.append(f"- {item.local_path} (will be bind-mounted into the container as /data/{item.filename}){hint_suffix}")
-                        lines.append("After the image is built, a runtime command will be run using this file")
-                        lines.append("bind-mounted into the container — no network access or download utilities")
-                        lines.append("(wget, curl) are needed inside the image for this test. Ensure all dependencies")
-                        lines.append("needed to process this file type are installed. Do NOT assume the module only")
-                        lines.append("handles this format — install support for all formats the tool accepts.")
-                        example_data_section = "\n".join(lines)
-
-                    wrapper_source_section = ""
-                    _wrapper_script = planning_data.wrapper_script or 'wrapper.py'
-                    _wrapper_path = module_path / _wrapper_script
-                    if _wrapper_path.exists():
-                        try:
-                            _wrapper_src = _wrapper_path.read_text(encoding='utf-8', errors='replace')
-                            wrapper_source_section = (
-                                f"\n\nWrapper Script ({_wrapper_script}) — use this to determine "
-                                f"which packages must be installed in the image:\n"
-                                f"```\n{_wrapper_src}\n```"
-                            )
-                        except Exception as _we:
-                            self.logger.print_status(f"Could not read wrapper for dockerfile prompt: {_we}", "WARNING")
-
+                # For dockerfile, truncate each error entry for readability
+                if artifact_name == 'dockerfile':
                     def _truncate_error_report(raw: str, max_tail: int = 50) -> str:
                         """Return structured error lines + last `max_tail` lines of raw output."""
-                        error_indicators = [
-                            'E: Unable to locate package', 'E: Package',
-                            'ERROR:', 'error:', 'No such file or directory',
-                            'ModuleNotFoundError', 'ImportError', 'command not found',
-                            'exit code:', 'executor failed', 'FAILED',
-                            'the following arguments are required:', 'usage:',
-                            'unrecognized arguments', 'TypeError:',
-                            'has no matching flag',
-                            'unexpected end of statement', 'failed to process',
-                            # Docker COPY source missing (BuildKit and classic)
-                            'file not found in build context',
-                            'file does not exist',
-                            'COPY failed:',
-                            'failed to solve:',
-                            # GATK / Java runtime errors
-                            'USER ERROR', 'A USER ERROR has occurred',
-                            'Exception in thread', 'java.lang.', 'java.io.',
-                            'htsjdk.', 'org.broadinstitute.',
-                        ]
                         extracted = []
                         for ln in raw.splitlines():
-                            if any(ind in ln for ind in error_indicators):
+                            if any(ind in ln for ind in ERROR_INDICATORS):
                                 sanitized = _sanitize_error_line(ln)
                                 if sanitized and sanitized not in extracted:
                                     extracted.append(sanitized)
@@ -655,261 +511,46 @@ Make sure the generated artifact follows all guidelines, key requirements and cr
                             parts.append("KEY ERRORS:\n" + "\n".join(f"  - {e}" for e in extracted))
                         parts.append("LAST 50 LINES OF OUTPUT:\n" + "\n".join(tail_lines))
                         return "\n\n".join(parts)
-
-                    all_errors = status.artifacts_status[artifact_name].get('errors', [])
-                    error_history_section = ""
-                    if all_errors:
-                        history_parts = ["Previous attempt errors (do NOT repeat these mistakes):"]
-                        for i, prev_err in enumerate(all_errors, 1):
-                            truncated = _truncate_error_report(prev_err)
-                            history_parts.append(f"\n--- Attempt {i} error ---\n{truncated}")
-                        error_history_section = "\n".join(history_parts)
-
-                    structured_errors_section = ""
-                    if error_report:
-                        error_indicators = [
-                            'E: Unable to locate package', 'E: Package',
-                            'ERROR:', 'error:', 'No such file or directory',
-                            'ModuleNotFoundError', 'ImportError', 'command not found',
-                            'exit code:', 'executor failed', 'FAILED',
-                            'the following arguments are required:', 'usage:',
-                            'unrecognized arguments', 'TypeError:',
-                            'has no matching flag',
-                            'unexpected end of statement', 'failed to process',
-                            # Docker COPY source missing (BuildKit and classic)
-                            'file not found in build context',
-                            'file does not exist',
-                            'COPY failed:',
-                            'failed to solve:',
-                            # GATK / Java runtime errors
-                            'USER ERROR', 'A USER ERROR has occurred',
-                            'Exception in thread', 'java.lang.', 'java.io.',
-                            'htsjdk.', 'org.broadinstitute.',
-                        ]
-                        extracted = []
-                        for line in error_report.splitlines():
-                            if any(ind in line for ind in error_indicators):
-                                sanitized = _sanitize_error_line(line)
-                                if sanitized and sanitized not in extracted:
-                                    extracted.append(sanitized)
-                        if extracted:
-                            structured_errors_section = "\n\nKEY ERRORS FROM MOST RECENT ATTEMPT (fix these specifically):\n"
-                            structured_errors_section += "\n".join(f"  - {e}" for e in extracted)
-                            structured_errors_section += (
-                                "\n\nBefore writing apt-get install commands, use the verify_apt_packages tool "
-                                "to confirm every package name is valid. If a package is not found, search for "
-                                "the correct name before using it."
-                            )
-                            # ── COPY source missing ──────────────────────────────────────────
-                            _copy_missing_indicators = (
-                                'file not found in build context',
-                                'file does not exist',
-                                'COPY failed:',
-                            )
-                            if any(ind in e for e in extracted for ind in _copy_missing_indicators):
-                                # Extract the filename Docker complained about, if present.
-                                # BuildKit: "stat <name>: file does not exist"
-                                # Classic:  "COPY failed: … stat <name>: no such file or directory"
-                                import re as _re
-                                _copy_filenames = _re.findall(
-                                    r'stat\s+([\w./-]+)\s*:', error_report
-                                )
-                                _filename_hint = ""
-                                if _copy_filenames:
-                                    _copy_filenames = list(dict.fromkeys(_copy_filenames))
-                                    _filename_hint = (
-                                        f" Docker reported the missing file(s) as: "
-                                        f"{', '.join(_copy_filenames)}."
-                                    )
-                                structured_errors_section += (
-                                    "\n\nDOCKER BUILD FAILED — COPY SOURCE FILE NOT FOUND:"
-                                    f"{_filename_hint}"
-                                    "\nThe Dockerfile contains a COPY instruction that references a file"
-                                    " which does not exist in the build context (the module directory)."
-                                    " This is a filename mismatch, NOT a package problem."
-                                    " DO NOT change apt-get install lines to fix this."
-                                    "\nTo fix:"
-                                    "\n  1. Check the wrapper script filename that was actually generated"
-                                    " (look at the 'Wrapper Script' section above for the real filename)."
-                                    "\n  2. Update the COPY instruction to use that exact filename"
-                                    " (e.g. 'COPY wrapper.py /module/wrapper.py')."
-                                    "\n  3. Ensure the WORKDIR and COPY destination are consistent so"
-                                    " 'python wrapper.py' resolves correctly inside the container."
-                                )
-                            if any('the following arguments are required' in e or 'usage:' in e or 'unrecognized arguments' in e.lower() for e in extracted):
-                                structured_errors_section += (
-                                    "\n\nThe runtime test command failed because the manifest commandLine passes "
-                                    "argument names that do not match what the wrapper's argparse declares. "
-                                    "The manifest's pN_name values and commandLine template are the source of "
-                                    "truth for flag names — the wrapper's add_argument() calls MUST use the "
-                                    "exact same dot-notation names (e.g. '--intervals.file' not '--intervals'). "
-                                    "Check the usage: line in the error for the wrapper's actual flag names, "
-                                    "then either (a) fix the wrapper to accept the manifest's flag names, or "
-                                    "(b) fix the manifest commandLine to use the wrapper's actual flag names."
-                                )
-                            if any('unexpected end of statement' in e or 'failed to process' in e for e in extracted):
-                                structured_errors_section += (
-                                    "\n\nDOCKERFILE SYNTAX ERROR: A RUN instruction contains an unmatched quote or "
-                                    "shell metacharacter. Do NOT use double-quoted strings in RUN echo or comment "
-                                    "lines. Use single quotes or no quotes. Check every RUN instruction for "
-                                    "unbalanced double-quotes."
-                                )
-                            if any("'type' object is not subscriptable" in e for e in extracted):
-                                structured_errors_section += (
-                                    "\n\nPYTHON VERSION INCOMPATIBILITY: The wrapper uses built-in generic type "
-                                    "annotations (e.g. list[str], dict[str, int]) that require Python 3.9+. "
-                                    "The container's Python version is older. The wrapper must be fixed by "
-                                    "adding 'from __future__ import annotations' as the very first import, "
-                                    "OR by replacing bare built-in generics with typing module equivalents "
-                                    "(e.g. List[str], Dict[str, int], Optional[str] from 'from typing import ...')."
-                                )
-                            if any('has no matching flag in the wrapper' in e for e in extracted):
-                                structured_errors_section += (
-                                    "\n\nMANIFEST/WRAPPER CONSISTENCY ERROR: The manifest declares parameter "
-                                    "names (pN_name=...) that do not match any add_argument() flag in the "
-                                    "wrapper script. The error lines above list the exact parameter names that "
-                                    "are mismatched and what flags the wrapper actually declares. "
-                                    "You MUST use the wrapper's actual flag names as the manifest pN_name "
-                                    "values (e.g. if the wrapper has '--input.tumor.bam', the manifest must "
-                                    "have pN_name=input.tumor.bam). Do NOT invent new parameter names. "
-                                    "The wrapper's declared flags are shown in the error: "
-                                    "'Wrapper declares: --flag1, --flag2, ...'. "
-                                    "Every pN_name in the manifest must appear in that list."
-                                )
-
-                    _base_image_constraint = ""
-                    if tool_info.get('base_image'):
-                        _base_image_constraint = (
-                            f"\n\n🚫 IMMUTABLE BASE IMAGE CONSTRAINT 🚫\n"
-                            f"The user has explicitly specified the base Docker image:\n"
-                            f"  FROM {tool_info['base_image']}\n"
-                            f"You MUST use this EXACT image in the FROM instruction.\n"
-                            f"Do NOT substitute a different version (e.g. do not upgrade from 4.1.4.1 to 4.6.1.0).\n"
-                            f"This constraint applies to ALL retry attempts — changing the base image to fix\n"
-                            f"test failures is FORBIDDEN. Fix test failures by other means (e.g. add tabix,\n"
-                            f"adjust entrypoint logic, fix wrapper args) while keeping the FROM line unchanged."
-                        )
-
-                    prompt = f"""Generate the {artifact_name} artifact for the GenePattern module '{tool_info['name']}'.
-{wrapper_source_section}
-{error_history_section if error_history_section else ""}
-{structured_errors_section}
-{downstream_section}
-This is attempt {attempt} of {max_loops}.{instructions_section}{example_data_section}{_base_image_constraint}
-
-Call the {create_method} tool with the following parameters:
-- wrapper_source: Pass the FULL wrapper script source shown above in the "Wrapper Script" section (pass an empty string if no wrapper source was shown).
-- error_report: {repr(error_report)}
-- attempt: {attempt}.
-The tool will parse the wrapper's import statements programmatically to determine the correct pip/R packages to install.
-Make sure the generated artifact follows all guidelines, key requirements and critical rules and edit what the tool gave you as needed."""
-
-                elif artifact_name == 'wrapper':
-                    instructions_section = ""
-                    if tool_info.get('instructions'):
-                        instructions_section = f"\n\nIMPORTANT - Additional Instructions:\n{tool_info['instructions']}\n"
-
-                    # Determine the wrapper language explicitly so the LLM cannot
-                    # oscillate between bash and Python across retry attempts.
-                    _tool_lang = tool_info.get('language', 'python').lower()
-                    _jvm_langs = {'java', 'scala', 'groovy', 'kotlin'}
-                    if _tool_lang in _jvm_langs:
-                        _wrapper_lang = 'bash'
-                        _wrapper_lang_rationale = (
-                            f"The tool is implemented in {tool_info.get('language', 'Java')}. "
-                            "GenePattern wrappers for JVM-based tools MUST be written as bash scripts "
-                            "that invoke the tool via its command-line interface (e.g. `gatk`, `java -jar`). "
-                            "Do NOT write a Java, Python, or any other language wrapper."
-                        )
-                    elif _tool_lang == 'r':
-                        _wrapper_lang = 'R'
-                        _wrapper_lang_rationale = "The tool is R-based; write an R wrapper script."
-                    elif _tool_lang in ('bash', 'shell'):
-                        _wrapper_lang = 'bash'
-                        _wrapper_lang_rationale = "The tool is shell-based; write a bash wrapper script."
-                    else:
-                        _wrapper_lang = 'python'
-                        _wrapper_lang_rationale = "Write a Python wrapper script using argparse and subprocess."
-
-                    _wrapper_script_name = planning_data_dict.get('wrapper_script', filename)
-                    wrapper_language_section = (
-                        f"\n\n🔒 WRAPPER LANGUAGE IS FIXED — DO NOT CHANGE THIS 🔒\n"
-                        f"You MUST write this wrapper as a {_wrapper_lang.upper()} script.\n"
-                        f"Rationale: {_wrapper_lang_rationale}\n"
-                        f"The output file will be saved as '{_wrapper_script_name}'. "
-                        f"Its shebang line and syntax MUST match {_wrapper_lang.upper()}.\n"
-                        f"This constraint applies to ALL retry attempts — do not switch languages to fix errors.\n"
-                    )
-
-                    # Build an explicit list of parameter names from planning data so the
-                    # LLM cannot silently substitute its own names.
-                    param_names_section = ""
-                    planned_params = planning_data_dict.get('parameters', [])
-                    if planned_params:
-                        param_lines_list = []
-                        for p in planned_params:
-                            pname = p.get('name', '?') if isinstance(p, dict) else getattr(p, 'name', '?')
-                            ptype = p.get('type', 'text') if isinstance(p, dict) else getattr(p, 'type', 'text')
-                            preq  = p.get('required', False) if isinstance(p, dict) else getattr(p, 'required', False)
-                            req_label = 'required' if preq else 'optional'
-                            param_lines_list.append(f"  - {pname} ({ptype}, {req_label})")
-                        param_names_section = (
-                            "\n\n⚠️  PARAMETER NAMES ARE FIXED — DO NOT RENAME THEM ⚠️\n"
-                            "The wrapper MUST use EXACTLY the following parameter names as CLI flags "
-                            "(e.g. --tumor.bam, not --input.tumor.bam; --reference, not --reference.fasta). "
-                            "These names come from the planning data and must match the manifest exactly:\n"
-                            + "\n".join(param_lines_list)
-                            + "\n\nDo NOT add a prefix like 'input.' or rename any parameter for any reason. "
-                            "The create_wrapper tool will generate a scaffold using these exact names — "
-                            "preserve them as-is in the final wrapper.\n"
-                        )
-
-                    error_history = build_error_history()
-                    prompt = f"""Generate the wrapper artifact for the GenePattern module '{tool_info['name']}'.
-{wrapper_language_section}
-{param_names_section}
-{error_history if error_history else ""}
-{downstream_section}
-This is attempt {attempt} of {max_loops}.{instructions_section}
-
-Call the {create_method} tool with the following parameters:
-- tool_info: Use the tool information provided
-- planning_data: Use the planning data provided
-- error_report: {repr(error_report)}
-- attempt: {attempt}.
-The tool generates a scaffold using the exact parameter names listed above. You may extend the
-scaffold with better validation, logging, and error handling, but you MUST NOT rename any
-parameter — every --flag in the final wrapper must exactly match the names listed above."""
-
+                    error_history_list = [_truncate_error_report(e) for e in all_errors]
                 else:
-                    instructions_section = ""
-                    if tool_info.get('instructions'):
-                        instructions_section = f"\n\nIMPORTANT - Additional Instructions:\n{tool_info['instructions']}\n"
+                    error_history_list = list(all_errors)
 
-                    error_history = build_error_history()
-                    prompt = f"""Generate the {artifact_name} artifact for the GenePattern module '{tool_info['name']}'.
+                # For dockerfile, inject wrapper source into the prompt directly
+                # (too large for ArtifactDeps; passed as prompt text to create_dockerfile tool)
+                prompt_prefix = ""
+                if artifact_name == 'dockerfile':
+                    _wrapper_script = planning_data.wrapper_script or 'wrapper.py'
+                    _wrapper_path = module_path / _wrapper_script
+                    if _wrapper_path.exists():
+                        try:
+                            _wrapper_src = _wrapper_path.read_text(encoding='utf-8', errors='replace')
+                            prompt_prefix = (
+                                f"Wrapper Script ({_wrapper_script}) — use this to determine "
+                                f"which packages must be installed in the image:\n"
+                                f"```\n{_wrapper_src}\n```\n\n"
+                            )
+                        except Exception as _we:
+                            self.logger.print_status(f"Could not read wrapper for dockerfile prompt: {_we}", "WARNING")
 
-{error_history if error_history else ""}
-{downstream_section}
-This is attempt {attempt} of {max_loops}.{instructions_section}
+                prompt = (
+                    f"{prompt_prefix}"
+                    f"Generate the {artifact_name} artifact for the GenePattern module "
+                    f"'{tool_info['name']}'. Call the {create_method} tool."
+                )
 
-Call the {create_method} tool with the following parameters:
-- tool_info: Use the tool information provided
-- planning_data: Use the planning data provided
-- error_report: {repr(error_report)}
-- attempt: {attempt}.
-Make sure the generated artifact follows all guidelines, key requirements and critical rules and edit what the tool gave you as needed."""
-
-                deps_context = {
-                    'tool_info': tool_info,
-                    'planning_data': planning_data.model_dump(mode='json'),
-                    'error_report': error_report,
-                    'attempt': attempt
-                }
+                deps_context = ArtifactDeps(
+                    tool_info=tool_info,
+                    planning_data=planning_data.model_dump(mode='json'),
+                    error_report=error_report,
+                    attempt=attempt,
+                    max_loops=max_loops,
+                    example_data=example_data_dicts,
+                    downstream_error_context=downstream_error_context,
+                    error_history=error_history_list,
+                )
 
                 result = agent.run_sync(
                     prompt,
-                    output_type=model_class,
                     deps=deps_context
                 )
                 artifact_model = result.output

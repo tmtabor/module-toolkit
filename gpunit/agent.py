@@ -2,7 +2,7 @@ import yaml
 from typing import Dict, Any, List
 from pydantic_ai import Agent, RunContext
 from dotenv import load_dotenv
-from agents.models import configured_llm_model
+from agents.models import configured_llm_model, ArtifactDeps, ArtifactModel
 
 
 # Load environment variables from .env file
@@ -32,11 +32,55 @@ the corrected values. Do not loop further.
 """
 
 # Create agent without MCP dependency
-gpunit_agent = Agent(configured_llm_model(), system_prompt=system_prompt)
+gpunit_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ArtifactModel, deps_type=ArtifactDeps)
+
+
+@gpunit_agent.instructions
+def gpunit_context_instructions(ctx: RunContext[ArtifactDeps]) -> str:
+    """Inject per-call context into the gpunit agent's instructions."""
+    deps = ctx.deps
+    tool_info = deps.tool_info
+    planning_data = deps.planning_data or {}
+
+    lines = []
+    lines.append(
+        f"You are generating the GPUNIT TEST artifact for GenePattern module '{tool_info.get('name', 'unknown')}'. "
+        f"This is attempt {deps.attempt} of {deps.max_loops}."
+    )
+
+    if tool_info.get('instructions'):
+        lines.append(f"\nIMPORTANT — Additional Instructions:\n{tool_info['instructions']}")
+
+    if deps.example_data:
+        local_items = [item for item in deps.example_data if item.get('local_path')]
+        if local_items:
+            ex_lines = ["\nExample Data for Test Parameters:"]
+            for item in local_items:
+                hint = f"  # {item['hint']}" if item.get('hint') else ""
+                ex_lines.append(f"- {item['local_path']}  (use as value for the matching file input parameter){hint}")
+            ex_lines.append("Use these exact local paths as parameter values in the test YAML.")
+            ex_lines.append("Where a hint is shown, use it to identify which parameter this file corresponds to.")
+            ex_lines.append("For numeric/text/choice parameters, use sensible default values.")
+            lines.append("\n".join(ex_lines))
+
+    if deps.error_history:
+        history_lines = ["Previous attempt errors (avoid repeating these mistakes):"]
+        for i, err in enumerate(deps.error_history, 1):
+            history_lines.append(f"\nAttempt {i} error:\n{err}")
+        lines.append("\n" + "\n".join(history_lines))
+
+    if deps.downstream_error_context:
+        lines.append(
+            "\n⚠️  CROSS-ARTIFACT ESCALATION — READ CAREFULLY ⚠️\n"
+            + deps.downstream_error_context
+            + "\n\nYou MUST address the issue described above."
+        )
+
+    return "\n".join(lines)
 
 
 @gpunit_agent.tool
-def validate_gpunit(context: RunContext[str], path: str, module: str = None, parameters: List[str] = None) -> str:
+def validate_gpunit(context: RunContext[ArtifactDeps], path: str, module: str = None, parameters: List[str] = None) -> str:
     """
     Validate GPUnit test definition YAML files.
 
@@ -104,7 +148,7 @@ def validate_gpunit(context: RunContext[str], path: str, module: str = None, par
 
 
 @gpunit_agent.tool
-def create_gpunit(context: RunContext[str]) -> str:
+def create_gpunit(context: RunContext[ArtifactDeps]) -> str:
     """
     Generate a comprehensive GPUnit test definition (test.yml) for the GenePattern module.
     
@@ -119,10 +163,10 @@ def create_gpunit(context: RunContext[str]) -> str:
     required parameters only.
     """
     # Extract data from context dependencies
-    tool_info = context.deps.get('tool_info', {})
-    planning_data = context.deps.get('planning_data', {})
-    error_report = context.deps.get('error_report', '')
-    attempt = context.deps.get('attempt', 1)
+    tool_info = context.deps.tool_info
+    planning_data = context.deps.planning_data or {}
+    error_report = context.deps.error_report
+    attempt = context.deps.attempt
 
     print(f"🧪 GPUNIT TOOL: Running create_gpunit for '{tool_info.get('name', 'unknown')}' (attempt {attempt})")
     

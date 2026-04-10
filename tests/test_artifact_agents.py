@@ -11,15 +11,6 @@ These tests verify:
 - Each agent can complete a run under TestModel
 - The result carries a non-empty output
 - Tool call assertions match the agent's registered tools
-
-NOTE on output_type (tracked gap):
-  Artifact agents currently do NOT declare output_type at construction — it is
-  passed dynamically by module.py at call-site.  This is one of the critical
-  issues identified in the Pydantic AI evaluation (issue #2).  Because of this,
-  TestModel cannot synthesise a typed result on its own; we must pass
-  output_type= at call-site here as well (mirroring the current production code).
-  Once output_type is declared on each agent, the call-site argument can be
-  removed from these tests and the assertion upgraded to check the concrete type.
 """
 import pytest
 from pydantic_ai.models.test import TestModel
@@ -111,19 +102,14 @@ class TestArtifactAgentStructure:
         )
 
     @pytest.mark.parametrize("agent,model_class,expected_tools", ARTIFACT_AGENTS)
-    def test_output_type_not_yet_declared(self, agent, model_class, expected_tools):
+    def test_output_type_declared(self, agent, model_class, expected_tools):
         """
-        Documents the current gap: artifact agents do not yet declare their
-        proper output_type at construction time (evaluation issue #2).
-        Pydantic AI defaults output_type to str when nothing is set.
-        When this is fixed, flip the assertion to:
-            assert agent.output_type is model_class
+        Each artifact agent must declare its output_type at construction time
+        (Refactor #2). The type must match the expected model class for that agent.
         """
-        # Currently expected to default to str (Pydantic AI's default when
-        # output_type is not explicitly set at construction)
-        assert agent.output_type is str, (
-            f"{agent} has a non-str output_type declared at construction — "
-            f"update this test to assert agent.output_type is {model_class.__name__}."
+        assert agent.output_type is model_class, (
+            f"{agent} has output_type={agent.output_type!r}, "
+            f"expected {model_class.__name__}."
         )
 
 
@@ -142,11 +128,8 @@ class TestArtifactAgentBehaviour:
             f"Call the create tool with the provided parameters."
         )
         with agent.override(model=m):
-            # output_type passed at call-site to match current production pattern.
-            # Remove this kwarg once output_type is declared on the agent.
             result = agent.run_sync(
                 prompt,
-                output_type=model_class,
                 deps=sample_deps_context,
             )
         assert result is not None
@@ -158,7 +141,6 @@ class TestArtifactAgentBehaviour:
         with agent.override(model=m):
             result = agent.run_sync(
                 "Generate artifact for TestTool.",
-                output_type=model_class,
                 deps=sample_deps_context,
             )
         assert result.output is not None
@@ -170,7 +152,6 @@ class TestArtifactAgentBehaviour:
         with agent.override(model=m):
             result = agent.run_sync(
                 "Generate artifact.",
-                output_type=model_class,
                 deps=sample_deps_context,
             )
         assert result.usage() is not None
@@ -185,7 +166,6 @@ class TestArtifactAgentBehaviour:
         with agent.override(model=m):
             agent.run_sync(
                 "Generate artifact for TestTool.",
-                output_type=model_class,
                 deps=sample_deps_context,
             )
         registered_tool_names = set(agent._function_toolset.tools.keys())
@@ -195,8 +175,28 @@ class TestArtifactAgentBehaviour:
             f"Model saw tools {model_tool_names}, expected {registered_tool_names}"
         )
 
+    @pytest.mark.parametrize("agent,model_class,expected_tools", ARTIFACT_AGENTS)
+    def test_instructions_callback_injects_tool_name(self, agent, model_class, expected_tools, sample_deps_context):
+        """
+        The @agent.instructions callback must inject the tool name into the system
+        instructions seen by the model (Refactor 5).
+        instruction_parts on last_model_request_parameters holds InstructionPart
+        objects whose .content is the assembled system prompt text.
+        """
+        m = TestModel()
+        with agent.override(model=m):
+            agent.run_sync(
+                "Generate artifact for TestTool.",
+                deps=sample_deps_context,
+            )
 
+        instruction_text = " ".join(
+            part.content
+            for part in m.last_model_request_parameters.instruction_parts
+            if isinstance(getattr(part, "content", None), str)
+        )
 
-
-
+        assert "TestTool" in instruction_text, (
+            f"Expected 'TestTool' in instruction_parts but got: {instruction_text[:500]!r}"
+        )
 

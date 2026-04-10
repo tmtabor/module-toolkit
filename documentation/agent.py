@@ -2,7 +2,7 @@ import re
 from typing import Dict, Any, List
 from pydantic_ai import Agent, RunContext
 from dotenv import load_dotenv
-from agents.models import configured_llm_model
+from agents.models import configured_llm_model, ArtifactDeps, ArtifactModel
 
 # Load environment variables from .env file
 load_dotenv()
@@ -107,11 +107,43 @@ Output:
 """
 
 # Create agent without MCP dependency
-documentation_agent = Agent(configured_llm_model(), system_prompt=system_prompt)
+documentation_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ArtifactModel, deps_type=ArtifactDeps)
+
+
+@documentation_agent.instructions
+def documentation_context_instructions(ctx: RunContext[ArtifactDeps]) -> str:
+    """Inject per-call context into the documentation agent's instructions."""
+    deps = ctx.deps
+    tool_info = deps.tool_info
+
+    lines = []
+    lines.append(
+        f"You are generating the DOCUMENTATION (README.md) artifact for GenePattern module "
+        f"'{tool_info.get('name', 'unknown')}'. "
+        f"This is attempt {deps.attempt} of {deps.max_loops}."
+    )
+
+    if tool_info.get('instructions'):
+        lines.append(f"\nIMPORTANT — Additional Instructions:\n{tool_info['instructions']}")
+
+    if deps.error_history:
+        history_lines = ["Previous attempt errors (avoid repeating these mistakes):"]
+        for i, err in enumerate(deps.error_history, 1):
+            history_lines.append(f"\nAttempt {i} error:\n{err}")
+        lines.append("\n" + "\n".join(history_lines))
+
+    if deps.downstream_error_context:
+        lines.append(
+            "\n⚠️  CROSS-ARTIFACT ESCALATION — READ CAREFULLY ⚠️\n"
+            + deps.downstream_error_context
+            + "\n\nYou MUST address the issue described above."
+        )
+
+    return "\n".join(lines)
 
 
 @documentation_agent.tool
-def validate_documentation(context: RunContext[str], path_or_url: str, module: str = None, parameters: List[str] = None) -> str:
+def validate_documentation(context: RunContext[ArtifactDeps], path_or_url: str, module: str = None, parameters: List[str] = None) -> str:
     """
     Validate GenePattern module documentation files or URLs.
 
@@ -179,7 +211,7 @@ def validate_documentation(context: RunContext[str], path_or_url: str, module: s
 
 
 @documentation_agent.tool
-def analyze_documentation_requirements(context: RunContext[str], tool_info: Dict[str, Any], parameters: List[Dict[str, Any]] = None, target_audience: str = "mixed") -> str:
+def analyze_documentation_requirements(context: RunContext[ArtifactDeps], tool_info: Dict[str, Any], parameters: List[Dict[str, Any]] = None, target_audience: str = "mixed") -> str:
     """
     Analyze module information to determine documentation structure and content requirements.
     
@@ -334,7 +366,7 @@ def analyze_documentation_requirements(context: RunContext[str], tool_info: Dict
 
 
 @documentation_agent.tool
-def generate_documentation_outline(context: RunContext[str], tool_info: Dict[str, Any], sections: List[str], parameters: List[Dict[str, Any]] = None) -> str:
+def generate_documentation_outline(context: RunContext[ArtifactDeps], tool_info: Dict[str, Any], sections: List[str], parameters: List[Dict[str, Any]] = None) -> str:
     """
     Generate a detailed documentation outline with section structure and content guidelines.
     
@@ -544,7 +576,7 @@ def generate_documentation_outline(context: RunContext[str], tool_info: Dict[str
 
 
 @documentation_agent.tool
-def optimize_documentation_structure(context: RunContext[str], existing_content: str, improvement_goals: List[str] = None) -> str:
+def optimize_documentation_structure(context: RunContext[ArtifactDeps], existing_content: str, improvement_goals: List[str] = None) -> str:
     """
     Analyze existing documentation and suggest structural and content improvements.
     
@@ -716,7 +748,7 @@ def optimize_documentation_structure(context: RunContext[str], existing_content:
 
 
 @documentation_agent.tool
-def create_documentation(context: RunContext[str]) -> str:
+def create_documentation(context: RunContext[ArtifactDeps]) -> str:
     """
     Generate comprehensive user documentation (README.md) for the GenePattern module.
     
@@ -727,10 +759,10 @@ def create_documentation(context: RunContext[str]) -> str:
         Complete README.md content ready for validation
     """
     # Extract data from context dependencies
-    tool_info = context.deps.get('tool_info', {})
-    planning_data = context.deps.get('planning_data', {})
-    error_report = context.deps.get('error_report', '')
-    attempt = context.deps.get('attempt', 1)
+    tool_info = context.deps.tool_info
+    planning_data = context.deps.planning_data or {}
+    error_report = context.deps.error_report
+    attempt = context.deps.attempt
 
     print(f"📚 DOCUMENTATION TOOL: Running create_documentation for '{tool_info.get('name', 'unknown')}' (attempt {attempt})")
     

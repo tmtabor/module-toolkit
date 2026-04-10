@@ -6,6 +6,19 @@ from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.ollama import OllamaProvider
 
 
+class ArtifactDeps(BaseModel):
+    """Structured dependencies injected into every artifact agent via RunContext."""
+    tool_info: Dict[str, Any] = Field(default_factory=dict)
+    planning_data: Optional[Dict[str, Any]] = Field(default=None)
+    error_report: str = Field(default="")
+    attempt: int = Field(default=1)
+    # Additional fields for @agent.instructions callbacks (Refactor 5)
+    example_data: List[Dict[str, Any]] = Field(default_factory=list)
+    downstream_error_context: str = Field(default="")
+    error_history: List[str] = Field(default_factory=list)
+    max_loops: int = Field(default=5)
+
+
 def configured_llm_model():
     DEFAULT_LLM_MODEL = os.getenv('DEFAULT_LLM_MODEL', 'ollama:qwen3:8b')
     if DEFAULT_LLM_MODEL.startswith('ollama:'):

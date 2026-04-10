@@ -28,10 +28,13 @@ class TestClassifyError(unittest.TestCase):
         self.assertTrue(should_escalate(rc))
 
     def test_unrecognized_arguments(self):
+        # "--foo --bar" matches the manifest-escalation pattern first because the
+        # classifier prioritises fixing the manifest commandLine / pN_name before
+        # rewriting the wrapper.  See error_classifier.py rule ordering.
         error = "error: unrecognized arguments: --foo --bar"
         rc = classify_error(error, "dockerfile")
         self.assertIsNotNone(rc)
-        self.assertEqual(rc.target_artifact, "wrapper")
+        self.assertEqual(rc.target_artifact, "manifest")
         self.assertIn("--foo", rc.reason)
         self.assertTrue(should_escalate(rc))
 

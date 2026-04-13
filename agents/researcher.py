@@ -111,28 +111,41 @@ Provide structured, detailed reports with clear sections for different aspects o
 Include references and maintain scientific rigor in all analyses.
 """
 
-# Create agent with MCP tools access
-researcher_agent = Agent(configured_llm_model(), instructions=system_prompt)
+# ---------------------------------------------------------------------------
+# Agent construction — web search strategy depends on available API keys
+# ---------------------------------------------------------------------------
+# When BRAVE_API_KEY is set the custom Brave web_search tool is registered
+# below (rate-limited, with full page-content extraction).
+#
+# When BRAVE_API_KEY is absent we do NOT add any WebSearch capability.
+# WebSearch(builtin=True) hard-errors on Bedrock ("WebSearchTool not
+# supported by this model"), and WebSearch(local=False) does the same.
+# The local DuckDuckGo fallback uses primp which can hang indefinitely.
+# The researcher already fetches real content via parse_repository_info and
+# analyze_tool_documentation, so the agent works well without web search.
 
-@researcher_agent.tool
-def web_search(context: RunContext[str], query: str, num_results: int = 5) -> str:
+_brave_api_key = os.getenv('BRAVE_API_KEY')
+_capabilities: list = []   # extended below when Brave key is present
+
+researcher_agent = Agent(configured_llm_model(), instructions=system_prompt, capabilities=_capabilities)
+
+
+def _web_search_impl(context: RunContext[str], query: str, num_results: int = 5) -> str:
     """
     Search the web using Brave Search API and extract content from relevant pages.
-    
+
+    Only registered on the agent when BRAVE_API_KEY is configured.  Without it
+    the native WebSearch capability (DuckDuckGo fallback) handles all searching.
+
     Args:
         query: Search query string
         num_results: Number of search results to process (default: 5)
-    
+
     Returns:
         Formatted search results with page content extracted from top results
     """
     print(f"🔍 RESEARCH TOOL: Running web_search for query: '{query}' (requesting {num_results} results)")
-    
-    brave_api_key = os.getenv('BRAVE_API_KEY')
-    if not brave_api_key:
-        print("⚠️  RESEARCH TOOL: web_search failed - BRAVE_API_KEY not configured")
-        return "Error: BRAVE_API_KEY environment variable not set. Please configure Brave Search API access."
-    
+
     try:
         # Brave Search API endpoint
         search_url = "https://api.search.brave.com/res/v1/web/search"
@@ -140,7 +153,7 @@ def web_search(context: RunContext[str], query: str, num_results: int = 5) -> st
         headers = {
             "Accept": "application/json",
             "Accept-Encoding": "gzip",
-            "X-Subscription-Token": brave_api_key
+            "X-Subscription-Token": _brave_api_key
         }
         
         params = {
@@ -155,9 +168,9 @@ def web_search(context: RunContext[str], query: str, num_results: int = 5) -> st
         # Make the search request (rate-limited, retries on 429)
         response = _brave_get(search_url, params=params, headers=headers)
         response.raise_for_status()
-        
+
         search_data = response.json()
-        
+
         if not search_data.get('web', {}).get('results'):
             return f"No search results found for query: '{query}'"
         
@@ -257,6 +270,14 @@ def _extract_page_content(url: str) -> str:
         return ""
 
 
+# Register Brave web_search only when the API key is available.
+# Without Brave there is no web search tool — the agent uses parse_repository_info
+# and analyze_tool_documentation to fetch real content from known URLs instead.
+if _brave_api_key:
+    researcher_agent.tool(_web_search_impl)
+    web_search = _web_search_impl   # preserve importable name for tests
+
+
 @researcher_agent.tool
 def analyze_tool_documentation(context: RunContext[str], documentation_text: str, source_type: str = "help") -> str:
     """
@@ -270,13 +291,13 @@ def analyze_tool_documentation(context: RunContext[str], documentation_text: str
         Structured analysis of tool capabilities, parameters, and usage patterns
     """
     print(f"📖 RESEARCH TOOL: Running analyze_tool_documentation (source: {source_type}, text length: {len(documentation_text)} chars)")
-    
+
     analysis = f"Tool Documentation Analysis (Source: {source_type})\n"
     analysis += "=" * 50 + "\n\n"
-    
+
     # Extract tool name and version
     tool_info = {}
-    
+
     # Look for version information
     version_patterns = [
         r'version\s+(\d+\.\d+\.\d+)',
@@ -978,3 +999,31 @@ def compare_similar_tools(context: RunContext[str], target_tool: str, similar_to
     
     print("✅ RESEARCH TOOL: compare_similar_tools completed successfully")
     return comparison
+
+
+# ---------------------------------------------------------------------------
+# Factory — build a researcher agent with custom capabilities
+# ---------------------------------------------------------------------------
+# Defined here (after all @researcher_agent.tool decorators) so the factory
+# can copy the fully-populated function toolset onto new agent instances.
+
+def build_researcher_agent(*, capabilities=None):
+    """Return a researcher Agent configured with the given capabilities list.
+
+    All function tools from ``researcher_agent`` are shared with the returned
+    agent, so its behaviour is identical except for the capability pipeline.
+
+    Typical use — strip WebSearch for TestModel compatibility in unit tests::
+
+        from agents.researcher import build_researcher_agent
+        agent = build_researcher_agent(capabilities=[])
+    """
+    if capabilities is None:
+        capabilities = _capabilities
+    agent = Agent(configured_llm_model(), instructions=system_prompt, capabilities=capabilities)
+    # Share the populated function toolset — avoids re-registering every tool
+    # and guarantees the twin behaves identically to researcher_agent.
+    agent._function_toolset = researcher_agent._function_toolset
+    return agent
+
+

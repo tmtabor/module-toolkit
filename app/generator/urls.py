@@ -12,6 +12,7 @@ urlpatterns = [
     path('generate/', views.generate_module, name='generate'),
     path('upload-data/', views.upload_data_file, name='upload_data'),
     path('status/<str:module_dir>/', views.module_status, name='module_status'),
+    path('upload-decision/<str:module_dir>/', views.upload_decision, name='upload_decision'),
     path('console/<str:module_dir>/', views.console_log, name='console_log'),
     path('download/<str:module_dir>/<str:filename>/', views.download_file, name='download_file'),
     path('files/<str:module_dir>/', views.module_files, name='module_files'),

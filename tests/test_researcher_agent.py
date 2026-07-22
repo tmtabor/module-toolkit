@@ -108,7 +108,7 @@ class TestResearcherAgentBehaviour:
         with _test_agent.override(model=m):
             result = _test_agent.run_sync("Research samtools.")
         # TestModel returns zero-cost usage objects; they should be accessible
-        assert result.usage() is not None
+        assert result.usage is not None
 
     def test_run_does_not_call_tools_by_default(self):
         """TestModel returns plain text output without invoking tools."""

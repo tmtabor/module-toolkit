@@ -1,9 +1,142 @@
+import functools
+import json
 import os
 from typing import Any, Dict, List, Optional, Literal
 from enum import Enum
+from json_repair import repair_json
 from pydantic import BaseModel, Field
+from pydantic_ai import ModelRetry
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.ollama import OllamaProvider
+
+
+def _flatten_dict_list(obj: Any) -> Any:
+    """Recursively flatten nested lists into one flat list, dropping non-dict noise.
+
+    json_repair salvages a structurally-complete prefix, but when the source
+    malformation was mis-nesting (not just truncation) that prefix can surface as
+    a list of sublists / Nones instead of the flat list of dicts callers expect.
+    Only lists are touched; dicts and scalars pass through untouched.
+    """
+    if not isinstance(obj, list):
+        return obj
+    flat: list = []
+    for item in obj:
+        if isinstance(item, list):
+            flat.extend(_flatten_dict_list(item))
+        elif isinstance(item, dict):
+            flat.append(item)
+    return flat if flat else obj
+
+
+def coerce_stringified_json(v: Any) -> Any:
+    """BeforeValidator for tool params typed List[Dict[...]] / Dict[str, ...].
+
+    Some models -- observed reproducibly with a local Ollama model on large or
+    deeply nested tool-call arguments -- emit a JSON-encoded STRING instead of
+    a real array/object (e.g. {"research_findings": "[{...}, {...}]"} instead
+    of {"research_findings": [{...}, {...}]}). pydantic-ai validates tool
+    arguments against the function signature before the function body ever
+    runs, so this rejected every attempt regardless of retry count (see
+    temporal/PHASE4.md's parity-run notes). This transparently parses a
+    string input back into the expected structure; well-formed calls (a real
+    list/dict) pass through unchanged.
+
+    Also observed: for very large stringified payloads the same local model
+    sometimes truncates mid-generation, leaving unbalanced brackets that
+    plain json.loads can't parse -- and every retry regenerates the whole
+    blob, so it's just as likely to truncate again. json_repair salvages the
+    structurally-complete prefix (closing whatever containers were left open)
+    rather than losing the entire tool call to the retry budget.
+
+    Usage: `Annotated[List[Dict[str, Any]], BeforeValidator(coerce_stringified_json)]`
+    """
+    if isinstance(v, str):
+        try:
+            return json.loads(v)
+        except (json.JSONDecodeError, TypeError):
+            pass
+        try:
+            repaired = repair_json(v)
+            parsed = json.loads(repaired)
+            return _flatten_dict_list(parsed) if isinstance(parsed, list) else parsed
+        except (json.JSONDecodeError, TypeError, ValueError):
+            pass  # let normal validation raise its own, more specific error
+    return v
+
+
+def guard_single_call(fn):
+    """Decorator for a "terminal" @agent.tool -- one whose return value IS the
+    artifact's finished content (create_wrapper, create_manifest,
+    create_paramgroups, create_gpunit, create_documentation,
+    create_tool_research_report), not an intermediate analysis step. If the
+    model calls it again after already calling it once in this run, raise a
+    sharp ModelRetry instead of silently regenerating the same content.
+
+    A prompt-level "call this exactly once" instruction reduces but doesn't
+    reliably prevent local models from looping on these tools -- observed
+    three times independently in temporal/PHASE4.md's live debugging
+    (gpunit, paramgroups, then researcher's create_tool_research_report),
+    and recurring even on an already-fixed tool in a later run. Each loop
+    burns real tokens/cost with no new information. This is the deterministic
+    backstop temporal/PHASE5.md Workstream C3 calls for.
+
+    Counts prior *successful* completions by scanning `context.messages` for
+    ToolReturnPart entries matching this tool's name -- deliberately not
+    ToolCallPart (every attempt, including ones that failed argument
+    validation and were transparently retried by pydantic-ai itself, e.g. via
+    coerce_stringified_json's retry path). Counting attempts instead of
+    successes makes every retry-after-a-validation-failure look like "already
+    called," so this guard would fire on the very next attempt and burn the
+    whole retry budget -- exactly what broke `tests/test_researcher_agent.py`
+    the first time this was written. Counting ToolReturnPart avoids that:
+    only a call that actually finished counts. Doesn't rely on
+    `context.deps` either (some agents, e.g. researcher_agent, don't have a
+    deps object at all) -- `messages` is always populated by pydantic-ai
+    regardless of deps_type, so this works uniformly across every agent
+    running in-process (the --legacy path, and tests).
+
+    Under Temporal, tools run in an *activity*, whose RunContext is
+    reconstructed from a serialized dict that doesn't include `messages` by
+    default -- accessing it raises `UserError` (found live: the very first
+    Temporal-path run after this guard was added failed outright). Rather
+    than ship the full message history across the activity boundary (which
+    would reintroduce the payload-size problem Workstream A just fixed),
+    `temporal/agents.py`'s `_GuardedRunContext` precomputes and serializes
+    just `completed_tool_names` -- this checks for that first and only falls
+    back to scanning `context.messages` when it isn't present.
+
+    Usage: stack directly below the `@<agent>.tool` decorator so the tool
+    registration sees this wrapper (functools.wraps keeps the original
+    signature visible for schema generation):
+
+        @wrapper_agent.tool
+        @guard_single_call
+        def create_wrapper(context: RunContext[ArtifactDeps]) -> str: ...
+    """
+    tool_name = fn.__name__
+
+    @functools.wraps(fn)
+    def wrapper(context, *args, **kwargs):
+        completed_tool_names = getattr(context, 'completed_tool_names', None)
+        if completed_tool_names is not None:
+            prior_calls = 1 if tool_name in completed_tool_names else 0
+        else:
+            prior_calls = sum(
+                1
+                for message in context.messages
+                for part in getattr(message, 'parts', [])
+                if type(part).__name__ == 'ToolReturnPart' and getattr(part, 'tool_name', None) == tool_name
+            )
+        if prior_calls >= 1:
+            raise ModelRetry(
+                f"You already called {tool_name} and received its output -- that output IS your "
+                f"final answer. Do NOT call {tool_name} again to regenerate or double-check it; "
+                f"respond with its previous return value instead of making another tool call."
+            )
+        return fn(context, *args, **kwargs)
+
+    return wrapper
 
 
 class ArtifactDeps(BaseModel):

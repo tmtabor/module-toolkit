@@ -6,16 +6,14 @@ delegating to specialised sub-agents for each phase and artifact type.
 """
 
 import json
-import shutil
-import subprocess
 import traceback
-import zipfile
-import requests
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from agents.config import DEFAULT_OUTPUT_DIR, MAX_ARTIFACT_LOOPS, MAX_ESCALATIONS
+from pydantic_ai.usage import UsageLimits
+
+from agents.config import DEFAULT_OUTPUT_DIR, MAX_AGENT_REQUESTS, MAX_ARTIFACT_LOOPS, MAX_ESCALATIONS
 from agents.error_classifier import (
     classify_error, should_escalate,
     get_upstream_dependencies, _sanitize_error_line, RootCause,
@@ -41,6 +39,7 @@ ERROR_INDICATORS = [
     'Exception in thread', 'java.lang.', 'java.io.',
     'htsjdk.', 'org.broadinstitute.',
 ]
+from agents import effects
 from agents.example_data import ExampleDataItem
 from agents.logger import Logger
 from agents.models import ArtifactModel, ArtifactDeps
@@ -57,7 +56,7 @@ from manifest.agent import manifest_agent
 from manifest.models import ManifestModel
 from paramgroups.agent import paramgroups_agent
 from paramgroups.models import ParamgroupsModel
-from wrapper.agent import wrapper_agent
+from wrapper.agent import wrapper_agent, select_wrapper_language
 
 
 class ModuleAgent:
@@ -123,6 +122,11 @@ class ModuleAgent:
             }
         }
 
+    def _emit(self, result) -> None:
+        """Drain an effect result's captured log lines through this agent's Logger."""
+        for line in getattr(result, 'log', []):
+            self.logger.print_status(line)
+
     def create_module_directory(self, tool_name: str, module_dir: str = "") -> Path:
         """Create and return the module directory path.
 
@@ -130,19 +134,11 @@ class ModuleAgent:
         directly, allowing the caller (e.g. the web UI) to guarantee that
         uploaded files and generated artifacts share the same directory.
         """
-        if module_dir:
-            module_path = Path(module_dir)
-            self.logger.print_status(f"Creating module directory: {module_path}")
-            module_path.mkdir(parents=True, exist_ok=True)
-            return module_path
-
+        # Timestamp is generated here (coordination) and injected into the
+        # effect; Phase 3 will source it from workflow.now() instead.
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        tool_name_clean = tool_name.lower().replace(' ', '_').replace('-', '_')
-        module_dir_name = f"{tool_name_clean}_{timestamp}"
-        module_path = Path(self.output_dir) / module_dir_name
-
+        module_path = Path(effects.make_module_dir(self.output_dir, tool_name, timestamp, module_dir))
         self.logger.print_status(f"Creating module directory: {module_path}")
-        module_path.mkdir(parents=True, exist_ok=True)
         return module_path
 
     def download_url_data(self, example_data: List[ExampleDataItem], module_path: Path) -> None:
@@ -156,9 +152,9 @@ class ModuleAgent:
             return
 
         data_dir = module_path / "data"
-        data_dir.mkdir(exist_ok=True)
 
-        # Track filenames used in this session to handle collisions
+        # Track filenames used in this session to handle collisions (deterministic
+        # coordination); each resolved filename is handed to the download effect.
         used_names: set = set()
 
         for item in url_items:
@@ -173,94 +169,21 @@ class ModuleAgent:
                     counter += 1
             used_names.add(filename)
 
-            dest = data_dir / filename
-            self.logger.print_status(f"Downloading {item.original} → {dest}")
-            try:
-                with requests.get(item.original, stream=True, timeout=60) as resp:
-                    resp.raise_for_status()
-                    with open(dest, 'wb') as f:
-                        for chunk in resp.iter_content(chunk_size=65536):
-                            if chunk:
-                                f.write(chunk)
-                item.local_path = str(dest.resolve())
-                self.logger.print_status(f"Downloaded {filename} ({dest.stat().st_size:,} bytes)", "SUCCESS")
-            except Exception as e:
-                self.logger.print_status(
-                    f"Failed to download {item.original}: {e} — skipping this item",
-                    "WARNING"
-                )
-                # Clean up partial file if it exists
-                if dest.exists():
-                    try:
-                        dest.unlink()
-                    except Exception:
-                        pass
-                # local_path remains None — downstream steps will skip this item
+            result = effects.download_one(item.original, str(data_dir), filename)
+            self._emit(result)
+            if result.ok and result.local_path:
+                item.local_path = result.local_path
+            # On failure local_path stays None — downstream steps skip the item.
 
     def cleanup_data_dir(self, module_path: Path) -> None:
         """Remove the data/ subdirectory after a successful dockerfile step."""
         data_dir = module_path / "data"
         if not data_dir.exists():
             return
-        try:
-            shutil.rmtree(data_dir)
-            self.logger.print_status(f"Cleaned up data directory: {data_dir}")
-        except Exception as e:
-            self.logger.print_status(
-                f"Could not remove data directory {data_dir}: {e}",
-                "WARNING"
-            )
+        effects.remove_dir(str(data_dir))
+        self.logger.print_status(f"Cleaned up data directory: {data_dir}")
 
-    def save_status(self, status: ModuleGenerationStatus):
-        """Save the current status to disk as status.json"""
-        try:
-            status_path = Path(status.module_directory) / "status.json"
-            with open(status_path, 'w') as f:
-                json.dump(status.to_dict(), f, indent=2)
-        except Exception as e:
-            self.logger.print_status(f"Failed to save status.json: {str(e)}", "WARNING")
-
-    def load_status(self, module_directory: str) -> ModuleGenerationStatus:
-        """Load status from status.json file for resuming generation"""
-        status_path = Path(module_directory) / "status.json"
-
-        if not status_path.exists():
-            raise FileNotFoundError(f"No status.json found in {module_directory}")
-
-        try:
-            with open(status_path, 'r') as f:
-                data = json.load(f)
-
-            # Reconstruct ModulePlan from dict if present, then inject it after validation
-            planning_data = None
-            if data.get('planning_data') and data['planning_data']:
-                planning_data = ModulePlan(**data['planning_data'])
-
-            # Reconstruct ExampleDataItem objects
-            example_data = [ExampleDataItem.from_dict(d) for d in data.get('example_data', [])]
-
-            # Build the status via model_validate, then fix up non-JSON-native fields
-            status = ModuleGenerationStatus.model_validate({
-                'tool_name': data['tool_name'],
-                'module_directory': data['module_directory'],
-                'research_data': data.get('research_data', {}),
-                'artifacts_status': data.get('artifacts_status', {}),
-                'error_messages': data.get('error_messages', []),
-                'input_tokens': data.get('input_tokens', 0),
-                'output_tokens': data.get('output_tokens', 0),
-                'escalation_counts': data.get('escalation_counts', {}),
-                'escalation_log': data.get('escalation_log', []),
-            })
-            status.planning_data = planning_data
-            status.example_data = example_data
-
-            self.logger.print_status(f"Loaded status from {status_path}")
-            return status
-
-        except Exception as e:
-            raise ValueError(f"Failed to load status.json: {str(e)}")
-
-    def do_research(self, tool_info: Dict[str, str], status: ModuleGenerationStatus = None) -> Tuple[bool, Dict[str, Any]]:
+    async def do_research(self, tool_info: Dict[str, str], status: ModuleGenerationStatus = None) -> Tuple[bool, Dict[str, Any]]:
         """Run research phase using researcher agent"""
         self.logger.print_section("Research Phase")
         self.logger.print_status("Starting research on tool information")
@@ -307,12 +230,11 @@ class ModuleAgent:
             Focus on information that will help create a complete GenePattern module.
             """
 
-            result = researcher_agent.run_sync(prompt)
+            result = await researcher_agent.run(prompt, usage_limits=UsageLimits(request_limit=MAX_AGENT_REQUESTS))
 
             # Track token usage if status provided
             if status:
                 status.add_usage(result)
-                self.save_status(status)
 
             self.logger.print_status("Research phase completed successfully", "SUCCESS")
             return True, {'research': result.output}
@@ -323,7 +245,7 @@ class ModuleAgent:
             self.logger.print_status(f"Traceback: {traceback.format_exc()}", "DEBUG")
             return False, {'error': error_msg}
 
-    def do_planning(self, tool_info: Dict[str, str], research_data: Dict[str, Any], status: ModuleGenerationStatus = None, module_path: Path = None) -> Tuple[bool, ModulePlan]:
+    async def do_planning(self, tool_info: Dict[str, str], research_data: Dict[str, Any], status: ModuleGenerationStatus = None, module_path: Path = None) -> Tuple[bool, ModulePlan]:
         """Run planning phase using planner agent"""
         self.logger.print_section("Planning Phase")
         self.logger.print_status("Starting module planning and parameter analysis")
@@ -382,12 +304,11 @@ class ModuleAgent:
             Focus on creating actionable specifications for module development.
             """
 
-            result = planner_agent.run_sync(prompt)
+            result = await planner_agent.run(prompt, usage_limits=UsageLimits(request_limit=MAX_AGENT_REQUESTS))
 
             # Track token usage if status provided
             if status:
                 status.add_usage(result)
-                self.save_status(status)
 
             # Capture training data for LoRA fine-tuning
             if module_path is not None:
@@ -397,8 +318,7 @@ class ModuleAgent:
                         "output": result.output.model_dump_json(),
                     }
                     jsonl_path = module_path / "plan.jsonl"
-                    with open(jsonl_path, "w") as f:
-                        f.write(json.dumps(training_record) + "\n")
+                    effects.write_text_file(str(jsonl_path), json.dumps(training_record) + "\n")
                     self.logger.print_status(f"Training data saved to {jsonl_path}", "DEBUG")
                 except Exception as capture_err:
                     self.logger.print_status(f"Warning: could not save plan.jsonl: {capture_err}", "WARNING")
@@ -412,7 +332,7 @@ class ModuleAgent:
             self.logger.print_status(f"Traceback: {traceback.format_exc()}", "DEBUG")
             return False, None
 
-    def artifact_creation_loop(self, artifact_name: str, tool_info: Dict[str, str], planning_data: ModulePlan, module_path: Path, status: ModuleGenerationStatus, max_loops: int = MAX_ARTIFACT_LOOPS, downstream_error_context: str = "") -> ArtifactResult:
+    async def artifact_creation_loop(self, artifact_name: str, tool_info: Dict[str, str], planning_data: ModulePlan, module_path: Path, status: ModuleGenerationStatus, max_loops: int = MAX_ARTIFACT_LOOPS, downstream_error_context: str = "") -> ArtifactResult:
         """Generate and validate a single artifact using its dedicated agent"""
         artifact_config = self.artifact_agents[artifact_name]
         agent = artifact_config['agent']
@@ -425,27 +345,32 @@ class ModuleAgent:
             planning_dict = planning_data.model_dump(mode='json') if planning_data else {}
             wrapper_script_from_plan = planning_dict.get('wrapper_script')
 
+            tool_language = tool_info.get('language', 'python').lower()
+            _expected_wrapper_ext = {'python': '.py', 'r': '.R', 'bash': '.sh'}[select_wrapper_language(tool_language)]
+
             if wrapper_script_from_plan:
-                filename = wrapper_script_from_plan
-                self.logger.print_status(f"Using wrapper filename from planning data: {filename}")
+                # The planner freely chooses a wrapper_script name/extension and
+                # doesn't always agree with select_wrapper_language()'s deterministic
+                # mapping (e.g. it may pick .py for a C tool while wrapper_agent
+                # correctly writes bash content for that same tool). The linter
+                # infers expected syntax from the file EXTENSION, so a mismatch here
+                # makes correct content fail validation against the wrong language.
+                # Preserve the planner's chosen base name but enforce the extension.
+                _stem = wrapper_script_from_plan.rsplit('.', 1)[0] if '.' in wrapper_script_from_plan else wrapper_script_from_plan
+                if not wrapper_script_from_plan.endswith(_expected_wrapper_ext):
+                    filename = f"{_stem}{_expected_wrapper_ext}"
+                    self.logger.print_status(
+                        f"Correcting wrapper filename extension: '{wrapper_script_from_plan}' → '{filename}' "
+                        f"(tool language '{tool_language}' requires a {select_wrapper_language(tool_language)} wrapper)",
+                        "WARNING",
+                    )
+                else:
+                    filename = wrapper_script_from_plan
+                    self.logger.print_status(f"Using wrapper filename from planning data: {filename}")
             else:
-                tool_language = tool_info.get('language', 'python').lower()
-                extension_map = {
-                    'python': '.py',
-                    'r': '.R',
-                    'bash': '.sh',
-                    'shell': '.sh',
-                    'perl': '.pl',
-                    # JVM-based tools (Java, Scala, Groovy, Kotlin) are wrapped
-                    # with a bash script that invokes the tool via subprocess/gatk/java.
-                    # A Java source-file wrapper is never appropriate for GenePattern.
-                    'java': '.sh',
-                    'scala': '.sh',
-                    'groovy': '.sh',
-                    'kotlin': '.sh',
-                }
-                extension = extension_map.get(tool_language, '.py')
-                filename = f'wrapper{extension}'
+                # Single source of truth: select_wrapper_language() (also used by
+                # wrapper_agent itself), not a separately hand-maintained map.
+                filename = f'wrapper{_expected_wrapper_ext}'
                 self.logger.print_status(f"Using default wrapper filename: {filename}")
 
         validate_tool = artifact_config['validate_tool']
@@ -463,7 +388,6 @@ class ModuleAgent:
             'attempts': 0,
             'errors': existing_errors if downstream_error_context else []
         }
-        self.save_status(status)
 
         def build_error_history() -> str:
             """Build a numbered history of all previous errors for this artifact."""
@@ -479,7 +403,6 @@ class ModuleAgent:
             try:
                 self.logger.print_status(f"Generating {artifact_name} (attempt {attempt}/{max_loops})")
                 status.artifacts_status[artifact_name]['attempts'] = attempt
-                self.save_status(status)
 
                 # Serialize planning_data here for use in prompt-building below.
                 # NOTE: deps_context re-serializes immediately before the agent
@@ -492,28 +415,31 @@ class ModuleAgent:
                 # Serialize example_data for ArtifactDeps
                 example_data_dicts = [item.to_dict() for item in example_data]
 
-                # Build error history list for this artifact
+                # Build error history list for this artifact. Truncate every
+                # entry (not just dockerfile's, which is where this was
+                # originally scoped) -- linter output for any artifact can run
+                # to several KB per attempt, and status.artifacts_status[...]
+                # ['errors'] accumulates one entry per retry with no other
+                # bound, so an untruncated list was a real unbounded-growth
+                # contributor to the payload-size issues in
+                # temporal/PHASE5.md Workstream A2.
                 all_errors = status.artifacts_status[artifact_name].get('errors', [])
 
-                # For dockerfile, truncate each error entry for readability
-                if artifact_name == 'dockerfile':
-                    def _truncate_error_report(raw: str, max_tail: int = 50) -> str:
-                        """Return structured error lines + last `max_tail` lines of raw output."""
-                        extracted = []
-                        for ln in raw.splitlines():
-                            if any(ind in ln for ind in ERROR_INDICATORS):
-                                sanitized = _sanitize_error_line(ln)
-                                if sanitized and sanitized not in extracted:
-                                    extracted.append(sanitized)
-                        tail_lines = raw.splitlines()[-max_tail:]
-                        parts = []
-                        if extracted:
-                            parts.append("KEY ERRORS:\n" + "\n".join(f"  - {e}" for e in extracted))
-                        parts.append("LAST 50 LINES OF OUTPUT:\n" + "\n".join(tail_lines))
-                        return "\n\n".join(parts)
-                    error_history_list = [_truncate_error_report(e) for e in all_errors]
-                else:
-                    error_history_list = list(all_errors)
+                def _truncate_error_report(raw: str, max_tail: int = 50) -> str:
+                    """Return structured error lines + last `max_tail` lines of raw output."""
+                    extracted = []
+                    for ln in raw.splitlines():
+                        if any(ind in ln for ind in ERROR_INDICATORS):
+                            sanitized = _sanitize_error_line(ln)
+                            if sanitized and sanitized not in extracted:
+                                extracted.append(sanitized)
+                    tail_lines = raw.splitlines()[-max_tail:]
+                    parts = []
+                    if extracted:
+                        parts.append("KEY ERRORS:\n" + "\n".join(f"  - {e}" for e in extracted))
+                    parts.append("LAST 50 LINES OF OUTPUT:\n" + "\n".join(tail_lines))
+                    return "\n\n".join(parts)
+                error_history_list = [_truncate_error_report(e) for e in all_errors]
 
                 # For dockerfile, inject wrapper source into the prompt directly
                 # (too large for ArtifactDeps; passed as prompt text to create_dockerfile tool)
@@ -521,9 +447,9 @@ class ModuleAgent:
                 if artifact_name == 'dockerfile':
                     _wrapper_script = planning_data.wrapper_script or 'wrapper.py'
                     _wrapper_path = module_path / _wrapper_script
-                    if _wrapper_path.exists():
+                    _wrapper_src = effects.read_text_file(str(_wrapper_path))
+                    if _wrapper_src is not None:
                         try:
-                            _wrapper_src = _wrapper_path.read_text(encoding='utf-8', errors='replace')
                             prompt_prefix = (
                                 f"Wrapper Script ({_wrapper_script}) — use this to determine "
                                 f"which packages must be installed in the image:\n"
@@ -549,20 +475,19 @@ class ModuleAgent:
                     error_history=error_history_list,
                 )
 
-                result = agent.run_sync(
+                result = await agent.run(
                     prompt,
-                    deps=deps_context
+                    deps=deps_context,
+                    usage_limits=UsageLimits(request_limit=MAX_AGENT_REQUESTS),
                 )
                 artifact_model = result.output
 
                 # Track token usage
                 status.add_usage(result)
-                self.save_status(status)
 
                 formatted_content = formatter(artifact_model)
 
-                with open(file_path, 'w') as f:
-                    f.write(formatted_content)
+                effects.write_text_file(str(file_path), formatted_content)
 
                 # Write the report file if the artifact has one
                 report_content = None
@@ -571,13 +496,11 @@ class ModuleAgent:
 
                 if report_content:
                     report_path = module_path / f"report-{artifact_name}.md"
-                    with open(report_path, 'w') as f:
-                        f.write(report_content)
+                    effects.write_text_file(str(report_path), report_content)
                     self.logger.print_status(f"Generated {artifact_name} report: {report_path.name}")
 
                 status.artifacts_status[artifact_name]['generated'] = True
                 self.logger.print_status(f"Generated {filename}")
-                self.save_status(status)
 
                 # Prepare extra validation arguments based on artifact type
                 extra_validation_args = None
@@ -615,18 +538,17 @@ class ModuleAgent:
 
                     if example_data:
                         gpunit_params: Dict[str, Any] = {}
-                        test_yml_path = module_path / "test.yml"
-                        if test_yml_path.exists():
+                        test_yml_text = effects.read_text_file(str(module_path / "test.yml"))
+                        if test_yml_text is not None:
                             try:
                                 import yaml
-                                with open(test_yml_path) as yf:
-                                    gpunit_doc = yaml.safe_load(yf)
+                                gpunit_doc = yaml.safe_load(test_yml_text)
                                 if isinstance(gpunit_doc, dict):
                                     gpunit_params = gpunit_doc.get('params', {}) or {}
                             except Exception as e:
                                 self.logger.print_status(f"Could not parse test.yml for runtime params: {e}", "WARNING")
 
-                        runtime_cmd, volumes = self.build_runtime_command(
+                        runtime_cmd, volumes = await self.build_runtime_command(
                             planning_data, example_data, gpunit_params, module_path
                         )
                         if runtime_cmd:
@@ -670,13 +592,11 @@ class ModuleAgent:
                 if validation_result['success']:
                     status.artifacts_status[artifact_name]['validated'] = True
                     self.logger.print_status(f"✅ Successfully generated and validated {artifact_name}")
-                    self.save_status(status)
                     return ArtifactResult(success=True, artifact_name=artifact_name)
                 else:
                     error_report = f"Validation failed: {validation_result.get('error', 'Unknown validation error')}"
                     self.logger.print_status(f"❌ {error_report}")
                     status.artifacts_status[artifact_name]['errors'].append(error_report)
-                    self.save_status(status)
 
                     if attempt == max_loops:
                         root_cause = classify_error(error_report, artifact_name)
@@ -696,7 +616,6 @@ class ModuleAgent:
 
                 full_error = f"{error_report}\n\nTraceback:\n{tb_str}"
                 status.artifacts_status[artifact_name]['errors'].append(full_error)
-                self.save_status(status)
 
                 if attempt == max_loops:
                     root_cause = classify_error(full_error, artifact_name)
@@ -730,49 +649,11 @@ class ModuleAgent:
             True if upload was successful, False otherwise
         """
         self.logger.print_section("Uploading to GenePattern")
-        endpoint = f"{gp_server.rstrip('/')}/rest/v1/tasks/installModule"
-        self.logger.print_status(f"Uploading {zip_path.name} to {endpoint}")
+        result = effects.upload_module(str(zip_path), gp_server, gp_user, gp_password)
+        self._emit(result)
+        return result.success
 
-        try:
-            with open(zip_path, 'rb') as f:
-                response = requests.post(
-                    endpoint,
-                    auth=(gp_user, gp_password),
-                    files={'file': (zip_path.name, f, 'application/zip')},
-                    data={'privacy': '1'},
-                )
-
-            try:
-                result = response.json()
-            except Exception(e):
-                log.error(f"Failed to parse JSON response from GenePattern installing module: {e}")
-                result = {}
-
-            status = result.get('status', '')
-            message = result.get('message', response.text[:200])
-
-            if status == 'success':
-                self.logger.print_status(f"✅ {message}", "SUCCESS")
-                return True
-            elif status == 'failed':
-                self.logger.print_status(f"Upload failed: {message}", "ERROR")
-                return False
-            elif response.status_code in (200, 201):
-                # No JSON body but HTTP success
-                self.logger.print_status(f"✅ Module uploaded successfully (HTTP {response.status_code})", "SUCCESS")
-                return True
-            else:
-                self.logger.print_status(
-                    f"Upload failed: HTTP {response.status_code} — {message}", "ERROR"
-                )
-                return False
-
-        except Exception as e:
-            self.logger.print_status(f"Upload failed: {str(e)}", "ERROR")
-            self.logger.print_status(f"Traceback: {traceback.format_exc()}", "DEBUG")
-            return False
-
-    def build_runtime_command(
+    async def build_runtime_command(
         self,
         planning_data: ModulePlan,
         example_data: List[ExampleDataItem],
@@ -782,7 +663,7 @@ class ModuleAgent:
         """Build a docker runtime command and volume list for Dockerfile runtime testing.
         Delegates to dockerfile.runtime.build_runtime_command.
         """
-        return _build_runtime_command(planning_data, example_data, gpunit_params, module_path, self.logger)
+        return await _build_runtime_command(planning_data, example_data, gpunit_params, module_path, self.logger)
 
     def validate_artifact(self, file_path: str, validate_tool: str, extra_args: List[str] = None) -> Dict[str, Any]:
         """Validate an artifact using its linter. Delegates to agents.validator."""
@@ -828,22 +709,10 @@ class ModuleAgent:
             "WARNING",
         )
 
-        # Non-wrapper filenames that share extensions with wrappers
-        _NON_WRAPPER_NAMES = frozenset({
-            "manage.py", "setup.py", "setup.cfg", "conftest.py",
-        })
+        # Scan the module dir for the most likely wrapper file (deterministic).
+        chosen_name = effects.find_wrapper_file(str(module_path))
 
-        wrapper_extensions = (".py", ".R", ".r", ".sh", ".bash", ".pl")
-        candidates = []
-        for p in module_path.iterdir():
-            if (
-                p.is_file()
-                and p.suffix.lower() in wrapper_extensions
-                and p.name not in _NON_WRAPPER_NAMES
-            ):
-                candidates.append(p)
-
-        if not candidates:
+        if not chosen_name:
             self.logger.print_status(
                 f"{ctx_prefix}No wrapper-like file found in {module_path}; "
                 f"keeping planning_data.wrapper_script='{expected_name}' unchanged",
@@ -851,49 +720,25 @@ class ModuleAgent:
             )
             return
 
-        # Prefer files whose names start with "wrapper" or match common patterns;
-        # fall back to the first candidate sorted by name.
-        def _score(p: Path) -> int:
-            n = p.name.lower()
-            if n.startswith("wrapper"):
-                return 0
-            if n.startswith("run_"):
-                return 1
-            return 2
-
-        candidates.sort(key=_score)
-        chosen = candidates[0]
         old_name = planning_data.wrapper_script
-        planning_data.wrapper_script = chosen.name
+        planning_data.wrapper_script = chosen_name
 
         # Reflect the correction in status.planning_data if it is the same object
         if status.planning_data is planning_data:
             pass  # already updated via the shared reference
         elif status.planning_data is not None:
-            status.planning_data.wrapper_script = chosen.name
+            status.planning_data.wrapper_script = chosen_name
 
         self.logger.print_status(
-            f"{ctx_prefix}✅ Corrected wrapper_script: '{old_name}' → '{chosen.name}'",
+            f"{ctx_prefix}✅ Corrected wrapper_script: '{old_name}' → '{chosen_name}'",
             "WARNING",
         )
-        self.save_status(status)
 
     def _get_manifest_docker_image(self, module_path: Path) -> Optional[str]:
         """Read job.docker.image from the manifest file, unescaping colons."""
-        manifest_path = module_path / 'manifest'
-        if not manifest_path.exists():
-            return None
-        try:
-            for line in manifest_path.read_text(encoding='utf-8').splitlines():
-                line = line.strip()
-                if line.startswith('job.docker.image='):
-                    value = line[len('job.docker.image='):]
-                    return value.replace('\\:', ':')
-        except Exception:
-            pass
-        return None
+        return effects.read_manifest_docker_image(str(module_path))
 
-    def generate_all_artifacts(self, tool_info: Dict[str, str], planning_data: ModulePlan, module_path: Path, status: ModuleGenerationStatus, skip_artifacts: List[str] = None, max_loops: int = MAX_ARTIFACT_LOOPS, max_escalations: int = MAX_ESCALATIONS, no_zip: bool = False, zip_only: bool = False, gp_server: Optional[str] = None, gp_user: Optional[str] = None, gp_password: Optional[str] = None) -> bool:
+    async def generate_all_artifacts(self, tool_info: Dict[str, str], planning_data: ModulePlan, module_path: Path, status: ModuleGenerationStatus, skip_artifacts: List[str] = None, max_loops: int = MAX_ARTIFACT_LOOPS, max_escalations: int = MAX_ESCALATIONS, no_zip: bool = False, zip_only: bool = False, gp_server: Optional[str] = None, gp_user: Optional[str] = None, gp_password: Optional[str] = None) -> bool:
         """Run artifact generation phase with cross-artifact error escalation."""
         self.logger.print_section("Artifact Generation Phase")
         self.logger.print_status("Starting artifact generation")
@@ -957,7 +802,6 @@ class ModuleAgent:
                                 'generated': True, 'validated': True, 'skipped': True,
                                 'attempts': 0, 'errors': [],
                             }
-                            self.save_status(status)
                             idx += 1
                             continue
 
@@ -965,7 +809,7 @@ class ModuleAgent:
                         planning_data, module_path, status,
                         context="pre-dockerfile assertion",
                     )
-                result = self.artifact_creation_loop(
+                result = await self.artifact_creation_loop(
                     artifact_name, tool_info, planning_data, module_path, status,
                     max_loops,
                     downstream_error_context=downstream_ctx,
@@ -1012,7 +856,6 @@ class ModuleAgent:
                         'error_snippet': result.error_text[:500],
                     }
                     status.escalation_log.append(escalation_event)
-                    self.save_status(status)
 
                     self.logger.print_section("Cross-Artifact Escalation")
                     self.logger.print_status(
@@ -1028,7 +871,6 @@ class ModuleAgent:
                     if target in status.artifacts_status:
                         status.artifacts_status[target]['validated'] = False
                         status.artifacts_status[target]['generated'] = False
-                    self.save_status(status)
 
                     # Build an enriched context message for manifest/wrapper escalations
                     # that includes wrapper flag details to guide alignment.
@@ -1037,10 +879,10 @@ class ModuleAgent:
                         planning_dict_esc = planning_data.model_dump(mode='json') if planning_data else {}
                         wrapper_script_esc = planning_dict_esc.get('wrapper_script') or 'wrapper.py'
                         wrapper_path_esc = module_path / wrapper_script_esc
-                        if wrapper_path_esc.exists():
+                        wrapper_src = effects.read_text_file(str(wrapper_path_esc))
+                        if wrapper_src is not None:
                             try:
                                 import ast as _ast
-                                wrapper_src = wrapper_path_esc.read_text(encoding='utf-8', errors='replace')
                                 # Extract declared flags for the context message
                                 declared_flags = []
                                 try:
@@ -1154,81 +996,28 @@ class ModuleAgent:
             self.logger.print_status("No docker_image_tag found in planning data, cannot push", "ERROR")
             return False
 
-        self.logger.print_status(f"Pushing Docker image: {tag}")
+        result = effects.docker_push(tag)
+        self._emit(result)
+        return result.success
 
-        cmd = ["docker", "push", tag]
-        try:
-            proc = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-            )
-            for line in proc.stdout:
-                print(line, end="")
-            proc.wait()
-
-            if proc.returncode == 0:
-                self.logger.print_status(f"✅ Successfully pushed {tag}", "SUCCESS")
-                return True
-            else:
-                self.logger.print_status(f"❌ Docker push failed for {tag} (exit code {proc.returncode})", "ERROR")
-                return False
-        except FileNotFoundError:
-            self.logger.print_status("Docker CLI not found; ensure Docker is installed and on PATH", "ERROR")
-            return False
-        except Exception as e:
-            self.logger.print_status(f"Docker push error: {str(e)}", "ERROR")
-            self.logger.print_status(f"Traceback: {traceback.format_exc()}", "DEBUG")
-            return False
-
-    def zip_artifacts(self, module_path: Path, tool_name: str, planning_data: 'ModulePlan', zip_only: bool = False) -> str:
+    def zip_artifacts(self, module_path: Path, tool_name: str, planning_data: 'ModulePlan', zip_only: bool = False) -> Optional[Path]:
         """Zip all artifact files into {module_name}.zip at the top level."""
         self.logger.print_section("Zipping Artifacts")
         self.logger.print_status("Creating zip archive of artifact files")
 
-        try:
-            artifact_files = ['manifest', 'paramgroups.json', 'test.yml', 'README.md', 'Dockerfile']
-            wrapper_script = planning_data.wrapper_script if planning_data else None
+        # Compute the member list here (coordination) and hand it to the effect.
+        members = ['manifest', 'paramgroups.json', 'test.yml', 'README.md', 'Dockerfile']
+        wrapper_script = planning_data.wrapper_script if planning_data else None
+        if wrapper_script:
+            members.append(wrapper_script)
 
-            files_to_zip = []
-            for file in module_path.iterdir():
-                if file.is_file():
-                    if wrapper_script and file.name == wrapper_script:
-                        files_to_zip.append(file)
-                    elif file.name in artifact_files:
-                        files_to_zip.append(file)
+        zip_name = f"{tool_name.lower().replace(' ', '_').replace('-', '_')}.zip"
+        result = effects.zip_artifacts(str(module_path), zip_name, members, zip_only)
+        self._emit(result)
 
-            if not files_to_zip:
-                self.logger.print_status("No artifact files found to zip", "WARNING")
-                return False
-
-            zip_filename = f"{tool_name.lower().replace(' ', '_').replace('-', '_')}.zip"
-            zip_path = module_path / zip_filename
-
-            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for file in files_to_zip:
-                    zipf.write(file, arcname=file.name)
-                    self.logger.print_status(f"  Added {file.name} to zip")
-
-            zip_size = zip_path.stat().st_size
-            self.logger.print_status(f"✅ Created {zip_filename} ({zip_size:,} bytes)", "SUCCESS")
-
-            if zip_only:
-                self.logger.print_status("Cleaning up artifact files (--zip-only specified)")
-                for file in files_to_zip:
-                    try:
-                        file.unlink()
-                        self.logger.print_status(f"  Deleted {file.name}")
-                    except Exception as e:
-                        self.logger.print_status(f"  Failed to delete {file.name}: {str(e)}", "WARNING")
-
-            return zip_path
-
-        except Exception as e:
-            self.logger.print_status(f"Failed to create zip archive: {str(e)}", "ERROR")
-            self.logger.print_status(f"Traceback: {traceback.format_exc()}", "DEBUG")
+        if not result.ok or not result.zip_path:
             return None
+        return Path(result.zip_path)
 
     def _run_install_artifact(
         self,
@@ -1352,92 +1141,36 @@ class ModuleAgent:
                 for error in status.error_messages:
                     print(f"  - {error}")
 
-    def run(self, tool_info: Dict[str, str] = None, skip_artifacts: List[str] = None, resume_status: ModuleGenerationStatus = None, max_loops: int = MAX_ARTIFACT_LOOPS, no_zip: bool = False, zip_only: bool = False, docker_push: bool = False, example_data: List[ExampleDataItem] = None, max_escalations: int = MAX_ESCALATIONS, gp_server: str = None, gp_user: str = None, gp_password: str = None) -> int:
+    async def run(self, tool_info: Dict[str, str] = None, skip_artifacts: List[str] = None, max_loops: int = MAX_ARTIFACT_LOOPS, no_zip: bool = False, zip_only: bool = False, docker_push: bool = False, example_data: List[ExampleDataItem] = None, max_escalations: int = MAX_ESCALATIONS, gp_server: str = None, gp_user: str = None, gp_password: str = None) -> int:
         """Run the complete module generation process"""
 
-        if resume_status:
-            self.logger.print_status(f"Resuming module generation for: {resume_status.tool_name}")
-            status = resume_status
-            module_path = Path(status.module_directory)
+        self.logger.print_status(f"Generating module for: {tool_info['name']}")
+        module_path = self.create_module_directory(
+            tool_info['name'],
+            module_dir=tool_info.get('module_dir', ''),
+        )
+        status = ModuleGenerationStatus(
+            tool_name=tool_info['name'],
+            module_directory=str(module_path),
+            example_data=example_data or [],
+        )
+        tool_info['example_data'] = status.example_data
 
-            if example_data is not None:
-                status.example_data = example_data
-                self.logger.print_status(f"Overriding example_data with {len(example_data)} item(s) from --data")
-                self.save_status(status)  # persist hints immediately so they survive any mid-run crash
-
-            if not tool_info:
-                language = 'unknown'
-                if status.research_data and isinstance(status.research_data, dict):
-                    research_text = str(status.research_data.get('research', ''))
-                    if 'bioconductor' in research_text.lower() or ' r package' in research_text.lower() or 'cran' in research_text.lower():
-                        language = 'r'
-                    elif 'python' in research_text.lower() and 'pypi' in research_text.lower():
-                        language = 'python'
-
-                if language == 'unknown' and status.planning_data:
-                    plan_text = str(status.planning_data.plan if hasattr(status.planning_data, 'plan') else '')
-                    if 'bioconductor' in plan_text.lower() or ' r package' in plan_text.lower():
-                        language = 'r'
-                    elif 'python' in plan_text.lower():
-                        language = 'python'
-
-                tool_info = {
-                    'name': status.tool_name,
-                    'version': 'latest',
-                    'language': language,
-                    'description': '',
-                    'repository_url': '',
-                    'documentation_url': '',
-                    'example_data': status.example_data,
-                }
-                self.logger.print_status(f"Detected tool language from existing data: {language}")
-            else:
-                tool_info['example_data'] = status.example_data
-
-            url_items_missing_local = [
-                item for item in (status.example_data or [])
-                if item.is_url and not item.has_local
-            ]
-            if url_items_missing_local:
-                self.logger.print_status(
-                    f"Re-downloading {len(url_items_missing_local)} URL item(s) whose local_path was not recorded"
-                )
-                self.download_url_data(status.example_data, module_path)
-                tool_info['example_data'] = status.example_data
-                self.save_status(status)
-
-        else:
-            self.logger.print_status(f"Generating module for: {tool_info['name']}")
-            module_path = self.create_module_directory(
-                tool_info['name'],
-                module_dir=tool_info.get('module_dir', ''),
-            )
-            status = ModuleGenerationStatus(
-                tool_name=tool_info['name'],
-                module_directory=str(module_path),
-                example_data=example_data or [],
-            )
-            tool_info['example_data'] = status.example_data
-
-            if status.example_data:
-                self.download_url_data(status.example_data, module_path)
-
-            self.save_status(status)
+        if status.example_data:
+            self.download_url_data(status.example_data, module_path)
 
         # Phase 1: Research
         if status.research_complete:
             self.logger.print_section("Research Phase")
             self.logger.print_status("✓ Research already complete, using existing data", "SUCCESS")
         else:
-            research_success, research_data = self.do_research(tool_info, status)
+            research_success, research_data = await self.do_research(tool_info, status)
             if research_success:
                 status.research_data = research_data
             else:
                 status.error_messages.append(research_data.get('error', 'Research failed'))
             if status.research_data:
-                with open(module_path / "research.md", "w") as f:
-                    f.write(status.research_data.get('research', ''))
-            self.save_status(status)
+                effects.write_text_file(str(module_path / "research.md"), status.research_data.get('research', ''))
 
         if not status.research_complete:
             self.print_final_report(status)
@@ -1448,15 +1181,13 @@ class ModuleAgent:
             self.logger.print_section("Planning Phase")
             self.logger.print_status("✓ Planning already complete, using existing plan", "SUCCESS")
         else:
-            planning_success, planning_data = self.do_planning(tool_info, status.research_data, status, module_path=module_path)
+            planning_success, planning_data = await self.do_planning(tool_info, status.research_data, status, module_path=module_path)
             if planning_success:
                 status.planning_data = planning_data
             else:
                 status.error_messages.append("Planning failed")
             if status.planning_data:
-                with open(module_path / "plan.md", "w") as f:
-                    f.write(status.planning_data.plan)
-            self.save_status(status)
+                effects.write_text_file(str(module_path / "plan.md"), status.planning_data.plan)
 
         if not status.planning_complete:
             self.print_final_report(status)
@@ -1472,7 +1203,7 @@ class ModuleAgent:
                     skip_artifacts.append(artifact_name)
                     self.logger.print_status(f"✓ {artifact_name} already completed, skipping")
 
-        artifacts_success = self.generate_all_artifacts(
+        artifacts_success = await self.generate_all_artifacts(
             tool_info, status.planning_data, module_path, status,
             skip_artifacts, max_loops, max_escalations,
             no_zip=no_zip, zip_only=zip_only,

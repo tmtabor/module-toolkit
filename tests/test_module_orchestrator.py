@@ -12,7 +12,7 @@ are made.  They verify:
 import json
 import pytest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from pydantic_ai.models.test import TestModel
 
@@ -45,54 +45,54 @@ def module_path(tmp_path):
 
 class TestDoResearch:
 
-    def test_returns_true_on_success(self, agent, sample_tool_info, sample_status):
+    async def test_returns_true_on_success(self, agent, sample_tool_info, sample_status):
         with patch("agents.module.researcher_agent") as mock_ra:
             mock_result = MagicMock()
             mock_result.output = "TestTool is a great bioinformatics tool."
-            mock_result.usage.return_value = MagicMock(input_tokens=10, output_tokens=20)
-            mock_ra.run_sync.return_value = mock_result
+            mock_result.usage = MagicMock(input_tokens=10, output_tokens=20)
+            mock_ra.run = AsyncMock(return_value=mock_result)
 
-            success, data = agent.do_research(sample_tool_info, sample_status)
+            success, data = await agent.do_research(sample_tool_info, sample_status)
 
         assert success is True
         assert "research" in data
         assert "TestTool" in data["research"]
 
-    def test_updates_status_tokens(self, agent, sample_tool_info, sample_status):
+    async def test_updates_status_tokens(self, agent, sample_tool_info, sample_status):
         with patch("agents.module.researcher_agent") as mock_ra:
             mock_result = MagicMock()
             mock_result.output = "Research output."
             mock_usage = MagicMock()
             mock_usage.input_tokens = 100
             mock_usage.output_tokens = 50
-            mock_result.usage.return_value = mock_usage
-            mock_ra.run_sync.return_value = mock_result
+            mock_result.usage = mock_usage
+            mock_ra.run = AsyncMock(return_value=mock_result)
 
-            agent.do_research(sample_tool_info, sample_status)
+            await agent.do_research(sample_tool_info, sample_status)
 
         assert sample_status.input_tokens == 100
         assert sample_status.output_tokens == 50
 
-    def test_returns_false_on_exception(self, agent, sample_tool_info, sample_status):
+    async def test_returns_false_on_exception(self, agent, sample_tool_info, sample_status):
         with patch("agents.module.researcher_agent") as mock_ra:
-            mock_ra.run_sync.side_effect = RuntimeError("API down")
+            mock_ra.run = AsyncMock(side_effect=RuntimeError("API down"))
 
-            success, data = agent.do_research(sample_tool_info, sample_status)
+            success, data = await agent.do_research(sample_tool_info, sample_status)
 
         assert success is False
         assert "error" in data
 
-    def test_tool_name_appears_in_prompt(self, agent, sample_tool_info, sample_status):
+    async def test_tool_name_appears_in_prompt(self, agent, sample_tool_info, sample_status):
         """The prompt passed to researcher_agent must include the tool name."""
         with patch("agents.module.researcher_agent") as mock_ra:
             mock_result = MagicMock()
             mock_result.output = "done"
-            mock_result.usage.return_value = MagicMock(input_tokens=0, output_tokens=0)
-            mock_ra.run_sync.return_value = mock_result
+            mock_result.usage = MagicMock(input_tokens=0, output_tokens=0)
+            mock_ra.run = AsyncMock(return_value=mock_result)
 
-            agent.do_research(sample_tool_info, sample_status)
+            await agent.do_research(sample_tool_info, sample_status)
 
-        call_args = mock_ra.run_sync.call_args
+        call_args = mock_ra.run.call_args
         prompt = call_args[0][0]
         assert "TestTool" in prompt
 
@@ -103,14 +103,14 @@ class TestDoResearch:
 
 class TestDoPlanning:
 
-    def test_returns_true_and_plan_on_success(self, agent, sample_tool_info, sample_plan, sample_status, module_path):
+    async def test_returns_true_and_plan_on_success(self, agent, sample_tool_info, sample_plan, sample_status, module_path):
         with patch("agents.module.planner_agent") as mock_pa:
             mock_result = MagicMock()
             mock_result.output = sample_plan
-            mock_result.usage.return_value = MagicMock(input_tokens=10, output_tokens=20)
-            mock_pa.run_sync.return_value = mock_result
+            mock_result.usage = MagicMock(input_tokens=10, output_tokens=20)
+            mock_pa.run = AsyncMock(return_value=mock_result)
 
-            success, plan = agent.do_planning(
+            success, plan = await agent.do_planning(
                 sample_tool_info,
                 {"research": "tool research data"},
                 sample_status,
@@ -121,11 +121,11 @@ class TestDoPlanning:
         assert isinstance(plan, ModulePlan)
         assert plan.module_name == "TestTool"
 
-    def test_returns_false_on_exception(self, agent, sample_tool_info, sample_status, module_path):
+    async def test_returns_false_on_exception(self, agent, sample_tool_info, sample_status, module_path):
         with patch("agents.module.planner_agent") as mock_pa:
-            mock_pa.run_sync.side_effect = ValueError("bad plan")
+            mock_pa.run = AsyncMock(side_effect=ValueError("bad plan"))
 
-            success, plan = agent.do_planning(
+            success, plan = await agent.do_planning(
                 sample_tool_info,
                 {},
                 sample_status,
@@ -135,32 +135,32 @@ class TestDoPlanning:
         assert success is False
         assert plan is None
 
-    def test_updates_status_tokens(self, agent, sample_tool_info, sample_plan, sample_status, module_path):
+    async def test_updates_status_tokens(self, agent, sample_tool_info, sample_plan, sample_status, module_path):
         with patch("agents.module.planner_agent") as mock_pa:
             mock_result = MagicMock()
             mock_result.output = sample_plan
             mock_usage = MagicMock()
             mock_usage.input_tokens = 200
             mock_usage.output_tokens = 80
-            mock_result.usage.return_value = mock_usage
-            mock_pa.run_sync.return_value = mock_result
+            mock_result.usage = mock_usage
+            mock_pa.run = AsyncMock(return_value=mock_result)
 
-            agent.do_planning(
+            await agent.do_planning(
                 sample_tool_info, {}, sample_status, module_path=module_path
             )
 
         assert sample_status.input_tokens == 200
         assert sample_status.output_tokens == 80
 
-    def test_saves_plan_jsonl(self, agent, sample_tool_info, sample_plan, sample_status, module_path):
+    async def test_saves_plan_jsonl(self, agent, sample_tool_info, sample_plan, sample_status, module_path):
         """do_planning should write plan.jsonl when module_path is provided."""
         with patch("agents.module.planner_agent") as mock_pa:
             mock_result = MagicMock()
             mock_result.output = sample_plan
-            mock_result.usage.return_value = MagicMock(input_tokens=0, output_tokens=0)
-            mock_pa.run_sync.return_value = mock_result
+            mock_result.usage = MagicMock(input_tokens=0, output_tokens=0)
+            mock_pa.run = AsyncMock(return_value=mock_result)
 
-            agent.do_planning(
+            await agent.do_planning(
                 sample_tool_info, {}, sample_status, module_path=module_path
             )
 
@@ -176,10 +176,10 @@ class TestArtifactCreationLoop:
     def _make_mock_result(self, artifact_model):
         mock_result = MagicMock()
         mock_result.output = artifact_model
-        mock_result.usage.return_value = MagicMock(input_tokens=5, output_tokens=10)
+        mock_result.usage = MagicMock(input_tokens=5, output_tokens=10)
         return mock_result
 
-    def test_success_path_writes_file(
+    async def test_success_path_writes_file(
         self, agent, sample_tool_info, sample_plan, sample_status, sample_artifact_model, module_path
     ):
         """A successful agent run should write the artifact file to disk."""
@@ -187,12 +187,12 @@ class TestArtifactCreationLoop:
 
         with patch.object(
             agent.artifact_agents["documentation"]["agent"],
-            "run_sync",
+            "run",
             return_value=mock_result,
         ):
             # Stub out the validator so we don't run the real linter
             with patch.object(agent, "validate_artifact", return_value={"success": True}):
-                result = agent.artifact_creation_loop(
+                result = await agent.artifact_creation_loop(
                     "documentation",
                     sample_tool_info,
                     sample_plan,
@@ -205,7 +205,7 @@ class TestArtifactCreationLoop:
         assert result.artifact_name == "documentation"
         assert (module_path / "README.md").exists()
 
-    def test_validation_failure_returns_failed_result(
+    async def test_validation_failure_returns_failed_result(
         self, agent, sample_tool_info, sample_plan, sample_status, sample_artifact_model, module_path
     ):
         """When validation fails every attempt, the loop returns success=False."""
@@ -213,7 +213,7 @@ class TestArtifactCreationLoop:
 
         with patch.object(
             agent.artifact_agents["documentation"]["agent"],
-            "run_sync",
+            "run",
             return_value=mock_result,
         ):
             with patch.object(
@@ -221,7 +221,7 @@ class TestArtifactCreationLoop:
                 "validate_artifact",
                 return_value={"success": False, "error": "linter error"},
             ):
-                result = agent.artifact_creation_loop(
+                result = await agent.artifact_creation_loop(
                     "documentation",
                     sample_tool_info,
                     sample_plan,
@@ -233,15 +233,15 @@ class TestArtifactCreationLoop:
         assert result.success is False
         assert result.artifact_name == "documentation"
 
-    def test_exception_in_agent_returns_failed_result(
+    async def test_exception_in_agent_returns_failed_result(
         self, agent, sample_tool_info, sample_plan, sample_status, module_path
     ):
         with patch.object(
             agent.artifact_agents["gpunit"]["agent"],
-            "run_sync",
+            "run",
             side_effect=RuntimeError("model error"),
         ):
-            result = agent.artifact_creation_loop(
+            result = await agent.artifact_creation_loop(
                 "gpunit",
                 sample_tool_info,
                 sample_plan,
@@ -253,18 +253,18 @@ class TestArtifactCreationLoop:
         assert result.success is False
         assert "model error" in result.error_text
 
-    def test_status_tracks_attempts(
+    async def test_status_tracks_attempts(
         self, agent, sample_tool_info, sample_plan, sample_status, sample_artifact_model, module_path
     ):
         mock_result = self._make_mock_result(sample_artifact_model)
 
         with patch.object(
             agent.artifact_agents["gpunit"]["agent"],
-            "run_sync",
+            "run",
             return_value=mock_result,
         ):
             with patch.object(agent, "validate_artifact", return_value={"success": True}):
-                agent.artifact_creation_loop(
+                await agent.artifact_creation_loop(
                     "gpunit",
                     sample_tool_info,
                     sample_plan,
@@ -275,7 +275,7 @@ class TestArtifactCreationLoop:
 
         assert sample_status.artifacts_status["gpunit"]["attempts"] == 1
 
-    def test_error_history_accumulated_across_attempts(
+    async def test_error_history_accumulated_across_attempts(
         self, agent, sample_tool_info, sample_plan, sample_status, sample_artifact_model, module_path
     ):
         """Validation errors must accumulate in status.artifacts_status[name]['errors']."""
@@ -283,7 +283,7 @@ class TestArtifactCreationLoop:
 
         with patch.object(
             agent.artifact_agents["documentation"]["agent"],
-            "run_sync",
+            "run",
             return_value=mock_result,
         ):
             with patch.object(
@@ -291,7 +291,7 @@ class TestArtifactCreationLoop:
                 "validate_artifact",
                 return_value={"success": False, "error": "lint fail"},
             ):
-                agent.artifact_creation_loop(
+                await agent.artifact_creation_loop(
                     "documentation",
                     sample_tool_info,
                     sample_plan,
@@ -305,48 +305,14 @@ class TestArtifactCreationLoop:
 
 
 # ---------------------------------------------------------------------------
-# save_status() / load_status()
+# ModuleGenerationStatus.to_dict() -- still live: it's what the Temporal
+# workflow's `progress()` query and generate-module.py's Temporal-path report
+# serialise (temporal/PHASE4.md 4.5 removed ModuleAgent.save_status/load_status
+# and the on-disk status.json they wrote, but to_dict() itself is unrelated to
+# that persistence and remains exercised here).
 # ---------------------------------------------------------------------------
 
-class TestStatusPersistence:
-
-    def test_save_and_load_round_trip(self, agent, sample_status, module_path):
-        sample_status.module_directory = str(module_path)
-        agent.save_status(sample_status)
-
-        loaded = agent.load_status(str(module_path))
-
-        assert loaded.tool_name == sample_status.tool_name
-        assert loaded.module_directory == sample_status.module_directory
-
-    def test_save_creates_status_json(self, agent, sample_status, module_path):
-        sample_status.module_directory = str(module_path)
-        agent.save_status(sample_status)
-        assert (module_path / "status.json").exists()
-
-    def test_load_missing_raises(self, agent, module_path):
-        with pytest.raises(FileNotFoundError):
-            agent.load_status(str(module_path))
-
-    def test_loaded_status_preserves_planning_data(self, agent, sample_status, sample_plan, module_path):
-        sample_status.module_directory = str(module_path)
-        agent.save_status(sample_status)
-
-        loaded = agent.load_status(str(module_path))
-
-        assert loaded.planning_complete is True
-        assert loaded.planning_data.module_name == "TestTool"
-
-    def test_loaded_status_preserves_token_counts(self, agent, sample_status, module_path):
-        sample_status.module_directory = str(module_path)
-        sample_status.input_tokens = 1234
-        sample_status.output_tokens = 567
-        agent.save_status(sample_status)
-
-        loaded = agent.load_status(str(module_path))
-
-        assert loaded.input_tokens == 1234
-        assert loaded.output_tokens == 567
+class TestModuleGenerationStatusSerialization:
 
     def test_model_dump_round_trip(self, sample_status):
         """ModuleGenerationStatus.model_dump() must produce a serialisable dict."""
@@ -367,6 +333,20 @@ class TestStatusPersistence:
         d = sample_status.to_dict()
         assert d['tool_name'] == 'TestTool'
         assert isinstance(d['artifacts_status'], dict)
+
+    def test_to_dict_excludes_large_free_text(self, sample_status):
+        """to_dict() must drop research_data['research']/planning_data['plan'] --
+        the large free-text blobs already written to research.md/plan.md on
+        disk -- so they aren't re-transmitted on every progress() poll and
+        workflow payload (temporal/PHASE5.md Workstream A1)."""
+        d = sample_status.to_dict()
+        assert 'research' not in d['research_data']
+        assert 'plan' not in d['planning_data']
+        # Structural fields must still be present.
+        assert d['research_complete'] is True
+        assert d['planning_complete'] is True
+        assert d['planning_data']['module_name'] == 'TestTool'
+        assert len(d['planning_data']['parameters']) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -404,7 +384,7 @@ class TestGenerateAllArtifacts:
         return_val = ArtifactResult(success=success, artifact_name="stub")
         return patch.object(agent, "artifact_creation_loop", return_value=return_val)
 
-    def test_returns_true_when_all_succeed(
+    async def test_returns_true_when_all_succeed(
         self, agent, sample_tool_info, sample_plan, sample_status, module_path
     ):
         sample_status.module_directory = str(module_path)
@@ -414,7 +394,7 @@ class TestGenerateAllArtifacts:
                 agent, "_run_install_artifact",
                 return_value=ArtifactResult(success=True, artifact_name="install"),
             ):
-                ok = agent.generate_all_artifacts(
+                ok = await agent.generate_all_artifacts(
                     sample_tool_info,
                     sample_plan,
                     module_path,
@@ -423,12 +403,12 @@ class TestGenerateAllArtifacts:
                 )
         assert ok is True
 
-    def test_returns_false_and_aborts_on_failure(
+    async def test_returns_false_and_aborts_on_failure(
         self, agent, sample_tool_info, sample_plan, sample_status, module_path
     ):
         sample_status.module_directory = str(module_path)
         with self._stub_artifact_loop(agent, success=False):
-            ok = agent.generate_all_artifacts(
+            ok = await agent.generate_all_artifacts(
                 sample_tool_info,
                 sample_plan,
                 module_path,
@@ -437,7 +417,7 @@ class TestGenerateAllArtifacts:
             )
         assert ok is False
 
-    def test_skips_already_validated_artifacts(
+    async def test_skips_already_validated_artifacts(
         self, agent, sample_tool_info, sample_plan, sample_status, module_path
     ):
         """If an artifact is already validated in status, it must not be re-generated."""
@@ -450,7 +430,7 @@ class TestGenerateAllArtifacts:
                 agent, "_run_install_artifact",
                 return_value=ArtifactResult(success=True, artifact_name="install"),
             ):
-                agent.generate_all_artifacts(
+                await agent.generate_all_artifacts(
                     sample_tool_info,
                     sample_plan,
                     module_path,

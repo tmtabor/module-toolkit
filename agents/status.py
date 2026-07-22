@@ -48,6 +48,11 @@ class ModuleGenerationStatus(BaseModel):
     escalation_counts: Dict[str, int] = Field(default_factory=dict)
     # Log of escalation events for debugging / reporting
     escalation_log: List[Dict[str, str]] = Field(default_factory=list)
+    # GenePattern upload outcome: None (never attempted -- no gp_server/gp_user
+    # given), 'uploaded', 'declined' (human-in-the-loop rejection, temporal/
+    # PHASE5.md Workstream D), or 'failed'. Only ever set by the Temporal path
+    # today (the human-in-the-loop gate is Temporal-only).
+    upload_status: Optional[str] = None
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -69,7 +74,7 @@ class ModuleGenerationStatus(BaseModel):
     def add_usage(self, result) -> None:
         """Add token usage from an agent result to the running totals."""
         try:
-            usage = result.usage()
+            usage = result.usage
             if usage:
                 self.input_tokens += usage.input_tokens or 0
                 self.output_tokens += usage.output_tokens or 0
@@ -86,17 +91,30 @@ class ModuleGenerationStatus(BaseModel):
         """
         Serialise status to a JSON-serialisable dictionary.
         Delegates to model_dump() and adds derived/computed fields.
+
+        Excludes the large free-text research/plan narratives
+        (research_data['research'], planning_data['plan']) -- they're already
+        written to research.md/plan.md on disk by the same run, but were
+        being re-transmitted in full on every progress() poll and workflow
+        payload otherwise. That's how a real run hit Temporal's payload-size
+        warning and, in one observed case, its workflow-history-size limit
+        (temporal/PHASE5.md Workstream A1). Callers that need the full text
+        read it from disk directly (the CLI already has it locally; the web
+        UI has /files/ + /download/) rather than through this hot path.
         """
         data = self.model_dump(
             mode='json',
-            exclude={'planning_data', 'example_data'},
+            exclude={'planning_data', 'example_data', 'research_data'},
         )
         data['research_complete'] = self.research_complete
         data['planning_complete'] = self.planning_complete
         data['estimated_cost'] = self.get_estimated_cost()
         data['example_data'] = [item.to_dict() for item in (self.example_data or [])]
+        data['research_data'] = {k: v for k, v in (self.research_data or {}).items() if k != 'research'}
         if self.planning_data:
-            data['planning_data'] = self.planning_data.model_dump(mode='json')
+            planning_dict = self.planning_data.model_dump(mode='json')
+            planning_dict.pop('plan', None)
+            data['planning_data'] = planning_dict
         else:
             data['planning_data'] = {}
         return data

@@ -6,6 +6,8 @@ network or docker is touched. These are pure and fast (no LLM, no live marker).
 """
 import io
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -79,6 +81,26 @@ class TestFilesystemEffects:
     def test_read_manifest_docker_image_none_when_absent(self, tmp_path):
         (tmp_path / "manifest").write_text("commandLine=echo hi\n")
         assert effects.read_manifest_docker_image(str(tmp_path)) is None
+
+    def test_make_module_dir_bumps_suffix_on_name_collision(self, tmp_path):
+        """Same tool_name+timestamp (two runs starting in the same wall-clock
+        second, temporal/PHASE5.md Workstream E) must not silently share a dir."""
+        first = effects.make_module_dir(str(tmp_path), "tool", "20260101_120000")
+        second = effects.make_module_dir(str(tmp_path), "tool", "20260101_120000")
+        assert first != second
+        assert Path(first).is_dir() and Path(second).is_dir()
+
+    def test_make_module_dir_concurrent_same_name_all_unique(self, tmp_path):
+        """N threads racing to create the same-named dir at once (the actual
+        failure mode -- a sequential test can't rule out a TOCTOU race)."""
+        n = 8
+        with ThreadPoolExecutor(max_workers=n) as pool:
+            paths = list(pool.map(
+                lambda _: effects.make_module_dir(str(tmp_path), "tool", "20260101_120000"),
+                range(n),
+            ))
+        assert len(set(paths)) == n
+        assert all(Path(p).is_dir() for p in paths)
 
 
 # ---------------------------------------------------------------------------

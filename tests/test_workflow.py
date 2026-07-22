@@ -28,6 +28,7 @@ Two things this file deliberately does and does not attempt, and why:
 import asyncio
 import concurrent.futures
 from datetime import timedelta
+from pathlib import Path
 
 import pytest
 from temporalio.client import Client
@@ -42,7 +43,7 @@ from temporal._test_fixtures import (
     MiniWorkflow, mini_agent, TimeoutPolicyWorkflow, sleep_activity,
     RetryPolicyWorkflow, always_failing_activity, _always_fails_call_count,
     HeartbeatWrapperWorkflow, heartbeat_sleep_activity,
-    ApprovalGateWorkflow,
+    ApprovalGateWorkflow, MakeModuleDirWorkflow,
 )
 
 pytestmark = pytest.mark.temporal
@@ -300,3 +301,49 @@ async def test_signal_unblocks_a_waiting_workflow():
             )
             await handle2.signal(ApprovalGateWorkflow.reject)
             assert await handle2.result() == 'rejected'
+
+
+async def test_concurrent_workflows_across_two_workers_avoid_module_dir_collision(tmp_path):
+    """temporal/PHASE5.md Workstream E: N simultaneous workflows against 2+
+    worker processes must not collide on module directory names.
+
+    Two real Worker instances poll the same task queue (representative of two
+    worker *processes* -- Temporal's dispatch/locking model doesn't
+    distinguish them from separate processes; the thing that's actually in
+    question is filesystem atomicity, which is OS-level and doesn't care
+    either). N workflow instances are started concurrently, all requesting the
+    *same* output_dir/tool_name/timestamp -- the exact scenario that used to
+    silently produce a shared directory (agents.effects.make_module_dir's
+    prior unconditional exist_ok=True) before this workstream's fix.
+    """
+    n = 6
+    async with await WorkflowEnvironment.start_time_skipping() as env:
+        client = await _connected_client(env)
+        # Two independent client connections, each backing its own Worker on
+        # the same task queue -- the Rust bridge refuses two Workers sharing
+        # one client's connection to register on an identical task queue, but
+        # that's a same-process SDK bookkeeping detail, not a Temporal-server
+        # rule. Separate processes each get their own client/connection, so
+        # separate connections here is the more faithful two-worker-process
+        # simulation anyway.
+        client2 = await _connected_client(env)
+        async with Worker(
+            client, task_queue=QUEUE, workflows=[MakeModuleDirWorkflow],
+            activities=[activities.make_module_dir], activity_executor=_EXECUTOR,
+        ), Worker(
+            client2, task_queue=QUEUE, workflows=[MakeModuleDirWorkflow],
+            activities=[activities.make_module_dir], activity_executor=_EXECUTOR,
+        ):
+            results = await asyncio.gather(*[
+                client.execute_workflow(
+                    MakeModuleDirWorkflow.run,
+                    args=[str(tmp_path), "tool", "20260101_120000"],
+                    id=f'make-module-dir-race-{i}',
+                    task_queue=QUEUE,
+                    execution_timeout=timedelta(seconds=30),
+                )
+                for i in range(n)
+            ])
+
+    assert len(set(results)) == n
+    assert all(Path(p).is_dir() for p in results)

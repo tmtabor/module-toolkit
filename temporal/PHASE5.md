@@ -373,7 +373,7 @@ Default **off** — this doesn't surprise existing automated CLI users who alrea
 `uv run pytest -m "not live"` (179 passed) and `uv run pytest -m temporal` (11 passed) green
 throughout.
 
-## Workstream E — Concurrent multi-run validation (depends on Workstream A)
+## Workstream E — Concurrent multi-run validation (depends on Workstream A) — done
 
 Unsafe to attempt meaningfully before A resolves the shared-filesystem/payload questions. Once A
 lands: run N simultaneous workflows against 2+ worker processes and confirm no cross-run
@@ -381,6 +381,56 @@ interference — module directory collisions, and process-wide state such as `ag
 module-level `_brave_lock`/`_brave_last_call` Brave rate-limiter (correct *within* one worker
 process, but worth confirming it doesn't create unintended cross-run contention at higher
 concurrency, or that it's fine because each worker process is independent).
+
+**Found and fixed: a real module-directory-collision bug.** `agents/effects.py::make_module_dir`'s
+no-explicit-`module_dir` branch named directories from `tool_name` + a second-granularity timestamp
+and created them with `Path.mkdir(parents=True, exist_ok=True)` — silently succeeding even if the
+directory already existed. Two workflows for the same tool starting in the same wall-clock second
+(a real scenario: the Django UI computes this same name synchronously in the request thread and
+also uses it as the Temporal `workflow_id`) would silently share one directory. Fix:
+
+- `make_module_dir`'s auto-named branch now creates the directory with `mkdir(exist_ok=False)` (atomic
+  at the OS level) and, on `FileExistsError`, bumps a numeric suffix and retries — the explicit-
+  `module_dir` branch (an intentional, caller-specified target) is unchanged and still reuses an
+  existing directory on purpose.
+- `app/generator/views.py::generate_module` no longer duplicates the naming/`mkdir` logic inline;
+  it now calls `effects.make_module_dir` directly (removing the duplication *and* inheriting the fix
+  in one change).
+
+**Verification:**
+- `tests/test_effects.py`: `test_make_module_dir_bumps_suffix_on_name_collision` (sequential) and
+  `test_make_module_dir_concurrent_same_name_all_unique` (8 real threads racing the same
+  tool_name/timestamp via `ThreadPoolExecutor`) — both fast, no server needed.
+- `tests/test_workflow.py::test_concurrent_workflows_across_two_workers_avoid_module_dir_collision`
+  (live, `temporal`-marked): a new fixture (`temporal/_test_fixtures.py::MakeModuleDirWorkflow`)
+  calls the real `make_module_dir` *activity*; the test backs two `Worker`s with two independent
+  client connections on the same task queue (the SDK-level equivalent of two worker processes —
+  a single client can't register two Workers on one queue, itself a useful thing learned live) and
+  fires 6 concurrent workflow executions at one deliberately-identical directory name.
+- **Regression-confirmed, not just written and trusted:** the fix was temporarily reverted and the
+  same live test re-run — it failed exactly as predicted (`assert 1 == 6`, all six workflows
+  resolved to the same directory) — before restoring the fix and re-confirming green. This is the
+  same "prove the test would have caught the bug" discipline used for `guard_single_call` earlier
+  in Phase 5.
+- `tests/test_brave_rate_limiter.py` (new, fast, no server): drives 6 threads through the real
+  `_brave_get` concurrently (with `_BRAVE_MIN_INTERVAL` monkeypatched down so the test runs in
+  well under a second) and asserts every call reaches the mocked HTTP layer exactly once, correctly
+  serialized with the minimum gap enforced — confirming the "correct *within* one worker process"
+  assumption rather than just asserting it. The cross-*process* case (two worker processes sharing
+  one Brave API key are **not** jointly rate-limited against each other, since the lock/timestamp
+  are module-level state private to each process) is a real, accepted limitation, not fixed here —
+  building a distributed rate limiter (e.g. Redis-backed) for a capability nothing in this codebase
+  currently needs would be exactly the kind of premature infrastructure the project has avoided
+  elsewhere (see A3's shared-filesystem decision).
+- Full non-live suite (185 passed) and `temporal`-marked suite (12 passed) both green.
+- **Not done, and deliberately so:** a full concurrent run of the real LLM-backed pipeline across
+  genuinely separate OS worker processes. The verification above is mechanism-level (real Temporal
+  SDK dispatch, real filesystem, real thread concurrency) rather than a full end-to-end live run —
+  judged lower value for the risk, since the local model's already-documented tool-call-looping
+  flake (Phase 4's parity gate) makes multiple simultaneous full pipeline runs slow and
+  failure-prone in a way orthogonal to what's actually being validated here, and the two-client-
+  connection setup exercises the identical dispatch/locking code path a second real OS process
+  would.
 
 ## Workstream F — Observability
 
@@ -410,7 +460,7 @@ concurrency, or that it's fine because each worker process is independent).
 
 ```
 A (storage/payload)  ─┬─▶ E (concurrency)
-   [DONE]              │
+   [DONE]              │      [DONE]
                         │
 C (retry/heartbeat/    │
    anti-loop guard)  ──┼─▶ B (de-dup, tabled)  ──▶  G (revisit --legacy decision)
@@ -422,11 +472,10 @@ D (approval gate)  ─────┘  [independent of everything else]
 F (observability) ── independent, ongoing
 ```
 
-A, C, and D are **done** (see their writeups above for implementation + live verification). B is
-the biggest remaining lift and benefits from A having already settled the payload/status shape it
-will consolidate. E and F remain open — F doesn't depend on anything above and can be picked up
-opportunistically; E depends on A, which is now satisfied. G trails whichever of B/E/F it's
-documenting.
+A, C, D, and E are **done** (see their writeups above for implementation + live verification). B was
+spiked (see its section above) and its full refactor deliberately tabled, with only its concrete
+`file_exists()` finding landed. F remains open and doesn't depend on anything above — pick up
+opportunistically. G trails whichever of B/F it's documenting.
 
 ## Acceptance criteria
 
@@ -451,10 +500,14 @@ documenting.
 6. ✅ A human-in-the-loop approval gate exists for the GenePattern upload step, opt-in and
    defaulting off, exposed through both the CLI and the Django UI (Workstream D — verified live
    through the real Django HTTP endpoints, not just internal mechanisms).
-7. ✅ `uv run pytest -m "not live"` (179 passed) and `uv run pytest -m temporal` (11 passed) green
+7. ✅ `uv run pytest -m "not live"` (185 passed) and `uv run pytest -m temporal` (12 passed) green
    throughout every workstream landed.
-8. ✅ Each landed workstream (A, C, D) verified live against a real Temporal server + worker run,
-   not just via unit tests — matching the standard set in Phase 4.
+8. ✅ Each landed workstream (A, C, D, E) verified live against a real Temporal server + worker
+   run, not just via unit tests — matching the standard set in Phase 4.
+9. ✅ N simultaneous workflows against 2+ workers don't corrupt each other's module directories, and
+   the one piece of process-wide mutable state (the Brave rate limiter) is confirmed correct under
+   real concurrent access (Workstream E — a real collision bug was found, fixed, and the fix
+   regression-confirmed by re-running the failing test against the pre-fix code).
 
 ## Risks & mitigations
 
@@ -464,7 +517,7 @@ documenting.
 | Changing `ModuleGenerationStatus.to_dict()`'s shape (A1) breaks the Django UI's status contract | `app/generator/views.py::_map_state_to_status` is the one place that shape is consumed — update it in the same change, verify live against the real UI (as Phase 4 did) |
 | Retry-policy changes (C1) mask real bugs by retrying too aggressively, or fail real transient errors too eagerly | Start conservative (retry only on a documented allow-list of transient error signatures); expand based on observed failure logs, not guesses |
 | Human-in-the-loop gate (D) surprises existing automated CLI users | Default off; opt-in flag only |
-| Concurrency testing (E) surfaces a real multi-host storage need | That's exactly what E is for — resolve into Workstream A's option (b)/(c) rather than treating it as a surprise |
+| Concurrency testing (E) surfaces a real multi-host storage need | Did not surface one — the bug found (module-directory collision) was a same-host race, resolved without touching A's shared-filesystem decision |
 
 ## Suggested commit sequence
 

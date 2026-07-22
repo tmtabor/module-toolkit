@@ -50,7 +50,16 @@ def make_module_dir(output_dir: str, tool_name: str, timestamp: str, module_dir:
 
     *timestamp* is injected (not read from the clock) so the caller — a Temporal
     workflow in Phase 3 — controls determinism. If *module_dir* is given it is
-    used verbatim (the web UI relies on this).
+    used verbatim (an explicit, intentional target directory; reused if it
+    already exists).
+
+    Otherwise the name is derived from *tool_name*/*timestamp* alone, which
+    only has second-granularity uniqueness -- two concurrent runs for the same
+    tool starting in the same wall-clock second (temporal/PHASE5.md Workstream
+    E's concurrency validation surfaced this) would otherwise collide and
+    silently share a directory. `Path.mkdir(exist_ok=False)` is atomic at the
+    OS level, so on a collision this bumps a numeric suffix and retries rather
+    than reusing someone else's directory.
     """
     if module_dir:
         path = Path(module_dir)
@@ -58,9 +67,15 @@ def make_module_dir(output_dir: str, tool_name: str, timestamp: str, module_dir:
         return str(path)
 
     tool_name_clean = tool_name.lower().replace(' ', '_').replace('-', '_')
-    path = Path(output_dir) / f"{tool_name_clean}_{timestamp}"
-    path.mkdir(parents=True, exist_ok=True)
-    return str(path)
+    base = Path(output_dir) / f"{tool_name_clean}_{timestamp}"
+    path, suffix = base, 1
+    while True:
+        try:
+            path.mkdir(parents=True, exist_ok=False)
+            return str(path)
+        except FileExistsError:
+            suffix += 1
+            path = Path(f"{base}_{suffix}")
 
 
 def write_text_file(path: str, content: str) -> None:

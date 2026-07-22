@@ -21,6 +21,7 @@ from django.conf import settings
 from django.contrib import messages
 from asgiref.sync import async_to_sync
 
+from agents import effects
 from agents.example_data import ExampleDataResolver
 from agents.logger import Logger
 from temporal.client import start_module_generation, get_workflow_state, connect as temporal_connect, decide_upload
@@ -302,11 +303,14 @@ def generate_module(request):
     output_dir = settings.GENERATED_MODULES_DIR / username
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # effects.make_module_dir (not a plain f-string + mkdir) so two concurrent
+    # submissions for the same tool name landing in the same wall-clock second
+    # get distinct directories -- and distinct workflow_ids, since that's
+    # derived from module_dir below -- instead of silently colliding
+    # (temporal/PHASE5.md Workstream E).
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    tool_name_clean = form_data['name'].lower().replace(' ', '_').replace('-', '_')
-    module_dir = f"{tool_name_clean}_{timestamp}"
-    module_path = output_dir / module_dir
-    module_path.mkdir(parents=True, exist_ok=True)
+    module_path = Path(effects.make_module_dir(str(output_dir), form_data['name'], timestamp))
+    module_dir = module_path.name
 
     # Resolve example data (uploaded files already sit under module_path;
     # URLs are downloaded synchronously here, same as the CLI's --data resolution).

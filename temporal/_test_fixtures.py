@@ -232,3 +232,24 @@ class ApprovalGateWorkflow(PydanticAIWorkflow):
     async def run(self) -> str:
         await workflow.wait_condition(lambda: self._decision is not None)
         return self._decision
+
+
+@workflow.defn
+class MakeModuleDirWorkflow(PydanticAIWorkflow):
+    """Calls the real make_module_dir activity with a caller-supplied,
+    deliberately-identical output_dir/tool_name/timestamp, so a test can start
+    many instances of this workflow concurrently (across 2+ Workers on one
+    task queue, simulating 2+ worker processes) and confirm the activity's
+    collision-avoidance actually holds under real concurrent Temporal
+    dispatch, not just direct concurrent function calls (temporal/PHASE5.md
+    Workstream E)."""
+
+    __pydantic_ai_agents__ = []
+
+    @workflow.run
+    async def run(self, output_dir: str, tool_name: str, timestamp: str) -> str:
+        return await workflow.execute_activity(
+            activities.make_module_dir,
+            args=[output_dir, tool_name, timestamp, ""],
+            start_to_close_timeout=timedelta(seconds=30),
+        )

@@ -178,7 +178,7 @@ class ModuleAgent:
     def cleanup_data_dir(self, module_path: Path) -> None:
         """Remove the data/ subdirectory after a successful dockerfile step."""
         data_dir = module_path / "data"
-        if not data_dir.exists():
+        if not effects.file_exists(str(data_dir)):
             return
         effects.remove_dir(str(data_dir))
         self.logger.print_status(f"Cleaned up data directory: {data_dir}")
@@ -525,7 +525,7 @@ class ModuleAgent:
                     # cross-check manifest parameter names against add_argument() flags.
                     wrapper_script = planning_data_dict.get('wrapper_script') or 'wrapper.py'
                     wrapper_path = module_path / wrapper_script
-                    if wrapper_path.exists():
+                    if effects.file_exists(str(wrapper_path)):
                         extra_validation_args = ['--wrapper', str(wrapper_path)]
                         self.logger.print_status(f"Passing wrapper to manifest linter: {wrapper_path.name}")
 
@@ -696,7 +696,7 @@ class ModuleAgent:
 
         ctx_prefix = f"[{context}] " if context else ""
 
-        if expected_path.exists():
+        if effects.file_exists(str(expected_path)):
             self.logger.print_status(
                 f"{ctx_prefix}wrapper_script '{expected_name}' confirmed on disk ✓"
             )

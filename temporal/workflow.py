@@ -440,8 +440,7 @@ class ModuleGenerationWorkflow(PydanticAIWorkflow):
         expected_name = planning_data.wrapper_script or "wrapper.py"
         ctx_prefix = f"[{context}] " if context else ""
 
-        existing = await self._act(activities.read_text_file, f"{module_path}/{expected_name}")
-        if existing is not None:
+        if await self._act(activities.file_exists, f"{module_path}/{expected_name}"):
             self.logger.print_status(f"{ctx_prefix}wrapper_script '{expected_name}' confirmed on disk")
             return
 
@@ -600,7 +599,7 @@ class ModuleGenerationWorkflow(PydanticAIWorkflow):
                 elif artifact_name == 'manifest':
                     wrapper_script = planning_data_dict.get('wrapper_script') or 'wrapper.py'
                     wrapper_full_path = f"{module_path}/{wrapper_script}"
-                    if await self._act(activities.read_text_file, wrapper_full_path) is not None:
+                    if await self._act(activities.file_exists, wrapper_full_path):
                         extra_validation_args = ['--wrapper', wrapper_full_path]
 
                 elif artifact_name == 'dockerfile':

@@ -81,6 +81,7 @@ def _wrap_with_heartbeat(name: str, fn, heartbeat_interval_sec: float = _HEARTBE
 make_module_dir = _wrap('effects__make_module_dir', effects.make_module_dir)
 write_text_file = _wrap('effects__write_text_file', effects.write_text_file)
 read_text_file = _wrap('effects__read_text_file', effects.read_text_file)
+file_exists = _wrap('effects__file_exists', effects.file_exists)
 remove_dir = _wrap('effects__remove_dir', effects.remove_dir)
 find_wrapper_file = _wrap('effects__find_wrapper_file', effects.find_wrapper_file)
 read_manifest_docker_image = _wrap('effects__read_manifest_docker_image', effects.read_manifest_docker_image)
@@ -141,6 +142,7 @@ ALL_EFFECT_ACTIVITIES = [
     make_module_dir,
     write_text_file,
     read_text_file,
+    file_exists,
     remove_dir,
     find_wrapper_file,
     read_manifest_docker_image,

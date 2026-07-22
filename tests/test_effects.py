@@ -42,6 +42,14 @@ class TestFilesystemEffects:
     def test_read_missing_returns_none(self, tmp_path):
         assert effects.read_text_file(str(tmp_path / "nope.txt")) is None
 
+    def test_file_exists_true_for_present_file(self, tmp_path):
+        p = tmp_path / "f.txt"
+        p.write_text("hello")
+        assert effects.file_exists(str(p)) is True
+
+    def test_file_exists_false_for_missing_file(self, tmp_path):
+        assert effects.file_exists(str(tmp_path / "nope.txt")) is False
+
     def test_remove_dir_removes_and_is_idempotent(self, tmp_path):
         d = tmp_path / "data"
         d.mkdir()

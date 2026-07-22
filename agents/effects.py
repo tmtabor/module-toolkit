@@ -81,6 +81,23 @@ def read_text_file(path: str) -> str | None:
         return None
 
 
+def file_exists(path: str) -> bool:
+    """Return whether *path* exists on disk.
+
+    Added during the temporal/PHASE5.md Workstream B spike: `--legacy`
+    (agents/module.py) was calling `pathlib.Path.exists()` directly for
+    existence checks -- a real gap in Phase 2's "every side effect is
+    extracted" claim, undetected until the spike compared both drivers line
+    by line. The Temporal path had no equivalent primitive to call (workflow
+    code can't touch the filesystem directly), so it worked around the gap by
+    repurposing `read_text_file`'s `None`-return as an existence signal
+    instead -- functionally equivalent but semantically the wrong effect for
+    the question actually being asked, and wasteful when the content itself
+    is never used. This is the correct primitive for both.
+    """
+    return Path(path).exists()
+
+
 def remove_dir(path: str) -> None:
     """Recursively remove *path* if present; a no-op otherwise (idempotent)."""
     p = Path(path)

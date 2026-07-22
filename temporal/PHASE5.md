@@ -172,6 +172,47 @@ Option C sketch:
 passes against the shared module; a live parity re-run (CLI `--legacy` vs. Temporal, same
 methodology as PHASE4.md's 4.2 gate) after the refactor, to prove behavior is unchanged.
 
+**Status: spiked, full refactor tabled.** Per the scope warning above, `agents/module.py` and
+`temporal/workflow.py` were read in full and compared method-by-method before committing to the
+extraction. Findings:
+
+- **Object-vs-dict representation.** `ModuleAgent` passes live `ModulePlan`/`ExampleDataItem`
+  objects and `pathlib.Path`s between steps; `ModuleGenerationWorkflow` is constrained to
+  JSON-serializable dicts/strings across every activity boundary. A shared coordination module
+  would need one representation or an adapter layer at every call site — not a mechanical
+  extraction.
+- **Sync vs. async-with-per-call-tuning effects.** `ModuleAgent` calls `agents/effects.py`
+  functions directly and synchronously; `ModuleGenerationWorkflow` calls the same functions through
+  `self._act(...)`, awaited, with per-call retry policy/heartbeat/timeout choices. Unifying this
+  means either dragging async and Temporal-specific tuning into the `--legacy` path or building the
+  `EffectsPort`-style protocol (a `LegacyEffectsPort`/`TemporalEffectsPort` pair) sketched during the
+  spike — itself a small design project, not a given.
+- **Concrete bug found by the comparison:** neither driver had a real existence-check primitive.
+  `--legacy` called `pathlib.Path.exists()` directly (a real gap in Phase 2's "every side effect is
+  extracted" claim); the Temporal path had no equivalent activity and worked around it by calling
+  `read_text_file` and checking for a non-`None` result — functionally equivalent but semantically
+  the wrong effect for the question being asked, and wasteful when the content was never used.
+
+Given these, the user chose to land only the concrete, scoped fix — a proper `effects.file_exists()`
+primitive — and table the broader de-duplication effort rather than commit to it now:
+
+- Added `effects.file_exists(path: str) -> bool` (`agents/effects.py`), unit-tested in
+  `tests/test_effects.py`.
+- Registered as the `file_exists` Temporal activity (`temporal/activities.py`, added to
+  `ALL_EFFECT_ACTIVITIES`).
+- `agents/module.py` now calls `effects.file_exists(...)` at its three coordination-logic existence
+  checks (`cleanup_data_dir`, the manifest branch of `artifact_creation_loop`, `_sync_wrapper_script`)
+  instead of `Path.exists()`. `print_final_report`'s existence check was left alone deliberately —
+  it's client-side/legacy-only terminal reporting, not shared coordination logic.
+- `temporal/workflow.py`'s two matching call sites (`_sync_wrapper_script`, the manifest branch of
+  `_artifact_creation_loop`) now call the `file_exists` activity directly instead of the
+  `read_text_file`-and-check-`None` workaround.
+- Full non-live suite (179 passed) and the `temporal`-marked suite (11 passed, including
+  replay-determinism) both green after the change.
+
+The rest of Workstream B (steps 1-5 above, the `EffectsPort` design, the coordination-logic
+extraction) remains **not started** and is not scheduled — revisit only on explicit request.
+
 ## Workstream C — Reliability hardening (independent, low risk, can start anytime) — done
 
 **C1 — Per-activity retry policies.** Add explicit `RetryPolicy(maximum_attempts=N,
@@ -372,8 +413,8 @@ A (storage/payload)  ─┬─▶ E (concurrency)
    [DONE]              │
                         │
 C (retry/heartbeat/    │
-   anti-loop guard)  ──┼─▶ B (de-dup)  ──▶  G (revisit --legacy decision)
-   [DONE]              │
+   anti-loop guard)  ──┼─▶ B (de-dup, tabled)  ──▶  G (revisit --legacy decision)
+   [DONE]              │      [spiked, not started]
                         │
 D (approval gate)  ─────┘  [independent of everything else]
    [DONE]

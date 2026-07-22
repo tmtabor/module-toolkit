@@ -352,6 +352,13 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <p class="text-muted small mb-2">
+                        This shows the workflow's phase-level progress (research, planning, each
+                        artifact). Fine-grained per-tool-call output from the AI agents runs inside
+                        the Temporal worker process and isn't shipped back here -- check the
+                        worker's own terminal/log output (or the Temporal Web UI's activity view)
+                        for that level of detail.
+                    </p>
                     <div id="consoleOutput" class="console-output">Waiting for output...</div>
                 </div>
                 <div class="modal-footer">

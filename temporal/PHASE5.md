@@ -432,7 +432,7 @@ also uses it as the Temporal `workflow_id`) would silently share one directory. 
   connection setup exercises the identical dispatch/locking code path a second real OS process
   would.
 
-## Workstream F — Observability
+## Workstream F — Observability — done
 
 - **Dashboards/alerts** on workflow failure rate, activity retry counts (become meaningful once C1
   lands), end-to-end latency — via Temporal's own Web UI/CLI (`temporal workflow list`, metrics
@@ -448,6 +448,51 @@ also uses it as the Temporal `workflow_id`) would silently share one directory. 
   their result for the workflow to append to its bounded log sink — directly in tension with
   Workstream A's payload-size goals, so only worth it if (i)/(ii) prove insufficient.
   **Recommendation: (i) first**, revisit only on actual user complaint.
+
+**What actually shipped, and why the scope narrowed from the sketch above.** "Dashboards/alerts" as
+originally scoped (Grafana-style panels, paging) was reconsidered: Temporal's own Web UI (bundled
+with `temporal server start-dev`, zero extra infra) already *is* the dashboard for workflow/activity
+state — failure rate, retry counts, activity timelines, heartbeats, signals are all visible there
+per-run today, unlabeled work would be building a second, redundant surface for a single-worker-
+process deployment with no on-call rotation to page. What was actually missing wasn't a new surface;
+it was that the *existing* one (Logfire) had a real bug that silently limited it to local-only,
+which is what this pass found and fixed:
+
+- **`configure_telemetry()` could never reach the real Logfire cloud dashboard, regardless of
+  configuration.** It hardcoded `send_to_logfire=False` — so even a correctly-set `LOGFIRE_TOKEN`
+  would have done nothing. Fixed: `send_to_logfire='if-token-present'` (logfire's own semantics —
+  sends to the cloud only when a token is actually configured, stays local otherwise; never blocks
+  or errors on a missing token).
+- **The local-collector reachability pre-check was hardcoded to `localhost:4318`, ignoring the
+  `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` env var `.env.example` already documented.** `logfire.configure()`
+  itself already honors that env var internally (confirmed by reading `logfire._internal.config`) —
+  but the project's own pre-flight probe in `agents/config.py::enable_telemetry()` never consulted
+  it, so pointing the endpoint anywhere non-default silently skipped telemetry configuration
+  entirely. Fixed: a small `_otlp_collector_target()` helper parses the endpoint env var (falling
+  back to `localhost:4318`) and the probe now targets that instead.
+- **Verified the worker-loads-`.env`-before-telemetry ordering PHASE3.5's H1 fixed is still
+  correct** (`temporal/worker.py` calls `load_dotenv()` then `configure_telemetry()` before any
+  agent-importing code runs) — confirmed by reading the file, not re-broken since.
+- **Console-log fidelity (option (i)):** added a short, permanent note to the Django dashboard's
+  console modal (`app/generator/templates/generator/dashboard.html`) explaining that fine-grained
+  per-tool-call output lives in the worker's own process log / the Temporal Web UI's activity view,
+  not in the phase-level log shown there — the cheap, no-payload-growth fix the original plan
+  recommended, taken as written.
+- `.env.example` and `README.md`'s Observability section updated to document the `LOGFIRE_TOKEN`
+  path alongside the existing local-collector one.
+
+**Verification:** `tests/test_telemetry_config.py` (new, fast, no server/network) — 7 tests
+covering `_otlp_collector_target()`'s endpoint parsing and `configure_telemetry()`'s three gating
+paths (token present → configures without probing; no token, collector reachable → configures; no
+token, no collector → skips), all with `logfire.configure`/`instrument_pydantic_ai` mocked so no
+real network call happens in the suite. Full non-live suite green (192 passed). Django `manage.py
+check` passes after the dashboard template change.
+
+**Not done, and deliberately so:** custom dashboards/alerting infrastructure beyond Temporal's own
+Web UI and Logfire's own UI. Building bespoke panels or a paging integration for a project with one
+deployment and no on-call rotation would be exactly the kind of premature infrastructure this
+project has avoided elsewhere (A3's shared-filesystem decision, E's Brave-limiter decision) —
+revisit if/when there's an actual operational team consuming this in production.
 
 ## Workstream G — Docs & follow-through
 
@@ -469,13 +514,14 @@ C (retry/heartbeat/    │
 D (approval gate)  ─────┘  [independent of everything else]
    [DONE]
 
-F (observability) ── independent, ongoing
+F (observability) ── independent
+   [DONE]
 ```
 
-A, C, D, and E are **done** (see their writeups above for implementation + live verification). B was
-spiked (see its section above) and its full refactor deliberately tabled, with only its concrete
-`file_exists()` finding landed. F remains open and doesn't depend on anything above — pick up
-opportunistically. G trails whichever of B/F it's documenting.
+A, C, D, E, and F are **done** (see their writeups above for implementation + live/test
+verification). B was spiked (see its section above) and its full refactor deliberately tabled, with
+only its concrete `file_exists()` finding landed. G trails whichever of B it's documenting — only
+remaining open item in this phase.
 
 ## Acceptance criteria
 
@@ -500,7 +546,7 @@ opportunistically. G trails whichever of B/F it's documenting.
 6. ✅ A human-in-the-loop approval gate exists for the GenePattern upload step, opt-in and
    defaulting off, exposed through both the CLI and the Django UI (Workstream D — verified live
    through the real Django HTTP endpoints, not just internal mechanisms).
-7. ✅ `uv run pytest -m "not live"` (185 passed) and `uv run pytest -m temporal` (12 passed) green
+7. ✅ `uv run pytest -m "not live"` (192 passed) and `uv run pytest -m temporal` (12 passed) green
    throughout every workstream landed.
 8. ✅ Each landed workstream (A, C, D, E) verified live against a real Temporal server + worker
    run, not just via unit tests — matching the standard set in Phase 4.
@@ -508,6 +554,10 @@ opportunistically. G trails whichever of B/F it's documenting.
    the one piece of process-wide mutable state (the Brave rate limiter) is confirmed correct under
    real concurrent access (Workstream E — a real collision bug was found, fixed, and the fix
    regression-confirmed by re-running the failing test against the pre-fix code).
+10. ✅ Telemetry can actually reach a real, screenshot-able dashboard when configured to, not just
+    claim to (Workstream F — `configure_telemetry()`'s `send_to_logfire=False` bug, which made a
+    correctly-set `LOGFIRE_TOKEN` a no-op, is fixed and unit-tested; the local-collector reachability
+    probe now honors `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` instead of ignoring it).
 
 ## Risks & mitigations
 

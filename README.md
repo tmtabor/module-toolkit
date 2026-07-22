@@ -366,7 +366,12 @@ module-toolkit/
 
 ## 🔭 Observability
 
-The toolkit emits OpenTelemetry traces via [Logfire](https://logfire.pydantic.dev/) for every agent run — giving you deep visibility into research queries, planning decisions, artifact generation attempts, and validation outcomes. Telemetry is enabled automatically when a compatible collector is reachable on `localhost:4318`.
+The toolkit emits OpenTelemetry traces via [Logfire](https://logfire.pydantic.dev/) for every agent run — giving you deep visibility into research queries, planning decisions, artifact generation attempts, and validation outcomes. Telemetry only turns on if you opt in, via one of two independent paths (`agents/config.py::configure_telemetry`), checked at CLI/worker startup:
+
+- **Set `LOGFIRE_TOKEN`** (a [Logfire](https://logfire.pydantic.dev/) project write token) to send real traces to your own Logfire cloud dashboard — the richest option, with a searchable trace waterfall per agent run.
+- **Run a local OTel collector** (e.g. Jaeger, below) reachable on `localhost:4318`, or point `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` at a different collector — traces stay local, nothing leaves your machine.
+
+Neither set: telemetry stays off. Running via Temporal (the default path), the **worker process** is what needs the env var set — it's where the agents actually execute (`temporal/worker.py` loads `.env` and calls `configure_telemetry()` before anything else).
 
 ### Viewing traces locally with Jaeger
 

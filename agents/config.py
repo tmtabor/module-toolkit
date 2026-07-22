@@ -7,6 +7,8 @@ places.
 """
 import os
 import socket
+from urllib.parse import urlparse
+
 import logfire
 
 # ---------------------------------------------------------------------------
@@ -32,6 +34,25 @@ MAX_AGENT_REQUESTS = int(os.getenv('MAX_AGENT_REQUESTS', '150'))
 # Telemetry
 # ---------------------------------------------------------------------------
 
+def _otlp_collector_target() -> tuple[str, int]:
+    """(host, port) to probe for a reachable local OTel collector.
+
+    Reads OTEL_EXPORTER_OTLP_TRACES_ENDPOINT / OTEL_EXPORTER_OTLP_ENDPOINT if
+    set -- logfire.configure() itself already forwards spans to that endpoint
+    when present (see OTEL_EXPORTER_OTLP_TRACES_ENDPOINT in
+    logfire._internal.config), but the reachability pre-check below used to be
+    hardcoded to localhost:4318 regardless, so a non-default collector
+    endpoint would be silently unreachable-checked at the wrong address and
+    telemetry would never get configured at all. Falls back to the
+    conventional local-collector default (localhost:4318) when unset.
+    """
+    endpoint = os.getenv('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT') or os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT')
+    if not endpoint:
+        return "localhost", 4318
+    parsed = urlparse(endpoint if '://' in endpoint else f'//{endpoint}')
+    return parsed.hostname or "localhost", parsed.port or 4318
+
+
 def enable_telemetry(host: str = "localhost", port: int = 4318) -> bool:
     """Return True if an OpenTelemetry collector is reachable at host:port."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -40,8 +61,20 @@ def enable_telemetry(host: str = "localhost", port: int = 4318) -> bool:
 
 
 def configure_telemetry() -> None:
-    """Configure Logfire telemetry if a collector is available."""
-    if enable_telemetry():
-        logfire.configure(send_to_logfire=False, service_name="module-toolkit")
-        logfire.instrument_pydantic_ai()
+    """Configure Logfire telemetry.
+
+    Two independent ways this turns on:
+      - LOGFIRE_TOKEN is set -> spans are sent to the real Logfire cloud
+        dashboard (send_to_logfire='if-token-present' never blocks waiting
+        for a token that isn't there, and never sends without one either).
+      - A local OTel collector is reachable (localhost:4318 by default, or
+        wherever OTEL_EXPORTER_OTLP_TRACES_ENDPOINT points) -> spans are
+        exported there instead, matching the previous local-only behavior.
+    Neither present: telemetry stays off, matching the previous default.
+    """
+    has_token = bool(os.getenv('LOGFIRE_TOKEN'))
+    if not has_token and not enable_telemetry(*_otlp_collector_target()):
+        return
+    logfire.configure(send_to_logfire='if-token-present', service_name="module-toolkit")
+    logfire.instrument_pydantic_ai()
 

@@ -122,7 +122,7 @@ class TestArtifactAgentBehaviour:
     @pytest.mark.parametrize("agent,model_class,expected_tools", ARTIFACT_AGENTS)
     def test_run_sync_completes(self, agent, model_class, expected_tools, sample_deps_context):
         """Each agent should complete a run without raising."""
-        m = TestModel()
+        m = TestModel(call_tools=[])
         prompt = (
             f"Generate the artifact for GenePattern module 'TestTool'. "
             f"Call the create tool with the provided parameters."
@@ -137,7 +137,7 @@ class TestArtifactAgentBehaviour:
     @pytest.mark.parametrize("agent,model_class,expected_tools", ARTIFACT_AGENTS)
     def test_run_sync_output_is_non_empty(self, agent, model_class, expected_tools, sample_deps_context):
         """Output must be a non-None object (TestModel synthesises the declared type)."""
-        m = TestModel()
+        m = TestModel(call_tools=[])
         with agent.override(model=m):
             result = agent.run_sync(
                 "Generate artifact for TestTool.",
@@ -147,14 +147,14 @@ class TestArtifactAgentBehaviour:
 
     @pytest.mark.parametrize("agent,model_class,expected_tools", ARTIFACT_AGENTS)
     def test_usage_is_accessible(self, agent, model_class, expected_tools, sample_deps_context):
-        """result.usage() must not raise and must return a usage object."""
-        m = TestModel()
+        """result.usage must not raise and must return a usage object."""
+        m = TestModel(call_tools=[])
         with agent.override(model=m):
             result = agent.run_sync(
                 "Generate artifact.",
                 deps=sample_deps_context,
             )
-        assert result.usage() is not None
+        assert result.usage is not None
 
     @pytest.mark.parametrize("agent,model_class,expected_tools", ARTIFACT_AGENTS)
     def test_model_receives_registered_tools(self, agent, model_class, expected_tools, sample_deps_context):
@@ -162,7 +162,7 @@ class TestArtifactAgentBehaviour:
         TestModel should expose the agent's registered tools in the model request.
         ModelRequestParameters.function_tools contains the tool schemas passed to the model.
         """
-        m = TestModel()
+        m = TestModel(call_tools=[])
         with agent.override(model=m):
             agent.run_sync(
                 "Generate artifact for TestTool.",
@@ -170,9 +170,12 @@ class TestArtifactAgentBehaviour:
             )
         registered_tool_names = set(agent._function_toolset.tools.keys())
         model_tool_names = {t.name for t in m.last_model_request_parameters.function_tools}
-        # Every registered tool must have been offered to the model
-        assert registered_tool_names == model_tool_names, (
-            f"Model saw tools {model_tool_names}, expected {registered_tool_names}"
+        # Every registered tool must have been offered to the model. A SkillsToolset
+        # (wrapper/manifest agents) legitimately adds its own tools (e.g. load_skill)
+        # on top, so assert subset rather than exact equality.
+        missing = registered_tool_names - model_tool_names
+        assert not missing, (
+            f"Model was not offered registered tools {missing}. Saw: {model_tool_names}"
         )
 
     @pytest.mark.parametrize("agent,model_class,expected_tools", ARTIFACT_AGENTS)
@@ -183,7 +186,7 @@ class TestArtifactAgentBehaviour:
         instruction_parts on last_model_request_parameters holds InstructionPart
         objects whose .content is the assembled system prompt text.
         """
-        m = TestModel()
+        m = TestModel(call_tools=[])
         with agent.override(model=m):
             agent.run_sync(
                 "Generate artifact for TestTool.",

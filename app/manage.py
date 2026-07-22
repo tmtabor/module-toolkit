@@ -1,5 +1,14 @@
 import os
 import sys
+from pathlib import Path
+
+# views.py imports agents.*/temporal.* (the module-toolkit's top-level
+# packages) directly to talk to the Temporal client (temporal/PHASE4.md 4.4).
+# Running as `python app/manage.py` puts sys.path[0] at app/ (the script's own
+# directory), not the repo root, so those packages wouldn't otherwise resolve.
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 
 def main():

@@ -49,7 +49,7 @@ class TestResearcherAgentLive:
         result = researcher_agent.run_sync(
             "What file formats does samtools support?"
         )
-        usage = result.usage()
+        usage = result.usage
         assert usage is not None
         print(f"\n✅ Usage stats: {usage}")
 

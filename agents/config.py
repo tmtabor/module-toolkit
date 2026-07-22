@@ -20,6 +20,13 @@ DEFAULT_OUTPUT_DIR = os.getenv('MODULE_OUTPUT_DIR', './generated-modules')
 MAX_ARTIFACT_LOOPS = int(os.getenv('MAX_ARTIFACT_LOOPS', '5'))
 MAX_ESCALATIONS = int(os.getenv('MAX_ESCALATIONS', '2'))
 
+# pydantic-ai defaults UsageLimits.request_limit to 50 per agent.run() call.
+# Local models re-validate their own output far more chattily than hosted
+# frontier models (observed: the planner re-running validate_module_plan and
+# every validate_parameter_name call twice before emitting a final plan), so
+# 50 is too tight for those and silently aborts a normal, correct run.
+MAX_AGENT_REQUESTS = int(os.getenv('MAX_AGENT_REQUESTS', '150'))
+
 
 # ---------------------------------------------------------------------------
 # Telemetry

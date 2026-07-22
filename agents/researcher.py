@@ -4,10 +4,12 @@ import json
 import time
 import threading
 import requests
-from typing import List, Dict, Any
+from typing import Annotated, List, Dict, Any
+from pydantic import BeforeValidator
 from pydantic_ai import Agent, RunContext
 from dotenv import load_dotenv
-from .models import configured_llm_model
+from .config import MAX_ARTIFACT_LOOPS
+from .models import configured_llm_model, coerce_stringified_json, guard_single_call
 
 # Load environment variables from .env file
 load_dotenv()
@@ -107,8 +109,14 @@ development.
 - Consider compatibility with common bioinformatics file formats and workflows
 
 **Output Format:**
-Provide structured, detailed reports with clear sections for different aspects of the research. 
+Provide structured, detailed reports with clear sections for different aspects of the research.
 Include references and maintain scientific rigor in all analyses.
+
+**CRITICAL:** call create_tool_research_report EXACTLY ONCE, after you've gathered findings with
+the other tools (parse_repository_info, analyze_tool_documentation, analyze_parameter_patterns,
+compare_similar_tools). It returns the complete, finished report -- that IS your final answer, not
+an intermediate step. Do NOT call it again to "add more findings" or "regenerate" it; your final
+response should be that report (or a lightly edited version of it), not another tool call.
 """
 
 # ---------------------------------------------------------------------------
@@ -127,7 +135,7 @@ Include references and maintain scientific rigor in all analyses.
 _brave_api_key = os.getenv('BRAVE_API_KEY')
 _capabilities: list = []   # extended below when Brave key is present
 
-researcher_agent = Agent(configured_llm_model(), instructions=system_prompt, capabilities=_capabilities)
+researcher_agent = Agent(configured_llm_model(), instructions=system_prompt, capabilities=_capabilities, retries=MAX_ARTIFACT_LOOPS)
 
 
 def _web_search_impl(context: RunContext[str], query: str, num_results: int = 5) -> str:
@@ -413,7 +421,7 @@ def analyze_tool_documentation(context: RunContext[str], documentation_text: str
 
 
 @researcher_agent.tool
-def parse_repository_info(context: RunContext[str], repo_url: str, readme_content: str = None) -> str:
+def parse_repository_info(context: RunContext[str], repo_url: str, readme_content: str | None = None) -> str:
     """
     Parse software repository information to extract development and usage details.
     
@@ -534,7 +542,8 @@ def parse_repository_info(context: RunContext[str], repo_url: str, readme_conten
 
 
 @researcher_agent.tool
-def create_tool_research_report(context: RunContext[str], tool_name: str, research_findings: List[Dict[str, Any]]) -> str:
+@guard_single_call
+def create_tool_research_report(context: RunContext[str], tool_name: str, research_findings: Annotated[List[Dict[str, Any]], BeforeValidator(coerce_stringified_json)]) -> str:
     """
     Create a comprehensive research report combining multiple research findings.
     
@@ -715,7 +724,7 @@ def create_tool_research_report(context: RunContext[str], tool_name: str, resear
 
 
 @researcher_agent.tool
-def analyze_parameter_patterns(context: RunContext[str], parameter_list: List[str], usage_examples: str = None) -> str:
+def analyze_parameter_patterns(context: RunContext[str], parameter_list: List[str], usage_examples: str | None = None) -> str:
     """
     Analyze parameter usage patterns to identify groupings and relationships.
     
@@ -873,7 +882,7 @@ def analyze_parameter_patterns(context: RunContext[str], parameter_list: List[st
 
 
 @researcher_agent.tool
-def compare_similar_tools(context: RunContext[str], target_tool: str, similar_tools: List[Dict[str, str]]) -> str:
+def compare_similar_tools(context: RunContext[str], target_tool: str, similar_tools: Annotated[List[Dict[str, str]], BeforeValidator(coerce_stringified_json)]) -> str:
     """
     Compare the target tool with similar tools to highlight unique features and positioning.
     

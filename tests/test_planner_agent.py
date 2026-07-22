@@ -77,7 +77,7 @@ class TestPlannerAgentBehaviour:
         m = TestModel()
         with planner_agent.override(model=m):
             result = planner_agent.run_sync("Plan a module for bwa.")
-        assert result.usage() is not None
+        assert result.usage is not None
 
     def test_model_receives_registered_tools(self):
         """TestModel must be offered all registered planner tools in the request."""

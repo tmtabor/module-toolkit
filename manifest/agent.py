@@ -1,10 +1,12 @@
 import re
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Annotated, Dict, Any, List
+from pydantic import BeforeValidator
 from pydantic_ai import Agent, RunContext
 from pydantic_ai_skills import SkillsToolset
 from dotenv import load_dotenv
-from agents.models import configured_llm_model, ArtifactDeps
+from agents.config import MAX_ARTIFACT_LOOPS
+from agents.models import configured_llm_model, ArtifactDeps, coerce_stringified_json, guard_single_call
 from manifest.models import ManifestModel
 
 
@@ -98,10 +100,10 @@ CRITICAL FLAG NAMING RULE:
 
 # Skills toolset: loads only the gp-manifest skill
 _MANIFEST_SKILL_DIR = Path(__file__).parent.parent / "skills" / "gp-manifest"
-_manifest_skills = SkillsToolset(directories=[str(_MANIFEST_SKILL_DIR)], exclude_tools={'list_skills', 'read_skill_resource', 'run_skill_script'})
+_manifest_skills = SkillsToolset(directories=[str(_MANIFEST_SKILL_DIR)], exclude_tools={'list_skills', 'read_skill_resource', 'run_skill_script'}, id='manifest-skills')
 
 # Create agent without MCP toolsets - validation happens separately via generate-module.py
-manifest_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ManifestModel, deps_type=ArtifactDeps, toolsets=[_manifest_skills])
+manifest_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ManifestModel, deps_type=ArtifactDeps, toolsets=[_manifest_skills], retries=MAX_ARTIFACT_LOOPS)
 
 
 @manifest_agent.instructions
@@ -209,7 +211,7 @@ def validate_manifest(context: RunContext[ArtifactDeps], path: str) -> str:
 
 
 @manifest_agent.tool
-def analyze_module_metadata(context: RunContext[ArtifactDeps], tool_name: str, tool_info: Dict[str, Any], parameters: List[Dict[str, Any]] = None) -> str:
+def analyze_module_metadata(context: RunContext[ArtifactDeps], tool_name: str, tool_info: Annotated[Dict[str, Any], BeforeValidator(coerce_stringified_json)], parameters: Annotated[List[Dict[str, Any]] | None, BeforeValidator(coerce_stringified_json)] = None) -> str:
     """
     Analyze module information to determine appropriate manifest metadata and structure.
     
@@ -426,7 +428,7 @@ def generate_manifest_content(context: RunContext[ArtifactDeps], manifest_data: 
 
 
 @manifest_agent.tool
-def optimize_command_line_template(context: RunContext[ArtifactDeps], current_command: str, parameters: List[Dict[str, Any]], tool_info: Dict[str, Any] = None) -> str:
+def optimize_command_line_template(context: RunContext[ArtifactDeps], current_command: str, parameters: Annotated[List[Dict[str, Any]], BeforeValidator(coerce_stringified_json)], tool_info: Annotated[Dict[str, Any] | None, BeforeValidator(coerce_stringified_json)] = None) -> str:
     """
     Analyze and optimize a command line template for better GenePattern integration.
     
@@ -562,6 +564,7 @@ def optimize_command_line_template(context: RunContext[ArtifactDeps], current_co
 
 
 @manifest_agent.tool
+@guard_single_call
 def create_manifest(context: RunContext[ArtifactDeps]) -> Dict[str, Any]:
     """
     Generate a complete manifest file for the GenePattern module.
@@ -649,6 +652,20 @@ def create_manifest(context: RunContext[ArtifactDeps]) -> Dict[str, Any]:
                             pattern2 = rf'--{re.escape(param_name)}\s+[^\s-]+'
                             command_line = re.sub(pattern1, f'<{param_name}>', command_line)
                             command_line = re.sub(pattern2, f'<{param_name}>', command_line)
+
+                    # Strip ANY flag-like token directly preceding a placeholder
+                    # (long --flag or short -f), regardless of whether that flag's
+                    # text matches the parameter name. prefix_when_specified (set
+                    # below, from param['prefix']) is the single source of truth
+                    # for the flag; leaving an inline one -- even one the model
+                    # mistyped to some other name -- makes GenePattern pass the
+                    # flag twice (the two prior patterns above only catch the case
+                    # where the inline flag already spells the param name right).
+                    for param in planning_dict['parameters']:
+                        param_name = param.get('name', '')
+                        if param_name:
+                            inline_flag_pattern = rf'--?[^\s<>]+[= ]+<{re.escape(param_name)}>'
+                            command_line = re.sub(inline_flag_pattern, f'<{param_name}>', command_line)
 
                 print(f"✓ Using command_line from planning_data (converted to placeholders): {command_line}")
             else:

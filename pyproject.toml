@@ -1,0 +1,45 @@
+[project]
+name = "module-toolkit"
+version = "0.1.0"
+description = "A multi-agent AI pipeline that turns bioinformatics CLI tools into GenePattern modules."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+dependencies = [
+    # GPUnit linter (.yml parsing)
+    "PyYAML>=6.0,<7.0",
+    # Documentation linter
+    "requests>=2.25.0,<3.0.0",
+    "beautifulsoup4>=4.9.0,<5.0.0",
+    "PyPDF2>=3.0.0,<4.0.0",
+    # MCP server
+    "mcp[cli]>=1.14.0,<2.0.0",
+    # Agent framework — pinned only by floor so the resolver takes the newest
+    # version that remains compatible with pydantic-ai-skills (see temporal/PHASE0.md).
+    "pydantic-ai[temporal]>=1.77.0",
+    "pydantic-ai-skills>=1.2.0",
+    # Environment loading
+    "python-dotenv>=1.0.0,<2.0.0",
+    # Telemetry
+    "logfire>=4.8.0",
+    "json-repair>=0.61.7",
+]
+
+[project.optional-dependencies]
+# Django web UI (app/). Install with: uv sync --extra app
+app = [
+    "Django>=4.2",
+]
+
+[dependency-groups]
+# Test tooling. Installed by default on `uv sync`; pytest-asyncio is required
+# for the async test suite introduced in temporal/PHASE1.md.
+dev = [
+    "pytest>=8.0.0,<9.0.0",
+    "pytest-asyncio>=0.24.0,<1.0.0",
+]
+
+[tool.uv]
+# Flat-layout application repo (agents/, wrapper/, manifest/, ... at the root),
+# not a distributable package — uv manages the environment without building a wheel.
+package = false

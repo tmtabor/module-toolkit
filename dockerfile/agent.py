@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from pydantic_ai import Agent, RunContext
 from dotenv import load_dotenv
+from agents.config import MAX_ARTIFACT_LOOPS
 from agents.models import configured_llm_model, ArtifactDeps, ArtifactModel
 
 
@@ -96,7 +97,7 @@ Provide clear comments explaining each section and any complex installation step
 """
 
 # Create agent without MCP dependency
-dockerfile_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ArtifactModel, deps_type=ArtifactDeps)
+dockerfile_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ArtifactModel, deps_type=ArtifactDeps, retries=MAX_ARTIFACT_LOOPS)
 
 
 @dockerfile_agent.instructions
@@ -155,7 +156,7 @@ def dockerfile_context_instructions(ctx: RunContext[ArtifactDeps]) -> str:
 
 
 @dockerfile_agent.tool
-def validate_dockerfile(context: RunContext[ArtifactDeps], path: str, tag: str = None, cmd: str = None, cleanup: bool = True) -> str:
+def validate_dockerfile(context: RunContext[ArtifactDeps], path: str, tag: str | None = None, cmd: str | None = None, cleanup: bool = True) -> str:
     """
     Validate Dockerfiles for GenePattern modules.
 
@@ -223,7 +224,7 @@ def validate_dockerfile(context: RunContext[ArtifactDeps], path: str, tag: str =
 
 
 @dockerfile_agent.tool
-def analyze_tool_requirements(context: RunContext[ArtifactDeps], tool_name: str, language: str = None, dependencies: str = None) -> str:
+def analyze_tool_requirements(context: RunContext[ArtifactDeps], tool_name: str, language: str | None = None, dependencies: str | None = None) -> str:
     """
     Analyze the requirements for a bioinformatics tool to determine appropriate Dockerfile base image and dependencies.
     

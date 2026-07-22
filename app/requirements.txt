@@ -1,3 +1,8 @@
+# Django web UI dependencies.
+#
+# These are now the `app` optional-dependency group in the root pyproject.toml.
+# Preferred install:  uv sync --extra app
+#
+# Kept for pip users who want only the web-UI deps:
 Django>=4.2
 python-dotenv>=1.0.0
-

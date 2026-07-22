@@ -39,15 +39,16 @@ A multi-agent AI pipeline researches your tool, plans its architecture, generate
 git clone https://github.com/genepattern/module-toolkit.git
 cd module-toolkit
 
-# Install dependencies (Python 3.10+ recommended)
-pip install -r requirements.txt
+# Install dependencies with uv (Python 3.10+; installs into .venv from uv.lock)
+uv sync                 # add --extra app for the Django web UI
 ```
 
-> **Conda users:**
+> **Prefer pip?** A pip-compatible fallback is provided:
 > ```bash
-> conda create -n gp-toolkit python=3.11 && conda activate gp-toolkit
+> python -m venv .venv && source .venv/bin/activate
 > pip install -r requirements.txt
 > ```
+> `pyproject.toml` + `uv.lock` are authoritative; `requirements.txt` mirrors the direct deps.
 
 ### 2 — Configure (Optional)
 
@@ -69,8 +70,10 @@ cp .env.example .env   # then edit as needed
 
 ### 3 — Generate Your First Module
 
+The quickest way to try it — runs the whole pipeline in-process, no extra services:
+
 ```bash
-python generate-module.py
+uv run python generate-module.py --legacy
 ```
 
 Follow the interactive prompts — the whole pipeline runs automatically:
@@ -85,6 +88,10 @@ Documentation URL: http://www.htslib.org/doc/samtools.html
 ```
 
 That's it. In a few minutes you'll have a fully validated, ready-to-deploy GenePattern module.
+
+> **Without `--legacy`, the CLI runs through a Temporal workflow** (durable, resumable) and needs a
+> Temporal server and worker running — see [Durable execution with Temporal](#-durable-execution-with-temporal)
+> below. Use `--legacy` when you just want to run it locally with no extra infrastructure.
 
 ---
 
@@ -143,7 +150,6 @@ samtools_20260315_143022/
 ├── test.yml               # GPUnit test suite (run with gpunit validate .)
 ├── README.md              # Human-readable user documentation
 ├── Dockerfile             # Pinned, reproducible container definition
-├── status.json            # Live pipeline state (resume support)
 ├── research.md            # Raw researcher output
 └── plan.md                # Planner output
 ```
@@ -246,18 +252,21 @@ python generate-module.py --name mytool --skip-dockerfile
 # Regenerate only the wrapper and manifest after editing
 python generate-module.py --name mytool --artifacts wrapper manifest
 
-# Generate nothing except the Dockerfile (e.g. update container only)
-python generate-module.py --resume ./generated-modules/mytool_20260315_143022 \
+# Generate nothing except the Dockerfile (e.g. update container only), reusing
+# a pre-created module directory (see --module-dir below)
+python generate-module.py --name mytool --module-dir ./generated-modules/mytool_20260315_143022 \
   --artifacts dockerfile
 ```
 
-### Resume & output flags
+### Output flags
 
 | Flag | Description |
 |---|---|
-| `--resume MODULE_DIR` | Resume a previous run from its `status.json`. Already-validated artifacts are skipped; failed or missing ones are retried. Can be combined with `--data` to supply fresh example data, or with `--artifacts` / `--skip-*` to regenerate specific artifacts. |
 | `--output-dir DIR` | Root directory where module subdirectories are created (default: `./generated-modules`, overrides `MODULE_OUTPUT_DIR`). |
 | `--module-dir PATH` | Write output directly into this pre-created directory instead of generating a new timestamped name. Used by the web UI. |
+
+There is no `--resume` flag — a failed or interrupted run is retried by starting a fresh one
+(`--artifacts`/`--skip-*` still let you regenerate just the artifacts you need).
 
 ### Retry & escalation flags
 
@@ -289,11 +298,36 @@ python generate-module.py --resume ./generated-modules/mytool_20260315_143022 \
 The toolkit also ships a Django-based web interface in the `app/` directory, which wraps `generate-module.py` for browser-based use. To start it:
 
 ```bash
-cd app
-python manage.py runserver
+uv run --extra app python app/manage.py runserver
 ```
 
-The web UI provides the same generation pipeline as the CLI, with a form-based input, real-time log streaming, and per-user run history.
+The web UI provides the same generation pipeline as the CLI, with a form-based input, real-time log streaming, and per-user run history. It submits each generation as a Temporal workflow — see [Durable execution with Temporal](#-durable-execution-with-temporal) below, since it needs a running server and worker.
+
+---
+
+## ⚙️ Durable execution with Temporal
+
+By default `generate-module.py` runs each generation as a [Temporal](https://temporal.io/) workflow: the agent calls, Docker build, downloads, and uploads become durable activities, so a run survives worker restarts and transient failures. This needs two things running alongside the CLI:
+
+```bash
+# 1. A Temporal server (dev server is fine for local use)
+temporal server start-dev
+
+# 2. A worker — this is where the agents actually run, so it reads the same
+#    .env config the CLI does (DEFAULT_LLM_MODEL, BRAVE_API_KEY, GP_* …)
+uv run python -m temporal.worker
+
+# 3. Then run the CLI normally (no --legacy)
+uv run python generate-module.py --name samtools --language c ...
+```
+
+The CLI submits the workflow and waits for a worker to run it. Configure the server address and timeouts via env (see `.env.example`): `TEMPORAL_ADDRESS`, `TEMPORAL_DOCKER_BUILD_TIMEOUT_SEC`, `TEMPORAL_DOWNLOAD_TIMEOUT_SEC`, `TEMPORAL_EXECUTION_TIMEOUT_SEC`.
+
+- **No infrastructure?** Pass `--legacy` to run the whole pipeline in-process (the pre-Temporal path) from the CLI.
+- **Current limitation:** the worker writes the generated module to *its own* filesystem, so the worker and the CLI/user must share a filesystem (run them co-located). Distributed workers with shared object storage are future work.
+
+**The Django web UI requires a running Temporal server + worker** — it submits and polls runs
+via the Temporal client, with no in-process fallback. Start both before `runserver` (see above).
 
 ---
 

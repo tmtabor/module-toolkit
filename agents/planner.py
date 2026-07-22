@@ -143,8 +143,68 @@ any user-provided instructions.
 planner_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ModulePlan, retries=MAX_ARTIFACT_LOOPS)
 
 
+_WRAPPER_EXT_BY_LANG = {'python': '.py', 'r': '.R', 'bash': '.sh'}
+_WRAPPER_RUNNER_BY_LANG = {'python': 'python', 'r': 'Rscript', 'bash': 'bash'}
+
+
+@planner_agent.output_validator
+def enforce_wrapper_and_flag_consistency(plan: ModulePlan) -> ModulePlan:
+    """Deterministically correct two failure modes observed with local models:
+
+    1. wrapper_script/command_line naming a runner+extension that doesn't match
+       select_wrapper_language(plan.language) (e.g. 'python foo.py' for a C tool
+       that must get a bash wrapper) -- this is the same tool-language-vs-wrapper-
+       language conflation already fixed for wrapper/agent.py's own scaffold
+       generation, but the model can independently get it wrong in the plan
+       fields every other artifact reads as context.
+    2. Parameter prefixes copied from the underlying tool's OWN native CLI flags
+       (e.g. samtools' '-@', '-q', '--reference') instead of the wrapper
+       script's GenePattern-facing flag, which per the locked dotted-name
+       convention must always be '--<param.name>'.
+
+    Both are deterministic invariants, not judgment calls, so they're enforced
+    here rather than left to model retries.
+    """
+    from wrapper.agent import select_wrapper_language
+
+    expected_lang = select_wrapper_language(plan.language)
+    expected_ext = _WRAPPER_EXT_BY_LANG[expected_lang]
+    expected_runner = _WRAPPER_RUNNER_BY_LANG[expected_lang]
+
+    if not plan.wrapper_script.endswith(expected_ext):
+        stem = plan.wrapper_script.rsplit('.', 1)[0] if '.' in plan.wrapper_script else plan.wrapper_script
+        corrected_script = f"{stem}{expected_ext}"
+        print(f"  ⚠️  Correcting wrapper_script: '{plan.wrapper_script}' → '{corrected_script}' (language '{plan.language}')")
+        if plan.wrapper_script in plan.command_line:
+            plan.command_line = plan.command_line.replace(plan.wrapper_script, corrected_script)
+        for runner in _WRAPPER_RUNNER_BY_LANG.values():
+            prefix = f"{runner} <libdir>"
+            if plan.command_line.startswith(prefix):
+                plan.command_line = f"{expected_runner} <libdir>{plan.command_line[len(prefix):]}"
+                break
+        else:
+            if plan.command_line.startswith("<libdir>") and expected_runner:
+                plan.command_line = f"{expected_runner} {plan.command_line}"
+        plan.wrapper_script = corrected_script
+
+    for param in plan.parameters:
+        if not param.prefix:
+            continue
+        suffix = "=" if param.prefix.rstrip().endswith("=") else " "
+        expected_prefix = f"--{param.name}{suffix}"
+        if param.prefix != expected_prefix:
+            print(f"  ⚠️  Correcting parameter '{param.name}' prefix: '{param.prefix.strip()}' → '{expected_prefix.strip()}'")
+            old_token = f"{param.prefix.strip()} <{param.name}>"
+            new_token = f"{expected_prefix.strip()} <{param.name}>"
+            if old_token in plan.command_line:
+                plan.command_line = plan.command_line.replace(old_token, new_token)
+            param.prefix = expected_prefix
+
+    return plan
+
+
 @planner_agent.tool
-def create_structured_plan(context: RunContext[ModulePlan], tool_name: str, research_data: str = None) -> ModulePlan:
+def create_structured_plan(context: RunContext[ModulePlan], tool_name: str, research_data: str | None = None) -> ModulePlan:
     """
     Create a comprehensive structured plan for a GenePattern module based on tool analysis.
 
@@ -191,7 +251,7 @@ def create_structured_plan(context: RunContext[ModulePlan], tool_name: str, rese
 
 
 @planner_agent.tool
-def analyze_parameter_structure(context: RunContext[ModulePlan], tool_help_text: str, command_examples: str = None) -> str:
+def analyze_parameter_structure(context: RunContext[ModulePlan], tool_help_text: str, command_examples: str | None = None) -> str:
     """
     Analyze command-line help text and examples to extract parameter structure.
     
@@ -364,7 +424,7 @@ def create_parameter_group_schema(context: RunContext[ModulePlan], parameters: L
 
 
 @planner_agent.tool
-def validate_parameter_definition(context: RunContext[ModulePlan], param_name: str, param_type: str, constraints: str = None, default_value: str = None) -> str:
+def validate_parameter_definition(context: RunContext[ModulePlan], param_name: str, param_type: str, constraints: str | None = None, default_value: str | None = None) -> str:
     """
     Validate a GenePattern parameter definition for correctness and completeness.
     

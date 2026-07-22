@@ -1,8 +1,10 @@
 import json
-from typing import List, Dict, Any
+from typing import Annotated, List, Dict, Any
+from pydantic import BeforeValidator
 from pydantic_ai import Agent, RunContext
 from dotenv import load_dotenv
-from agents.models import configured_llm_model, ArtifactDeps
+from agents.config import MAX_ARTIFACT_LOOPS
+from agents.models import configured_llm_model, ArtifactDeps, coerce_stringified_json, guard_single_call
 from paramgroups.models import ParamgroupsModel
 
 
@@ -44,10 +46,15 @@ Best Practices:
 - Limit parameters per group to 10 or fewer for usability
 
 REMEMBER: Output ONLY valid JSON. No explanations, no markdown, no additional text.
+
+CRITICAL: call the create_paramgroups tool EXACTLY ONCE. It returns grouping analysis and
+the full parameter list -- everything you need. Do NOT call it again to "double check" or
+"regenerate"; use what it returned to write your own final structured paramgroups output
+directly. Calling it repeatedly wastes your turn budget without producing new information.
 """
 
 # Create agent without MCP dependency
-paramgroups_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ParamgroupsModel, deps_type=ArtifactDeps)
+paramgroups_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ParamgroupsModel, deps_type=ArtifactDeps, retries=MAX_ARTIFACT_LOOPS)
 
 
 @paramgroups_agent.instructions
@@ -96,7 +103,7 @@ def paramgroups_context_instructions(ctx: RunContext[ArtifactDeps]) -> str:
 
 
 @paramgroups_agent.tool
-def validate_paramgroups(context: RunContext[ArtifactDeps], path: str, parameters: List[str] = None) -> str:
+def validate_paramgroups(context: RunContext[ArtifactDeps], path: str, parameters: List[str] | None = None) -> str:
     """
     Validate GenePattern paramgroups.json files.
 
@@ -160,7 +167,7 @@ def validate_paramgroups(context: RunContext[ArtifactDeps], path: str, parameter
 
 
 @paramgroups_agent.tool
-def analyze_parameter_groupings(context: RunContext[ArtifactDeps], parameters: List[Dict[str, Any]], group_strategy: str = "functional") -> str:
+def analyze_parameter_groupings(context: RunContext[ArtifactDeps], parameters: Annotated[List[Dict[str, Any]], BeforeValidator(coerce_stringified_json)], group_strategy: str = "functional") -> str:
     """
     Analyze a list of parameters and suggest optimal groupings for paramgroups.json.
     
@@ -314,6 +321,7 @@ def analyze_parameter_groupings(context: RunContext[ArtifactDeps], parameters: L
 
 
 @paramgroups_agent.tool
+@guard_single_call
 def create_paramgroups(context: RunContext[ArtifactDeps]) -> str:
     """
     Generate a valid paramgroups.json file based on the provided tool information and planning data.

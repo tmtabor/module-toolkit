@@ -1,10 +1,12 @@
 import re
-from typing import Dict, Any, List
+from typing import Annotated, Dict, Any, List
 from pathlib import Path
+from pydantic import BeforeValidator
 from pydantic_ai import Agent, RunContext
 from pydantic_ai_skills import SkillsToolset
 from dotenv import load_dotenv
-from agents.models import configured_llm_model, ArtifactDeps, ArtifactModel
+from agents.config import MAX_ARTIFACT_LOOPS
+from agents.models import configured_llm_model, ArtifactDeps, ArtifactModel, coerce_stringified_json, guard_single_call
 
 
 # Load environment variables from .env file
@@ -12,6 +14,33 @@ load_dotenv()
 
 # Get the wrapper templates directory
 WRAPPER_TEMPLATES_DIR = Path(__file__).parent / "templates"
+
+
+def select_wrapper_language(tool_language: str) -> str:
+    """Map a tool's implementation language to the wrapper script's target language.
+
+    Single source of truth for this decision -- must stay consistent between
+    the LLM-facing instructions (wrapper_context_instructions) and the
+    deterministic scaffold generator (create_wrapper). These two previously
+    diverged for compiled-binary languages: a 'c' tool got correct prose
+    instructions telling the LLM to write bash, but create_wrapper's own
+    scaffold path checked the raw tool language against a hardcoded
+    ['python', 'bash', 'r'] allowlist with no translation step and silently
+    fell back to Python -- producing Python content in a .sh-named file that
+    then failed bash syntax validation. Found via a real end-to-end run
+    (temporal/PHASE4.md's parity gate); fixed by having both call sites use
+    this one function.
+    """
+    lang = (tool_language or 'python').lower()
+    if lang in {'java', 'scala', 'groovy', 'kotlin'}:
+        return 'bash'
+    if lang == 'r':
+        return 'r'
+    if lang in ('bash', 'shell'):
+        return 'bash'
+    if lang in ('c', 'c++', 'cpp', 'fortran'):
+        return 'bash'
+    return 'python'
 
 
 system_prompt = """
@@ -133,10 +162,10 @@ integration between GenePattern and bioinformatics tools with excellent user exp
 
 # Skills toolset: loads only the gp-wrapper skill
 _WRAPPER_SKILL_DIR = Path(__file__).parent.parent / "skills" / "gp-wrapper"
-_wrapper_skills = SkillsToolset(directories=[str(_WRAPPER_SKILL_DIR)], exclude_tools={'list_skills', 'read_skill_resource', 'run_skill_script'})
+_wrapper_skills = SkillsToolset(directories=[str(_WRAPPER_SKILL_DIR)], exclude_tools={'list_skills', 'read_skill_resource', 'run_skill_script'}, id='wrapper-skills')
 
 # Create agent without MCP dependency
-wrapper_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ArtifactModel, deps_type=ArtifactDeps, toolsets=[_wrapper_skills])
+wrapper_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ArtifactModel, deps_type=ArtifactDeps, toolsets=[_wrapper_skills], retries=MAX_ARTIFACT_LOOPS)
 
 
 @wrapper_agent.instructions
@@ -158,11 +187,12 @@ def wrapper_context_instructions(ctx: RunContext[ArtifactDeps]) -> str:
     if tool_info.get('instructions'):
         lines.append(f"\nIMPORTANT — Additional Instructions:\n{tool_info['instructions']}")
 
-    # Wrapper language lock
+    # Wrapper language lock -- select_wrapper_language() is the single source
+    # of truth (also used by create_wrapper's scaffold generator below).
     _tool_lang = tool_info.get('language', 'python').lower()
     _jvm_langs = {'java', 'scala', 'groovy', 'kotlin'}
+    _wrapper_lang = select_wrapper_language(_tool_lang)
     if _tool_lang in _jvm_langs:
-        _wrapper_lang = 'bash'
         _rationale = (
             f"The tool is implemented in {tool_info.get('language', 'Java')}. "
             "GenePattern wrappers for JVM-based tools MUST be written as bash scripts "
@@ -170,13 +200,16 @@ def wrapper_context_instructions(ctx: RunContext[ArtifactDeps]) -> str:
             "Do NOT write a Java, Python, or any other language wrapper."
         )
     elif _tool_lang == 'r':
-        _wrapper_lang = 'R'
         _rationale = "The tool is R-based; write an R wrapper script."
     elif _tool_lang in ('bash', 'shell'):
-        _wrapper_lang = 'bash'
         _rationale = "The tool is shell-based; write a bash wrapper script."
+    elif _tool_lang in ('c', 'c++', 'cpp', 'fortran'):
+        _rationale = (
+            f"The tool is a compiled binary ({tool_info.get('language', 'C')}). "
+            "GenePattern wrappers for compiled-binary tools MUST be written as bash "
+            "scripts that invoke the tool's CLI directly. Do NOT write a Python wrapper."
+        )
     else:
-        _wrapper_lang = 'python'
         _rationale = "Write a Python wrapper script using argparse and subprocess."
 
     _wrapper_script_name = planning_data.get('wrapper_script', 'wrapper.py')
@@ -227,7 +260,7 @@ def wrapper_context_instructions(ctx: RunContext[ArtifactDeps]) -> str:
 
 
 @wrapper_agent.tool
-def validate_wrapper(context: RunContext[ArtifactDeps], script_path: str, parameters: List[str] = None) -> str:
+def validate_wrapper(context: RunContext[ArtifactDeps], script_path: str, parameters: List[str] | None = None) -> str:
     """
     Validate GenePattern wrapper scripts.
 
@@ -292,7 +325,7 @@ def validate_wrapper(context: RunContext[ArtifactDeps], script_path: str, parame
 
 
 @wrapper_agent.tool
-def analyze_wrapper_requirements(context: RunContext[ArtifactDeps], tool_info: Dict[str, Any], parameters: List[Dict[str, Any]] = None, execution_environment: str = "container") -> str:
+def analyze_wrapper_requirements(context: RunContext[ArtifactDeps], tool_info: Annotated[Dict[str, Any], BeforeValidator(coerce_stringified_json)], parameters: Annotated[List[Dict[str, Any]] | None, BeforeValidator(coerce_stringified_json)] = None, execution_environment: str = "container") -> str:
     """
     Analyze tool information to determine optimal wrapper script requirements and implementation strategy.
     
@@ -481,7 +514,7 @@ def analyze_wrapper_requirements(context: RunContext[ArtifactDeps], tool_info: D
 
 
 @wrapper_agent.tool
-def generate_wrapper_structure(context: RunContext[ArtifactDeps], language: str, parameters: List[Dict[str, Any]], tool_command: str) -> str:
+def generate_wrapper_structure(context: RunContext[ArtifactDeps], language: str, parameters: Annotated[List[Dict[str, Any]], BeforeValidator(coerce_stringified_json)], tool_command: str) -> str:
     """
     Generate the basic structure and key components for a wrapper script in the specified language.
     
@@ -741,7 +774,7 @@ def generate_wrapper_structure(context: RunContext[ArtifactDeps], language: str,
 
 
 @wrapper_agent.tool
-def optimize_wrapper_performance(context: RunContext[ArtifactDeps], wrapper_content: str, performance_goals: List[str] = None) -> str:
+def optimize_wrapper_performance(context: RunContext[ArtifactDeps], wrapper_content: str, performance_goals: List[str] | None = None) -> str:
     """
     Analyze wrapper script content and suggest performance optimizations and best practices.
     
@@ -922,6 +955,7 @@ def optimize_wrapper_performance(context: RunContext[ArtifactDeps], wrapper_cont
 
 
 @wrapper_agent.tool
+@guard_single_call
 def create_wrapper(context: RunContext[ArtifactDeps]) -> str:
     """
     Generate a comprehensive wrapper script for the GenePattern module using planning data.
@@ -960,14 +994,20 @@ def create_wrapper(context: RunContext[ArtifactDeps]) -> str:
     wrapper_script = planning_data.get('wrapper_script', 'wrapper.py') if planning_data else 'wrapper.py'
     print(f"✓ Using wrapper_script from planning_data: {wrapper_script}")
 
-    # Determine wrapper language from planning data or tool language
-    # Priority: 1) planning_data language, 2) tool_info language
+    # Determine wrapper language from planning data (the tool's implementation
+    # language) or tool_info, then map to a wrapper *target* language via
+    # select_wrapper_language() -- the same mapping wrapper_context_instructions
+    # uses, so the LLM-facing prose and this deterministic scaffold path can't
+    # diverge (previously this compared the raw tool language, e.g. "c",
+    # directly against ['python', 'bash', 'r'] with no translation step and
+    # silently fell back to Python; see select_wrapper_language's docstring).
     if planning_data and 'language' in planning_data:
-        wrapper_language = planning_data['language'].lower()
-        print(f"✓ Using language from planning_data: {wrapper_language}")
+        raw_tool_language = planning_data['language'].lower()
+        print(f"✓ Using language from planning_data: {raw_tool_language}")
     else:
-        wrapper_language = tool_language
-        print(f"✓ Using language from tool_info: {wrapper_language}")
+        raw_tool_language = tool_language
+        print(f"✓ Using language from tool_info: {raw_tool_language}")
+    wrapper_language = select_wrapper_language(raw_tool_language)
 
     # Extract parameters from planning_data
     parameters = []

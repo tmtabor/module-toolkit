@@ -12,9 +12,21 @@ from typing import Dict, Optional
 
 
 def parse_wrapper_flags(wrapper_path: Path) -> Dict[str, Optional[str]]:
+    """Read *wrapper_path* and parse its argparse add_argument flags.
+
+    Convenience wrapper around ``parse_wrapper_flags_from_source`` for callers
+    that don't need to route the read through an effects/activity seam. Callers
+    that do (e.g. the pipeline orchestrator) should read the file via
+    ``agents.effects.read_text_file`` and call ``parse_wrapper_flags_from_source``
+    directly instead.
+    """
+    return parse_wrapper_flags_from_source(wrapper_path.read_text(encoding='utf-8'))
+
+
+def parse_wrapper_flags_from_source(source: str) -> Dict[str, Optional[str]]:
     """Parse a wrapper script's argparse add_argument calls to extract flag names.
 
-    Reads the wrapper source and finds lines like::
+    Finds lines like::
 
         parser.add_argument('--input-file', ...)
         parser.add_argument('input_file', ...)   # positional
@@ -24,9 +36,9 @@ def parse_wrapper_flags(wrapper_path: Path) -> Dict[str, Optional[str]]:
     ``None`` for positional arguments.
 
     Falls back to a regex-based scan if the source cannot be parsed as valid
-    Python/R AST.
+    Python/R AST. Pure — no I/O — so it is safe to call from deterministic
+    (future workflow) code.
     """
-    source = wrapper_path.read_text(encoding='utf-8')
     try:
         tree = ast.parse(source)
     except SyntaxError:

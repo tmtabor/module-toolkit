@@ -21,9 +21,11 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
+from agents import effects
 from agents.logger import Logger
+from agents.config import MAX_ARTIFACT_LOOPS
 from agents.models import configured_llm_model
-from wrapper.parser import parse_wrapper_flags
+from wrapper.parser import parse_wrapper_flags_from_source
 
 
 def _shell_quote(value: str) -> str:
@@ -61,10 +63,11 @@ _hint_mapping_agent = Agent(
         "Only include parameters where you are confident about the match. "
         "Do not invent filenames — only use filenames from the provided list."
     ),
+    retries=MAX_ARTIFACT_LOOPS,
 )
 
 
-def _llm_hint_mapping(
+async def _llm_hint_mapping(
     hinted_items: list,
     file_params: Dict[str, Dict[str, Any]],
     logger: Logger,
@@ -100,7 +103,7 @@ def _llm_hint_mapping(
     )
 
     try:
-        result = _hint_mapping_agent.run_sync(prompt)
+        result = await _hint_mapping_agent.run(prompt)
         mapping = result.output.mapping
         logger.print_status(
             f"LLM hint mapping produced {len(mapping)} assignment(s): {mapping}"
@@ -134,9 +137,10 @@ def _parse_manifest(manifest_path: Path) -> Optional[Dict[str, Any]]:
 
     Returns ``None`` if the file cannot be read or has no ``commandLine``.
     """
-    try:
-        text = manifest_path.read_text(encoding="utf-8", errors="replace")
-    except Exception:
+    # Route the file read through the effects seam (Phase 3 activity target);
+    # the parse logic below stays deterministic and I/O-free.
+    text = effects.read_text_file(str(manifest_path))
+    if text is None:
         return None
 
     kv: Dict[str, str] = {}
@@ -304,7 +308,7 @@ def _default_for_param(p: Dict[str, Any], gpunit_params: Dict[str, Any], *, allo
 # Main entry point
 # ---------------------------------------------------------------------------
 
-def build_runtime_command(
+async def build_runtime_command(
     planning_data,
     example_data,
     gpunit_params: Dict[str, Any],
@@ -330,15 +334,17 @@ def build_runtime_command(
     # ------------------------------------------------------------------ #
     if module_path is not None:
         manifest_path = module_path / "manifest"
-        if manifest_path.exists():
-            result = _build_from_manifest(
-                manifest_path, example_data, gpunit_params, logger,
-                module_path=module_path,
-                wrapper_script=planning_data.wrapper_script if planning_data else None,
-            )
-            if result is not None:
-                return result
-            # If manifest strategy returned None, fall through.
+        # No .exists() pre-check: _build_from_manifest's read is routed through
+        # effects.read_text_file, which already returns None (via _parse_manifest)
+        # when the file is absent — the fallthrough below handles that case.
+        result = await _build_from_manifest(
+            manifest_path, example_data, gpunit_params, logger,
+            module_path=module_path,
+            wrapper_script=planning_data.wrapper_script if planning_data else None,
+        )
+        if result is not None:
+            return result
+        # If manifest strategy returned None, fall through.
 
     # ------------------------------------------------------------------ #
     # Strategy 2: introspect the wrapper script for argparse flag names  #
@@ -361,7 +367,7 @@ def build_runtime_command(
 # Strategy 1: manifest-based
 # ---------------------------------------------------------------------------
 
-def _build_from_manifest(
+async def _build_from_manifest(
     manifest_path: Path,
     example_data,
     gpunit_params: Dict[str, Any],
@@ -420,7 +426,7 @@ def _build_from_manifest(
     }
     llm_mapping: Dict[str, str] = {}   # param_name → filename
     if hinted_items:
-        llm_mapping = _llm_hint_mapping(hinted_items, file_params_for_llm, logger)
+        llm_mapping = await _llm_hint_mapping(hinted_items, file_params_for_llm, logger)
 
     volume_list: List[str] = []
     positional_file_idx = 0
@@ -552,9 +558,10 @@ def _build_from_manifest(
     if module_path is not None:
         ws = wrapper_script or "wrapper.py"
         wrapper_path = module_path / ws
-        if wrapper_path.exists():
+        wrapper_source = effects.read_text_file(str(wrapper_path))
+        if wrapper_source is not None:
             try:
-                wrapper_flags = parse_wrapper_flags(wrapper_path)
+                wrapper_flags = parse_wrapper_flags_from_source(wrapper_source)
                 # wrapper_flags maps canonical names to the actual flag string
                 # e.g. {"input.file": "--input.file", "input_file": "--input.file", ...}
                 # Collect all actual long-flags the wrapper accepts
@@ -602,11 +609,12 @@ def _build_from_wrapper_introspection(
 
     wrapper_script = planning_data.wrapper_script or "wrapper.py"
     wrapper_path = module_path / wrapper_script
-    if not wrapper_path.exists():
+    wrapper_source = effects.read_text_file(str(wrapper_path))
+    if wrapper_source is None:
         return None
 
     try:
-        wrapper_flags = parse_wrapper_flags(wrapper_path)
+        wrapper_flags = parse_wrapper_flags_from_source(wrapper_source)
         logger.print_status(
             f"Introspected {len(wrapper_flags)} argument(s) from {wrapper_script}"
         )

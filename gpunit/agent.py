@@ -2,7 +2,8 @@ import yaml
 from typing import Dict, Any, List
 from pydantic_ai import Agent, RunContext
 from dotenv import load_dotenv
-from agents.models import configured_llm_model, ArtifactDeps, ArtifactModel
+from agents.config import MAX_ARTIFACT_LOOPS
+from agents.models import configured_llm_model, ArtifactDeps, ArtifactModel, guard_single_call
 
 
 # Load environment variables from .env file
@@ -32,7 +33,7 @@ the corrected values. Do not loop further.
 """
 
 # Create agent without MCP dependency
-gpunit_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ArtifactModel, deps_type=ArtifactDeps)
+gpunit_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ArtifactModel, deps_type=ArtifactDeps, retries=MAX_ARTIFACT_LOOPS)
 
 
 @gpunit_agent.instructions
@@ -80,7 +81,7 @@ def gpunit_context_instructions(ctx: RunContext[ArtifactDeps]) -> str:
 
 
 @gpunit_agent.tool
-def validate_gpunit(context: RunContext[ArtifactDeps], path: str, module: str = None, parameters: List[str] = None) -> str:
+def validate_gpunit(context: RunContext[ArtifactDeps], path: str, module: str | None = None, parameters: List[str] | None = None) -> str:
     """
     Validate GPUnit test definition YAML files.
 
@@ -148,6 +149,7 @@ def validate_gpunit(context: RunContext[ArtifactDeps], path: str, module: str = 
 
 
 @gpunit_agent.tool
+@guard_single_call
 def create_gpunit(context: RunContext[ArtifactDeps]) -> str:
     """
     Generate a comprehensive GPUnit test definition (test.yml) for the GenePattern module.

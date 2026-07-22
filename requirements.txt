@@ -1,28 +1,35 @@
-# GenePattern Module Toolkit - Requirements
-# Production dependencies for all linters
+# GenePattern Module Toolkit — pip fallback
+#
+# The authoritative dependency definition is pyproject.toml, locked in uv.lock.
+# Prefer:  uv sync              (runtime + dev/test tools)
+#          uv sync --extra app  (adds the Django web UI)
+#
+# This file mirrors pyproject's direct dependencies so `pip install -r requirements.txt`
+# still works for non-uv users. Keep it in sync with pyproject.toml [project.dependencies].
 
-# Required for GPUnit linter (.yml file parsing)
+# Linters
 PyYAML>=6.0,<7.0
-
-# Required for Documentation linter
 requests>=2.25.0,<3.0.0
 beautifulsoup4>=4.9.0,<5.0.0
 PyPDF2>=3.0.0,<4.0.0
 
-# Required for the MCP server
+# MCP server
 mcp[cli]>=1.14.0,<2.0.0
 
-# Required for the agent framework
-pydantic-ai>= 1.77.0,<2.0.0
-pydantic-ai-skills>=0.1.0,<1.0.0
+# Agent framework (floor only — see pyproject.toml / uv.lock for the resolved version).
+# The [temporal] extra pulls in temporalio, needed for the default (Temporal) run path.
+pydantic-ai[temporal]>=1.77.0
+pydantic-ai-skills>=1.2.0
 
-# Required for environment variable loading
+# Environment loading
 python-dotenv>=1.0.0,<2.0.0
 
-# Logfire telemetry
-logfire==4.8.0
+# Salvages malformed/truncated JSON emitted by local LLMs in tool-call arguments
+json-repair>=0.61.7
 
-# Testing
+# Telemetry
+logfire>=4.8.0
+
+# Test tooling (installed automatically by `uv sync`; listed here for pip users)
 pytest>=8.0.0,<9.0.0
 pytest-asyncio>=0.24.0,<1.0.0
-

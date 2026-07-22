@@ -49,6 +49,19 @@ class ManifestModel(BaseModel):
     commandLine: str = Field(...,
                              description="Command line template with parameter placeholders (e.g., 'bash <libdir>script.sh <input.file>')")
 
+    @field_validator('commandLine', mode='before')
+    @classmethod
+    def unescape_placeholder_brackets(cls, v):
+        """Some models HTML-escape the '<'/'>' around parameter placeholders (observed
+        reproducibly even though the deterministic create_manifest tool result it was
+        given used literal brackets). GenePattern's substitution engine matches literal
+        '<param.name>' tokens; an escaped '&lt;param.name&gt;' silently fails to
+        substitute at runtime, and the manifest linter doesn't currently catch this, so
+        it would otherwise validate as a broken manifest."""
+        if isinstance(v, str):
+            v = v.replace('&lt;', '<').replace('&gt;', '>')
+        return v
+
     # Common metadata fields
     author: Optional[str] = Field(None, description="Module author(s)")
     version: Optional[str] = Field(None, description="Module version")

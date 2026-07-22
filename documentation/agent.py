@@ -1,8 +1,10 @@
 import re
-from typing import Dict, Any, List
+from typing import Annotated, Dict, Any, List
+from pydantic import BeforeValidator
 from pydantic_ai import Agent, RunContext
 from dotenv import load_dotenv
-from agents.models import configured_llm_model, ArtifactDeps, ArtifactModel
+from agents.config import MAX_ARTIFACT_LOOPS
+from agents.models import configured_llm_model, ArtifactDeps, ArtifactModel, coerce_stringified_json, guard_single_call
 
 # Load environment variables from .env file
 load_dotenv()
@@ -107,7 +109,7 @@ Output:
 """
 
 # Create agent without MCP dependency
-documentation_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ArtifactModel, deps_type=ArtifactDeps)
+documentation_agent = Agent(configured_llm_model(), instructions=system_prompt, output_type=ArtifactModel, deps_type=ArtifactDeps, retries=MAX_ARTIFACT_LOOPS)
 
 
 @documentation_agent.instructions
@@ -143,7 +145,7 @@ def documentation_context_instructions(ctx: RunContext[ArtifactDeps]) -> str:
 
 
 @documentation_agent.tool
-def validate_documentation(context: RunContext[ArtifactDeps], path_or_url: str, module: str = None, parameters: List[str] = None) -> str:
+def validate_documentation(context: RunContext[ArtifactDeps], path_or_url: str, module: str | None = None, parameters: List[str] | None = None) -> str:
     """
     Validate GenePattern module documentation files or URLs.
 
@@ -211,7 +213,7 @@ def validate_documentation(context: RunContext[ArtifactDeps], path_or_url: str, 
 
 
 @documentation_agent.tool
-def analyze_documentation_requirements(context: RunContext[ArtifactDeps], tool_info: Dict[str, Any], parameters: List[Dict[str, Any]] = None, target_audience: str = "mixed") -> str:
+def analyze_documentation_requirements(context: RunContext[ArtifactDeps], tool_info: Annotated[Dict[str, Any], BeforeValidator(coerce_stringified_json)], parameters: Annotated[List[Dict[str, Any]] | None, BeforeValidator(coerce_stringified_json)] = None, target_audience: str = "mixed") -> str:
     """
     Analyze module information to determine documentation structure and content requirements.
     
@@ -366,7 +368,7 @@ def analyze_documentation_requirements(context: RunContext[ArtifactDeps], tool_i
 
 
 @documentation_agent.tool
-def generate_documentation_outline(context: RunContext[ArtifactDeps], tool_info: Dict[str, Any], sections: List[str], parameters: List[Dict[str, Any]] = None) -> str:
+def generate_documentation_outline(context: RunContext[ArtifactDeps], tool_info: Annotated[Dict[str, Any], BeforeValidator(coerce_stringified_json)], sections: List[str], parameters: Annotated[List[Dict[str, Any]] | None, BeforeValidator(coerce_stringified_json)] = None) -> str:
     """
     Generate a detailed documentation outline with section structure and content guidelines.
     
@@ -576,7 +578,7 @@ def generate_documentation_outline(context: RunContext[ArtifactDeps], tool_info:
 
 
 @documentation_agent.tool
-def optimize_documentation_structure(context: RunContext[ArtifactDeps], existing_content: str, improvement_goals: List[str] = None) -> str:
+def optimize_documentation_structure(context: RunContext[ArtifactDeps], existing_content: str, improvement_goals: List[str] | None = None) -> str:
     """
     Analyze existing documentation and suggest structural and content improvements.
     
@@ -748,6 +750,7 @@ def optimize_documentation_structure(context: RunContext[ArtifactDeps], existing
 
 
 @documentation_agent.tool
+@guard_single_call
 def create_documentation(context: RunContext[ArtifactDeps]) -> str:
     """
     Generate comprehensive user documentation (README.md) for the GenePattern module.
